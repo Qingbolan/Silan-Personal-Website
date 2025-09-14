@@ -2,7 +2,7 @@
 
 A revolutionary full-stack personal website platform that transforms professional online presence through intelligent content management, modern web technologies, and automated workflows. Built for AI professionals, researchers, and full-stack developers who demand sophisticated yet maintainable digital presence.
 
-![Project Overview](README/overview.png)
+![Project Overview](assets/overview.png)
 
 **🌐 Live Demo**: [https://silan.tech](https://silan.tech)  
 **💻 Source Code**: [https://github.com/Qingbolan/AIPro-Resume](https://github.com/Qingbolan/AIPro-Resume)
