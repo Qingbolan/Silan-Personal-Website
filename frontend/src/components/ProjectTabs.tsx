@@ -377,7 +377,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
                       key={tagIndex}
                       className="flex items-center gap-1 px-2 py-1 text-xs bg-theme-surface text-theme-secondary rounded"
                     >
-                      <Tag size={10} />
+                      <Tag/>
                       {tag}
                     </span>
                   ))}
