@@ -1,0 +1,42 @@
+Metadata-Version: 2.4
+Name: silan-personal-website
+Version: 1.0.1
+Summary: A lightweight tool for syncing markdown content to databases
+Author-email: Silan Hu <silan.hu@u.nus.edu>
+License: MIT
+Project-URL: Homepage, https://github.com/Qingbolan/AIPro-Resume
+Project-URL: Documentation, https://github.com/Qingbolan/AIPro-Resume/blob/main/README.md
+Project-URL: Repository, https://github.com/Qingbolan/AIPro-Resume.git
+Project-URL: Bug Tracker, https://github.com/Qingbolan/AIPro-Resume/issues
+Keywords: database,sync,markdown,migration,tools
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Database
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Topic :: Text Processing :: Markup :: Markdown
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: click>=8.0.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: python-frontmatter>=1.0.0
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: pymysql>=1.0.0
+Requires-Dist: psycopg2-binary>=2.9.0
+Requires-Dist: psutil>=5.9.0
+Requires-Dist: requests>=2.28.0
+Requires-Dist: pathlib2>=2.3.0; python_version < "3.6"
+Provides-Extra: dev
+Requires-Dist: black>=22.0.0; extra == "dev"
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: mypy>=0.991; extra == "dev"
+Requires-Dist: flake8>=5.0.0; extra == "dev"
+Requires-Dist: isort>=5.10.0; extra == "dev"
