@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Tabs, Space, Card, Tag, Typography } from 'antd';
 import { 
   BookOpen, 
   Download, 
@@ -12,7 +13,6 @@ import {
   FileText,
   Clock,
   ExternalLink,
-  Tag,
   Scale,
   CheckCircle,
   XCircle,
@@ -23,6 +23,8 @@ import { useTranslation } from 'react-i18next';
 import CommunityFeedback from './CommunityFeedback';
 import { Link } from 'react-router-dom';
 
+const { Paragraph } = Typography;
+
 interface ProjectTabsProps {
   projectData: any; // 简化处理，实际使用时会有完整类型
 }
@@ -32,51 +34,84 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('readme');
 
-  const tabs = [
-    { 
-      id: 'readme', 
-      label: t('projects.readme'), 
-      icon: <BookOpen size={16} /> 
+  const tabItems = [
+    {
+      key: 'readme',
+      label: (
+        <Space>
+          <BookOpen size={16} />
+          {t('projects.readme')}
+        </Space>
+      ),
     },
-    { 
-      id: 'relatedblogs', 
-      label: t('projects.relatedBlogs'), 
-      icon: <FileText size={16} /> 
+    {
+      key: 'relatedblogs',
+      label: (
+        <Space>
+          <FileText size={16} />
+          {t('projects.relatedBlogs')}
+        </Space>
+      ),
     },
-    { 
-      id: 'releases', 
-      label: t('projects.releases'), 
-      icon: <Download size={16} /> 
+    {
+      key: 'releases',
+      label: (
+        <Space>
+          <Download size={16} />
+          {t('projects.releases')}
+        </Space>
+      ),
     },
-    { 
-      id: 'quickstart', 
-      label: t('projects.quickStart'), 
-      icon: <Play size={16} /> 
+    {
+      key: 'quickstart',
+      label: (
+        <Space>
+          <Play size={16} />
+          {t('projects.quickStart')}
+        </Space>
+      ),
     },
-    { 
-      id: 'community', 
-      label: t('projects.community'), 
-      icon: <Users size={16} /> 
+    {
+      key: 'community',
+      label: (
+        <Space>
+          <Users size={16} />
+          {t('projects.community')}
+        </Space>
+      ),
     },
-    { 
-      id: 'issues', 
-      label: t('projects.issues'), 
-      icon: <Bug size={16} /> 
+    {
+      key: 'issues',
+      label: (
+        <Space>
+          <Bug size={16} />
+          {t('projects.issues')}
+        </Space>
+      ),
     },
-    { 
-      id: 'dependencies', 
-      label: t('projects.dependencies'), 
-      icon: <Settings size={16} /> 
+    {
+      key: 'dependencies',
+      label: (
+        <Space>
+          <Settings size={16} />
+          {t('projects.dependencies')}
+        </Space>
+      ),
     },
-    { 
-      id: 'license', 
-      label: t('projects.license'), 
-      icon: <Scale size={16} /> 
-    }
+    {
+      key: 'license',
+      label: (
+        <Space>
+          <Scale size={16} />
+          {t('projects.license')}
+        </Space>
+      ),
+    },
   ];
 
   const renderReadme = () => (
-    <div className="prose max-w-none">
+    <Card>
+      <div className="prose max-w-none">
       <h2 className="text-2xl font-bold mb-4 text-theme-primary">
         {projectData.title}
       </h2>
@@ -112,6 +147,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
         ))}
       </ul>
     </div>
+    </Card>
   );
 
   const renderQuickStart = () => (
@@ -520,8 +556,8 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
     </div>
   );
 
-  const renderContent = () => {
-    switch (activeTab) {
+  const renderContent = (tabKey: string = activeTab) => {
+    switch (tabKey) {
       case 'readme': return renderReadme();
       case 'relatedblogs': return renderRelatedBlogs();
       case 'quickstart': return renderQuickStart();
@@ -536,36 +572,35 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
 
   return (
     <div className="w-full">
-      {/* Tab Navigation */}
-      <div className="border-b border-theme-border mb-6">
-        <nav className="flex space-x-8 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                activeTab === tab.id
-                  ? 'border-theme-primary text-theme-primary'
-                  : 'border-transparent text-theme-secondary hover:text-theme-primary hover:border-theme-secondary'
-              }`}
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={tabItems.map(item => ({
+          ...item,
+          children: (
+            <motion.div
+              key={item.key}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="min-h-[400px]"
             >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="min-h-[400px]"
-      >
-        {renderContent()}
-      </motion.div>
+              {renderContent(item.key)}
+            </motion.div>
+          )
+        }))}
+        style={{
+          '--antd-tabs-ink-bar-color': 'var(--color-primary)',
+          '--antd-tabs-item-color': 'var(--color-text-secondary)',
+          '--antd-tabs-item-active-color': 'var(--color-primary)',
+          '--antd-tabs-item-hover-color': 'var(--color-primary)'
+        } as any}
+        size="large"
+        tabBarStyle={{
+          borderBottom: '1px solid var(--color-card-border)',
+          marginBottom: '24px'
+        }}
+      />
     </div>
   );
 };

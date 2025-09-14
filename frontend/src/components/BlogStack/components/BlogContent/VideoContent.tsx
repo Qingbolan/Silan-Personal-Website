@@ -1,6 +1,10 @@
 import React from 'react';
+import { Card, Tag, Typography, Alert } from 'antd';
+import { PlayCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { BlogContent } from '../../types/blog';
 import { useLanguage } from '../../../LanguageContext';
+
+const { Paragraph } = Typography;
 
 interface VideoContentProps {
   item: BlogContent;
@@ -13,12 +17,20 @@ export const VideoContent: React.FC<VideoContentProps> = ({ item, index, isWideS
 
   return (
     <figure className={`my-16 ${isWideScreen ? 'col-span-2' : ''} break-inside-avoid`}>
-      <div className="bg-theme-surface-elevated rounded-xl overflow-hidden shadow-medium border border-theme-card-border">
+      <Card
+        className="overflow-hidden shadow-medium"
+        bodyStyle={{ padding: 0 }}
+        style={{ 
+          borderRadius: '12px',
+          backgroundColor: 'var(--color-surface-elevated, white)',
+          borderColor: 'var(--color-card-border, rgba(229, 231, 235, 1))'
+        }}
+      >
         {/* Video Container */}
-        <div className="relative overflow-hidden bg-theme-background-secondary">
+        <div className="relative overflow-hidden  -secondary">
           <video
             controls
-            className="w-full h-auto focus:outline-none focus:ring-4 focus:ring-theme-focus-ring"
+            className="w-full h-auto focus:outline-none"
             style={{ 
               aspectRatio: '16/9',
               maxHeight: '400px'
@@ -28,51 +40,92 @@ export const VideoContent: React.FC<VideoContentProps> = ({ item, index, isWideS
               : undefined
             }
             preload="metadata"
+            onError={(e) => {
+              // Show fallback content on video error
+              const videoElement = e.target as HTMLVideoElement;
+              const container = videoElement.parentElement;
+              if (container) {
+                container.innerHTML = `
+                  <div class="flex items-center justify-center h-64 bg-gray-100">
+                    <div class="text-center p-8">
+                      <div class="text-4xl mb-4 text-gray-400">⚠️</div>
+                      <p class="text-gray-600 text-sm font-medium">
+                        ${language === 'en' ? 'Video could not be loaded' : '视频无法加载'}
+                      </p>
+                    </div>
+                  </div>
+                `;
+              }
+            }}
           >
             <source src={item.content} type="video/mp4" />
             <source src={item.content.replace('.mp4', '.webm')} type="video/webm" />
             
-            {/* Fallback Content */}
-            <div className="absolute inset-0 flex items-center justify-center bg-theme-background-secondary">
-              <div className="text-center p-8">
-                <div className="w-16 h-16 mx-auto mb-4 bg-theme-accent/20 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-theme-accent" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <p className="text-theme-text-secondary text-sm font-medium">
-                  {language === 'en' ? 'Your browser does not support the video tag.' : '您的浏览器不支持视频播放。'}
-                </p>
-                <p className="text-theme-text-tertiary text-xs mt-2">
-                  {language === 'en' ? 'Please try updating your browser or use a different device.' : '请尝试更新浏览器或使用其他设备。'}
-                </p>
-              </div>
+            {/* Fallback Content for unsupported browsers */}
+            <div className="absolute inset-0 flex items-center justify-center  -secondary">
+              <Alert
+                message={language === 'en' ? 'Video Playback Not Supported' : '不支持视频播放'}
+                description={
+                  language === 'en' 
+                    ? 'Your browser does not support the video tag. Please try updating your browser or use a different device.'
+                    : '您的浏览器不支持视频播放。请尝试更新浏览器或使用其他设备。'
+                }
+                type="warning"
+                icon={<ExclamationCircleOutlined />}
+                showIcon
+                className="max-w-md"
+              />
             </div>
           </video>
+          
+          {/* Play button overlay for better UX */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <PlayCircleOutlined 
+              style={{ 
+                fontSize: '64px', 
+                color: 'rgba(255, 255, 255, 0.8)',
+                filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))'
+              }} 
+            />
+          </div>
         </div>
         
         {/* Caption */}
         {item.caption && (
-          <figcaption className="p-6 bg-theme-surface-elevated">
+          <div className="p-6 bg-theme-surface-elevated">
             <div className="text-center space-y-2">
-              {/* Video Number */}
-              <div className="inline-flex items-center px-3 py-1 bg-theme-accent/10 rounded-full mb-2">
-                <span className="text-xs font-semibold text-theme-accent uppercase tracking-wider font-sans">
-                  Video {index + 1}
-                </span>
-              </div>
+              {/* Video Number Tag */}
+              <Tag 
+                color="orange" 
+                className="mb-2"
+                style={{
+                  borderRadius: '16px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}
+                icon={<PlayCircleOutlined />}
+              >
+                Video {index + 1}
+              </Tag>
               
               {/* Caption Text */}
-              <p className="text-sm text-theme-text-secondary leading-relaxed max-w-2xl mx-auto font-normal"
-                 style={{ 
-                   fontFamily: 'Georgia, "Times New Roman", Charter, serif'
-                 }}>
+              <Paragraph 
+                className="text-center max-w-2xl mx-auto"
+                style={{ 
+                  fontFamily: 'Georgia, "Times New Roman", Charter, serif',
+                  fontSize: '14px',
+                  lineHeight: '1.6',
+                  color: 'var(--color-text-secondary, #6b7280)',
+                  marginBottom: 0
+                }}
+              >
                 {item.caption}
-              </p>
+              </Paragraph>
             </div>
-          </figcaption>
+          </div>
         )}
-      </div>
+      </Card>
     </figure>
   );
 }; 

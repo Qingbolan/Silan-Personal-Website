@@ -2,10 +2,18 @@ import { ReactNode } from 'react';
 
 export interface BlogContent {
   id: string;
-  type: 'text' | 'image' | 'video' | 'quote' | 'code';
+  type: 'text' | 'image' | 'video' | 'quote' | 'code' | 'heading';
   content: string;
   metadata?: Record<string, any>;
   children?: ReactNode;
+  // Heading specific properties
+  level?: number; // 1-6 for h1-h6
+  // Image specific properties
+  caption?: string;
+  // Code specific properties
+  language?: string;
+  // Annotation specific properties
+  annotation?: string;
 }
 
 export interface BlogData {

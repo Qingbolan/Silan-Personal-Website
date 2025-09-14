@@ -4,6 +4,7 @@ import { Quote, X, MessageCircle } from 'lucide-react';
 import { BlogContent, UserAnnotation, SelectedText } from '../../types/blog';
 import { useTheme } from '../../../ThemeContext';
 import { useLanguage } from '../../../LanguageContext';
+import { renderInlineMarkdown, renderFullMarkdown, hasCompleteMarkdownFormatting, processPlainTextWithBreaks, isFileTreeStructure, FileTreeRenderer } from '../../../../utils/fullMarkdownRenderer';
 
 interface TextContentProps {
   item: BlogContent;
@@ -64,9 +65,19 @@ export const TextContent: React.FC<TextContentProps> = ({
 
     // Process markdown formatting first
     let processedText = processMarkdownText(text);
+    
+    // Check if processed text contains block elements
+    const hasBlockElements = React.isValidElement(processedText) && 
+      (processedText.type === 'div' || 
+       (processedText.props && processedText.props.children && 
+        Array.isArray(processedText.props.children) && 
+        processedText.props.children.some((child: any) => 
+          React.isValidElement(child) && (child.type === 'ul' || child.type === 'ol' || child.type === 'div')
+        )));
 
     if (relevantAnnotations.length === 0) {
-      return isFirstParagraph ? renderFirstLetterDropCap(processedText) : processedText;
+      const result = isFirstParagraph ? renderFirstLetterDropCap(processedText) : processedText;
+      return { content: result, hasBlockElements };
     }
 
     // Sort annotations by start offset to avoid overlap issues
@@ -165,7 +176,7 @@ export const TextContent: React.FC<TextContentProps> = ({
           {/* Annotation popup - show on hover or when clicked */}
           {(hoveredAnnotation === annotationId || clickedAnnotation === annotationId) && (
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-20 annotation-popup">
-              <div className="bg-theme-background-secondary border border-theme-card-border 
+              <div className=" -secondary border border-theme-card-border 
                               rounded-lg p-3 shadow-xl w-72 max-w-sm relative">
                 {/* Original quoted text */}
                 <p className="text-xs text-theme-text-primary leading-relaxed italic text-left mb-2 px-2 py-1 
@@ -219,7 +230,12 @@ export const TextContent: React.FC<TextContentProps> = ({
       parts.push(processMarkdownText(remainingText));
     }
 
-    return parts;
+    // Add keys to parts array elements
+    const partsWithKeys = parts.map((part, index) => 
+      React.isValidElement(part) ? React.cloneElement(part, { key: `part-${index}` }) : 
+      typeof part === 'string' ? <span key={`text-${index}`}>{part}</span> : part
+    );
+    return { content: partsWithKeys, hasBlockElements };
   };
 
   // Function to render first letter as drop cap
@@ -234,6 +250,7 @@ export const TextContent: React.FC<TextContentProps> = ({
       return (
         <>
           <span 
+            key="drop-cap"
             className="float-left text-5xl lg:text-6xl xl:text-7xl leading-none 
                        text-theme-accent font-bold italic mr-2 mt-1"
             style={{
@@ -244,7 +261,7 @@ export const TextContent: React.FC<TextContentProps> = ({
           >
             {firstChar}
           </span>
-          {restOfText}
+          <span key="rest-text">{restOfText}</span>
         </>
       );
     }
@@ -257,105 +274,49 @@ export const TextContent: React.FC<TextContentProps> = ({
   const processMarkdownText = (text: string): React.ReactNode => {
     if (!text) return text;
 
-    // Handle headers
-    if (text.match(/^#+\s/)) {
-      const level = text.match(/^#+/)?.[0].length || 1;
-      const content = text.replace(/^#+\s/, '');
-      
-      const HeaderTag = `h${Math.min(level, 6)}` as keyof JSX.IntrinsicElements;
-      const sizeClasses = {
-        1: 'text-3xl font-bold',
-        2: 'text-2xl font-semibold', 
-        3: 'text-xl font-semibold',
-        4: 'text-lg font-medium',
-        5: 'text-base font-medium',
-        6: 'text-sm font-medium'
-      };
-      
-      return React.createElement(HeaderTag, {
-        className: `${sizeClasses[level as keyof typeof sizeClasses] || sizeClasses[6]} 
-                    text-theme-primary mb-4 mt-6 leading-tight`
-      }, content);
+    // Check for file tree structure first
+    if (isFileTreeStructure(text)) {
+      return <FileTreeRenderer content={text} />;
     }
 
-    // Process inline markdown
-    let processedText: React.ReactNode = text;
-
-    // Handle bold text
-    processedText = processInlineMarkdown(
-      processedText,
-      /\*\*(.*?)\*\*/g,
-      (match, content) => (
-        <strong key={Math.random()} className="font-semibold text-theme-primary">
-          {content}
-        </strong>
-      )
-    );
-
-    // Handle italic text (but avoid processing already processed bold text)
-    if (typeof processedText === 'string') {
-      processedText = processInlineMarkdown(
-        processedText,
-        /\*(.*?)\*/g,
-        (match, content) => (
-          <em key={Math.random()} className="italic">
-            {content}
-          </em>
-        )
-      );
-    }
-
-    // Handle inline code (but avoid processing already processed text)
-    if (typeof processedText === 'string') {
-      processedText = processInlineMarkdown(
-        processedText,
-        /`(.*?)`/g,
-        (match, content) => (
-          <code key={Math.random()} 
-                className="px-1.5 py-0.5 bg-theme-surface-elevated rounded text-sm font-mono 
-                           text-theme-accent border border-theme-card-border">
-            {content}
-          </code>
-        )
-      );
-    }
-
-    return processedText;
-  };
-
-  // Helper function to process inline markdown patterns
-  const processInlineMarkdown = (
-    content: React.ReactNode, 
-    pattern: RegExp, 
-    replacer: (match: string, content: string) => React.ReactNode
-  ): React.ReactNode => {
-    // If content is not a string, return as is
-    if (typeof content !== 'string') return content;
-    
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-
-    pattern.lastIndex = 0; // Reset regex state
-    
-    while ((match = pattern.exec(content)) !== null) {
-      // Add text before match
-      if (match.index > lastIndex) {
-        parts.push(content.slice(lastIndex, match.index));
+    // Check if text has markdown formatting first
+    if (hasCompleteMarkdownFormatting(text)) {
+      // For complex markdown (lists, headers, etc), use full renderer
+      if (text.includes('\n') || text.match(/^[-*+#>]/m) || text.includes('---')) {
+        return renderFullMarkdown(text);
       }
-      
-      // Add replaced content
-      parts.push(replacer(match[0], match[1]));
-      
-      lastIndex = pattern.lastIndex;
+      // For simple inline markdown, use inline renderer
+      return renderInlineMarkdown(text);
     }
-    
-    // Add remaining text
-    if (lastIndex < content.length) {
-      parts.push(content.slice(lastIndex));
+
+    // Special handling: if text looks like a list but doesn't have proper formatting
+    // Look for patterns like "- Item1: description - Item2: description"
+    if (text.includes(' - ') && text.startsWith('- ')) {
+      // Split by finding patterns like " - [Word/Phrase followed by :]"
+      // This will capture: " - Git Integration:", " - CLI Tools:", etc.
+      const splitPattern = / - (?=[A-Z][^:]*:)/g;
+      
+      if (splitPattern.test(text)) {
+        // Reset the regex and split
+        splitPattern.lastIndex = 0;
+        const parts = text.split(splitPattern);
+        const items = parts.map(part => part.replace(/^-\s*/, '').trim()).filter(Boolean);
+        const listText = items.map(item => `- ${item}`).join('\n');
+        return renderFullMarkdown(listText);
+      } else {
+        // Fallback: simple split by ' - '
+        const items = text.split(' - ').map(item => item.replace(/^-\s*/, '').trim()).filter(Boolean);
+        const listText = items.map(item => `- ${item}`).join('\n');
+        return renderFullMarkdown(listText);
+      }
     }
-    
-    return parts.length === 1 ? parts[0] : parts;
+
+    // For plain text with line breaks, process line breaks
+    if (text.includes('\n')) {
+      return processPlainTextWithBreaks(text);
+    }
+
+    return text;
   };
 
   // Handle clicks outside to unpin annotations
@@ -377,27 +338,35 @@ export const TextContent: React.FC<TextContentProps> = ({
         onMouseUp={onTextSelection}
       >
         <div className="prose prose-lg max-w-none">
-          {isHeader ? (
-            // Render headers directly without <p> wrapper
-            <div className="text-theme-text-primary selection:bg-theme-accent/20">
-              {renderTextWithAnnotations(item.content, item.id)}
-            </div>
-          ) : (
-            // Render regular text with <p> wrapper
-            <p className={`text-theme-text-primary leading-relaxed tracking-wide font-normal 
-                           text-justify hyphens-auto selection:bg-theme-accent/20 
-                           sm:text-base lg:text-lg xl:leading-[1.8] ${
-                             isFirstParagraph ? 'first-letter:text-theme-accent first-letter:font-bold first-letter:italic' : ''
-                           }`}
-               style={{ 
-                 fontFamily: 'Georgia, "Times New Roman", Charter, serif',
-                 textRendering: 'optimizeLegibility',
-                 WebkitFontSmoothing: 'antialiased',
-                 MozOsxFontSmoothing: 'grayscale'
-               }}>
-              {renderTextWithAnnotations(item.content, item.id)}
-            </p>
-          )}
+          {(() => {
+            const annotatedContent = renderTextWithAnnotations(item.content, item.id);
+            
+            if (isHeader || annotatedContent.hasBlockElements) {
+              // Render headers or content with block elements without <p> wrapper
+              return (
+                <div className="text-theme-text-primary selection:bg-theme-accent/20">
+                  {annotatedContent.content}
+                </div>
+              );
+            } else {
+              // Render regular text with <p> wrapper
+              return (
+                <p className={`text-theme-text-primary leading-relaxed tracking-wide font-normal 
+                               text-justify hyphens-auto selection:bg-theme-accent/20 
+                               sm:text-base lg:text-lg xl:leading-[1.8] ${
+                                 isFirstParagraph ? 'first-letter:text-theme-accent first-letter:font-bold first-letter:italic' : ''
+                               }`}
+                   style={{ 
+                     fontFamily: 'Georgia, "Times New Roman", Charter, serif',
+                     textRendering: 'optimizeLegibility',
+                     WebkitFontSmoothing: 'antialiased',
+                     MozOsxFontSmoothing: 'grayscale'
+                   }}>
+                  {annotatedContent.content}
+                </p>
+              );
+            }
+          })()}
         </div>
 
         {/* Annotation Count Badge - Right Side Indicator */}
@@ -440,7 +409,7 @@ export const TextContent: React.FC<TextContentProps> = ({
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
-                <div className="bg-theme-background-secondary rounded-lg p-4 border border-theme-card-border">
+                <div className=" -secondary rounded-lg p-4 border border-theme-card-border">
                   <p className="text-sm text-theme-text-secondary leading-relaxed italic font-light"
                      style={{ 
                        fontFamily: 'Georgia, "Times New Roman", Charter, serif'
@@ -496,7 +465,7 @@ export const TextContent: React.FC<TextContentProps> = ({
                   value={newAnnotationText}
                   onChange={(e) => onSetNewAnnotationText(e.target.value)}
                   placeholder={language === 'en' ? 'Write your note...' : '写下你的批注...'}
-                  className="w-full p-3 bg-theme-background border border-theme-card-border rounded-lg 
+                  className="w-full p-3   border border-theme-card-border rounded-lg 
                              text-theme-text-primary placeholder-theme-text-tertiary resize-none 
                              focus:outline-none focus:ring-2 focus:ring-theme-focus-ring 
                              focus:border-transparent transition-all duration-200 leading-relaxed text-sm"

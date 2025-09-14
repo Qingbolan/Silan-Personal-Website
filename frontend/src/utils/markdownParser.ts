@@ -140,12 +140,15 @@ export const parseMarkdownToBlogContent = (markdownText: string): BlogContent[] 
       continue;
     }
 
-    // Handle headers - convert to text with proper formatting
-    if (trimmedLine.match(/^#+\s/)) {
+    // Handle headers - convert to heading with proper level
+    const headingMatch = trimmedLine.match(/^(#+)\s+(.*)$/);
+    if (headingMatch) {
       pushParagraph();
+      const [, hashes, headingText] = headingMatch;
       content.push({
-        type: 'text',
-        content: trimmedLine,
+        type: 'heading',
+        content: headingText.trim(),
+        level: Math.min(hashes.length, 6), // Limit to h6
         id: generateId()
       });
       continue;
@@ -320,12 +323,15 @@ export const parseAcademicMarkdown = (markdownText: string): BlogContent[] => {
       continue;
     }
 
-    // Handle headers - convert to text with proper formatting
-    if (trimmedLine.match(/^#+\s/)) {
+    // Handle headers - convert to heading with proper level
+    const headingMatch = trimmedLine.match(/^(#+)\s+(.*)$/);
+    if (headingMatch) {
       pushParagraph();
+      const [, hashes, headingText] = headingMatch;
       content.push({
-        type: 'text',
-        content: trimmedLine,
+        type: 'heading',
+        content: headingText.trim(),
+        level: Math.min(hashes.length, 6), // Limit to h6
         id: generateId()
       });
       continue;

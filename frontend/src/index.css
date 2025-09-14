@@ -1,6 +1,3 @@
-/* Modern Typography System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 /* Tailwind Base with Enhanced CSS Variables */
 @tailwind base;
 @tailwind components;
@@ -207,11 +204,6 @@ img {
 
   .glow-lg {
     filter: drop-shadow(0 0 30px var(--color-primary, #0066FF));
-  }
-
-  /* Theme-aware background colors */
-  .bg-theme-background {
-    background-color: var(--color-background);
   }
 
   .bg-theme-card {
@@ -826,4 +818,442 @@ p {
 
 .dark .fluent-subtle-gradient {
   background: linear-gradient(145deg, rgba(50, 49, 48, 0.9), rgba(45, 44, 43, 0.9));
+}
+
+/* ========================================
+   Ant Design Custom Styles
+   ======================================== */
+
+/* Custom Blog Card Styles */
+.blog-card-custom .ant-card-body {
+  padding: 24px !important;
+}
+
+.blog-card-custom .ant-card-cover {
+  border-radius: 16px 16px 0 0 !important;
+}
+
+.blog-card-custom:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ant Design Button Customizations */
+.ant-btn-secondary {
+  background-color: var(--color-secondary) !important;
+  border-color: var(--color-secondary) !important;
+  color: white !important;
+}
+
+.ant-btn-secondary:hover {
+  background-color: var(--color-secondary) !important;
+  border-color: var(--color-secondary) !important;
+  opacity: 0.8;
+}
+
+/* Ant Design Input and Search Customizations */
+.ant-input,
+.ant-input-affix-wrapper {
+  border-radius: 12px !important;
+  border-color: var(--color-cardBorder, rgba(229, 231, 235, 1)) !important;
+  background-color: var(--color-surface, white) !important;
+  color: var(--color-textPrimary, #1f2937) !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--color-primary, #0066FF) !important;
+  box-shadow: 0 0 0 2px var(--color-primary, #0066FF)20 !important;
+}
+
+/* Ant Design Tag Customizations */
+.ant-tag-checkable {
+  border-radius: 12px !important;
+  border-color: var(--color-cardBorder, rgba(229, 231, 235, 1)) !important;
+  background-color: var(--color-surface, white) !important;
+  color: var(--color-textSecondary, #6b7280) !important;
+}
+
+.ant-tag-checkable-checked {
+  background-color: var(--color-primary, #0066FF) !important;
+  border-color: var(--color-primary, #0066FF) !important;
+  color: white !important;
+}
+
+/* Ant Design Card Customizations */
+.ant-card {
+  border-radius: 16px !important;
+  border-color: var(--color-cardBorder, rgba(229, 231, 235, 1)) !important;
+  background-color: var(--color-cardBackground, white) !important;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08)) !important;
+}
+
+.ant-card-hoverable:hover {
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.12)) !important;
+}
+
+/* Ant Design Statistic Customizations */
+.ant-statistic-title {
+  color: var(--color-textSecondary, #6b7280) !important;
+  font-family: var(--font-body, 'Inter') !important;
+}
+
+.ant-statistic-content {
+  color: var(--color-textPrimary, #1f2937) !important;
+  font-family: var(--font-display, 'Inter') !important;
+}
+
+/* Ant Design Alert Customizations */
+.ant-alert {
+  border-radius: 12px !important;
+  font-family: var(--font-body, 'Inter') !important;
+}
+
+/* Ant Design Spin Customizations */
+.ant-spin-dot-item {
+  background-color: var(--color-primary, #0066FF) !important;
+}
+
+/* Ant Design List Customizations */
+.ant-list-item {
+  border-bottom-color: var(--color-cardBorder, rgba(229, 231, 235, 1)) !important;
+}
+
+.ant-list-item-meta-title {
+  color: var(--color-textPrimary, #1f2937) !important;
+  font-family: var(--font-body, 'Inter') !important;
+}
+
+.ant-list-item-meta-description {
+  color: var(--color-textTertiary, #9ca3af) !important;
+  font-family: var(--font-body, 'Inter') !important;
+}
+
+/* Ant Design Avatar Customizations */
+.ant-avatar {
+  background-color: var(--color-primary, #0066FF) !important;
+  color: white !important;
+}
+
+/* Ant Design Typography Customizations */
+.ant-typography {
+  color: var(--color-textPrimary, #1f2937) !important;
+  font-family: var(--font-body, 'Inter') !important;
+}
+
+/* Ant Design Divider Customizations */
+.ant-divider {
+  border-color: var(--color-cardBorder, rgba(229, 231, 235, 1)) !important;
+}
+
+/* Dark theme support for Ant Design */
+.dark .ant-card {
+  background-color: var(--color-cardBackground, rgba(31, 41, 55, 1)) !important;
+  border-color: var(--color-cardBorder, rgba(55, 65, 81, 1)) !important;
+}
+
+.dark .ant-input,
+.dark .ant-input-affix-wrapper {
+  background-color: var(--color-surface, rgba(17, 24, 39, 1)) !important;
+  border-color: var(--color-cardBorder, rgba(55, 65, 81, 1)) !important;
+  color: var(--color-textPrimary, #f9fafb) !important;
+}
+
+.dark .ant-tag-checkable {
+  background-color: var(--color-surface, rgba(17, 24, 39, 1)) !important;
+  border-color: var(--color-cardBorder, rgba(55, 65, 81, 1)) !important;
+  color: var(--color-textSecondary, #d1d5db) !important;
+}
+
+/* Ant Design Tabs Customizations */
+.ant-tabs .ant-tabs-tab {
+  padding: 12px 4px !important;
+  color: var(--color-textSecondary, #6b7280) !important;
+  font-family: var(--font-body, 'Inter') !important;
+}
+
+.ant-tabs .ant-tabs-tab-active {
+  color: var(--color-primary, #0066FF) !important;
+}
+
+.ant-tabs .ant-tabs-tab:hover {
+  color: var(--color-primary, #0066FF) !important;
+}
+
+.ant-tabs .ant-tabs-ink-bar {
+  background: var(--color-primary, #0066FF) !important;
+}
+
+.ant-tabs .ant-tabs-content-holder {
+  padding-top: 0 !important;
+}
+
+/* Ant Design Progress Customizations */
+.ant-progress .ant-progress-bg {
+  background-color: var(--color-primary, #0066FF) !important;
+}
+
+.ant-progress-line .ant-progress-outer {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Ant Design Image Customizations */
+.ant-image-mask {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.ant-image-preview-operations {
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Dark theme for Tabs
+.dark .ant-tabs .ant-tabs-tab {
+  color: var(--color-textSecondary, #d1d5db) !important;
+}
+
+.dark .ant-tabs .ant-tabs-content {
+  color: var(--color-textPrimary, #f9fafb) !important;
+} */
+
+/* Ant Design Layout Customizations */
+.ant-layout {
+  background: transparent !important;
+}
+
+.ant-layout-header {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.ant-layout-content {
+  background: transparent !important;
+}
+
+
+.ant-anchor-link-title {
+  color: inherit !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease !important;
+}
+
+
+.ant-anchor-ink {
+  display: none !important;
+}
+
+/* Dark theme for Anchor */
+.dark .ant-anchor {
+  color: var(--color-textSecondary, #d1d5db) !important;
+  border-left: none !important;
+}
+
+
+/* Simple TOC Styles - Clean and Minimal */
+.simple-toc {
+  background: transparent;
+}
+
+/* Compact TOC styling */
+.simple-toc.p-3 {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+/* Reset Ant Design Anchor default styles */
+.simple-toc-anchor {
+  background: transparent !important;
+  border: none !important;
+  border-left: none !important;
+  margin-left: 10px !important;
+  padding: 0 !important;
+  /* margin: 0 !important; */
+}
+
+/* Force remove any border from the anchor wrapper and all children */
+.simple-toc-anchor *,
+.simple-toc-anchor *::before,
+.simple-toc-anchor *::after {
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
+.simple-toc-anchor .ant-anchor-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Anchor link container styles - completely override defaults */
+.simple-toc-anchor .ant-anchor-link {
+  padding: 1px 0 !important; /* 减少padding */
+  margin: 0 !important;
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  line-height: 1.3 !important; /* 减少行高 */
+  background: transparent !important;
+}
+
+/* Anchor link title (the actual clickable text) */
+.simple-toc-anchor .ant-anchor-link-title {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: inherit !important;
+  display: block !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Remove all default Ant Design anchor visual elements */
+.simple-toc-anchor .ant-anchor-ink {
+  display: none !important;
+}
+
+.simple-toc-anchor .ant-anchor-ink-ball {
+  display: none !important;
+}
+
+/* Simple TOC Item Styles - our custom span elements */
+.simple-toc-item {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  display: block;
+  text-decoration: none;
+  padding: 1px 0; /* 减少垂直padding */
+  transition: color 0.15s ease;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1.3; /* 减少行高 */
+  color: var(--theme-secondary, var(--ant-color-text-secondary));
+}
+
+/* Level-specific styles */
+.simple-toc-item.level-1 {
+  font-size: 13px;
+  font-weight: 500;
+  margin-left: 0;
+  margin-bottom: 1px; /* 减少底部间距 */
+}
+
+.simple-toc-item.level-2 {
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 16px;
+  margin-bottom: 1px; /* 减少底部间距 */
+  position: relative;
+}
+
+.simple-toc-item.level-2::before {
+  content: '·';
+  position: absolute;
+  left: -10px;
+  color: var(--theme-tertiary, var(--ant-color-text-quaternary, #bbb));
+  font-weight: bold;
+}
+
+.simple-toc-item.level-3 {
+  font-size: 11px;
+  font-weight: 400;
+  margin-left: 28px;
+  margin-bottom: 1px; /* 减少底部间距 */
+  position: relative;
+}
+
+.simple-toc-item.level-3::before {
+  content: '••';
+  position: absolute;
+  left: -12px;
+  color: var(--theme-tertiary, var(--ant-color-text-quaternary, #bbb));
+  font-weight: bold;
+  font-size: 10px;
+}
+
+/* Active state - use theme primary color */
+.simple-toc-anchor .ant-anchor-link-active .ant-anchor-link-title .simple-toc-item,
+.simple-toc-anchor .ant-anchor-link-active .simple-toc-item {
+  color: var(--color-primary, var(--theme-primary, #0066FF)) !important;
+  font-weight: 500 !important;
+}
+
+
+/* Remove any default focus outlines and add our own */
+.simple-toc-anchor .ant-anchor-link-title:focus,
+.simple-toc-anchor .ant-anchor-link-title:focus-visible {
+  outline: 1px solid var(--theme-primary, var(--ant-color-primary, #1677ff));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Dark theme support */
+.dark .simple-toc-anchor .ant-anchor-link:hover .ant-anchor-link-title .simple-toc-item,
+.dark .simple-toc-anchor .ant-anchor-link-title:hover .simple-toc-item,
+.dark .simple-toc-item:hover {
+  /* No color change on hover in dark theme either */
+}
+
+.dark .simple-toc-anchor .ant-anchor-link-active .ant-anchor-link-title .simple-toc-item,
+.dark .simple-toc-anchor .ant-anchor-link-active .simple-toc-item {
+  color: var(--color-primary, #0066FF) !important;
+}
+
+/* Blog Breadcrumb Styles */
+.blog-breadcrumb {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.blog-breadcrumb .ant-breadcrumb-link {
+  color: var(--color-textSecondary, #6b7280) !important;
+  transition: color 0.2s ease !important;
+}
+
+.blog-breadcrumb .ant-breadcrumb-link:hover {
+  color: var(--color-primary, #42b883) !important;
+}
+
+.blog-breadcrumb .ant-breadcrumb-separator {
+  color: var(--color-textTertiary, #9ca3af) !important;
+  margin: 0 8px !important;
+  font-size: 14px !important;
+}
+
+/* Override default breadcrumb styles */
+.blog-breadcrumb ol {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.blog-breadcrumb li {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 14px !important;
+}
+
+/* Dark theme for breadcrumb */
+.dark .blog-breadcrumb .ant-breadcrumb-link {
+  color: var(--color-textSecondary, #d1d5db) !important;
+}
+
+.dark .blog-breadcrumb .ant-breadcrumb-link:hover {
+  color: var(--color-primary, #42b883) !important;
+}
+
+.dark .blog-breadcrumb .ant-breadcrumb-separator {
+  color: var(--color-textTertiary, #9ca3af) !important;
 }

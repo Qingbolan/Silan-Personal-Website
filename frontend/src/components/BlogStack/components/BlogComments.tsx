@@ -1,7 +1,12 @@
 import React from 'react';
+import { List, Input, Button, Avatar, Typography, Divider } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
 import { Comment } from '../types/blog';
 import { useTheme } from '../../ThemeContext';
 import { useLanguage } from '../../LanguageContext';
+
+const { TextArea } = Input;
+const { Title, Paragraph } = Typography;
 
 interface BlogCommentsProps {
   comments: Comment[];
@@ -20,74 +25,92 @@ export const BlogComments: React.FC<BlogCommentsProps> = ({
   const { language } = useLanguage();
 
   return (
-    <section className="mt-32 pt-16" style={{ borderTop: `1px solid ${colors.cardBorder}` }}>
-      <h2 className="text-2xl font-light mb-12 text-left lg:text-center tracking-wide" style={{ 
+    <section className="mt-32 pt-16">
+      <Divider />
+      
+      <Title level={2} style={{ 
+        textAlign: 'center',
         color: colors.textPrimary,
+        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontWeight: 300
       }}>
         {language === 'en' ? 'Discussion' : '讨论'} ({comments.length})
-      </h2>
+      </Title>
 
       {/* Add Comment */}
       <div className="mb-16 max-w-4xl mx-auto">
-        <textarea
+        <TextArea
           value={newComment}
           onChange={(e) => onSetNewComment(e.target.value)}
           placeholder={language === 'en' ? 'Share your thoughts...' : '分享你的想法...'}
-          className="w-full p-6 resize-none font-light leading-relaxed outline-none"
-          style={{
-            color: colors.textPrimary,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            borderBottom: `1px solid ${colors.cardBorder}`
-          }}
           rows={4}
+          style={{
+            borderRadius: '8px',
+            fontFamily: 'Georgia, "Times New Roman", serif'
+          }}
         />
-        <button
+        <Button
+          type="primary"
           onClick={onAddComment}
-          className="mt-4 px-8 py-3 hover:opacity-70 transition-opacity underline"
+          disabled={!newComment.trim()}
+          className="mt-4"
           style={{ 
-            color: colors.accent,
+            borderRadius: '8px',
             fontFamily: 'Georgia, "Times New Roman", serif'
           }}
         >
           {language === 'en' ? 'Post Comment' : '发表评论'}
-        </button>
+        </Button>
       </div>
 
       {/* Comments List */}
-      <div className="space-y-8 max-w-4xl mx-auto">
-        {comments.map((comment) => (
-          <article key={comment.id} className="pl-6" style={{ borderLeft: `2px solid ${colors.cardBorder}` }}>
-            <header className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 flex items-center justify-center text-sm font-medium" 
-                   style={{ 
-                     color: colors.textPrimary,
-                     border: `1px solid ${colors.cardBorder}`
-                   }}>
-                {comment.author[0]}
-              </div>
-              <div>
-                <span className="font-medium block" style={{ 
-                  color: colors.textPrimary,
-                  fontFamily: 'Georgia, "Times New Roman", serif'
-                }}>
-                  {comment.author}
-                </span>
-                <span className="text-sm" style={{ 
-                  color: colors.textTertiary,
-                  fontFamily: 'Georgia, "Times New Roman", serif'
-                }}>
-                  {new Date(comment.timestamp).toLocaleDateString()}
-                </span>
-              </div>
-            </header>
-            <p className="leading-relaxed font-light" style={{ 
-              color: colors.textSecondary,
-              fontFamily: 'Georgia, "Times New Roman", serif'
-            }}>
-              {comment.content}
-            </p>
-          </article>
-        ))}
+      <div className="max-w-4xl mx-auto">
+        <List
+          itemLayout="vertical"
+          dataSource={comments}
+          renderItem={(comment) => (
+            <List.Item
+              key={comment.id}
+              style={{
+                paddingLeft: '24px',
+                borderLeft: `2px solid ${colors.cardBorder}`
+              }}
+            >
+              <List.Item.Meta
+                avatar={
+                  <Avatar icon={<UserOutlined />}>
+                    {comment.author[0]}
+                  </Avatar>
+                }
+                title={
+                  <span style={{ 
+                    color: colors.textPrimary,
+                    fontFamily: 'Georgia, "Times New Roman", serif',
+                    fontWeight: 500
+                  }}>
+                    {comment.author}
+                  </span>
+                }
+                description={
+                  <span style={{ 
+                    color: colors.textTertiary,
+                    fontFamily: 'Georgia, "Times New Roman", serif'
+                  }}>
+                    {new Date(comment.timestamp).toLocaleDateString()}
+                  </span>
+                }
+              />
+              <Paragraph style={{ 
+                color: colors.textSecondary,
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontWeight: 300,
+                marginTop: '8px'
+              }}>
+                {comment.content}
+              </Paragraph>
+            </List.Item>
+          )}
+        />
       </div>
     </section>
   );

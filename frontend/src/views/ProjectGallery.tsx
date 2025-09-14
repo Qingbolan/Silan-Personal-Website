@@ -43,7 +43,7 @@ const CurrentPlanSubtitle: React.FC<CurrentPlanProps> = ({
         </div>
         <div className="text-center">
           <span className="text-lg font-semibold text-theme-primary">
-            {language === "en" ? plan.name : plan.nameZh}
+            {language === "en" ? plan.name : (plan.nameZh || plan.name)}
           </span>
           <span className="text-sm text-theme-secondary ml-2">
             {plan.startYear} - {t('projects.ongoing')}
@@ -169,7 +169,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 e.stopPropagation();
                 window.open(project.demo, "_blank", "noopener,noreferrer");
               }}
-              className="p-3 rounded-full bg-white bg-opacity-20 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-white"
+              className="p-3 rounded-full bg-opacity-20 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-white"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               aria-label={t('projects.viewProjectDemo', { title: language === 'zh' && project.titleZh ? project.titleZh : project.title })}
@@ -183,7 +183,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 e.stopPropagation();
                 window.open(project.github, "_blank", "noopener,noreferrer");
               }}
-              className="p-3 rounded-full bg-white bg-opacity-20 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-white"
+              className="p-3 rounded-full bg-opacity-20 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-white"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               aria-label={t('projects.viewProjectSourceCode', { title: language === 'zh' && project.titleZh ? project.titleZh : project.title })}
@@ -366,7 +366,7 @@ const ProjectGallery: React.FC = () => {
       new Set(projects.flatMap((project) => project.tags))
     );
     const planFilters = plans.map((plan) =>
-      language === "en" ? plan.name.split(" ")[0] : plan.nameZh.substring(0, 2)
+      language === "en" ? plan.name.split(" ")[0] : (plan.nameZh || plan.name).substring(0, 2)
     );
     return [t('projects.all'), ...planFilters, ...allTags];
   }, [projects, plans, language, t]);
@@ -393,7 +393,7 @@ const ProjectGallery: React.FC = () => {
         const planMatch =
           plan &&
           (plan.name.includes(selectedFilter) ||
-            plan.nameZh.includes(selectedFilter));
+            (plan.nameZh && plan.nameZh.includes(selectedFilter)));
         const tagMatch = project.tags.includes(selectedFilter);
         return planMatch || tagMatch;
       });

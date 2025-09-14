@@ -1,20 +1,17 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, Github, Linkedin, Globe, MessageSquare, AlertCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Github, Linkedin, Globe, MessageSquare } from 'lucide-react';
+import { Form, Input, Button as AntButton, message } from 'antd';
 import { useTheme } from '../components/ThemeContext';
 import { useLanguage } from '../components/LanguageContext';
 import { ContactFormData } from '../types';
 
+const { TextArea } = Input;
+
 const InteractiveContactPage: React.FC = () => {
-  const [formData, setFormData] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
+  const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const { colors } = useTheme();
   const { language } = useLanguage();
@@ -32,35 +29,29 @@ const InteractiveContactPage: React.FC = () => {
     });
   }, [colors]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(async (values: ContactFormData) => {
     setIsSubmitting(true);
-    setError(null);
     
     try {
-      // Simulate form submission
+      // Simulate form submission with the form values
+      console.log('Form submitted with values:', values);
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      message.success(language === 'en' ? 'Message sent successfully!' : '消息发送成功！');
       setIsSubmitting(false);
       setSubmitted(true);
       
       // Reset form after 3 seconds
       setTimeout(() => {
         setSubmitted(false);
-        setFormData({ name: '', email: '', subject: '', message: '' });
+        form.resetFields();
       }, 3000);
     } catch (err) {
-      setError(language === 'en' ? 'Failed to send message' : '发送消息失败');
+      message.error(language === 'en' ? 'Failed to send message' : '发送消息失败');
       setIsSubmitting(false);
     }
-  }, [language]);
+  }, [language, form]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  }, []);
 
   const contactMethods = useMemo(() => [
     {
@@ -119,9 +110,6 @@ const InteractiveContactPage: React.FC = () => {
     }
   }, []);
 
-  const isFormValid = useMemo(() => {
-    return formData.name && formData.email && formData.subject && formData.message;
-  }, [formData]);
 
   return (
     <motion.div
@@ -167,17 +155,6 @@ const InteractiveContactPage: React.FC = () => {
                 <span>{language === 'en' ? 'Send Message' : '发送消息'}</span>
               </h2>
 
-              {error && (
-                <motion.div
-                  className="mb-6 p-4 rounded-lg flex items-center space-x-3 form-error"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  role="alert"
-                >
-                  <AlertCircle size={20} />
-                  <span>{error}</span>
-                </motion.div>
-              )}
 
               {submitted ? (
                 <motion.div
@@ -199,118 +176,111 @@ const InteractiveContactPage: React.FC = () => {
                   </p>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onFinish={handleSubmit}
+                  className="space-y-6"
+                  requiredMark={false}
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label 
-                        htmlFor="name"
-                        className="block text-sm font-medium mb-2 text-theme-primary"
-                      >
-                        {language === 'en' ? 'Name' : '姓名'} *
-                      </label>
-                      <input
-                        id="name"
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
+                    <Form.Item
+                      name="name"
+                      label={
+                        <span className="text-sm font-medium text-theme-primary">
+                          {language === 'en' ? 'Name' : '姓名'} *
+                        </span>
+                      }
+                      rules={[
+                        { required: true, message: language === 'en' ? 'Please enter your name' : '请输入您的姓名' }
+                      ]}
+                    >
+                      <Input
                         placeholder={language === 'en' ? 'Your Name' : '您的姓名'}
-                        required
-                        className="w-full px-4 py-3 rounded-xl text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 input-theme ring-theme-primary ring-offset-theme-background"
-                        aria-required="true"
+                        size="large"
+                        style={{ borderRadius: '12px' }}
                       />
-                    </div>
-                    <div>
-                      <label 
-                        htmlFor="email"
-                        className="block text-sm font-medium mb-2 text-theme-primary"
-                      >
-                        {language === 'en' ? 'Email' : '邮箱'} *
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
+                    </Form.Item>
+                    <Form.Item
+                      name="email"
+                      label={
+                        <span className="text-sm font-medium text-theme-primary">
+                          {language === 'en' ? 'Email' : '邮箱'} *
+                        </span>
+                      }
+                      rules={[
+                        { required: true, message: language === 'en' ? 'Please enter your email' : '请输入您的邮箱' },
+                        { type: 'email', message: language === 'en' ? 'Please enter a valid email' : '请输入有效的邮箱地址' }
+                      ]}
+                    >
+                      <Input
                         placeholder={language === 'en' ? 'Your Email' : '您的邮箱'}
-                        required
-                        className="w-full px-4 py-3 rounded-xl text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 input-theme ring-theme-primary ring-offset-theme-background"
-                        aria-required="true"
+                        size="large"
+                        style={{ borderRadius: '12px' }}
                       />
-                    </div>
+                    </Form.Item>
                   </div>
                   
-                  <div>
-                    <label 
-                      htmlFor="subject"
-                      className="block text-sm font-medium mb-2 text-theme-primary"
-                    >
-                      {language === 'en' ? 'Subject' : '主题'} *
-                    </label>
-                    <input
-                      id="subject"
-                      type="text"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      placeholder={language === 'en' ? 'Subject' : '主题'}
-                      required
-                      className="w-full px-4 py-3 rounded-xl text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 input-theme ring-theme-primary ring-offset-theme-background"
-                      aria-required="true"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label 
-                      htmlFor="message"
-                      className="block text-sm font-medium mb-2 text-theme-primary"
-                    >
-                      {language === 'en' ? 'Message' : '消息'} *
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      placeholder={language === 'en' ? 'Your Message' : '您的消息'}
-                      required
-                      rows={6}
-                      className="w-full px-4 py-3 rounded-xl text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 resize-vertical input-theme ring-theme-primary ring-offset-theme-background"
-                      aria-required="true"
-                    />
-                  </div>
-                  
-                  <motion.button
-                    type="submit"
-                    disabled={isSubmitting || !isFormValid}
-                    className="w-full py-4 px-6 rounded-xl font-semibold text-white flex items-center justify-center space-x-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed btn-primary ring-theme-primary ring-offset-theme-background"
-                    whileHover={!isSubmitting && isFormValid ? { scale: 1.02 } : {}}
-                    whileTap={!isSubmitting && isFormValid ? { scale: 0.98 } : {}}
-                    aria-describedby={!isFormValid ? "form-validation-message" : undefined}
+                  <Form.Item
+                    name="subject"
+                    label={
+                      <span className="text-sm font-medium text-theme-primary">
+                        {language === 'en' ? 'Subject' : '主题'} *
+                      </span>
+                    }
+                    rules={[
+                      { required: true, message: language === 'en' ? 'Please enter a subject' : '请输入主题' }
+                    ]}
                   >
-                    {isSubmitting ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>{language === 'en' ? 'Sending...' : '发送中...'}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Send size={20} />
-                        <span>{language === 'en' ? 'Send Message' : '发送消息'}</span>
-                      </>
-                    )}
-                  </motion.button>
+                    <Input
+                      placeholder={language === 'en' ? 'Subject' : '主题'}
+                      size="large"
+                      style={{ borderRadius: '12px' }}
+                    />
+                  </Form.Item>
                   
-                  {!isFormValid && (
-                    <p 
-                      id="form-validation-message"
-                      className="text-sm text-center text-theme-tertiary"
+                  <Form.Item
+                    name="message"
+                    label={
+                      <span className="text-sm font-medium text-theme-primary">
+                        {language === 'en' ? 'Message' : '消息'} *
+                      </span>
+                    }
+                    rules={[
+                      { required: true, message: language === 'en' ? 'Please enter your message' : '请输入您的消息' }
+                    ]}
+                  >
+                    <TextArea
+                      placeholder={language === 'en' ? 'Your Message' : '您的消息'}
+                      rows={6}
+                      style={{ borderRadius: '12px' }}
+                    />
+                  </Form.Item>
+                  
+                  <motion.div
+                    whileHover={!isSubmitting ? { scale: 1.02 } : {}}
+                    whileTap={!isSubmitting ? { scale: 0.98 } : {}}
+                  >
+                    <AntButton
+                      type="primary"
+                      htmlType="submit"
+                      loading={isSubmitting}
+                      size="large"
+                      icon={<Send size={20} />}
+                      className="w-full font-semibold"
+                      style={{
+                        borderRadius: '12px',
+                        height: '56px',
+                        fontSize: '16px'
+                      }}
                     >
-                      {language === 'en' ? 'Please fill in all required fields' : '请填写所有必填字段'}
-                    </p>
-                  )}
-                </form>
+                      {isSubmitting 
+                        ? (language === 'en' ? 'Sending...' : '发送中...')
+                        : (language === 'en' ? 'Send Message' : '发送消息')
+                      }
+                    </AntButton>
+                  </motion.div>
+                </Form>
               )}
             </div>
           </motion.section>

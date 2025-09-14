@@ -1,6 +1,6 @@
 import React from 'react';
 import { BlogContent, UserAnnotation, SelectedText } from '../types/blog';
-import { TextContent, QuoteContent, ImageContent, VideoContent, CodeContent } from './BlogContent';
+import { TextContent, QuoteContent, ImageContent, VideoContent, CodeContent, HeadingContent } from './BlogContent';
 
 interface BlogContentRendererProps {
   content: BlogContent[];
@@ -108,6 +108,16 @@ export const BlogContentRenderer: React.FC<BlogContentRendererProps> = ({
             key={item.id} 
             item={item}
             index={currentCodeIndex}
+            isWideScreen={isWideScreen}
+          />
+        );
+
+      case 'heading':
+        return (
+          <HeadingContent 
+            key={item.id} 
+            item={item}
+            index={0} // Headings don't need specific indexing
             isWideScreen={isWideScreen}
           />
         );

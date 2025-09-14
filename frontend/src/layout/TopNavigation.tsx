@@ -250,7 +250,7 @@ const Logo: React.FC = () => {
         whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.2 }}
       >
-        <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
+        <img src="/image.png" alt="Silan Hu" className="w-full h-full object-contain" />
         <motion.div
           className="absolute inset-0 bg-white opacity-0"
           whileHover={{ opacity: 0.1 }}

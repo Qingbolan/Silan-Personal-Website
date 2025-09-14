@@ -29,12 +29,12 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
     <figure className={`my-16 ${isWideScreen ? 'col-span-2' : ''} break-inside-avoid`}>
       <div className="bg-theme-surface-elevated rounded-xl overflow-hidden shadow-medium border border-theme-card-border">
         {/* Code Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-theme-background-secondary border-b border-theme-card-border">
+        <div className="flex items-center justify-between px-6 py-4 bg-theme-surface-secondary border-b border-theme-card-border">
           <div className="flex items-center gap-3">
             {/* Language Badge */}
-            <div className="inline-flex items-center px-3 py-1 bg-theme-accent/10 rounded-full">
-              <span className="text-xs font-semibold text-theme-accent uppercase tracking-wider font-mono">
-                {item.language || 'code'}
+            <div className="inline-flex items-center px-3 py-1 bg-theme-primary/10 rounded-full">
+              <span className="text-xs font-semibold text-theme-primary uppercase tracking-wider font-mono">
+                {item.language || 'TEXT'}
               </span>
             </div>
             
@@ -74,7 +74,7 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
         
         {/* Code Block */}
         <div className="relative">
-          <pre className="p-6 overflow-x-auto text-sm leading-relaxed bg-theme-background 
+          <pre className="p-6 overflow-x-auto text-sm leading-relaxed   
                           scrollbar-thin scrollbar-thumb-theme-accent/20 scrollbar-track-transparent"
                style={{
                  fontFamily: 'JetBrains Mono, Monaco, Menlo, "Ubuntu Mono", Consolas, monospace',
@@ -93,7 +93,7 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
           </pre>
           
           {/* Line Numbers (Optional Enhancement) */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-theme-background-secondary/50 
+          <div className="absolute left-0 top-0 bottom-0 w-12 bg-theme-surface-secondary/50
                           border-r border-theme-card-border/50 pointer-events-none hidden lg:block">
             <div className="p-6 text-xs text-theme-text-tertiary font-mono leading-relaxed">
               {item.content.split('\n').map((_, i) => (

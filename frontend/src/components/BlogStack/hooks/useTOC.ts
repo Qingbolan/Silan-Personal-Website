@@ -1,112 +1,59 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
 import { BlogData, Section } from '../types/blog';
 
 export const useTOC = (blog: BlogData | null) => {
-  const [sections, setSections] = useState<Section[]>([]);
-  const [activeSection, setActiveSection] = useState('');
-
-  // Generate sections from blog content
-  useEffect(() => {
-    if (blog) {
-      const generatedSections = blog.content
-        .filter(item => item.type === 'text' || item.type === 'quote')
-        .map((item) => {
-          let title = '';
-          let level = 1;
-          
-          if (item.type === 'quote') {
-            title = item.content.substring(0, 60) + (item.content.length > 60 ? '...' : '');
-            level = 2; // Quotes are sub-sections
-          } else {
-            // For text content, determine if it's a heading-like paragraph
-            const content = item.content;
-            if (content.length < 100 && (content.endsWith('.') === false || content.split('.').length <= 2)) {
-              title = content;
-              level = 1;
-            } else {
-              title = content.substring(0, 50) + (content.length > 50 ? '...' : '');
-              level = 1;
-            }
-          }
-          
-          return {
-            id: item.id,
-            title,
-            level
-          };
-        });
-      
-      setSections(generatedSections);
+  // Generate sections from blog content using useMemo for better performance
+  const sections = useMemo<Section[]>(() => {
+    if (!blog) return [];
+    
+    const headings = blog.content.filter(item => item.type === 'heading');
+    
+    // If all headings have the same level, create artificial hierarchy based on content length and position
+    const hasVariedLevels = headings.some(item => (item.level || 1) !== (headings[0]?.level || 1));
+    
+    if (!hasVariedLevels && headings.length > 1) {
+      // Create artificial hierarchy based on title length and keywords
+      return headings.map((item, index) => {
+        let level = item.level || 1;
+        const title = item.content.replace(/^#+\s*/, '').trim();
+        
+        // Apply heuristics to determine level
+        // Shorter titles are likely to be main sections
+        // Titles with certain keywords are likely subsections
+        const isLikelySubsection = title.length > 25 || 
+                                   title.toLowerCase().includes('approach') ||
+                                   title.toLowerCase().includes('solution') ||
+                                   title.toLowerCase().includes('implementation') ||
+                                   title.toLowerCase().includes('benefits') ||
+                                   title.toLowerCase().includes('features') ||
+                                   title.toLowerCase().includes('integration') ||
+                                   title.toLowerCase().includes('phase') ||
+                                   title.toLowerCase().includes('step');
+        
+        // Every 3rd-4th item becomes a subsection for visual variety
+        const isPositionalSubsection = index % 3 === 1 || index % 4 === 2;
+        
+        if (isLikelySubsection || isPositionalSubsection) {
+          level = 2;
+        }
+        
+        return {
+          id: item.id,
+          title,
+          level
+        };
+      });
     }
+    
+    // Use original levels if they vary
+    return headings.map((item) => ({
+      id: item.id,
+      title: item.content.replace(/^#+\s*/, '').trim(),
+      level: item.level || 1
+    }));
   }, [blog]);
 
-  // Update active section based on scroll position
-  const updateActiveSection = useCallback(() => {
-    if (sections.length === 0) return;
-    
-    const scrollTop = window.scrollY;
-    const windowHeight = window.innerHeight;
-    const threshold = windowHeight * 0.3; // 30% from top of viewport
-    
-    let activeId = '';
-    
-    // Find the section that's currently most visible
-    for (let i = 0; i < sections.length; i++) {
-      const element = document.getElementById(sections[i].id);
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        const elementTop = rect.top + scrollTop;
-        const elementBottom = elementTop + rect.height;
-        
-        // Check if element is in the threshold area
-        if (elementTop <= scrollTop + threshold && elementBottom > scrollTop + threshold) {
-          activeId = sections[i].id;
-          break;
-        }
-        
-        // If no element is in threshold, use the one closest to it
-        if (elementTop <= scrollTop + threshold) {
-          activeId = sections[i].id;
-        }
-      }
-    }
-    
-    if (activeId && activeId !== activeSection) {
-      setActiveSection(activeId);
-    }
-  }, [sections, activeSection]);
-
-  useEffect(() => {
-    let ticking = false;
-    
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          updateActiveSection();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    
-    // Initial calculation
-    setTimeout(() => {
-      updateActiveSection();
-    }, 100); // Small delay to ensure DOM is ready
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [updateActiveSection]);
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
   return {
-    sections,
-    activeSection,
-    scrollToSection
+    sections
   };
-}; 
+};

@@ -19,7 +19,9 @@ import {
 import { useLanguage } from '../LanguageContext';
 import { BlogData, UserAnnotation, SelectedText } from './types/blog';
 import { BlogContentRenderer } from './components/BlogContentRenderer';
-import { Breadcrumb } from './components/Breadcrumb';
+import { BlogBreadcrumb } from './components/Breadcrumb';
+import { TableOfContents } from './components/TableOfContents';
+import { useTOC } from './hooks/useTOC';
 
 interface ArticleDetailLayoutProps {
   post: BlogData;
@@ -60,8 +62,8 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
 }) => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { sections } = useTOC(post);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [activeSection, setActiveSection] = useState('');
   const [metaSidebarCollapsed, setMetaSidebarCollapsed] = useState(false); // Default open on desktop
   const [tocCollapsed, setTocCollapsed] = useState(false); // Default open on desktop
   const [liked, setLiked] = useState(false);
@@ -98,236 +100,21 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Generate table of contents from content by parsing actual headings
-  const tableOfContents = React.useMemo(() => {
-    const sections: Array<{ id: string, title: string, level: number }> = [];
 
-    post.content.forEach((item, index) => {
-      if (item.type === 'text') {
-        const lines = item.content.split('\n');
-        lines.forEach((line, lineIndex) => {
-          const trimmedLine = line.trim();
-          // Check for markdown headings (# ## ### etc.)
-          if (trimmedLine.startsWith('#')) {
-            const headingMatch = trimmedLine.match(/^(#{1,6})\s+(.+)/);
-            if (headingMatch) {
-              const level = headingMatch[1].length; // Number of # characters
-              const title = headingMatch[2].trim();
-              const id = item.id ? `${item.id}-heading-${lineIndex}` : `heading-${index}-${lineIndex}`;
-
-              sections.push({
-                id,
-                title,
-                level: Math.min(level, 3) // Limit to 3 levels for better UX
-              });
-            }
-          }
-          // Also check for HTML headings
-          else if (trimmedLine.match(/<h[1-6].*?>/i)) {
-            const htmlHeadingMatch = trimmedLine.match(/<h([1-6]).*?>(.*?)<\/h[1-6]>/i);
-            if (htmlHeadingMatch) {
-              const level = parseInt(htmlHeadingMatch[1]);
-              const title = htmlHeadingMatch[2].replace(/<[^>]*>/g, '').trim(); // Remove HTML tags
-              const id = item.id ? `${item.id}-heading-${lineIndex}` : `heading-${index}-${lineIndex}`;
-
-              sections.push({
-                id,
-                title,
-                level: Math.min(level, 3)
-              });
-            }
-          }
-          // Check for lines that look like headings (standalone lines in caps or with colons)
-          else if (
-            trimmedLine.length > 3 &&
-            trimmedLine.length < 80 &&
-            !trimmedLine.includes('.') &&
-            (
-              trimmedLine === trimmedLine.toUpperCase() ||
-              trimmedLine.endsWith(':') ||
-              /^[A-Z][A-Za-z\s]+$/.test(trimmedLine)
-            )
-          ) {
-            // Only add if it's not part of a sentence or paragraph
-            const nextLine = lines[lineIndex + 1];
-            const prevLine = lines[lineIndex - 1];
-
-            if (
-              (!nextLine || nextLine.trim() === '' || nextLine.trim().length > 20) &&
-              (!prevLine || prevLine.trim() === '' || prevLine.trim().length > 20)
-            ) {
-              const id = item.id ? `${item.id}-section-${lineIndex}` : `section-${index}-${lineIndex}`;
-              sections.push({
-                id,
-                title: trimmedLine.endsWith(':') ? trimmedLine.slice(0, -1) : trimmedLine,
-                level: 2
-              });
-            }
-          }
-        });
-      }
-      // Add quotes as subsections
-      else if (item.type === 'quote' && item.content.length < 100) {
-        sections.push({
-          id: item.id || `quote-${index}`,
-          title: `"${item.content.substring(0, 40)}..."`,
-          level: 3
-        });
-      }
-    });
-
-    // If no headings found, create default sections based on content blocks
-    if (sections.length === 0) {
-      const contentBlocks = post.content.filter(item =>
-        item.type === 'text' && item.content.trim().length > 100
-      );
-
-      if (contentBlocks.length > 1) {
-        contentBlocks.forEach((item, index) => {
-          const firstSentence = item.content.split('.')[0].trim();
-          const title = firstSentence.length > 50
-            ? firstSentence.substring(0, 50) + '...'
-            : firstSentence;
-
-          sections.push({
-            id: item.id || `auto-section-${index}`,
-            title: title || `${language === 'en' ? 'Section' : '章节'} ${index + 1}`,
-            level: 1
-          });
-        });
-      } else {
-        // Fallback to default sections
-        return [
-          { id: 'content-start', title: language === 'en' ? 'Introduction' : '介绍', level: 1 },
-          { id: 'content-main', title: language === 'en' ? 'Main Content' : '主要内容', level: 1 },
-          { id: 'content-end', title: language === 'en' ? 'Conclusion' : '总结', level: 1 },
-        ];
-      }
-    }
-
-    return sections.slice(0, 12); // Allow more sections since we're parsing real headings
-  }, [post.content, language]);
-
-  // Handle scroll for back to top button and active section
+  // Handle scroll for back to top button
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 300);
-
-      // Update active section based on scroll position using content blocks
-      const contentElements = post.content.map(item =>
-        item.id ? document.getElementById(item.id) : null
-      ).filter(Boolean);
-
-      if (contentElements.length === 0) return;
-
-      // Find the currently visible content element
-      const scrollPosition = window.scrollY + 150; // Offset for header
-      let currentContentIndex = -1;
-
-      for (let i = 0; i < contentElements.length; i++) {
-        const element = contentElements[i];
-        if (element) {
-          const elementTop = element.offsetTop;
-          const elementBottom = elementTop + element.offsetHeight;
-
-          if (scrollPosition >= elementTop && scrollPosition < elementBottom) {
-            currentContentIndex = i;
-            break;
-          } else if (scrollPosition < elementTop) {
-            // If we're before this element, the previous one should be active
-            currentContentIndex = Math.max(0, i - 1);
-            break;
-          }
-        }
-      }
-
-      // If we're past all elements, select the last one
-      if (currentContentIndex === -1) {
-        currentContentIndex = contentElements.length - 1;
-      }
-
-      // Find the corresponding TOC section for this content block
-      const activeContentId = post.content[currentContentIndex]?.id;
-      if (activeContentId) {
-        // Look for TOC items that belong to this content block
-        const relatedTocItem = tableOfContents.find(section =>
-          section.id.includes(activeContentId) || section.id === activeContentId
-        );
-
-        if (relatedTocItem) {
-          setActiveSection(relatedTocItem.id);
-        } else {
-          // Fallback: use index-based mapping
-          const tocIndex = Math.min(currentContentIndex, tableOfContents.length - 1);
-          if (tableOfContents[tocIndex]) {
-            setActiveSection(tableOfContents[tocIndex].id);
-          }
-        }
-      }
     };
-
-    // Initial call to set active section
-    handleScroll();
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [tableOfContents, post.content]);
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const scrollToSection = (sectionId: string) => {
-    // First try to find the exact element
-    let element = document.getElementById(sectionId);
-
-    // If not found, try to find the related content block
-    if (!element) {
-      // Extract the content ID from the section ID
-      const contentId = sectionId.split('-heading-')[0] || sectionId.split('-section-')[0];
-      element = document.getElementById(contentId);
-    }
-
-    // If still not found, try to find by index
-    if (!element) {
-      const sectionIndex = tableOfContents.findIndex(section => section.id === sectionId);
-      if (sectionIndex >= 0 && sectionIndex < post.content.length) {
-        const contentItem = post.content[sectionIndex];
-        if (contentItem.id) {
-          element = document.getElementById(contentItem.id);
-        }
-      }
-    }
-
-    if (element) {
-      // Account for fixed header height (top nav + blog header)
-      const headerHeight = 120; // 增加到120px以考虑双层头部
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - headerHeight;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-
-      // Update active section
-      setActiveSection(sectionId);
-    } else {
-      // Fallback: scroll to approximate position based on section index
-      const sectionIndex = tableOfContents.findIndex(section => section.id === sectionId);
-      if (sectionIndex >= 0) {
-        const contentHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollPosition = (sectionIndex / tableOfContents.length) * contentHeight;
-
-        window.scrollTo({
-          top: scrollPosition,
-          behavior: 'smooth'
-        });
-
-        setActiveSection(sectionId);
-      }
-    }
-  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -362,8 +149,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-theme-background">
-
+    <div className="min-h-screen">
       {/* Fixed Header - Y轴 0，考虑顶部导航栏 */}
       <motion.div
         className={`fixed top-12 xs:top-14 sm:top-16 left-0 right-0 z-40 border-b border-theme-border ${metaSidebarCollapsed ? 'ml-12' : 'ml-60'} ${tocCollapsed ? 'mr-12' : 'mr-60'}`}
@@ -372,7 +158,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
       >
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <Breadcrumb
+            <BlogBreadcrumb
               post={post}
               onBack={onBack}
               onFilterByCategory={(category) => {
@@ -608,26 +394,9 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
           </button>
 
           {!tocCollapsed && (
-            <>
-              {/* Table of Contents */}
-              <div className="rounded-lg p-4 border border-theme-border">
-                  {tableOfContents.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => scrollToSection(item.id)}
-                      className={`block w-full text-left text-xs py-2 rounded transition-all duration-200 ${activeSection === item.id
-                          ? 'text-theme-primary bg-theme-primary/10 border-l-2 border-theme-primary font-medium'
-                          : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-primary/5'
-                        }`}
-                      style={{ paddingLeft: `${item.level * 8}px` }}
-                    >
-                      {item.title}
-                    </button>
-                  ))}
-              </div>
-
-
-            </>
+            <TableOfContents 
+              sections={sections}
+            />
           )}
         </div>
       </motion.div>
@@ -708,7 +477,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
             </button>
 
             {/* Same content as desktop meta sidebar - simplified */}
-            <div className="bg-theme-background rounded-lg p-4 border border-theme-border mb-4">
+            <div className="rounded-lg p-4 border border-theme-border mb-4">
               <div className="flex items-center gap-2 mb-3">
                 {getContentTypeIcon()}
                 <h3 className="font-semibold text-theme-primary text-sm">
@@ -734,7 +503,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
 
             {/* Tags */}
             {post.tags && post.tags.length > 0 && (
-              <div className="bg-theme-background rounded-lg p-4 border border-theme-border mb-4">
+              <div className="rounded-lg p-4 border border-theme-border mb-4">
                 <h4 className="font-medium text-theme-primary text-sm mb-2">
                   {language === 'en' ? 'Tags' : '标签'}
                 </h4>
@@ -752,7 +521,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
             )}
 
             {/* Quick Actions */}
-            <div className="bg-theme-background rounded-lg p-4 border border-theme-border">
+            <div className="rounded-lg p-4 border border-theme-border">
               <h4 className="font-medium text-theme-primary text-sm mb-3">
                 {language === 'en' ? 'Actions' : '操作'}
               </h4>
@@ -818,30 +587,9 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
             </button>
 
             {/* Table of Contents */}
-            <div className="bg-theme-background rounded-lg p-4 border border-theme-border">
-              <h4 className="font-medium text-theme-primary mb-3 text-sm">
-                {language === 'en' ? 'Table of Contents' : '目录'}
-              </h4>
-              <nav className="space-y-1">
-                {tableOfContents.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      scrollToSection(item.id);
-                      setTocCollapsed(true);
-                      sessionStorage.setItem('sidebar-user-interaction', 'true');
-                    }}
-                    className={`block w-full text-left text-xs py-2 px-3 rounded transition-all duration-200 ${activeSection === item.id
-                        ? 'text-theme-primary bg-theme-primary/10 border-l-2 border-theme-primary font-medium'
-                        : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-primary/5'
-                      }`}
-                    style={{ paddingLeft: `${item.level * 8 + 12}px` }}
-                  >
-                    {item.title}
-                  </button>
-                ))}
-              </nav>
-            </div>
+            <TableOfContents 
+              sections={sections}
+            />
           </div>
         </motion.div>
       </motion.div>

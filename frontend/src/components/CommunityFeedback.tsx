@@ -10,8 +10,12 @@ import {
   Bug,
   HelpCircle
 } from 'lucide-react';
+import { Statistic, Card, Row, Col, Button, Input, Select, Checkbox, Tag } from 'antd';
 import { useLanguage } from './LanguageContext';
 import { Comment, Reply as ReplyType, CommunityStats } from '../types/community';
+
+const { TextArea } = Input;
+const { Option } = Select;
 
 interface CommunityFeedbackProps {
   projectId?: string;
@@ -160,11 +164,6 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
     'bug-report': <Bug size={16} />
   };
 
-  const statusColors = {
-    open: 'bg-blue-100 text-blue-800',
-    'in-progress': 'bg-yellow-100 text-yellow-800',
-    resolved: 'bg-green-100 text-green-800'
-  };
 
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
@@ -246,34 +245,32 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         </div>
 
         {/* Comment Input */}
-        <textarea
+        <TextArea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder={language === 'en' ? 'Write your message...' : '写下您的留言...'}
-          className="w-full p-4 bg-theme-surface text-theme-primary rounded-lg resize-none focus:ring-2 focus:ring-theme-primary"
           rows={4}
+          style={{ borderRadius: '8px' }}
         />
 
         {/* Submit Options */}
         <div className="flex items-center justify-between mt-4">
-          <label className="flex items-center gap-2 text-sm text-theme-secondary">
-            <input
-              type="checkbox"
-              checked={isAnonymous}
-              onChange={(e) => setIsAnonymous(e.target.checked)}
-              className="rounded"
-            />
+          <Checkbox
+            checked={isAnonymous}
+            onChange={(e) => setIsAnonymous(e.target.checked)}
+          >
             {language === 'en' ? 'Post anonymously' : '匿名发布'}
-          </label>
+          </Checkbox>
           
-          <button
+          <Button
+            type="primary"
             onClick={submitComment}
             disabled={!newComment.trim()}
-            className="flex items-center gap-2 px-6 py-2 bg-theme-primary text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            icon={<Send size={16} />}
+            style={{ borderRadius: '8px' }}
           >
-            <Send size={16} />
             {language === 'en' ? 'Submit' : '提交'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -327,16 +324,23 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
                 <div className="flex items-center gap-2">
                   {typeIcons[comment.type]}
                   {comment.status && (
-                                         <select
-                       value={comment.status}
-                       onChange={(e) => updateCommentStatus(comment.id, e.target.value as Comment['status'])}
-                       className={`px-2 py-1 rounded text-xs font-medium ${statusColors[comment.status]}`}
-                       aria-label={language === 'en' ? 'Update status' : '更新状态'}
-                     >
-                      <option value="open">{language === 'en' ? 'Open' : '未解决'}</option>
-                      <option value="in-progress">{language === 'en' ? 'In Progress' : '处理中'}</option>
-                      <option value="resolved">{language === 'en' ? 'Resolved' : '已解决'}</option>
-                    </select>
+                    <Select
+                      value={comment.status}
+                      onChange={(value) => updateCommentStatus(comment.id, value as Comment['status'])}
+                      size="small"
+                      style={{ minWidth: '100px' }}
+                      aria-label={language === 'en' ? 'Update status' : '更新状态'}
+                    >
+                      <Option value="open">
+                        <Tag color="blue">{language === 'en' ? 'Open' : '未解决'}</Tag>
+                      </Option>
+                      <Option value="in-progress">
+                        <Tag color="orange">{language === 'en' ? 'In Progress' : '处理中'}</Tag>
+                      </Option>
+                      <Option value="resolved">
+                        <Tag color="green">{language === 'en' ? 'Resolved' : '已解决'}</Tag>
+                      </Option>
+                    </Select>
                   )}
                 </div>
               </div>
@@ -374,27 +378,27 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
                   animate={{ opacity: 1, height: 'auto' }}
                   className="mt-4 pt-4 border-t border-theme-surface"
                 >
-                  <textarea
+                  <TextArea
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder={language === 'en' ? 'Write a reply...' : '写下回复...'}
-                    className="w-full p-3 bg-theme-surface text-theme-primary rounded-lg resize-none focus:ring-2 focus:ring-theme-primary"
                     rows={3}
+                    style={{ borderRadius: '8px' }}
                   />
                   <div className="flex justify-end gap-2 mt-2">
-                    <button
+                    <Button
                       onClick={() => setShowReplyForm(null)}
-                      className="px-4 py-2 text-theme-secondary hover:text-theme-primary transition-colors"
                     >
                       {language === 'en' ? 'Cancel' : '取消'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      type="primary"
                       onClick={() => submitReply(comment.id)}
                       disabled={!replyContent.trim()}
-                      className="px-4 py-2 bg-theme-primary text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      style={{ borderRadius: '8px' }}
                     >
                       {language === 'en' ? 'Reply' : '回复'}
-                    </button>
+                    </Button>
                   </div>
                 </motion.div>
               )}

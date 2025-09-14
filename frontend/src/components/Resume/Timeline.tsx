@@ -33,7 +33,7 @@ const Timeline: React.FC<TimelineProps> = ({ items }) => {
             <div className="flex items-start space-x-3">
               {/* Company/School Logo */}
               {item.logo && (
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-white shadow-sm border border-gray-200">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden shadow-sm border border-gray-200">
                   <img 
                     src={item.logo} 
                     alt={`${item.subtitle} logo`}

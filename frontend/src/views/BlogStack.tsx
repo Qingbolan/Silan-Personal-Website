@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, User, Tag, ArrowRight, Search, AlertCircle, Play, Video, List, Grid, BookOpen } from 'lucide-react';
+import { Calendar, User, ArrowRight, Play, Video, List, Grid, BookOpen, Tag as TagIcon } from 'lucide-react';
+import { Card, Input, Tag, Row, Col, Alert, Spin, Empty } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
 import { useTheme } from '../components/ThemeContext';
 import { useLanguage } from '../components/LanguageContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BlogData } from '../components/BlogStack/types/blog';
 import { fetchBlogPosts } from '../api';
+
+const { Search } = Input;
 
 interface BlogCardProps {
   post: BlogData;
@@ -128,28 +132,12 @@ const BlogCard: React.FC<BlogCardProps> = ({
     return `${prefix}.${year}${month}${day}.${paperNum}`;
   };
 
-  return (
-    <motion.article
-      className={`group cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 card-interactive ${isWideLayout ? 'md:col-span-2' : ''
-        }`}
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      whileHover={{
-        y: -5,
-      }}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`Read article: ${post.title}`}
-    >
-      {/* Image */}
-      <div className={`relative overflow-hidden transition-all duration-300 ${
-        isWideLayout 
-          ? 'h-64 md:h-72'
-          : 'h-48'
-        }`}>
+  const cardCover = (
+    <div className={`relative overflow-hidden transition-all duration-300 ${
+      isWideLayout 
+        ? 'h-64 md:h-72'
+        : 'h-48'
+      }`}>
         {/* Use vlog cover for vlogs, series image for series, or default cover */}
         {isVlog && post.vlogCover && !imageLoadError ? (
           <div className="relative w-full h-full">
@@ -236,10 +224,11 @@ const BlogCard: React.FC<BlogCardProps> = ({
             </div>
           </div>
         )}
-      </div>
+    </div>
+  );
 
-      {/* Content */}
-      <div className={`p-6 ${featured ? 'md:p-8' : ''}`}>
+  const cardContent = (
+    <div>
         {/* Enhanced meta info */}
         <div className={`flex items-center flex-wrap gap-3 mb-4 ${
           isWideLayout ? 'text-base' : 'text-sm'
@@ -376,8 +365,34 @@ const BlogCard: React.FC<BlogCardProps> = ({
             </div>
           )}
         </motion.div>
-      </div>
-    </motion.article>
+    </div>
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: index * 0.1 }}
+      className={isWideLayout ? 'md:col-span-2' : ''}
+    >
+      <Card
+        hoverable
+        cover={cardCover}
+        className="blog-card-custom"
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`Read article: ${post.title}`}
+        style={{ 
+          borderRadius: '16px',
+          overflow: 'hidden',
+          height: '100%'
+        }}
+      >
+        {cardContent}
+      </Card>
+    </motion.div>
   );
 };
 
@@ -389,16 +404,23 @@ interface TagFilterProps {
 
 const TagFilter: React.FC<TagFilterProps> = ({ tag, active, onClick }) => {
   return (
-    <motion.button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-theme-primary ring-offset-theme-background filter-chip ${active ? 'active' : ''
-        }`}
+    <motion.div
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      aria-pressed={active}
     >
-      {tag}
-    </motion.button>
+      <Tag.CheckableTag
+        checked={active}
+        onChange={onClick}
+        style={{ 
+          borderRadius: '12px',
+          padding: '4px 16px',
+          fontSize: '14px',
+          fontWeight: 500
+        }}
+      >
+        {tag}
+      </Tag.CheckableTag>
+    </motion.div>
   );
 };
 
@@ -537,44 +559,27 @@ const BlogStack: React.FC = () => {
     navigate(`/blog/${post.id}`);
   }, [navigate]);
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center ">
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          role="status"
-          aria-live="polite"
-        >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full loading-gradient" />
-          <p className="text-theme-secondary">
-            {language === 'en' ? 'Loading blog posts...' : '加载博客文章中...'}
-          </p>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Spin size="large" tip={language === 'en' ? 'Loading blog posts...' : '加载博客文章中...'}>
+          <div style={{ minHeight: '200px' }} />
+        </Spin>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center ">
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          role="alert"
-        >
-          <AlertCircle size={48} className="mx-auto mb-4 text-theme-error" />
-          <h2 className="text-xl font-semibold mb-2 text-theme-primary">
-            {language === 'en' ? 'Error Loading Posts' : '加载文章出错'}
-          </h2>
-          <p className="text-theme-secondary">{error}</p>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Alert
+          message={language === 'en' ? 'Error Loading Posts' : '加载文章出错'}
+          description={error}
+          type="error"
+          showIcon
+          style={{ maxWidth: '400px' }}
+        />
       </div>
     );
   }
@@ -613,17 +618,14 @@ const BlogStack: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           {/* Search Bar */}
-          <div className="relative max-w-md mx-auto">
+          <div className="max-w-md mx-auto">
             <Search
-              size={20}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-theme-tertiary"
-            />
-            <input
-              type="text"
               placeholder={language === 'en' ? 'Search articles...' : '搜索文章...'}
               value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-full pl-12 pr-4 py-3 rounded-xl text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 input-theme ring-theme-primary ring-offset-theme-background"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="large"
+              style={{ borderRadius: '12px' }}
+              prefix={<SearchOutlined />}
               aria-label={language === 'en' ? 'Search articles' : '搜索文章'}
             />
           </div>
@@ -651,7 +653,7 @@ const BlogStack: React.FC = () => {
           {/* Tag Filters */}
           <div className="flex flex-wrap justify-center gap-3">
             <div className="flex items-center space-x-2 mb-2">
-              <Tag size={16} className="text-theme-secondary" />
+              <TagIcon size={16} className="text-theme-secondary" />
               <span className="text-sm font-medium text-theme-secondary">
                 {language === 'en' ? 'Filter by topic:' : '按主题筛选：'}
               </span>
@@ -673,45 +675,57 @@ const BlogStack: React.FC = () => {
         <AnimatePresence mode="wait">
           <motion.div
             key={`${selectedTag}-${selectedType}-${searchTerm}`}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {filteredPosts.map((post, index) => (
-              <BlogCard
-                key={post.id}
-                post={post}
-                index={index}
-                featured={false}
-                onClick={handlePostClick}
-              />
-            ))}
+            <Row gutter={[24, 24]}>
+              {filteredPosts.map((post, index) => {
+                const isWideLayout = index % 8 === 4 && (post.summary || '').length > 250;
+                return (
+                  <Col 
+                    key={post.id}
+                    xs={24}
+                    sm={12}
+                    lg={isWideLayout ? 12 : 8}
+                  >
+                    <BlogCard
+                      post={post}
+                      index={index}
+                      featured={false}
+                      onClick={handlePostClick}
+                    />
+                  </Col>
+                );
+              })}
+            </Row>
           </motion.div>
         </AnimatePresence>
 
         {/* Empty State */}
         {filteredPosts.length === 0 && !loading && (
           <motion.div
-            className="text-center py-20"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            role="status"
           >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center empty-state-bg">
-              <Search size={32} className="text-theme-secondary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2 text-theme-primary">
-              {language === 'en' ? 'No articles found' : '未找到文章'}
-            </h3>
-            <p className="text-theme-secondary">
-              {language === 'en'
-                ? 'Try adjusting your search terms or filters.'
-                : '尝试调整您的搜索词或筛选器。'
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <span>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {language === 'en' ? 'No articles found' : '未找到文章'}
+                  </h3>
+                  <p>
+                    {language === 'en'
+                      ? 'Try adjusting your search terms or filters.'
+                      : '尝试调整您的搜索词或筛选器。'
+                    }
+                  </p>
+                </span>
               }
-            </p>
+            />
           </motion.div>
         )}
       </div>
