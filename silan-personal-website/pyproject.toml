@@ -1,0 +1,131 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "silan-personal-website"
+version = "1.0.1"
+authors = [
+    {name = "Silan Hu", email = "silan.hu@u.nus.edu"},
+]
+description = "A lightweight tool for syncing markdown content to databases"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+keywords = ["database", "sync", "markdown", "migration", "tools"]
+
+dependencies = [
+    # Core CLI dependencies
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    
+    # Markdown processing
+    "python-frontmatter>=1.0.0",
+    
+    # Configuration
+    "PyYAML>=6.0",
+    
+    # Database support (SQLAlchemy)
+    "sqlalchemy>=2.0.0",
+    "pymysql>=1.0.0",
+    "psycopg2-binary>=2.9.0",
+    
+    # Backend management
+    "psutil>=5.9.0",
+    "requests>=2.28.0",
+    
+    # Process management and system utilities
+    "pathlib2>=2.3.0; python_version<'3.6'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.0.0",
+    "pytest>=7.0.0",
+    "mypy>=0.991",
+    "flake8>=5.0.0",
+    "isort>=5.10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Qingbolan/AIPro-Resume"
+Documentation = "https://github.com/Qingbolan/AIPro-Resume/blob/main/README.md"
+Repository = "https://github.com/Qingbolan/AIPro-Resume.git"
+"Bug Tracker" = "https://github.com/Qingbolan/AIPro-Resume/issues"
+
+[project.scripts]
+silan = "silan.silan:cli"
+silan-db-tools = "silan.silan:cli"
+silan-build-backend = "build_backend:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["silan*"]
+
+[tool.setuptools.package-data]
+silan = ["bin/*", "bin/**/*", "templates/*", "templates/**/*"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers --strict-config --color=yes"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
