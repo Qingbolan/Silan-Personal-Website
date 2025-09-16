@@ -46,6 +46,8 @@ func (ProjectDetail) Fields() []ent.Field {
 		field.String("license").
 			Optional().
 			MaxLen(50),
+		field.String("license_text").
+			Optional(),
 		field.String("version").
 			Optional().
 			MaxLen(20),

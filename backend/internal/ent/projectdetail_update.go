@@ -185,6 +185,26 @@ func (pdu *ProjectDetailUpdate) ClearLicense() *ProjectDetailUpdate {
 	return pdu
 }
 
+// SetLicenseText sets the "license_text" field.
+func (pdu *ProjectDetailUpdate) SetLicenseText(s string) *ProjectDetailUpdate {
+	pdu.mutation.SetLicenseText(s)
+	return pdu
+}
+
+// SetNillableLicenseText sets the "license_text" field if the given value is not nil.
+func (pdu *ProjectDetailUpdate) SetNillableLicenseText(s *string) *ProjectDetailUpdate {
+	if s != nil {
+		pdu.SetLicenseText(*s)
+	}
+	return pdu
+}
+
+// ClearLicenseText clears the value of the "license_text" field.
+func (pdu *ProjectDetailUpdate) ClearLicenseText() *ProjectDetailUpdate {
+	pdu.mutation.ClearLicenseText()
+	return pdu
+}
+
 // SetVersion sets the "version" field.
 func (pdu *ProjectDetailUpdate) SetVersion(s string) *ProjectDetailUpdate {
 	pdu.mutation.SetVersion(s)
@@ -370,6 +390,12 @@ func (pdu *ProjectDetailUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	}
 	if pdu.mutation.LicenseCleared() {
 		_spec.ClearField(projectdetail.FieldLicense, field.TypeString)
+	}
+	if value, ok := pdu.mutation.LicenseText(); ok {
+		_spec.SetField(projectdetail.FieldLicenseText, field.TypeString, value)
+	}
+	if pdu.mutation.LicenseTextCleared() {
+		_spec.ClearField(projectdetail.FieldLicenseText, field.TypeString)
 	}
 	if value, ok := pdu.mutation.Version(); ok {
 		_spec.SetField(projectdetail.FieldVersion, field.TypeString, value)
@@ -628,6 +654,26 @@ func (pduo *ProjectDetailUpdateOne) ClearLicense() *ProjectDetailUpdateOne {
 	return pduo
 }
 
+// SetLicenseText sets the "license_text" field.
+func (pduo *ProjectDetailUpdateOne) SetLicenseText(s string) *ProjectDetailUpdateOne {
+	pduo.mutation.SetLicenseText(s)
+	return pduo
+}
+
+// SetNillableLicenseText sets the "license_text" field if the given value is not nil.
+func (pduo *ProjectDetailUpdateOne) SetNillableLicenseText(s *string) *ProjectDetailUpdateOne {
+	if s != nil {
+		pduo.SetLicenseText(*s)
+	}
+	return pduo
+}
+
+// ClearLicenseText clears the value of the "license_text" field.
+func (pduo *ProjectDetailUpdateOne) ClearLicenseText() *ProjectDetailUpdateOne {
+	pduo.mutation.ClearLicenseText()
+	return pduo
+}
+
 // SetVersion sets the "version" field.
 func (pduo *ProjectDetailUpdateOne) SetVersion(s string) *ProjectDetailUpdateOne {
 	pduo.mutation.SetVersion(s)
@@ -843,6 +889,12 @@ func (pduo *ProjectDetailUpdateOne) sqlSave(ctx context.Context) (_node *Project
 	}
 	if pduo.mutation.LicenseCleared() {
 		_spec.ClearField(projectdetail.FieldLicense, field.TypeString)
+	}
+	if value, ok := pduo.mutation.LicenseText(); ok {
+		_spec.SetField(projectdetail.FieldLicenseText, field.TypeString, value)
+	}
+	if pduo.mutation.LicenseTextCleared() {
+		_spec.ClearField(projectdetail.FieldLicenseText, field.TypeString)
 	}
 	if value, ok := pduo.mutation.Version(); ok {
 		_spec.SetField(projectdetail.FieldVersion, field.TypeString, value)

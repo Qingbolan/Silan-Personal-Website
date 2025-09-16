@@ -9,6 +9,7 @@ import { useLanguage } from '../components/LanguageContext';
 import { useTheme } from '../components/ThemeContext';
 import { LoadingSpinner } from '../components/ui';
 import { fetchResumeData } from '../api/home/resumeApi';
+import Markdown from '../components/ui/Markdown';
 
 interface RecentItem {
   id: string;
@@ -470,10 +471,8 @@ const RecentUpdates: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Description */}
-                      <p className="text-theme-secondary mb-3 xs:mb-4 leading-relaxed text-sm xs:text-base">
-                        {item.description}
-                      </p>
+                      {/* Description rendered as Markdown with theme-aware styles */}
+                      <Markdown className="text-sm xs:text-base mb-3 xs:mb-4">{item.description}</Markdown>
 
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1.5 xs:gap-2">

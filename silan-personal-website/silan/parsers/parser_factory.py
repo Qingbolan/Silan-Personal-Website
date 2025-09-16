@@ -12,6 +12,7 @@ from .resume_parser import ResumeParser
 from .project_parser import ProjectParser
 from .blog_parser import BlogParser
 from .idea_parser import IdeaParser
+from .update_parser import UpdateParser
 
 
 class ParserFactory:
@@ -31,6 +32,10 @@ class ParserFactory:
         'blog_post': BlogParser,
         'idea': IdeaParser,
         'ideas': IdeaParser,  # Handle plural
+        # Register updates/moment
+        'update': UpdateParser,
+        'updates': UpdateParser,
+        'moment': UpdateParser,
     }
     
     # Default parser for unknown content types

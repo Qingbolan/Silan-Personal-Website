@@ -55,7 +55,7 @@ func (l *GetPersonalInfoLogic) GetPersonalInfo(req *types.PersonalInfoRequest) (
 		ID:            personalInfo.ID.String(),
 		UserID:        user.ID.String(),
 		FullName:      user.FirstName + " " + user.LastName,
-		Title:         "",
+		Title:         user.Bio,
 		CurrentStatus: "",
 		Phone:         personalInfo.Phone,
 		Email:         personalInfo.Email,

@@ -35,6 +35,8 @@ type ProjectDetail struct {
 	FutureEnhancements string `json:"future_enhancements,omitempty"`
 	// License holds the value of the "license" field.
 	License string `json:"license,omitempty"`
+	// LicenseText holds the value of the "license_text" field.
+	LicenseText string `json:"license_text,omitempty"`
 	// Version holds the value of the "version" field.
 	Version string `json:"version,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -83,7 +85,7 @@ func (*ProjectDetail) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case projectdetail.FieldDetailedDescription, projectdetail.FieldGoals, projectdetail.FieldChallenges, projectdetail.FieldSolutions, projectdetail.FieldLessonsLearned, projectdetail.FieldFutureEnhancements, projectdetail.FieldLicense, projectdetail.FieldVersion:
+		case projectdetail.FieldDetailedDescription, projectdetail.FieldGoals, projectdetail.FieldChallenges, projectdetail.FieldSolutions, projectdetail.FieldLessonsLearned, projectdetail.FieldFutureEnhancements, projectdetail.FieldLicense, projectdetail.FieldLicenseText, projectdetail.FieldVersion:
 			values[i] = new(sql.NullString)
 		case projectdetail.FieldCreatedAt, projectdetail.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -157,6 +159,12 @@ func (pd *ProjectDetail) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field license", values[i])
 			} else if value.Valid {
 				pd.License = value.String
+			}
+		case projectdetail.FieldLicenseText:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field license_text", values[i])
+			} else if value.Valid {
+				pd.LicenseText = value.String
 			}
 		case projectdetail.FieldVersion:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -245,6 +253,9 @@ func (pd *ProjectDetail) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("license=")
 	builder.WriteString(pd.License)
+	builder.WriteString(", ")
+	builder.WriteString("license_text=")
+	builder.WriteString(pd.LicenseText)
 	builder.WriteString(", ")
 	builder.WriteString("version=")
 	builder.WriteString(pd.Version)

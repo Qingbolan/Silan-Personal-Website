@@ -14,10 +14,10 @@ from .logic.cli_logic import CLILogic
 
 class SilanCLI:
     """Main CLI application class"""
-    
+
     def __init__(self):
         self.cli_logic = CLILogic()
-    
+
     def create_cli_group(self):
         """Create the main CLI group"""
         @click.group()
@@ -27,23 +27,28 @@ class SilanCLI:
         def cli(ctx, verbose):
             """Silan Database Tools - Sync markdown content to databases with ease"""
             self.cli_logic.run_application(ctx, verbose)
-        
+
         # Add commands to the group
         cli.add_command(self._create_init_command())
         cli.add_command(self._create_db_sync_command())
         cli.add_command(self._create_db_config_command())
         cli.add_command(self._create_backend_group())
         cli.add_command(self._create_frontend_group())
+
+        # New content scaffolding groups
+        cli.add_command(self._create_ideas_group())
+        cli.add_command(self._create_projects_group())
+
         cli.add_command(self._create_status_command())
         cli.add_command(self._create_help_command())
-        
+
         return cli
-    
+
     def _create_init_command(self):
         """Create init command"""
         @click.command()
         @click.argument('project_name')
-        @click.option('--language', default='en', 
+        @click.option('--language', default='en',
                       type=click.Choice(['en', 'zh', 'both']),
                       help='Default language for content')
         @click.option('--with-backend', is_flag=True, help='Initialize with Go backend configuration')
@@ -57,9 +62,9 @@ class SilanCLI:
             )
             if not success:
                 raise click.ClickException("Project initialization failed")
-        
+
         return init
-    
+
     def _create_db_sync_command(self):
         """Create db-sync command"""
         @click.command('db-sync')
@@ -75,8 +80,8 @@ class SilanCLI:
         @click.option('--create-tables', is_flag=True, help='Create database tables if they don\'t exist')
         @click.option('--start-backend', is_flag=True, help='Start backend server after sync')
         @click.option('--use-cache', is_flag=True, default=True, help='Use cached database configuration')
-        def db_sync(db_type: Optional[str], host: str, port: Optional[int], user: Optional[str], 
-                   password: Optional[str], database: Optional[str], db_path: str, dry_run: bool, 
+        def db_sync(db_type: Optional[str], host: str, port: Optional[int], user: Optional[str],
+                   password: Optional[str], database: Optional[str], db_path: str, dry_run: bool,
                    create_tables: bool, start_backend: bool, use_cache: bool):
             """Sync content files to database (MySQL/PostgreSQL/SQLite)"""
             success = self.cli_logic.execute_command(
@@ -95,13 +100,13 @@ class SilanCLI:
             )
             if not success:
                 raise click.ClickException("Database sync failed")
-        
+
         return db_sync
-    
+
     def _create_db_config_command(self):
         """Create db-config command"""
         @click.command('db-config')
-        @click.option('--action', default='show', 
+        @click.option('--action', default='show',
                       type=click.Choice(['show', 'set', 'cache', 'load-cache', 'clear-cache', 'interactive', 'last-sync', 'clear-all']),
                       help='Configuration action to perform')
         @click.option('--type', help='Database type (mysql, postgresql, sqlite)')
@@ -111,7 +116,7 @@ class SilanCLI:
         @click.option('--password', help='Database password')
         @click.option('--database', help='Database name')
         @click.option('--path', help='SQLite database file path')
-        def db_config(action: str, type: Optional[str], host: Optional[str], port: Optional[str], 
+        def db_config(action: str, type: Optional[str], host: Optional[str], port: Optional[str],
                      user: Optional[str], password: Optional[str], database: Optional[str], path: Optional[str]):
             """Manage database configuration with caching"""
             params = {
@@ -125,20 +130,20 @@ class SilanCLI:
             }
             # Remove None values
             params = {k: v for k, v in params.items() if v is not None}
-            
+
             success = self.cli_logic.execute_command('db-config', action=action, **params)
             if not success:
                 raise click.ClickException("Database configuration failed")
-        
+
         return db_config
-    
+
     def _create_backend_group(self):
         """Create backend command group"""
         @click.group()
         def backend():
             """Manage the Go backend server"""
             pass
-        
+
         # Add backend subcommands
         backend.add_command(self._create_backend_start_command())
         backend.add_command(self._create_backend_stop_command())
@@ -146,9 +151,9 @@ class SilanCLI:
         backend.add_command(self._create_backend_status_command())
         backend.add_command(self._create_backend_logs_command())
         backend.add_command(self._create_backend_install_command())
-        
+
         return backend
-    
+
     def _create_backend_start_command(self):
         """Create backend start command"""
         @click.command('start')
@@ -164,7 +169,7 @@ class SilanCLI:
         @click.option('--server-port', default=8888, help='Backend server port')
         @click.option('--daemon', '-d', is_flag=True, help='Run backend as daemon')
         @click.option('--config-file', help='Custom backend configuration file')
-        def start(db_type: str, host: str, port: Optional[int], user: Optional[str], password: Optional[str], 
+        def start(db_type: str, host: str, port: Optional[int], user: Optional[str], password: Optional[str],
                  database: Optional[str], db_path: str, server_host: str, server_port: int,
                  daemon: bool, config_file: Optional[str]):
             """Start the Go backend server"""
@@ -172,7 +177,7 @@ class SilanCLI:
             if db_type in ['mysql', 'postgresql']:
                 if port is None:
                     port = 3306 if db_type == 'mysql' else 5432
-                
+
                 db_config = {
                     'type': db_type,
                     'host': host,
@@ -186,7 +191,7 @@ class SilanCLI:
                     'type': 'sqlite',
                     'path': db_path
                 }
-            
+
             backend_config = {
                 'database': db_config,
                 'server': {
@@ -196,13 +201,13 @@ class SilanCLI:
                 'daemon': daemon,
                 'config_file': config_file
             }
-            
+
             success = self.cli_logic.execute_command('backend', action='start', **backend_config)
             if not success:
                 raise click.ClickException("Failed to start backend server")
-        
+
         return start
-    
+
     def _create_backend_stop_command(self):
         """Create backend stop command"""
         @click.command('stop')
@@ -211,9 +216,9 @@ class SilanCLI:
             success = self.cli_logic.execute_command('backend', action='stop')
             if not success:
                 raise click.ClickException("Failed to stop backend server")
-        
+
         return stop
-    
+
     def _create_backend_restart_command(self):
         """Create backend restart command"""
         @click.command('restart')
@@ -222,18 +227,18 @@ class SilanCLI:
             success = self.cli_logic.execute_command('backend', action='restart')
             if not success:
                 raise click.ClickException("Failed to restart backend server")
-        
+
         return restart
-    
+
     def _create_backend_status_command(self):
         """Create backend status command"""
         @click.command('status')
         def status():
             """Check the status of the Go backend server"""
             self.cli_logic.execute_command('backend', action='status')
-        
+
         return status
-    
+
     def _create_backend_logs_command(self):
         """Create backend logs command"""
         @click.command('logs')
@@ -244,9 +249,9 @@ class SilanCLI:
             success = self.cli_logic.execute_command('backend', action='logs', follow=follow, lines=lines)
             if not success:
                 raise click.ClickException("Failed to show backend logs")
-        
+
         return logs
-    
+
     def _create_backend_install_command(self):
         """Create backend install command"""
         @click.command('install')
@@ -255,18 +260,18 @@ class SilanCLI:
             success = self.cli_logic.execute_command('backend', action='install')
             if not success:
                 raise click.ClickException("Failed to install backend binary")
-        
+
         return install
-    
+
     def _create_status_command(self):
         """Create status command"""
         @click.command()
         def status():
             """Show content summary and database configuration"""
             self.cli_logic.execute_command('status')
-        
+
         return status
-    
+
     def _create_help_command(self):
         """Create help command"""
         @click.command()
@@ -276,7 +281,7 @@ class SilanCLI:
             success = self.cli_logic.execute_command('help', topic=topic)
             if not success:
                 raise click.ClickException("Help command failed")
-        
+
         return help
 
     def _create_frontend_group(self):
@@ -308,6 +313,83 @@ class SilanCLI:
                 raise click.ClickException("Frontend installation failed")
 
         return install
+
+    def _create_ideas_group(self):
+        """Create ideas command group"""
+        import click
+
+        @click.group(name='ideas')
+        def ideas():
+            """Create and manage ideas content (multi-file, series, metadata)"""
+            pass
+
+        @ideas.command('create')
+        @click.option('--title', required=True, help='Idea title')
+        @click.option('--category', default=None, help='Idea category')
+        @click.option('--tag', 'tags', multiple=True, help='Tags (repeatable)')
+        @click.option('--series', default=None, help='Create a series/collection under this idea')
+        @click.option('--open-collab', is_flag=True, help='Mark as open for collaboration')
+        @click.option('--difficulty', default=None, help='Difficulty (e.g., easy/medium/hard)')
+        @click.option('--research-field', default=None, help='Research field')
+        def create(title: str, category: str | None, tags: tuple[str, ...], series: str | None,
+                   open_collab: bool, difficulty: str | None, research_field: str | None):
+            from .logic.content_scaffold_logic import ContentScaffoldLogic, IdeaOptions
+            logic = ContentScaffoldLogic()
+            opts = IdeaOptions(
+                category=category,
+                tags=list(tags) if tags else None,
+                open_for_collaboration=open_collab,
+                difficulty=difficulty,
+                research_field=research_field,
+                series=series,
+            )
+            root = logic.create_idea(title, opts)
+            logic.success(f"Idea scaffold created: {root}")
+
+        @ideas.command('episode')
+        @click.option('--idea-title', required=True, help='Parent idea title (for locating folder)')
+        @click.option('--series', required=True, help='Series/collection name')
+        @click.option('--episode-title', required=True, help='Episode/article title')
+        @click.option('--order', type=int, default=1, help='Episode order number')
+        def episode(idea_title: str, series: str, episode_title: str, order: int):
+            from .logic.content_scaffold_logic import ContentScaffoldLogic
+            logic = ContentScaffoldLogic()
+            path = logic.create_idea_episode(idea_title, series, episode_title, order)
+            logic.success(f"Episode created: {path}")
+
+        return ideas
+
+    def _create_projects_group(self):
+        """Create projects command group"""
+        import click
+
+        @click.group(name='projects')
+        def projects():
+            """Create and manage project scaffolds and standard files"""
+            pass
+
+        @projects.command('create')
+        @click.option('--name', required=True, help='Project name')
+        @click.option('--description', default=None, help='Project description')
+        @click.option('--status', default='active', type=click.Choice(['active','completed','on-hold','cancelled']))
+        @click.option('--tag', 'tags', multiple=True, help='Tags (repeatable)')
+        @click.option('--tech', 'technologies', multiple=True, help='Technologies used (repeatable)')
+        @click.option('--license', 'license_name', default='MIT', help='License name (default: MIT)')
+        def create(name: str, description: str | None, status: str, tags: tuple[str, ...],
+                   technologies: tuple[str, ...], license_name: str):
+            from .logic.content_scaffold_logic import ContentScaffoldLogic, ProjectOptions
+            logic = ContentScaffoldLogic()
+            opts = ProjectOptions(
+                description=description,
+                tags=list(tags) if tags else None,
+                status=status,
+                technologies=list(technologies) if technologies else None,
+                license=license_name,
+            )
+            root = logic.create_project(name, opts)
+            logic.success(f"Project scaffold created: {root}")
+
+        return projects
 
 
 # Create the CLI instance and get the main group

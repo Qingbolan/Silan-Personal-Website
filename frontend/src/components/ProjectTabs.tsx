@@ -22,8 +22,7 @@ import { useLanguage } from './LanguageContext';
 import { useTranslation } from 'react-i18next';
 import CommunityFeedback from './CommunityFeedback';
 import { Link } from 'react-router-dom';
-
-const { Paragraph } = Typography;
+import Markdown from './ui/Markdown';
 
 interface ProjectTabsProps {
   projectData: any; // 简化处理，实际使用时会有完整类型
@@ -111,31 +110,12 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
 
   const renderReadme = () => (
     <Card>
-      <div className="prose max-w-none">
-      <h2 className="text-2xl font-bold mb-4 text-theme-primary">
-        {projectData.title}
-      </h2>
-      <div className="flex items-center gap-4 mb-6">
-        <span className={`px-2 py-1 rounded text-sm font-medium ${
-          projectData.status?.buildStatus === 'passing' 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {t('projects.build')}: {projectData.status?.buildStatus || t('projects.unknown')}
-        </span>
-        <span className="px-2 py-1 rounded text-sm font-medium bg-blue-100 text-blue-800">
-          {t('projects.coverage')}: {projectData.status?.coverage || 0}%
-        </span>
-        <span className="px-2 py-1 rounded text-sm font-medium bg-gray-100 text-gray-800">
-          {projectData.status?.license || t('projects.license')}
-        </span>
-      </div>
+      <div className="prose max-w-none">   
+      <Markdown className="text-lg mb-6">
+        {language === 'zh' && projectData.fullDescriptionZh ? projectData.fullDescriptionZh : projectData.fullDescription}
+      </Markdown>
       
-      <p className="text-lg mb-6 text-theme-secondary">
-        {language === 'en' ? projectData.fullDescription : projectData.fullDescriptionZh}
-      </p>
-      
-      <h3 className="text-lg font-semibold mb-3 text-theme-primary">
+      {/* <h3 className="text-lg font-semibold mb-3 text-theme-primary">
         {t('projects.keyFeatures')}
       </h3>
       <ul className="space-y-2 mb-6">
@@ -145,7 +125,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
             <span className="text-theme-secondary">{feature}</span>
           </li>
         ))}
-      </ul>
+      </ul> */}
     </div>
     </Card>
   );
@@ -401,12 +381,12 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
   );
 
   const renderLicense = () => (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {projectData.licenseInfo ? (
         <>
           {/* License Header */}
           <div className="border border-theme-border rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-0">
               <Scale size={24} className="text-theme-primary" />
               <div>
                 <h3 className="text-xl font-semibold text-theme-primary">
@@ -438,78 +418,9 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
           </div>
 
           {/* License Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Permissions */}
-            <div className="border border-theme-border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle size={20} className="text-green-600" />
-                <h4 className="font-semibold text-theme-primary">
-                  {t('projects.permissions')}
-                </h4>
-              </div>
-              <ul className="space-y-2">
-                {(language === 'zh' && projectData.licenseInfo.permissionsZh 
-                  ? projectData.licenseInfo.permissionsZh 
-                  : projectData.licenseInfo.permissions
-                ).map((permission: string, index: number) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle size={14} className="text-green-600" />
-                    <span className="text-theme-secondary">{permission}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Conditions */}
-            <div className="border border-theme-border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertCircle size={20} className="text-yellow-600" />
-                <h4 className="font-semibold text-theme-primary">
-                  {t('projects.conditions')}
-                </h4>
-              </div>
-              <ul className="space-y-2">
-                {(language === 'zh' && projectData.licenseInfo.conditionsZh 
-                  ? projectData.licenseInfo.conditionsZh 
-                  : projectData.licenseInfo.conditions
-                ).map((condition: string, index: number) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    <AlertCircle size={14} className="text-yellow-600" />
-                    <span className="text-theme-secondary">{condition}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Limitations */}
-            <div className="border border-theme-border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <XCircle size={20} className="text-red-600" />
-                <h4 className="font-semibold text-theme-primary">
-                  {t('projects.limitations')}
-                </h4>
-              </div>
-              <ul className="space-y-2">
-                {(language === 'zh' && projectData.licenseInfo.limitationsZh 
-                  ? projectData.licenseInfo.limitationsZh 
-                  : projectData.licenseInfo.limitations
-                ).map((limitation: string, index: number) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    <XCircle size={14} className="text-red-600" />
-                    <span className="text-theme-secondary">{limitation}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
 
           {/* Full License Text */}
           <div className="border border-theme-border rounded-lg">
-            <div className="p-4 border-b border-theme-border">
-              <h4 className="font-semibold text-theme-primary">
-                {t('projects.fullLicenseText')}
-              </h4>
-            </div>
             <div className="p-4">
               <pre className="whitespace-pre-wrap text-sm text-theme-secondary font-mono bg-theme-surface p-4 rounded overflow-x-auto">
                 {language === 'zh' && projectData.licenseInfo.fullTextZh 
@@ -532,14 +443,6 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
             >
               {t('projects.copyLicenseText')}
             </button>
-            <a
-              href={projectData.licenseInfo.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 border border-theme-border text-theme-primary rounded-lg hover:bg-theme-surface transition-colors"
-            >
-              {t('projects.learnMore')}
-            </a>
           </div>
         </>
       ) : (

@@ -84,22 +84,22 @@ class ProjectParser(BaseParser):
     
     def _enhance_with_folder_data(self, extracted: ExtractedContent, folder_path: Path, config_data: Dict):
         """Enhance extracted data with folder structure information"""
-        
+
         # Update project data with config
         if config_data:
             project_data = extracted.main_entity
-            
+
             # Handle nested config structure (config.yaml may have 'project' key)
             if 'project' in config_data:
                 config_project_data = config_data['project']
             else:
                 config_project_data = config_data
-            
+
             # Debug logging
             self.debug(f"Enhancing project {project_data.get('title', 'Unknown')} with config data")
             self.debug(f"Config description: {config_project_data.get('description', 'Missing')}")
             self.debug(f"Before - project description: {project_data.get('description', 'Missing')}")
-            
+
             # Override with config data if available
             for key, value in config_project_data.items():
                 if key in project_data and value is not None:
@@ -110,7 +110,7 @@ class ProjectParser(BaseParser):
                 elif key not in project_data and value is not None:
                     project_data[key] = value
                     self.debug(f"Added new {key}: '{value}'")
-            
+
             # Handle nested config structure - extract links
             if 'links' in config_project_data:
                 links = config_project_data['links']
@@ -124,40 +124,70 @@ class ProjectParser(BaseParser):
                 if 'documentation' in links:
                     project_data['documentation_url'] = links['documentation']
                     self.debug(f"Set documentation_url: {links['documentation']}")
-            
+
             # Handle nested metadata - extract featured flag
             if 'metadata' in config_project_data:
                 metadata = config_project_data['metadata']
                 if 'featured' in metadata:
                     project_data['is_featured'] = metadata['featured']
                     self.debug(f"Set is_featured: {metadata['featured']}")
-            
+
             self.debug(f"After - project description: {project_data.get('description', 'Missing')}")
             self.debug(f"After - github_url: {project_data.get('github_url', 'Missing')}")
             self.debug(f"After - is_featured: {project_data.get('is_featured', 'Missing')}")
-            
+
             # Add folder-specific data to metadata (not main entity)
             extracted.metadata['folder_path'] = str(folder_path)
             extracted.metadata['config_data'] = config_data
-        
+
+        # Detect LICENSE file in the project root and extract license type
+        try:
+            license_candidates = [
+                folder_path / 'LICENSE', folder_path / 'License', folder_path / 'LICENCE',
+                folder_path / 'LICENSE.txt', folder_path / 'License.txt',
+                folder_path / 'LICENSE.md', folder_path / 'License.md',
+                folder_path / 'COPYING', folder_path / 'COPYING.txt', folder_path / 'COPYING.md',
+            ]
+            license_text = None
+            for lf in license_candidates:
+                if lf.exists() and lf.is_file():
+                    with open(lf, 'r', encoding='utf-8', errors='ignore') as f:
+                        license_text = f.read()
+                    break
+            if license_text:
+                detected = self._detect_license_from_text(license_text)
+                if detected:
+                    # Inject into details metadata for downstream sync
+                    details_list = extracted.metadata.get('details')
+                    if isinstance(details_list, list) and details_list:
+                        if isinstance(details_list[0], dict) and not details_list[0].get('license'):
+                            details_list[0]['license'] = detected
+                    else:
+                        extracted.metadata['details'] = [{'license': detected}]
+                    # Also expose on main_entity for ContentLogic shortcuts
+                    if isinstance(extracted.main_entity, dict) and not extracted.main_entity.get('license'):
+                        extracted.main_entity['license'] = detected
+        except Exception as e:
+            self.warning(f"Failed to extract LICENSE from folder: {e}")
+
         # Scan assets folder for images and media
         assets_folder = folder_path / 'assets'
         if assets_folder.exists():
             folder_images = self._scan_assets_folder(assets_folder)
             extracted.images.extend(folder_images)
-        
+
         # Scan for additional documentation
         docs = self._scan_documentation_files(folder_path)
         extracted.metadata['documentation_files'] = docs
-        
+
         # Scan notes folder
         notes = self._scan_notes_folder(folder_path / 'notes')
         extracted.metadata['notes'] = notes
-        
+
         # Scan research folder
         research = self._scan_research_folder(folder_path / 'research')
         extracted.metadata['research'] = research
-    
+
     def _scan_assets_folder(self, assets_folder: Path) -> List[Dict[str, Any]]:
         """Scan assets folder for images and media"""
         images = []
@@ -306,8 +336,10 @@ class ProjectParser(BaseParser):
         
         # Extract main project data
         project_data = self._extract_project_data(metadata, content)
+        # Include raw README content for downstream sync (DB/API)
+        project_data['content'] = content
         extracted.main_entity = project_data
-        
+
         # Extract technologies with categorization
         technologies = self._extract_project_technologies(metadata, content)
         extracted.technologies = technologies
@@ -763,23 +795,33 @@ class ProjectParser(BaseParser):
         return max(1, months)  # At least 1 month
     
     def _extract_license(self, content: str) -> str:
-        """Extract license information"""
-        license_patterns = [
-            r'License[:\s]*([A-Z][A-Z0-9\s-]+)',
-            r'Licensed under\s+([A-Z][A-Z0-9\s-]+)',
-            r'MIT License', r'GPL', r'Apache', r'BSD'
+        """Extract license information from README/content text"""
+        return self._detect_license_from_text(content)
+
+    def _detect_license_from_text(self, text: str) -> str:
+        """Detect common OSS license identifiers from text content."""
+        patterns = [
+            (r'\bMIT\b', 'MIT'),
+            (r'Apache License[,\s]*Version\s*2\.0|\bApache-2\.0\b|\bApache License 2\.0\b', 'Apache-2.0'),
+            (r'GNU GENERAL PUBLIC LICENSE\s*Version\s*3|\bGPL-3\.0\b', 'GPL-3.0'),
+            (r'GNU GENERAL PUBLIC LICENSE\s*Version\s*2|\bGPL-2\.0\b', 'GPL-2.0'),
+            (r'GNU LESSER GENERAL PUBLIC LICENSE|\bLGPL-3\.0\b', 'LGPL-3.0'),
+            (r'Mozilla Public License\s*2\.0|\bMPL-2\.0\b', 'MPL-2.0'),
+            (r'BSD 3-?Clause|\bBSD-3-Clause\b', 'BSD-3-Clause'),
+            (r'BSD 2-?Clause|\bBSD-2-Clause\b', 'BSD-2-Clause'),
+            (r'Affero General Public License|\bAGPL-3\.0\b', 'AGPL-3.0'),
+            (r'The Unlicense|\bUnlicense\b', 'Unlicense'),
+            (r'Creative Commons Zero|CC0\s*1\.0|\bCC0-1\.0\b', 'CC0-1.0'),
         ]
-        
-        for pattern in license_patterns:
-            match = re.search(pattern, content, re.IGNORECASE)
-            if match:
-                if hasattr(match, 'group') and len(match.groups()) > 0:
-                    return match.group(1).strip()
-                else:
-                    return match.group(0).strip()
-        
+        for pat, spdx in patterns:
+            if re.search(pat, text, re.IGNORECASE):
+                return spdx
+        # Fallback generic patterns
+        generic = re.search(r'License[:\s]*([A-Za-z0-9 .+-]+)', text, re.IGNORECASE)
+        if generic and generic.group(1):
+            return generic.group(1).strip()
         return ''
-    
+
     def _extract_version(self, content: str) -> str:
         """Extract version information"""
         version_patterns = [

@@ -50,9 +50,10 @@ class ContentLogic(ContentLogger):
             'projects': self.content_dir / 'projects',
             'ideas': self.content_dir / 'ideas',
             'updates': self.content_dir / 'updates',
+            'moment': self.content_dir / 'moment',
             'resume': self.content_dir / 'resume'
         }
-        
+
         # Cache
         self._content_cache: Optional[List[Dict[str, Any]]] = None
     
@@ -221,8 +222,8 @@ class ContentLogic(ContentLogger):
                         'name': item.stem
                     })
         
-        elif content_type in ['blog', 'updates']:
-            # For blog and updates, handle both files and folders with prefixes
+        elif content_type in ['blog', 'updates', 'moment']:
+            # For blog, updates, and moment, handle both files and folders with prefixes
             for item in type_dir.iterdir():
                 if item.is_dir():
                     # Check for prefixed folders (vlog.*, blog.*, episode.*)
@@ -244,14 +245,14 @@ class ContentLogic(ContentLogger):
                                 # Generate a meaningful name from the file path
                                 relative_path = md_file.relative_to(type_dir)
                                 name = md_file.stem
-                                
-                                # For updates, include date info in name if available
-                                if content_type == 'updates' and len(relative_path.parts) > 1:
+
+                                # For updates/moment, include date info in name if available
+                                if content_type in ['updates', 'moment'] and len(relative_path.parts) > 1:
                                     # Extract date components from path like "2024/01/2024-01-01-ziyun2024-plan-launch.md"
                                     date_parts = [part for part in relative_path.parts[:-1] if part.isdigit()]
                                     if date_parts:
                                         name = f"{'-'.join(date_parts)}-{md_file.stem}"
-                                
+
                                 content_items.append({
                                     'type': 'file',
                                     'path': str(md_file),
@@ -259,14 +260,14 @@ class ContentLogic(ContentLogger):
                                     'name': name
                                 })
                 elif item.is_file() and item.suffix == '.md':
-                    # Direct .md files in the blog directory
+                    # Direct .md files in the blog/updates/moment directory
                     content_items.append({
                         'type': 'file',
                         'path': str(item),
                         'main_file': str(item),
                         'name': item.stem
                     })
-        
+
         elif content_type == 'resume':
             # For resume, look for resume.md or any .md file in the resume directory
             for md_file in type_dir.rglob('*.md'):
@@ -345,10 +346,27 @@ class ContentLogic(ContentLogger):
                 if extracted_content.tags:
                     parsed_data['tags'] = extracted_content.tags
             
-            # For projects, ensure technologies are included in the data
+            # For projects, ensure technologies and license/version are included in the data
             elif content_type == 'projects':
                 if hasattr(extracted_content, 'technologies') and extracted_content.technologies:
                     parsed_data['technologies'] = extracted_content.technologies
+                # Inject license and version if extracted into metadata.details
+                try:
+                    details_meta = extracted_content.metadata.get('details') if hasattr(extracted_content, 'metadata') else None
+                    # details may be a list with a single dict
+                    if isinstance(details_meta, list) and details_meta and isinstance(details_meta[0], dict):
+                        first_detail = details_meta[0]
+                        if first_detail.get('license'):
+                            parsed_data['license'] = first_detail.get('license')
+                        if first_detail.get('version'):
+                            parsed_data['version'] = first_detail.get('version')
+                    elif isinstance(details_meta, dict):
+                        if details_meta.get('license'):
+                            parsed_data['license'] = details_meta.get('license')
+                        if details_meta.get('version'):
+                            parsed_data['version'] = details_meta.get('version')
+                except Exception:
+                    pass
             
             # Preserve original frontmatter for all content types
             if hasattr(extracted_content, 'metadata') and extracted_content.metadata:
@@ -390,15 +408,21 @@ class ContentLogic(ContentLogger):
         
         # Hash all relevant files in the folder
         for file_path in sorted(folder_path.rglob('*')):
-            if file_path.is_file() and file_path.suffix in ['.md', '.yaml', '.yml']:
+            if not file_path.is_file():
+                continue
+            suffix = file_path.suffix.lower()
+            name = file_path.name
+            is_license_like = name.upper() in ['LICENSE', 'LICENCE', 'COPYING'] or \
+                name.upper().startswith('LICENSE') or name.upper().startswith('COPYING')
+            if suffix in ['.md', '.yaml', '.yml'] or is_license_like:
                 try:
                     content = self.file_ops.read_file(file_path)
                     hash_md5.update(content.encode('utf-8'))
                 except Exception:
                     continue
-        
+
         return hash_md5.hexdigest()
-    
+
     def _generate_content_id_from_item(self, content_type: str, content_item: Dict[str, Any]) -> str:
         """Generate unique content ID from content item"""
         try:

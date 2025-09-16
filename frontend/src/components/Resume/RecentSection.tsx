@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import Markdown from '../ui/Markdown';
 
 export interface RecentItem {
   id: string;
@@ -139,10 +140,8 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
                   </div>
                 </div>
 
-                {/* Description */}
-                <p className="text-xs xs:text-sm text-theme-secondary mb-1.5 xs:mb-2 leading-relaxed">
-                  {item.description}
-                </p>
+                {/* Description rendered as Markdown with theme-aware styles */}
+                <Markdown className="text-xs xs:text-sm mb-1.5 xs:mb-2">{item.description}</Markdown>
 
                 {/* Footer */}
                 <div className="flex flex-wrap items-center justify-between gap-1.5 xs:gap-2">

@@ -127,6 +127,20 @@ func (pdc *ProjectDetailCreate) SetNillableLicense(s *string) *ProjectDetailCrea
 	return pdc
 }
 
+// SetLicenseText sets the "license_text" field.
+func (pdc *ProjectDetailCreate) SetLicenseText(s string) *ProjectDetailCreate {
+	pdc.mutation.SetLicenseText(s)
+	return pdc
+}
+
+// SetNillableLicenseText sets the "license_text" field if the given value is not nil.
+func (pdc *ProjectDetailCreate) SetNillableLicenseText(s *string) *ProjectDetailCreate {
+	if s != nil {
+		pdc.SetLicenseText(*s)
+	}
+	return pdc
+}
+
 // SetVersion sets the "version" field.
 func (pdc *ProjectDetailCreate) SetVersion(s string) *ProjectDetailCreate {
 	pdc.mutation.SetVersion(s)
@@ -338,6 +352,10 @@ func (pdc *ProjectDetailCreate) createSpec() (*ProjectDetail, *sqlgraph.CreateSp
 	if value, ok := pdc.mutation.License(); ok {
 		_spec.SetField(projectdetail.FieldLicense, field.TypeString, value)
 		_node.License = value
+	}
+	if value, ok := pdc.mutation.LicenseText(); ok {
+		_spec.SetField(projectdetail.FieldLicenseText, field.TypeString, value)
+		_node.LicenseText = value
 	}
 	if value, ok := pdc.mutation.Version(); ok {
 		_spec.SetField(projectdetail.FieldVersion, field.TypeString, value)

@@ -96,6 +96,11 @@ func License(v string) predicate.ProjectDetail {
 	return predicate.ProjectDetail(sql.FieldEQ(FieldLicense, v))
 }
 
+// LicenseText applies equality check predicate on the "license_text" field. It's identical to LicenseTextEQ.
+func LicenseText(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldLicenseText, v))
+}
+
 // Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
 func Version(v string) predicate.ProjectDetail {
 	return predicate.ProjectDetail(sql.FieldEQ(FieldVersion, v))
@@ -654,6 +659,81 @@ func LicenseEqualFold(v string) predicate.ProjectDetail {
 // LicenseContainsFold applies the ContainsFold predicate on the "license" field.
 func LicenseContainsFold(v string) predicate.ProjectDetail {
 	return predicate.ProjectDetail(sql.FieldContainsFold(FieldLicense, v))
+}
+
+// LicenseTextEQ applies the EQ predicate on the "license_text" field.
+func LicenseTextEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldLicenseText, v))
+}
+
+// LicenseTextNEQ applies the NEQ predicate on the "license_text" field.
+func LicenseTextNEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNEQ(FieldLicenseText, v))
+}
+
+// LicenseTextIn applies the In predicate on the "license_text" field.
+func LicenseTextIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIn(FieldLicenseText, vs...))
+}
+
+// LicenseTextNotIn applies the NotIn predicate on the "license_text" field.
+func LicenseTextNotIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotIn(FieldLicenseText, vs...))
+}
+
+// LicenseTextGT applies the GT predicate on the "license_text" field.
+func LicenseTextGT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGT(FieldLicenseText, v))
+}
+
+// LicenseTextGTE applies the GTE predicate on the "license_text" field.
+func LicenseTextGTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGTE(FieldLicenseText, v))
+}
+
+// LicenseTextLT applies the LT predicate on the "license_text" field.
+func LicenseTextLT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLT(FieldLicenseText, v))
+}
+
+// LicenseTextLTE applies the LTE predicate on the "license_text" field.
+func LicenseTextLTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLTE(FieldLicenseText, v))
+}
+
+// LicenseTextContains applies the Contains predicate on the "license_text" field.
+func LicenseTextContains(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContains(FieldLicenseText, v))
+}
+
+// LicenseTextHasPrefix applies the HasPrefix predicate on the "license_text" field.
+func LicenseTextHasPrefix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldLicenseText, v))
+}
+
+// LicenseTextHasSuffix applies the HasSuffix predicate on the "license_text" field.
+func LicenseTextHasSuffix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldLicenseText, v))
+}
+
+// LicenseTextIsNil applies the IsNil predicate on the "license_text" field.
+func LicenseTextIsNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIsNull(FieldLicenseText))
+}
+
+// LicenseTextNotNil applies the NotNil predicate on the "license_text" field.
+func LicenseTextNotNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotNull(FieldLicenseText))
+}
+
+// LicenseTextEqualFold applies the EqualFold predicate on the "license_text" field.
+func LicenseTextEqualFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEqualFold(FieldLicenseText, v))
+}
+
+// LicenseTextContainsFold applies the ContainsFold predicate on the "license_text" field.
+func LicenseTextContainsFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContainsFold(FieldLicenseText, v))
 }
 
 // VersionEQ applies the EQ predicate on the "version" field.

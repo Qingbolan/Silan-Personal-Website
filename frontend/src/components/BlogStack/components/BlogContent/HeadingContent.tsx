@@ -38,9 +38,9 @@ export const HeadingContent: React.FC<HeadingContentProps> = ({
           fontWeight: level === 1 ? 700 : level === 2 ? 600 : 500,
           lineHeight: level === 1 ? 1.2 : 1.3,
           marginBottom: 0,
-          fontSize: isWideScreen ? 
-            (level === 1 ? '2.5rem' : level === 2 ? '2rem' : level === 3 ? '1.75rem' : '1.5rem') :
-            (level === 1 ? '2rem' : level === 2 ? '1.75rem' : level === 3 ? '1.5rem' : '1.25rem')
+          fontSize: isWideScreen ?
+            (level === 1 ? '2rem' : level === 2 ? '1.75rem' : level === 3 ? '1.5rem' : '1.25rem') :
+            (level === 1 ? '1.75rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.125rem')
         }}
         className={`heading-level-${level} ${isWideScreen ? 'wide' : 'normal'}`}
       >

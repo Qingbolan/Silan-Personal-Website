@@ -94,6 +94,8 @@ class ProjectDetail(Base, TimestampMixin):
     lessons_learned: Mapped[Optional[str]] = mapped_column(Text)
     future_enhancements: Mapped[Optional[str]] = mapped_column(Text)
     license: Mapped[Optional[str]] = mapped_column(String(50))
+    # Full license text stored for convenient API serving/searching
+    license_text: Mapped[Optional[str]] = mapped_column(Text)
     version: Mapped[Optional[str]] = mapped_column(String(20))
     
     # Relationships - matching Go schema edges

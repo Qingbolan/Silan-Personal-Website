@@ -629,6 +629,7 @@ var (
 		{Name: "lessons_learned", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "future_enhancements", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "license", Type: field.TypeString, Nullable: true, Size: 50},
+		{Name: "license_text", Type: field.TypeString, Nullable: true},
 		{Name: "version", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -642,7 +643,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "project_details_projects_details",
-				Columns:    []*schema.Column{ProjectDetailsColumns[11]},
+				Columns:    []*schema.Column{ProjectDetailsColumns[12]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

@@ -5,7 +5,6 @@ email: "Silan.Hu@u.nus.edu"
 phone: "+65 86986181"
 location: "Singapore🇸🇬 / Beijing, China🇨🇳"
 current: "looking for PhD, internships and research opportunities"
-avatar_url: "https://avatars.githubusercontent.com/u/qingbolan"
 contacts:
   - type: "email"
     value: "Silan.Hu@u.nus.edu"
@@ -53,6 +52,7 @@ Currently looking for PhD, internships and research opportunities
 ## Education
 
 ### National University of Singapore (NUS)
+
 *Logo*: nus
 *Website*: https://www.nus.edu.sg/
 
@@ -61,6 +61,7 @@ Currently looking for PhD, internships and research opportunities
 *Singapore*
 
 ### Macau University of Science and Technology (MUST)
+
 *Logo*: must
 *Website*: https://www.must.edu.mo/
 
@@ -77,6 +78,7 @@ Currently looking for PhD, internships and research opportunities
 ## Work Experience
 
 ### HPC-AI Tech
+
 *Logo*: hpc_ai
 *Website*: https://hpc-ai.tech/
 
@@ -87,6 +89,7 @@ Currently looking for PhD, internships and research opportunities
 - Open-Sora Team(AIGC text2video): Research on Improving Speed and Quality of Text-to-Video Generation
 
 ### Beijing Stats City Data Technology Co., Ltd.
+
 *Logo*: scholarhero
 *Website*: https://scholarhero.cn/
 
@@ -97,6 +100,7 @@ Currently looking for PhD, internships and research opportunities
 - Scholar Hero: Led a student startup team to develop an AI-powered educational application. Currently, it has 300 users, received recognition and funding support from the Communication University of China, and attracted attention from top Chinese universities. Published a paper as the first author, with patents and software copyrights pending.
 
 ### Lenovo (Beijing) Co. Ltd
+
 *Logo*: lenovo
 *Website*: https://www.lenovo.com/
 
@@ -108,6 +112,7 @@ Currently looking for PhD, internships and research opportunities
 - Stable Diffusion Launcher: This is the precursor to the AI image generation software pre-installed on Lenovo AI PCs.
 
 ### Ipsos China
+
 *Logo*: ipsos
 *Website*: https://www.ipsos.com/en-cn
 
@@ -152,8 +157,8 @@ Currently looking for PhD, internships and research opportunities
 ## Publications
 
 1. Hu, S. and Wang, X. "FOKE: A Personalized and Explainable Education Framework Integrating Foundation Models, Knowledge Graphs, and Prompt Engineering". Communications in Computer and Information Science, vol 2161. Springer (2024).
-3. Qiu, Y., Liu, H., Lin, Y., Hu, S., Wei, W. and Wang, X. "Knowledge-graph relation extraction for Chinese business datasets". Proceedings of AHPCAI 2023 (Vol. 12941, pp. 678-687). SPIE (2023).
-4. Shen, M., Chen, D., Hu, S. and Xu, G. "Class incremental learning of remote sensing images based on class similarity distillation". PeerJ Computer Science, vol 9, e1583 (2023).
+2. Qiu, Y., Liu, H., Lin, Y., Hu, S., Wei, W. and Wang, X. "Knowledge-graph relation extraction for Chinese business datasets". Proceedings of AHPCAI 2023 (Vol. 12941, pp. 678-687). SPIE (2023).
+3. Shen, M., Chen, D., Hu, S. and Xu, G. "Class incremental learning of remote sensing images based on class similarity distillation". PeerJ Computer Science, vol 9, e1583 (2023).
 
 ## Awards
 

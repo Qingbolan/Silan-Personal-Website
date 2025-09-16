@@ -12,7 +12,7 @@ from ..core.exceptions import DatabaseError, ValidationError
 from ..models import (
     Base, User, BlogPost, BlogTag, BlogPostTag, BlogPostTranslation,
     BlogCategory, BlogSeries, BlogSeriesTranslation, Project, ProjectTechnology,
-    ProjectDetail, Idea, RecentUpdate, PersonalInfo,
+    ProjectDetail, Idea, RecentUpdate, UpdateType, UpdateStatus, UpdatePriority, PersonalInfo,
     Education, EducationDetail, WorkExperience, WorkExperienceDetail, Award, Publication, PublicationAuthor,
     ResearchProject, ResearchProjectDetail, SocialLink
 )
@@ -244,24 +244,7 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                 pool_pre_ping=True,
                 # Disable insertmanyvalues optimization to avoid sentinel mismatch on SQLite
                 **({} if not connection_string.startswith("sqlite") else {"connect_args": {"check_same_thread": False}})
-            )
-            # ------------------------------------------------------------------
-            # SQLAlchemy 2.0 enables the insertmanyvalues optimization by default
-            # which relies on RETURNING clauses to bulk-insert several rows at
-            # once.  When we work with CHAR(36) UUID primary keys on SQLite this
-            # optimisation can raise the following runtime error during a flush
-            # / commit (observed when syncing experience details):
-            #
-            #    Can't match sentinel values in result set to parameter sets;
-            #    key 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' was not found
-            #
-            # The issue is tracked upstream in SQLAlchemy (see GH-9618) and will
-            # eventually be fixed, but  the safest workaround for now is to
-            # disable insertmanyvalues for SQLite engines.  This turns the bulk
-            # insert back into individual INSERT statements and removes the
-            # sentinel mapping step that triggers the crash.
-            # ------------------------------------------------------------------
-            
+            )            
             # Test connection
             with self.engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
@@ -354,7 +337,7 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                     self._sync_project(session, content_data, item)
                 elif content_type == 'ideas':
                     self._sync_idea(session, content_data, item)
-                elif content_type == 'updates':
+                elif content_type in ['updates', 'moment']:
                     self._sync_update(session, content_data, item)
                 elif content_type == 'resume':
                     self._sync_resume(session, content_data, item)
@@ -628,10 +611,23 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                         tech_names = technologies_data
                     self._sync_project_technologies(session, project, tech_names)
             
-            # Handle project details
-            if content:
-                self._sync_project_details(session, project, content)
-            
+            # Handle project details (README content, license, version)
+            license_str = None
+            version_str = None
+            try:
+                details_meta = frontmatter.get('details', []) if isinstance(frontmatter, dict) else []
+                if isinstance(details_meta, list) and details_meta and isinstance(details_meta[0], dict):
+                    license_str = details_meta[0].get('license')
+                    version_str = details_meta[0].get('version')
+                # Fallbacks from top-level parsed fields or frontmatter
+                license_str = content_data.get('license', license_str) or (frontmatter.get('license') if isinstance(frontmatter, dict) else None) or license_str
+                version_str = content_data.get('version', version_str) or (frontmatter.get('version') if isinstance(frontmatter, dict) else None) or version_str
+            except Exception:
+                pass
+
+            if content or license_str or version_str:
+                self._sync_project_details(session, project, content, license_str, version_str)
+
         except Exception as e:
             raise DatabaseError(f"Failed to sync project: {e}")
     
@@ -681,7 +677,7 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
             raise DatabaseError(f"Failed to sync idea: {e}")
     
     def _sync_update(self, session: Session, content_data: Dict[str, Any], item: Dict[str, Any]) -> None:
-        """Sync update to database"""
+        """Sync update/moment to database with rich fields (type/status/tags/priority)."""
         try:
             # Handle both structured data and frontmatter-based data
             if 'frontmatter' in content_data:
@@ -691,10 +687,61 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                 # Direct structured data from parsers
                 frontmatter = content_data
                 content = content_data.get('content', '')
-            
+
+            # Basic fields
             title = frontmatter.get('title', 'Untitled Update')
             update_date = self._parse_date(frontmatter.get('date', datetime.utcnow().date()))
-            
+            description = content or frontmatter.get('description', '')
+
+            # Map enums safely
+            def _map_update_type(val: Optional[str]) -> UpdateType:
+                if not val:
+                    return UpdateType.PROJECT
+                v = str(val).lower()
+                mapping = {
+                    'work': UpdateType.WORK,
+                    'education': UpdateType.EDUCATION,
+                    'research': UpdateType.RESEARCH,
+                    'publication': UpdateType.PUBLICATION,
+                    'project': UpdateType.PROJECT,
+                }
+                return mapping.get(v, UpdateType.PROJECT)
+
+            def _map_status(val: Optional[str]) -> UpdateStatus:
+                if not val:
+                    return UpdateStatus.ACTIVE
+                v = str(val).lower()
+                mapping = {
+                    'active': UpdateStatus.ACTIVE,
+                    'ongoing': UpdateStatus.ONGOING,
+                    'completed': UpdateStatus.COMPLETED,
+                }
+                return mapping.get(v, UpdateStatus.ACTIVE)
+
+            def _map_priority(val: Optional[str]) -> UpdatePriority:
+                if not val:
+                    return UpdatePriority.MEDIUM
+                v = str(val).lower()
+                mapping = {
+                    'high': UpdatePriority.HIGH,
+                    'medium': UpdatePriority.MEDIUM,
+                    'low': UpdatePriority.LOW,
+                }
+                return mapping.get(v, UpdatePriority.MEDIUM)
+
+            # Collect metadata
+            update_type = _map_update_type(frontmatter.get('type') or content_data.get('type') or content_data.get('update_type'))
+            status = _map_status(frontmatter.get('status') or content_data.get('status'))
+            priority = _map_priority(frontmatter.get('priority') or content_data.get('priority'))
+            tags = frontmatter.get('tags') or content_data.get('tags') or []
+            if isinstance(tags, str):
+                tags = [tags]
+
+            # Optional links/media
+            github_url = frontmatter.get('github_url') or frontmatter.get('github')
+            demo_url = frontmatter.get('demo_url') or frontmatter.get('demo')
+            external_url = frontmatter.get('external_url') or frontmatter.get('link')
+
             # Check if update exists (by title and date)
             existing_update = session.query(RecentUpdate).filter(
                 and_(
@@ -702,30 +749,43 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                     RecentUpdate.date == update_date
                 )
             ).first()
-            
+
             if existing_update:
-                # Update existing update
-                existing_update.description = content or frontmatter.get('description', '')
+                # Update existing
+                existing_update.description = description
+                existing_update.type = update_type
+                existing_update.status = status
+                existing_update.priority = priority
+                existing_update.tags = tags
+                existing_update.github_url = github_url
+                existing_update.demo_url = demo_url
+                existing_update.external_url = external_url
                 existing_update.updated_at = datetime.utcnow()
-                
                 update = existing_update
                 self.sync_stats['updated_count'] += 1
             else:
-                # Create new update
+                # Create new
                 assert self.current_user_id is not None
                 update = RecentUpdate(
                     user_id=self.current_user_id,
                     title=title,
-                    description=content or frontmatter.get('description', ''),
-                    date=update_date
+                    description=description,
+                    date=update_date,
+                    type=update_type,
+                    status=status,
+                    priority=priority,
+                    tags=tags,
+                    github_url=github_url,
+                    demo_url=demo_url,
+                    external_url=external_url,
                 )
                 session.add(update)
                 session.flush()
                 self.sync_stats['created_count'] += 1
-            
+
         except Exception as e:
             raise DatabaseError(f"Failed to sync update: {e}")
-    
+
     def _sync_resume(self, session: Session, content_data: Dict[str, Any], item: Dict[str, Any]) -> None:
         """Sync resume to database"""
         try:
@@ -1344,38 +1404,64 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
             )
             session.add(tech)
     
-    def _sync_project_details(self, session: Session, project: Project, content: str) -> None:
-        """Sync project details from content"""
+    def _sync_project_details(self, session: Session, project: Project, content: str, license_str: Optional[str] = None, version_str: Optional[str] = None) -> None:
+        """Sync project details from content, license, and version. Also stores full license text if available."""
         # Check if details exist
         details = session.query(ProjectDetail).filter_by(project_id=project.id).first()
+        # Try to read full license text from content folder if not provided
+        license_text: Optional[str] = None
+        try:
+            # Resolve project content folder based on slug
+            # We expect content/projects/{slug}/License or LICENSE
+            from pathlib import Path
+            project_slug = project.slug
+            if project_slug:
+                base = Path.cwd() / 'content' / 'projects' / project_slug
+                for name in ['License', 'LICENSE']:
+                    file_path = base / name
+                    if file_path.exists():
+                        license_text = file_path.read_text(encoding='utf-8')
+                        break
+        except Exception:
+            pass
         if not details:
             details = ProjectDetail(
                 project_id=project.id,
-                detailed_description=content
+                detailed_description=content or None,
+                license=license_str,
+                license_text=license_text,
+                version=version_str
             )
             session.add(details)
         else:
-            details.detailed_description = content
+            if content:
+                details.detailed_description = content
+            if license_str:
+                details.license = license_str
+            if license_text:
+                details.license_text = license_text
+            if version_str:
+                details.version = version_str
             details.updated_at = datetime.utcnow()
-    
+
     def _generate_slug(self, title: str) -> str:
         """Generate URL-friendly slug from title"""
         import re
         if not title:
             return 'untitled'
-        
+
         slug = title.lower()
         slug = re.sub(r'[^\w\s-]', '', slug)
         slug = re.sub(r'[-\s]+', '-', slug)
         slug = slug.strip('-')
-        
+
         return slug or 'untitled'
-    
+
     def _parse_datetime(self, date_str: Union[str, datetime]) -> datetime:
         """Parse datetime from string or return datetime object"""
         if isinstance(date_str, datetime):
             return date_str
-        
+
         if isinstance(date_str, str):
             try:
                 return datetime.strptime(date_str, '%Y-%m-%d')

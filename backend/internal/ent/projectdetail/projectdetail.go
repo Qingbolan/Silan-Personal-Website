@@ -31,6 +31,8 @@ const (
 	FieldFutureEnhancements = "future_enhancements"
 	// FieldLicense holds the string denoting the license field in the database.
 	FieldLicense = "license"
+	// FieldLicenseText holds the string denoting the license_text field in the database.
+	FieldLicenseText = "license_text"
 	// FieldVersion holds the string denoting the version field in the database.
 	FieldVersion = "version"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -70,6 +72,7 @@ var Columns = []string{
 	FieldLessonsLearned,
 	FieldFutureEnhancements,
 	FieldLicense,
+	FieldLicenseText,
 	FieldVersion,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -146,6 +149,11 @@ func ByFutureEnhancements(opts ...sql.OrderTermOption) OrderOption {
 // ByLicense orders the results by the license field.
 func ByLicense(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLicense, opts...).ToFunc()
+}
+
+// ByLicenseText orders the results by the license_text field.
+func ByLicenseText(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLicenseText, opts...).ToFunc()
 }
 
 // ByVersion orders the results by the version field.

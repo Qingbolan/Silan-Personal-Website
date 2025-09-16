@@ -21,14 +21,14 @@ Key Components:
 
 Usage:
     from silan.parsers import ParserFactory
-    
+
     # Parse single file with auto-detection
     extracted = ParserFactory.parse_file_with_auto_detection(file_path)
-    
+
     # Parse entire directory
     parsed_data = ParserFactory.batch_parse_directory(content_dir)
     collection = ParsedContentCollection(parsed_data)
-    
+
     # Create specific parser
     parser = ParserFactory.create_parser(content_dir, 'project')
     result = parser.parse_file(file_path)
@@ -46,14 +46,14 @@ __all__ = [
     # Core classes
     'BaseParser',
     'ExtractedContent',
-    
+
     # Specialized parsers
     'ResumeParser',
-    'ProjectParser', 
+    'ProjectParser',
     'BlogParser',
     'IdeaParser',
     'UpdateParser',
-    
+
     # Factory and utilities
     'ParserFactory',
     'ParsedContentCollection'
@@ -66,7 +66,7 @@ __description__ = 'Comprehensive content parsing system with specialized extract
 
 # Register all parsers with the factory
 ParserFactory.register_parser('resume', ResumeParser)
-ParserFactory.register_parser('cv', ResumeParser) 
+ParserFactory.register_parser('cv', ResumeParser)
 ParserFactory.register_parser('project', ProjectParser)
 ParserFactory.register_parser('projects', ProjectParser)
 ParserFactory.register_parser('blog', BlogParser)
@@ -82,3 +82,5 @@ ParserFactory.register_parser('concept', IdeaParser)
 ParserFactory.register_parser('update', UpdateParser)
 ParserFactory.register_parser('updates', UpdateParser)
 ParserFactory.register_parser('recent_update', UpdateParser)
+ParserFactory.register_parser('moment', UpdateParser)
+ParserFactory.register_parser('moments', UpdateParser)

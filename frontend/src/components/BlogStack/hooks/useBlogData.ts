@@ -31,7 +31,7 @@ export const useBlogData = (id: string | undefined) => {
           setBlog(blogData);
           // Try to update view count, but don't fail if it doesn't work
           try {
-            await updateBlogViews(id, language as 'en' | 'zh');
+            await updateBlogViews(blogData.id, language as 'en' | 'zh');
           } catch (viewError) {
             console.log('View count update failed (this is non-critical):', viewError);
           }

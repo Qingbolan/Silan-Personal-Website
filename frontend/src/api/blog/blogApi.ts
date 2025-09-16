@@ -1,7 +1,7 @@
 import type { BlogData } from '../../components/BlogStack/types/blog';
 import { get, post, formatLanguage } from '../utils';
 import { type PaginationRequest, type SearchRequest } from '../config';
-import { processRawContent, parseAcademicMarkdown } from '../../utils/markdownParser';
+import { processRawContent } from '../../utils/markdownParser';
 
 // Backend API request/response types
 interface BlogListRequest extends PaginationRequest {

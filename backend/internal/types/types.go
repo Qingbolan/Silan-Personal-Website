@@ -429,6 +429,7 @@ type ProjectDetail struct {
 	LessonsLearned      string           `json:"lessons_learned,omitempty"`
 	FutureEnhancements  string           `json:"future_enhancements,omitempty"`
 	License             string           `json:"license,omitempty"`
+	LicenseText         string           `json:"license_text,omitempty"`
 	Version             string           `json:"version,omitempty"`
 	Timeline            ProjectTimeline  `json:"timeline"`
 	Metrics             ProjectMetrics   `json:"metrics"`

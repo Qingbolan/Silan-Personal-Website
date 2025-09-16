@@ -5,6 +5,7 @@ import { Github, Linkedin, Mail, MapPin, Phone, Globe } from 'lucide-react';
 interface ContactInfo {
   type: string;
   value: string;
+  bio?: string;
 }
 
 interface SocialLink {

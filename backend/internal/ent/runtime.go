@@ -1141,15 +1141,15 @@ func init() {
 	// projectdetail.LicenseValidator is a validator for the "license" field. It is called by the builders before save.
 	projectdetail.LicenseValidator = projectdetailDescLicense.Validators[0].(func(string) error)
 	// projectdetailDescVersion is the schema descriptor for version field.
-	projectdetailDescVersion := projectdetailFields[9].Descriptor()
+	projectdetailDescVersion := projectdetailFields[10].Descriptor()
 	// projectdetail.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	projectdetail.VersionValidator = projectdetailDescVersion.Validators[0].(func(string) error)
 	// projectdetailDescCreatedAt is the schema descriptor for created_at field.
-	projectdetailDescCreatedAt := projectdetailFields[10].Descriptor()
+	projectdetailDescCreatedAt := projectdetailFields[11].Descriptor()
 	// projectdetail.DefaultCreatedAt holds the default value on creation for the created_at field.
 	projectdetail.DefaultCreatedAt = projectdetailDescCreatedAt.Default.(func() time.Time)
 	// projectdetailDescUpdatedAt is the schema descriptor for updated_at field.
-	projectdetailDescUpdatedAt := projectdetailFields[11].Descriptor()
+	projectdetailDescUpdatedAt := projectdetailFields[12].Descriptor()
 	// projectdetail.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	projectdetail.DefaultUpdatedAt = projectdetailDescUpdatedAt.Default.(func() time.Time)
 	// projectdetail.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -18,6 +18,7 @@ silan/logic/__init__.py
 silan/logic/backend_logic.py
 silan/logic/cli_logic.py
 silan/logic/content_logic.py
+silan/logic/content_scaffold_logic.py
 silan/logic/database_config_logic.py
 silan/logic/database_sync_logic.py
 silan/logic/frontend_logic.py
@@ -174,8 +175,14 @@ silan/utils/file_operations.py
 silan/utils/logger.py
 silan/utils/validation.py
 silan_personal_website.egg-info/PKG-INFO
+silan_personal_website.egg-info/PKG-INFO 2
+silan_personal_website.egg-info/SOURCES 2.txt
 silan_personal_website.egg-info/SOURCES.txt
+silan_personal_website.egg-info/dependency_links 2.txt
 silan_personal_website.egg-info/dependency_links.txt
+silan_personal_website.egg-info/entry_points 2.txt
 silan_personal_website.egg-info/entry_points.txt
+silan_personal_website.egg-info/requires 2.txt
 silan_personal_website.egg-info/requires.txt
+silan_personal_website.egg-info/top_level 2.txt
 silan_personal_website.egg-info/top_level.txt

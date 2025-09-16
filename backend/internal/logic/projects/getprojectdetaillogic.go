@@ -2,7 +2,8 @@ package projects
 
 import (
 	"context"
-
+	"regexp"
+	"strings"
 	"silan-backend/internal/ent/project"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
@@ -24,6 +25,25 @@ func NewGetProjectDetailLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
+}
+
+func (l *GetProjectDetailLogic) GetLicenseText(str string) string {
+	lines := strings.Split(str, "\n")
+	for i, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "License") {
+			if i+1 < len(lines) {
+				next := strings.TrimSpace(lines[i+1])
+				re := regexp.MustCompile(`Version\s+([\d.]+)`)
+				if m := re.FindStringSubmatch(next); len(m) > 1 {
+					name := strings.Replace(line, "License", "", 1)
+					name = strings.TrimSpace(name)
+					return name + " " + m[1]
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest) (resp *types.ProjectDetail, err error) {
@@ -76,6 +96,7 @@ func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest
 	// Create detail information
 	var detailID string
 	var detailedDescription, goals, challenges, solutions, lessonsLearned, futureEnhancements, license, version string
+	var licenseText string
 	var createdAt, updatedAt string
 
 	if proj.Edges.Details != nil {
@@ -87,7 +108,8 @@ func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest
 		solutions = detail.Solutions
 		lessonsLearned = detail.LessonsLearned
 		futureEnhancements = detail.FutureEnhancements
-		license = detail.License
+		license = l.GetLicenseText(detail.LicenseText)
+		licenseText = detail.LicenseText
 		version = detail.Version
 		createdAt = detail.CreatedAt.Format("2006-01-02 15:04:05")
 		updatedAt = detail.UpdatedAt.Format("2006-01-02 15:04:05")
@@ -111,6 +133,7 @@ func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest
 		LessonsLearned:      lessonsLearned,
 		FutureEnhancements:  futureEnhancements,
 		License:             license,
+		LicenseText:         licenseText,
 		Version:             version,
 		Timeline:            timeline,
 		Metrics:             metrics,

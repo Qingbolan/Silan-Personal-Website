@@ -120,9 +120,19 @@ a {
   transition: all 0.3s ease;
 }
 
-/* List reset */
-ul, ol {
-  list-style: none;
+/* Content lists default styling (restore markers) */
+.prose ul, .markdown-body ul, .content-body ul, ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0 0.75rem;
+}
+.prose ol, .markdown-body ol, .content-body ol, ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0 0.75rem;
+}
+.prose li, .markdown-body li, .content-body li, li {
+  margin: 0.25rem 0;
 }
 
 /* Image optimization */

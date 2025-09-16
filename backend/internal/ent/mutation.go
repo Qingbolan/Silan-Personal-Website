@@ -22868,6 +22868,7 @@ type ProjectDetailMutation struct {
 	lessons_learned      *string
 	future_enhancements  *string
 	license              *string
+	license_text         *string
 	version              *string
 	created_at           *time.Time
 	updated_at           *time.Time
@@ -23365,6 +23366,55 @@ func (m *ProjectDetailMutation) ResetLicense() {
 	delete(m.clearedFields, projectdetail.FieldLicense)
 }
 
+// SetLicenseText sets the "license_text" field.
+func (m *ProjectDetailMutation) SetLicenseText(s string) {
+	m.license_text = &s
+}
+
+// LicenseText returns the value of the "license_text" field in the mutation.
+func (m *ProjectDetailMutation) LicenseText() (r string, exists bool) {
+	v := m.license_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLicenseText returns the old "license_text" field's value of the ProjectDetail entity.
+// If the ProjectDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProjectDetailMutation) OldLicenseText(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLicenseText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLicenseText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLicenseText: %w", err)
+	}
+	return oldValue.LicenseText, nil
+}
+
+// ClearLicenseText clears the value of the "license_text" field.
+func (m *ProjectDetailMutation) ClearLicenseText() {
+	m.license_text = nil
+	m.clearedFields[projectdetail.FieldLicenseText] = struct{}{}
+}
+
+// LicenseTextCleared returns if the "license_text" field was cleared in this mutation.
+func (m *ProjectDetailMutation) LicenseTextCleared() bool {
+	_, ok := m.clearedFields[projectdetail.FieldLicenseText]
+	return ok
+}
+
+// ResetLicenseText resets all changes to the "license_text" field.
+func (m *ProjectDetailMutation) ResetLicenseText() {
+	m.license_text = nil
+	delete(m.clearedFields, projectdetail.FieldLicenseText)
+}
+
 // SetVersion sets the "version" field.
 func (m *ProjectDetailMutation) SetVersion(s string) {
 	m.version = &s
@@ -23601,7 +23651,7 @@ func (m *ProjectDetailMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProjectDetailMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.project != nil {
 		fields = append(fields, projectdetail.FieldProjectID)
 	}
@@ -23625,6 +23675,9 @@ func (m *ProjectDetailMutation) Fields() []string {
 	}
 	if m.license != nil {
 		fields = append(fields, projectdetail.FieldLicense)
+	}
+	if m.license_text != nil {
+		fields = append(fields, projectdetail.FieldLicenseText)
 	}
 	if m.version != nil {
 		fields = append(fields, projectdetail.FieldVersion)
@@ -23659,6 +23712,8 @@ func (m *ProjectDetailMutation) Field(name string) (ent.Value, bool) {
 		return m.FutureEnhancements()
 	case projectdetail.FieldLicense:
 		return m.License()
+	case projectdetail.FieldLicenseText:
+		return m.LicenseText()
 	case projectdetail.FieldVersion:
 		return m.Version()
 	case projectdetail.FieldCreatedAt:
@@ -23690,6 +23745,8 @@ func (m *ProjectDetailMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldFutureEnhancements(ctx)
 	case projectdetail.FieldLicense:
 		return m.OldLicense(ctx)
+	case projectdetail.FieldLicenseText:
+		return m.OldLicenseText(ctx)
 	case projectdetail.FieldVersion:
 		return m.OldVersion(ctx)
 	case projectdetail.FieldCreatedAt:
@@ -23760,6 +23817,13 @@ func (m *ProjectDetailMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLicense(v)
+		return nil
+	case projectdetail.FieldLicenseText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLicenseText(v)
 		return nil
 	case projectdetail.FieldVersion:
 		v, ok := value.(string)
@@ -23833,6 +23897,9 @@ func (m *ProjectDetailMutation) ClearedFields() []string {
 	if m.FieldCleared(projectdetail.FieldLicense) {
 		fields = append(fields, projectdetail.FieldLicense)
 	}
+	if m.FieldCleared(projectdetail.FieldLicenseText) {
+		fields = append(fields, projectdetail.FieldLicenseText)
+	}
 	if m.FieldCleared(projectdetail.FieldVersion) {
 		fields = append(fields, projectdetail.FieldVersion)
 	}
@@ -23871,6 +23938,9 @@ func (m *ProjectDetailMutation) ClearField(name string) error {
 	case projectdetail.FieldLicense:
 		m.ClearLicense()
 		return nil
+	case projectdetail.FieldLicenseText:
+		m.ClearLicenseText()
+		return nil
 	case projectdetail.FieldVersion:
 		m.ClearVersion()
 		return nil
@@ -23905,6 +23975,9 @@ func (m *ProjectDetailMutation) ResetField(name string) error {
 		return nil
 	case projectdetail.FieldLicense:
 		m.ResetLicense()
+		return nil
+	case projectdetail.FieldLicenseText:
+		m.ResetLicenseText()
 		return nil
 	case projectdetail.FieldVersion:
 		m.ResetVersion()

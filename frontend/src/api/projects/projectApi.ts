@@ -166,6 +166,9 @@ export const fetchProjectDetailById = async (
     }
 
     // Merge basic project info with detail info to create a complete ProjectDetail
+    const licenseName = projectDetail?.license || 'MIT';
+    const licenseText: string | undefined = projectDetail?.license_text;
+
     const mergedDetail: ProjectDetail = {
       id: basicProject.id,
       title: basicProject.name,
@@ -254,6 +257,20 @@ export const fetchProjectDetailById = async (
       github: '', // These would need to be added to the basic project type
       demo: ''    // or fetched from somewhere else
     };
+
+    // Populate licenseInfo if backend returned full license text
+    if (licenseText) {
+      (mergedDetail as any).licenseInfo = {
+        name: licenseName,
+        spdxId: licenseName,
+        fullText: licenseText,
+        url: '',
+        permissions: [],
+        conditions: [],
+        limitations: [],
+        description: ''
+      };
+    }
 
     return mergedDetail;
   } catch (err) {
