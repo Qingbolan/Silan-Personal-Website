@@ -41,8 +41,8 @@ export const fetchResumeData = async (language: Language = 'en'): Promise<Resume
             school: edu.institution,
             degree: edu.degree,
             date: edu.is_current 
-              ? `${edu.start_date} - Present`
-              : `${edu.start_date} - ${edu.end_date || ''}`,
+              ? `${edu.start_date?.substring(0, 7)} - Present`
+              : `${edu.start_date?.substring(0, 7)} - ${edu.end_date?.substring(0, 7) || ''}`,
             details: edu.details || [],
             logo: edu.institution_logo_url,
             website: edu.institution_website,
@@ -55,29 +55,29 @@ export const fetchResumeData = async (language: Language = 'en'): Promise<Resume
             company: exp.company,
             role: exp.position,
             date: exp.is_current 
-              ? `${exp.start_date} - Present`
-              : `${exp.start_date} - ${exp.end_date || ''}`,
+              ? `${exp.start_date?.substring(0, 7)} - Present`
+              : `${exp.start_date?.substring(0, 7)} - ${exp.end_date?.substring(0, 7) || ''}`,
             details: exp.details || [],
             logo: exp.company_logo_url,
             website: exp.company_website,
             location: exp.location
           })) || []
         },
-        research: {
-          title: 'Research Experience',
-          content: response.research?.map((research: any) => ({
-            title: research.title,
-            location: research.location,
-            date: research.is_ongoing 
-              ? `${research.start_date} - Present`
-              : `${research.start_date} - ${research.end_date || ''}`,
-            details: research.details || []
-          })) || []
-        },
-        publications: {
-          title: 'Publications',
-          content: response.publications?.map((pub: any) => pub.title) || []
-        },
+        // research: {
+        //   title: 'Research Experience',
+        //   content: response.research?.map((research: any) => ({
+        //     title: research.title,
+        //     location: research.location,
+        //     date: research.is_ongoing 
+        //       ? `${research.start_date} - Present`
+        //       : `${research.start_date} - ${research.end_date || ''}`,
+        //     details: research.details || []
+        //   })) || []
+        // },
+        // publications: {
+        //   title: 'Publications',
+        //   content: response.publications?.map((pub: any) => pub.title) || []
+        // },
         awards: {
           title: 'Awards',
           content: response.awards?.map((award: any) => award.description || award.title) || []

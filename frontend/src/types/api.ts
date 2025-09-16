@@ -80,7 +80,11 @@ export interface RecentUpdate {
 
 
 export interface ResumeData {
-  personal_info: PersonalInfo;
+  name: string;
+  title: string;
+  current: string;
+  contacts: Contact[];
+  socialLinks: SocialLink[];
   education: EducationItem[];
   experience: ExperienceItem[];
   research: ResearchItem[];

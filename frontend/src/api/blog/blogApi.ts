@@ -151,13 +151,8 @@ export const fetchBlogById = async (slugOrId: string, language: 'en' | 'zh' = 'e
       });
       
       if (response) {
-        console.log('🔍 Raw API response (fallback):', response);
-        console.log('🔍 Raw content (fallback):', response.content);
-        
         // Process the content with markdown parser
-        const processedContent = response.content ? processRawContent(response.content) : [];
-        console.log('✅ Processed content (fallback):', processedContent);
-        
+        const processedContent = response.content ? processRawContent(response.content) : [];        
         // Map backend response to frontend structure
         return {
           ...response,

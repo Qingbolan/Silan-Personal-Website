@@ -26,10 +26,12 @@ education_websites:
   nus: "https://www.nus.edu.sg/"
   must: "https://www.must.edu.mo/"
 experience_logos:
+  nus_computing: "/experiences/nus_computing.jpeg"
   hpc_ai: "/experiences/hpc-ai.jpeg"
   scholarhero: "/experiences/scholarhero.png"
   lenovo: "/experiences/lenovo.jpeg"
   ipsos: "/experiences/ipsos.jpeg"
+  summer: "/experiences/summer.png"
 experience_websites:
   hpc_ai: "https://hpc-ai.tech/"
   scholarhero: "https://scholarhero.cn/"
@@ -77,16 +79,28 @@ status: Currently looking for PhD, internships and research opportunities
 
 ## Work Experience
 
+### NUS Computing
+*Logo*: nus_computing
+*Website*: https://www.comp.nus.edu.sg
+
+**Research Assistant**
+*Aug 2025 - Now*
+*Singapore*
+
+
 ### HPC-AI Tech
 
 *Logo*: hpc_ai
 *Website*: https://hpc-ai.tech/
 
 **AI Engineer Intern**
-*Jan 2025 – Now*
+*Jan 2025 – Aug 2025*
 *Singapore*
 
-- Open-Sora Team(AIGC text2video): Research on Improving Speed and Quality of Text-to-Video Generation
+- Open-Sora Team (AIGC text-to-video): Conducted research on accelerating text-to-video generation while improving output quality.
+- Video Ocean Backend (Go, Entgo, go-zero): Built and maintained backend services for a platform with hundreds of thousands of users.
+  - Developed regular payment business modules and database maintenance SDKs.
+  - Contributed to two major system reconstructions, enhancing scalability and stability.
 
 ### Beijing Stats City Data Technology Co., Ltd.
 
@@ -124,6 +138,8 @@ status: Currently looking for PhD, internships and research opportunities
 - Gained familiarity with market research processes, improved data collection, organization, and analysis skills, and received the Outstanding Project Award for the market research internship project.
 
 ### Chaoyang District 'Youth Elite' Internship Program
+
+*Logo*: summer
 
 **Summer Intern**
 *Jul 2021 – Aug 2021*
