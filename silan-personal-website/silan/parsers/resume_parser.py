@@ -73,6 +73,8 @@ class ResumeParser(BaseParser):
         
         # Store all extracted data in metadata as well for other uses
         extracted.metadata.update({
+            'title': extracted.main_entity.get('title', ''),
+            'current_status': extracted.main_entity.get('current_status', ''),
             'social_links': social_links,
             'education': education_data,
             'experience': experience_data,
@@ -89,7 +91,6 @@ class ResumeParser(BaseParser):
         """Extract personal information from metadata and content"""
         # Extract title from content or metadata
         title = self._extract_professional_title(content) or metadata.get('title', '')
-        
         personal_info = {
             'full_name': metadata.get('name', ''),
             'title': title,
@@ -181,19 +182,12 @@ class ResumeParser(BaseParser):
     def _extract_professional_title(self, content: str) -> str:
         """Extract professional title from content"""
         lines = content.split('\n')
-        
+        title = 'AI Researcher' 
         for line in lines:
-            line = line.strip()
-            # Look for bold text that might be a title
-            if line.startswith('**') and line.endswith('**'):
-                title = line.strip('*').strip()
-                # Check if it looks like a professional title
-                if any(keyword in title.lower() for keyword in 
-                       ['engineer', 'developer', 'researcher', 'scientist', 'analyst', 
-                        'manager', 'lead', 'architect', 'consultant', 'specialist']):
-                    return title
-        
-        return 'Professional'
+            if line.startswith("title:"):
+                title = line.split(":", 1)[1].strip()
+                break        
+        return title
     
     def _extract_education(self, content: str) -> List[Dict[str, Any]]:
         """Extract education information with detailed parsing"""

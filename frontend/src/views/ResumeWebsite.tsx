@@ -142,13 +142,8 @@ const ResumeWebsite: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         const data = await fetchResumeData(language);
-        
-        console.log('✅ Resume data loaded successfully');
-        
+                
         if (isMounted) {
           setResumeData(data);
           setLoading(false);

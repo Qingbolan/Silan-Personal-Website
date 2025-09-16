@@ -33,3 +33,7 @@ Database: sqlite3 (***)
 Starting Silan Backend Server...
 Server: 0.0.0.0:8888
 Database: sqlite3 (***)
+{"@timestamp":"2025-09-16T13:46:23.397+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)

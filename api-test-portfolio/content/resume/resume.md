@@ -39,9 +39,9 @@ language: "en"
 ---
 # Silan Hu
 
-**AI Researcher & Full Stack Developer**
+title: AI Researcher & Full Stack Developer
 
-Currently looking for PhD, internships and research opportunities
+status: Currently looking for PhD, internships and research opportunities
 
 ## Contact Information
 
