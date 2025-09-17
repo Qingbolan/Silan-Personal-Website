@@ -2,7 +2,6 @@ package projects
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"silan-backend/internal/ent/project"
 	"silan-backend/internal/svc"
@@ -28,22 +27,38 @@ func NewGetProjectDetailLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *GetProjectDetailLogic) GetLicenseText(str string) string {
-	lines := strings.Split(str, "\n")
-	for i, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.Contains(line, "License") {
-			if i+1 < len(lines) {
-				next := strings.TrimSpace(lines[i+1])
-				re := regexp.MustCompile(`Version\s+([\d.]+)`)
-				if m := re.FindStringSubmatch(next); len(m) > 1 {
-					name := strings.Replace(line, "License", "", 1)
-					name = strings.TrimSpace(name)
-					return name + " " + m[1]
-				}
-			}
-		}
+	if str == "" {
+		return "MIT"
 	}
-	return ""
+
+	str = strings.TrimSpace(str)
+	if str == "" {
+		return "MIT"
+	}
+
+	// Simple license detection
+	lower := strings.ToLower(str)
+
+	if strings.Contains(lower, "mit") {
+		return "MIT"
+	}
+	if strings.Contains(lower, "apache") {
+		return "Apache 2.0"
+	}
+	if strings.Contains(lower, "gpl") || strings.Contains(lower, "gnu") {
+		return "GPL"
+	}
+	if strings.Contains(lower, "bsd") {
+		return "BSD"
+	}
+
+	// If it's a short string, return it directly
+	if len(str) <= 50 {
+		return str
+	}
+
+	// For longer text, return first 50 chars
+	return str[:50] + "..."
 }
 
 func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest) (resp *types.ProjectDetail, err error) {
@@ -98,7 +113,6 @@ func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest
 	var detailedDescription, goals, challenges, solutions, lessonsLearned, futureEnhancements, license, version string
 	var licenseText string
 	var createdAt, updatedAt string
-
 	if proj.Edges.Details != nil {
 		detail := proj.Edges.Details
 		detailID = detail.ID.String()

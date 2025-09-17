@@ -16,7 +16,7 @@ export { BlogHeader } from './components/BlogHeader';
 export { BlogArticleHeader } from './components/BlogArticleHeader';
 export { BlogContentRenderer } from './components/BlogContentRenderer';
 // export { BlogTOC } from './components/BlogTOC'; // Component not found, commented out
-export { BlogComments } from './components/BlogComments';
+export { default as BlogComments } from './components/BlogComments';
 export { BlogLoadingState } from './components/BlogLoadingState';
 
 // Content Components

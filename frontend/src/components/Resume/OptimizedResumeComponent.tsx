@@ -105,7 +105,7 @@ export const OptimizedResumeComponent: React.FC<OptimizedResumeProps> = ({ langu
             <button 
               onClick={loadEducation}
               disabled={loading.education}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+              className="px-4 py-2 bg-theme-500 text-white rounded hover:bg-theme-600 disabled:opacity-50"
             >
               {loading.education ? 'Loading...' : 'Load Education'}
             </button>

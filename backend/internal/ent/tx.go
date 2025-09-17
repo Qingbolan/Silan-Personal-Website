@@ -90,6 +90,8 @@ type Tx struct {
 	SocialLink *SocialLinkClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// UserIdentity is the client for interacting with the UserIdentity builders.
+	UserIdentity *UserIdentityClient
 	// WorkExperience is the client for interacting with the WorkExperience builders.
 	WorkExperience *WorkExperienceClient
 	// WorkExperienceDetail is the client for interacting with the WorkExperienceDetail builders.
@@ -268,6 +270,7 @@ func (tx *Tx) init() {
 	tx.ResearchProjectTranslation = NewResearchProjectTranslationClient(tx.config)
 	tx.SocialLink = NewSocialLinkClient(tx.config)
 	tx.User = NewUserClient(tx.config)
+	tx.UserIdentity = NewUserIdentityClient(tx.config)
 	tx.WorkExperience = NewWorkExperienceClient(tx.config)
 	tx.WorkExperienceDetail = NewWorkExperienceDetailClient(tx.config)
 	tx.WorkExperienceDetailTranslation = NewWorkExperienceDetailTranslationClient(tx.config)

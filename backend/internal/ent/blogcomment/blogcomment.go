@@ -33,6 +33,8 @@ const (
 	FieldIPAddress = "ip_address"
 	// FieldUserAgent holds the string denoting the user_agent field in the database.
 	FieldUserAgent = "user_agent"
+	// FieldUserIdentityID holds the string denoting the user_identity_id field in the database.
+	FieldUserIdentityID = "user_identity_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -43,6 +45,8 @@ const (
 	EdgeParent = "parent"
 	// EdgeReplies holds the string denoting the replies edge name in mutations.
 	EdgeReplies = "replies"
+	// EdgeUserIdentity holds the string denoting the user_identity edge name in mutations.
+	EdgeUserIdentity = "user_identity"
 	// Table holds the table name of the blogcomment in the database.
 	Table = "blog_comments"
 	// BlogPostTable is the table that holds the blog_post relation/edge.
@@ -60,6 +64,13 @@ const (
 	RepliesTable = "blog_comments"
 	// RepliesColumn is the table column denoting the replies relation/edge.
 	RepliesColumn = "parent_id"
+	// UserIdentityTable is the table that holds the user_identity relation/edge.
+	UserIdentityTable = "blog_comments"
+	// UserIdentityInverseTable is the table name for the UserIdentity entity.
+	// It exists in this package in order to avoid circular dependency with the "useridentity" package.
+	UserIdentityInverseTable = "user_identities"
+	// UserIdentityColumn is the table column denoting the user_identity relation/edge.
+	UserIdentityColumn = "user_identity_id"
 )
 
 // Columns holds all SQL columns for blogcomment fields.
@@ -74,6 +85,7 @@ var Columns = []string{
 	FieldIsApproved,
 	FieldIPAddress,
 	FieldUserAgent,
+	FieldUserIdentityID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -166,6 +178,11 @@ func ByUserAgent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserAgent, opts...).ToFunc()
 }
 
+// ByUserIdentityID orders the results by the user_identity_id field.
+func ByUserIdentityID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserIdentityID, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
@@ -203,6 +220,13 @@ func ByReplies(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRepliesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUserIdentityField orders the results by user_identity field.
+func ByUserIdentityField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserIdentityStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newBlogPostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -222,5 +246,12 @@ func newRepliesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(Table, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, RepliesTable, RepliesColumn),
+	)
+}
+func newUserIdentityStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserIdentityInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, UserIdentityTable, UserIdentityColumn),
 	)
 }

@@ -101,6 +101,11 @@ func UserAgent(v string) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldEQ(FieldUserAgent, v))
 }
 
+// UserIdentityID applies equality check predicate on the "user_identity_id" field. It's identical to UserIdentityIDEQ.
+func UserIdentityID(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldEQ(FieldUserIdentityID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldEQ(FieldCreatedAt, v))
@@ -591,6 +596,81 @@ func UserAgentContainsFold(v string) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldContainsFold(FieldUserAgent, v))
 }
 
+// UserIdentityIDEQ applies the EQ predicate on the "user_identity_id" field.
+func UserIdentityIDEQ(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldEQ(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDNEQ applies the NEQ predicate on the "user_identity_id" field.
+func UserIdentityIDNEQ(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldNEQ(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDIn applies the In predicate on the "user_identity_id" field.
+func UserIdentityIDIn(vs ...string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldIn(FieldUserIdentityID, vs...))
+}
+
+// UserIdentityIDNotIn applies the NotIn predicate on the "user_identity_id" field.
+func UserIdentityIDNotIn(vs ...string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldNotIn(FieldUserIdentityID, vs...))
+}
+
+// UserIdentityIDGT applies the GT predicate on the "user_identity_id" field.
+func UserIdentityIDGT(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldGT(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDGTE applies the GTE predicate on the "user_identity_id" field.
+func UserIdentityIDGTE(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldGTE(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDLT applies the LT predicate on the "user_identity_id" field.
+func UserIdentityIDLT(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldLT(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDLTE applies the LTE predicate on the "user_identity_id" field.
+func UserIdentityIDLTE(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldLTE(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDContains applies the Contains predicate on the "user_identity_id" field.
+func UserIdentityIDContains(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldContains(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDHasPrefix applies the HasPrefix predicate on the "user_identity_id" field.
+func UserIdentityIDHasPrefix(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldHasPrefix(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDHasSuffix applies the HasSuffix predicate on the "user_identity_id" field.
+func UserIdentityIDHasSuffix(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldHasSuffix(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDIsNil applies the IsNil predicate on the "user_identity_id" field.
+func UserIdentityIDIsNil() predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldIsNull(FieldUserIdentityID))
+}
+
+// UserIdentityIDNotNil applies the NotNil predicate on the "user_identity_id" field.
+func UserIdentityIDNotNil() predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldNotNull(FieldUserIdentityID))
+}
+
+// UserIdentityIDEqualFold applies the EqualFold predicate on the "user_identity_id" field.
+func UserIdentityIDEqualFold(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldEqualFold(FieldUserIdentityID, v))
+}
+
+// UserIdentityIDContainsFold applies the ContainsFold predicate on the "user_identity_id" field.
+func UserIdentityIDContainsFold(v string) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldContainsFold(FieldUserIdentityID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldEQ(FieldCreatedAt, v))
@@ -732,6 +812,29 @@ func HasReplies() predicate.BlogComment {
 func HasRepliesWith(preds ...predicate.BlogComment) predicate.BlogComment {
 	return predicate.BlogComment(func(s *sql.Selector) {
 		step := newRepliesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUserIdentity applies the HasEdge predicate on the "user_identity" edge.
+func HasUserIdentity() predicate.BlogComment {
+	return predicate.BlogComment(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, UserIdentityTable, UserIdentityColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUserIdentityWith applies the HasEdge predicate on the "user_identity" edge with a given conditions (other predicates).
+func HasUserIdentityWith(preds ...predicate.UserIdentity) predicate.BlogComment {
+	return predicate.BlogComment(func(s *sql.Selector) {
+		step := newUserIdentityStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

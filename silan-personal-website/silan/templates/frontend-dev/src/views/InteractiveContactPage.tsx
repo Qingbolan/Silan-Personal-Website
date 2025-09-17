@@ -88,7 +88,7 @@ const InteractiveContactPage: React.FC = () => {
       icon: <Linkedin size={20} />,
       label: 'LinkedIn',
       href: 'https://linkedin.com/in/Qingbolan',
-      hoverColor: 'hover:bg-blue-600'
+      hoverColor: 'hover:bg-theme-600'
     },
     {
       icon: <Globe size={20} />,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 // Import all custom hooks
@@ -10,9 +10,15 @@ import { BlogLoadingState } from './components/BlogLoadingState';
 import SeriesDetailLayout from './SeriesDetailLayout';
 import ArticleDetailLayout from './ArticleDetailLayout';
 
+// Import reading behavior utilities
+import { readingTracker } from '../../utils/readingBehavior';
+import { calculateReadingTime } from '../../utils/readingTime';
+import { useLanguage } from '../LanguageContext';
+
 const BlogDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { language } = useLanguage();
 
   // UI state
   const [annotations, setAnnotations] = useState<Record<string, boolean>>({});
@@ -33,6 +39,29 @@ const BlogDetail: React.FC = () => {
     highlightAnnotation,
     cancelAnnotation
   } = useAnnotations(id);
+
+  // Start reading tracking when blog is loaded
+  useEffect(() => {
+    if (blog && blog.id) {
+      readingTracker.startSession(blog.id);
+
+      // Cleanup when component unmounts
+      return () => {
+        readingTracker.endSession();
+      };
+    }
+  }, [blog]);
+
+  // Update reading time if it's missing or incorrect
+  useEffect(() => {
+    if (blog && blog.content) {
+      const calculatedTime = calculateReadingTime(blog.content, language as 'en' | 'zh');
+      if (!blog.readTime || blog.readTime === '') {
+        // Update the blog object with calculated reading time
+        blog.readTime = calculatedTime;
+      }
+    }
+  }, [blog, language]);
 
   // Handle annotation toggle
   const toggleAnnotation = (contentId: string) => {

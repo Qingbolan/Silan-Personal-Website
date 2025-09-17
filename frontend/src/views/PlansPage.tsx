@@ -57,7 +57,7 @@ const PlanHeaderCard: React.FC<PlanHeaderCardProps> = ({ plan, index }) => {
                   target.style.display = 'none';
                   const parent = target.parentElement;
                   if (parent) {
-                    parent.className = 'w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br from-purple-600 to-blue-600';
+                    parent.className = 'w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br from-purple-600 to-theme-600';
                     parent.textContent = (language === 'en' ? plan.name : plan.nameZh).charAt(0);
                   }
                 }}
@@ -68,7 +68,7 @@ const PlanHeaderCard: React.FC<PlanHeaderCardProps> = ({ plan, index }) => {
               </div>
             ) : (
               /* Blog-style fallback background */
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br from-purple-600 to-blue-600">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br from-purple-600 to-theme-600">
                 {(language === 'en' ? plan.name : plan.nameZh).charAt(0)}
               </div>
             )}
@@ -390,7 +390,7 @@ const StatisticsCard: React.FC<StatisticsCardProps> = ({ plan, projects, ideas, 
       label: language === 'en' ? 'Projects' : '项目',
       value: planProjects.length,
       icon: Briefcase,
-      color: 'text-blue-600'
+      color: 'text-theme-600'
     },
     {
       label: language === 'en' ? 'Ideas' : '想法',

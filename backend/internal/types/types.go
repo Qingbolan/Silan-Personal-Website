@@ -57,6 +57,25 @@ type BlogCategory struct {
 	SortOrder   int    `json:"sort_order"`
 }
 
+type BlogCommentData struct {
+	ID              string `json:"id"`
+	BlogPostID      string `json:"blog_post_id"`
+	AuthorName      string `json:"author_name"`
+	AuthorAvatarURL string `json:"author_avatar_url,optional"`
+	Content         string `json:"content"`
+	CreatedAt       string `json:"created_at"`
+}
+
+type BlogCommentListRequest struct {
+	ID       string `path:"id"`
+	Language string `form:"lang,default=en"`
+}
+
+type BlogCommentListResponse struct {
+	Comments []BlogCommentData `json:"comments"`
+	Total    int               `json:"total"`
+}
+
 type BlogContent struct {
 	Type       string `json:"type"`
 	Content    string `json:"content"`
@@ -172,6 +191,17 @@ type Contact struct {
 	Value string `json:"value"`
 }
 
+type CreateBlogCommentRequest struct {
+	ID             string `path:"id"`
+	AuthorName     string `json:"author_name"`
+	AuthorEmail    string `json:"author_email"`
+	Content        string `json:"content"`
+	Fingerprint    string `json:"fingerprint"`
+	UserIdentityId string `json:"user_identity_id,optional"`
+	IdToken        string `json:"id_token,optional"`
+	Language       string `form:"lang,default=en"`
+}
+
 type CreateIdeaRequest struct {
 	Title                string   `json:"title"`
 	Description          string   `json:"description"`
@@ -195,6 +225,12 @@ type CreateProjectRequest struct {
 	Tags        []string `json:"tags,optional"`
 	Year        int      `json:"year"`
 	AnnualPlan  string   `json:"annual_plan"`
+}
+
+type DeleteBlogCommentRequest struct {
+	CommentID   string `path:"comment_id"`
+	Fingerprint string `json:"fingerprint"`
+	Language    string `form:"lang,default=en"`
 }
 
 type DeleteIdeaRequest struct {
@@ -242,6 +278,19 @@ type FeedbackType struct {
 	Type          string `json:"type"`
 	Description   string `json:"description"`
 	DescriptionZh string `json:"description_zh,omitempty"`
+}
+
+type GoogleVerifyRequest struct {
+	IdToken string `json:"id_token"`
+}
+
+type GoogleVerifyResponse struct {
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	Name      string `json:"name,optional"`
+	AvatarURL string `json:"avatar_url,optional"`
+	Provider  string `json:"provider"`
+	Verified  bool   `json:"verified"`
 }
 
 type GraphData struct {

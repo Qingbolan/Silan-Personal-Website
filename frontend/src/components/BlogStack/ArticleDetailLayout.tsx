@@ -19,6 +19,7 @@ import {
 import { useLanguage } from '../LanguageContext';
 import { BlogData, UserAnnotation, SelectedText } from './types/blog';
 import { BlogContentRenderer } from './components/BlogContentRenderer';
+import BlogComments from './components/BlogComments';
 import { BlogBreadcrumb } from './components/Breadcrumb';
 import { TableOfContents } from './components/TableOfContents';
 import { useTOC } from './hooks/useTOC';
@@ -144,7 +145,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
         return <Play size={16} className="text-red-500" />;
       case 'article':
       default:
-        return <BookOpen size={16} className="text-blue-500" />;
+        return <BookOpen size={16} className="text-theme-500" />;
     }
   };
 
@@ -400,6 +401,14 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
           )}
         </div>
       </motion.div>
+
+      {/* Comments */}
+      <div className={`transition-all duration-300 ${metaSidebarCollapsed ? 'ml-12' : 'ml-60'} ${tocCollapsed ? 'mr-0' : 'mr-60'}`}>
+        <div className="px-4 sm:px-6 lg:px-8">
+          <BlogComments postId={post.id} postSlug={post.slug}
+          />
+        </div>
+      </div>
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-theme-surface/95 backdrop-blur-sm border-t border-theme-border lg:hidden">

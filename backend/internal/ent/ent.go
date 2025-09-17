@@ -46,6 +46,7 @@ import (
 	"silan-backend/internal/ent/researchprojecttranslation"
 	"silan-backend/internal/ent/sociallink"
 	"silan-backend/internal/ent/user"
+	"silan-backend/internal/ent/useridentity"
 	"silan-backend/internal/ent/workexperience"
 	"silan-backend/internal/ent/workexperiencedetail"
 	"silan-backend/internal/ent/workexperiencedetailtranslation"
@@ -154,6 +155,7 @@ func checkColumn(table, column string) error {
 			researchprojecttranslation.Table:       researchprojecttranslation.ValidColumn,
 			sociallink.Table:                       sociallink.ValidColumn,
 			user.Table:                             user.ValidColumn,
+			useridentity.Table:                     useridentity.ValidColumn,
 			workexperience.Table:                   workexperience.ValidColumn,
 			workexperiencedetail.Table:             workexperiencedetail.ValidColumn,
 			workexperiencedetailtranslation.Table:  workexperiencedetailtranslation.ValidColumn,

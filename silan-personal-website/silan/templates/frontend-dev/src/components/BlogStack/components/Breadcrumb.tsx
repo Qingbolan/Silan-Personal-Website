@@ -47,7 +47,7 @@ export const BlogBreadcrumb: React.FC<BreadcrumbProps> = ({ post, onBack, onFilt
       case 'article':
       default:
         return {
-          icon: <BookOpen size={14} className="text-blue-500" />,
+          icon: <BookOpen size={14} className="text-theme-500" />,
           label: isSeries
             ? (language === 'en' ? 'Article Series' : '文章系列')
             : (language === 'en' ? 'Article' : '文章'),

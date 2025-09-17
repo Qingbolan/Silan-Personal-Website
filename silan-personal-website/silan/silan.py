@@ -9,6 +9,9 @@ Pure class-based architecture using inherited logger.
 import click
 from typing import Optional
 
+from pathlib import Path
+from .utils.config import ConfigManager
+
 from .logic.cli_logic import CLILogic
 
 
@@ -167,11 +170,13 @@ class SilanCLI:
         @click.option('--db-path', default='portfolio.db', help='Database file path (SQLite only)')
         @click.option('--server-host', default='0.0.0.0', help='Backend server host')
         @click.option('--server-port', default=8888, help='Backend server port')
+        @click.option('--google-client-id', help='Google OAuth Client ID (optional, passed to backend as --google-client-id)')
+
         @click.option('--daemon', '-d', is_flag=True, help='Run backend as daemon')
         @click.option('--config-file', help='Custom backend configuration file')
         def start(db_type: str, host: str, port: Optional[int], user: Optional[str], password: Optional[str],
                  database: Optional[str], db_path: str, server_host: str, server_port: int,
-                 daemon: bool, config_file: Optional[str]):
+                 google_client_id: Optional[str], daemon: bool, config_file: Optional[str]):
             """Start the Go backend server"""
             # Build database configuration
             if db_type in ['mysql', 'postgresql']:
@@ -192,11 +197,23 @@ class SilanCLI:
                     'path': db_path
                 }
 
+            # prefer CLI flag; fallback to project config (silan.yaml: auth.google_client_id)
+            effective_google_client_id = google_client_id
+            if not effective_google_client_id:
+                try:
+                    cfg = ConfigManager(Path.cwd()).load_config()
+                    effective_google_client_id = cfg.get('auth', {}).get('google_client_id')
+                except Exception:
+                    effective_google_client_id = None
+
             backend_config = {
                 'database': db_config,
                 'server': {
                     'host': server_host,
                     'port': server_port
+                },
+                'auth': {
+                    'google_client_id': effective_google_client_id
                 },
                 'daemon': daemon,
                 'config_file': config_file

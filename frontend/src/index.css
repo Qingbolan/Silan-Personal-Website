@@ -134,6 +134,29 @@ a {
 .prose li, .markdown-body li, .content-body li, li {
   margin: 0.25rem 0;
 }
+.prose li::marker,
+.prose ol > li::marker,
+.prose ul > li::marker {
+  color: var(--color-textSecondary);
+}
+
+.prose a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Ensure list markers follow theme colors in light/dark modes */
+.markdown-body li::marker,
+.markdown-body ol > li::marker,
+.markdown-body ul > li::marker {
+  color: var(--color-textSecondary);
+  opacity: 1;
+}
+
+/* Ensure nested paragraph text within list items uses themed color */
+.markdown-body li > p {
+  color: var(--color-textSecondary);
+}
 
 /* Theme-aware markdown styles */
 .markdown-body {
@@ -146,6 +169,7 @@ a {
 
 .markdown-body a {
   color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .markdown-body pre.code-block, .markdown-body pre .code-block {

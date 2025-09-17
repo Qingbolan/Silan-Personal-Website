@@ -398,6 +398,38 @@ type (
 		Current   bool   `json:"current,omitempty"`
 		Order     int    `json:"order"`
 	}
+	// Blog comments
+	BlogCommentData {
+		ID              string `json:"id"`
+		BlogPostID      string `json:"blog_post_id"`
+		AuthorName      string `json:"author_name"`
+		AuthorAvatarURL string `json:"author_avatar_url,optional"`
+		Content         string `json:"content"`
+		CreatedAt       string `json:"created_at"`
+	}
+	BlogCommentListResponse {
+		Comments []BlogCommentData `json:"comments"`
+		Total    int               `json:"total"`
+	}
+	BlogCommentListRequest {
+		ID       string `path:"id"`
+		Language string `form:"lang,default=en"`
+	}
+	CreateBlogCommentRequest {
+		ID             string `path:"id"`
+		AuthorName     string `json:"author_name"`
+		AuthorEmail    string `json:"author_email"`
+		Content        string `json:"content"`
+		Fingerprint    string `json:"fingerprint"`
+		UserIdentityId string `json:"user_identity_id,optional"`
+		IdToken        string `json:"id_token,optional"`
+		Language       string `form:"lang,default=en"`
+	}
+	DeleteBlogCommentRequest {
+		CommentID   string `path:"comment_id"`
+		Fingerprint string `json:"fingerprint"`
+		Language    string `form:"lang,default=en"`
+	}
 	BlogListRequest {
 		Page        int    `form:"page,default=1"`
 		Size        int    `form:"size,default=10"`
@@ -663,6 +695,18 @@ type (
 		Page     int    `form:"page,default=1"`
 		Size     int    `form:"size,default=10"`
 	}
+	// Auth types
+	GoogleVerifyRequest {
+		IdToken string `json:"id_token"`
+	}
+	GoogleVerifyResponse {
+		ID        string `json:"id"`
+		Email     string `json:"email"`
+		Name      string `json:"name,optional"`
+		AvatarURL string `json:"avatar_url,optional"`
+		Provider  string `json:"provider"`
+		Verified  bool   `json:"verified"`
+	}
 )
 
 // ========== RESUME PAGE GROUP ==========
@@ -819,6 +863,19 @@ service backend-api {
 	@doc "Search blog posts with filters"
 	@handler SearchBlogPosts
 	get /search (BlogSearchRequest) returns (BlogListResponse)
+
+	// ----- Comments -----
+	@doc "List comments for a blog post"
+	@handler ListBlogComments
+	get /posts/:id/comments (BlogCommentListRequest) returns (BlogCommentListResponse)
+
+	@doc "Create a comment for a blog post"
+	@handler CreateBlogComment
+	post /posts/:id/comments (CreateBlogCommentRequest) returns (BlogCommentData)
+
+	@doc "Delete a comment (fingerprint required)"
+	@handler DeleteBlogComment
+	delete /comments/:comment_id (DeleteBlogCommentRequest)
 }
 
 // ========== IDEAS PAGE GROUP ==========
@@ -847,5 +904,17 @@ service backend-api {
 	@doc "Search ideas with filters"
 	@handler SearchIdeas
 	get /search (IdeaSearchRequest) returns (IdeaListResponse)
+}
+
+// ========== AUTH GROUP ==========
+@server (
+	group:      auth
+	prefix:     /api/v1/auth
+	middleware: Cors
+)
+service backend-api {
+	@doc "Verify Google ID token and upsert identity"
+	@handler GoogleVerify
+	post /google/verify (GoogleVerifyRequest) returns (GoogleVerifyResponse)
 }
 

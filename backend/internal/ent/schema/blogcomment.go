@@ -53,6 +53,9 @@ func (BlogComment) Fields() []ent.Field {
 		field.String("user_agent").
 			Optional().
 			MaxLen(500),
+		field.String("user_identity_id").
+			Optional().
+			Comment("Link to authenticated user identity if available"),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
@@ -75,5 +78,8 @@ func (BlogComment) Edges() []ent.Edge {
 			Unique(),
 		edge.From("replies", BlogComment.Type).
 			Ref("parent"),
+		edge.To("user_identity", UserIdentity.Type).
+			Field("user_identity_id").
+			Unique(),
 	}
 }

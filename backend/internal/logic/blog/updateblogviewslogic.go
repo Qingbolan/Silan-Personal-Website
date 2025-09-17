@@ -42,5 +42,8 @@ func (l *UpdateBlogViewsLogic) UpdateBlogViews(req *types.UpdateBlogViewsRequest
 		return err
 	}
 
+	// Optional: log basic view event
+	l.Logger.Infof("View recorded for post %s", req.ID)
+
 	return nil
 }

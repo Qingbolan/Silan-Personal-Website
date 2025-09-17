@@ -50,7 +50,7 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'text-green-600 bg-green-50 border-green-200';
-      case 'ongoing': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'ongoing': return 'text-theme-600 bg-theme-50 border-theme-200';
       case 'completed': return 'text-gray-600 bg-gray-50 border-gray-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }

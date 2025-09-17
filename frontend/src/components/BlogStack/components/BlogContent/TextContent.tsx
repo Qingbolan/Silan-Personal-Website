@@ -154,7 +154,7 @@ export const TextContent: React.FC<TextContentProps> = ({
           {/* Compact inline annotation indicator */}
           <span
             className="absolute -top-2 -right-1 w-4 h-4 rounded-full text-xs flex items-center justify-center 
-                       bg-theme-accent text-theme-card-background shadow-sm opacity-90 hover:opacity-100 
+                       bg-theme-accent text-white shadow-sm opacity-90 hover:opacity-100 
                        transition-all duration-200 hover:scale-110 cursor-pointer z-10"
             style={{ 
               fontSize: '9px',
@@ -176,10 +176,10 @@ export const TextContent: React.FC<TextContentProps> = ({
           {/* Annotation popup - show on hover or when clicked */}
           {(hoveredAnnotation === annotationId || clickedAnnotation === annotationId) && (
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-20 annotation-popup">
-              <div className=" -secondary border border-theme-card-border 
+              <div className="bg-theme-surface-elevated border border-theme-card-border 
                               rounded-lg p-3 shadow-xl w-72 max-w-sm relative">
                 {/* Original quoted text */}
-                <p className="text-xs text-theme-text-primary leading-relaxed italic text-left mb-2 px-2 py-1 
+                <p className="text-xs text-theme-primary leading-relaxed italic text-left mb-2 px-2 py-1 
                              bg-theme-accent/8 rounded border-l-2 border-theme-accent/30"
                    style={{ 
                      fontFamily: 'Georgia, "Times New Roman", Charter, serif'
@@ -189,20 +189,20 @@ export const TextContent: React.FC<TextContentProps> = ({
                 
                 {/* Annotation content */}
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs text-theme-text-secondary leading-relaxed flex-1 text-left"
+                  <p className="text-xs text-theme-secondary leading-relaxed flex-1 text-left"
                      style={{ 
                        fontFamily: 'Georgia, "Times New Roman", Charter, serif'
                      }}>
                     {annotation.text}
                   </p>
-                  {clickedAnnotation === annotationId && (
+                    {clickedAnnotation === annotationId && userAnnotations[annotationId]?.fingerprint === (typeof window !== 'undefined' ? (localStorage.getItem('client_fingerprint_v1') || '') : '') && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onRemoveUserAnnotation(annotationId);
                         setClickedAnnotation(null);
                       }}
-                      className="p-1 rounded-full text-theme-text-tertiary hover:text-error-500 
+                      className="p-1 rounded-full text-theme-tertiary hover:text-error-500 
                                  hover:bg-error-50 dark:hover:bg-error-900/20 transition-all duration-200 
                                  flex-shrink-0"
                       title={language === 'en' ? 'Remove annotation' : '删除批注'}
@@ -279,36 +279,59 @@ export const TextContent: React.FC<TextContentProps> = ({
       return <FileTreeRenderer content={text} />;
     }
 
-    // Check if text has markdown formatting first
+    // Enhanced list detection: check for various list patterns
+    const listPatterns = [
+      /^[-*+]\s+/m,           // Standard markdown lists
+      /^\d+\.\s+/m,           // Numbered lists
+      /^•\s+/m,               // Bullet points
+      /^\s*[-*+]\s+/m,        // Indented lists
+    ];
+
+    const hasListPattern = listPatterns.some(pattern => pattern.test(text));
+
+    // If text contains line breaks OR has list patterns, use full markdown renderer
+    if (text.includes('\n') || hasListPattern || text.match(/^[#>]/m) || text.includes('---')) {
+      return renderFullMarkdown(text);
+    }
+
+    // Check if text has markdown formatting for inline elements
     if (hasCompleteMarkdownFormatting(text)) {
-      // For complex markdown (lists, headers, etc), use full renderer
-      if (text.includes('\n') || text.match(/^[-*+#>]/m) || text.includes('---')) {
-        return renderFullMarkdown(text);
-      }
-      // For simple inline markdown, use inline renderer
       return renderInlineMarkdown(text);
     }
 
-    // Special handling: if text looks like a list but doesn't have proper formatting
-    // Look for patterns like "- Item1: description - Item2: description"
-    if (text.includes(' - ') && text.startsWith('- ')) {
-      // Split by finding patterns like " - [Word/Phrase followed by :]"
-      // This will capture: " - Git Integration:", " - CLI Tools:", etc.
+    // Enhanced handling for inline list patterns
+    // Pattern 1: "- Item1: description - Item2: description - Item3: description"
+    if (text.includes(' - ') && (text.startsWith('- ') || text.startsWith('• '))) {
+      // More sophisticated pattern to split list items
+      // Look for patterns like " - [Word/Phrase followed by :]"
       const splitPattern = / - (?=[A-Z][^:]*:)/g;
-      
+
       if (splitPattern.test(text)) {
         // Reset the regex and split
         splitPattern.lastIndex = 0;
         const parts = text.split(splitPattern);
-        const items = parts.map(part => part.replace(/^-\s*/, '').trim()).filter(Boolean);
+        const items = parts.map(part => part.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
         const listText = items.map(item => `- ${item}`).join('\n');
         return renderFullMarkdown(listText);
       } else {
-        // Fallback: simple split by ' - '
-        const items = text.split(' - ').map(item => item.replace(/^-\s*/, '').trim()).filter(Boolean);
+        // Fallback: simple split by ' - ' or ' • '
+        const items = text.split(/ - | • /).map(item => item.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
         const listText = items.map(item => `- ${item}`).join('\n');
         return renderFullMarkdown(listText);
       }
+    }
+
+    // Pattern 2: Check for multiple items separated by specific patterns
+    // "Digital-First Hiring: ... - Global Competition: ... - Continuous Learning: ..."
+    const inlineListPattern = / - [A-Z][^-]*:/g;
+    const matches = text.match(inlineListPattern);
+
+    if (matches && matches.length >= 2) {
+      // This looks like an inline list, convert to proper markdown list
+      const parts = text.split(/ - (?=[A-Z][^-]*:)/);
+      const items = parts.map(part => part.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+      const listText = items.map(item => `- ${item}`).join('\n');
+      return renderFullMarkdown(listText);
     }
 
     // For plain text with line breaks, process line breaks
@@ -344,14 +367,14 @@ export const TextContent: React.FC<TextContentProps> = ({
             if (isHeader || annotatedContent.hasBlockElements) {
               // Render headers or content with block elements without <p> wrapper
               return (
-                <div className="text-theme-text-primary selection:bg-theme-accent/20">
+                <div className="text-theme-primary selection:bg-theme-accent/20">
                   {annotatedContent.content}
                 </div>
               );
             } else {
               // Render regular text with <p> wrapper
               return (
-                <p className={`text-theme-text-primary leading-relaxed tracking-wide font-normal 
+                <p className={`text-theme-primary leading-relaxed tracking-wide font-normal 
                                text-justify hyphens-auto selection:bg-theme-accent/20 
                                sm:text-base lg:text-lg xl:leading-[1.8] ${
                                  isFirstParagraph ? 'first-letter:text-theme-accent first-letter:font-bold first-letter:italic' : ''
@@ -409,8 +432,8 @@ export const TextContent: React.FC<TextContentProps> = ({
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
-                <div className=" -secondary rounded-lg p-4 border border-theme-card-border">
-                  <p className="text-sm text-theme-text-secondary leading-relaxed italic font-light"
+                <div className=" -secondary rounded-lg p-4 border border-theme-card">
+                  <p className="text-sm text-theme-secondary leading-relaxed italic font-light"
                      style={{ 
                        fontFamily: 'Georgia, "Times New Roman", Charter, serif'
                      }}>
@@ -451,10 +474,10 @@ export const TextContent: React.FC<TextContentProps> = ({
               <div className="bg-theme-surface-elevated rounded-xl p-5 shadow-xl border border-theme-card-border">
                 {selectedText && selectedText.contentId === item.id && (
                   <div className="mb-4 p-3 bg-theme-accent/5 rounded-lg border border-theme-accent/20">
-                    <p className="text-xs text-theme-text-tertiary mb-1 font-sans uppercase tracking-wider">
+                    <p className="text-xs text-theme-tertiary mb-1 font-sans uppercase tracking-wider">
                       {language === 'en' ? 'Selected Text' : '选中文本'}
                     </p>
-                    <p className="text-sm text-theme-text-secondary italic leading-relaxed"
+                    <p className="text-sm text-theme-secondary italic leading-relaxed"
                        style={{ fontFamily: 'Georgia, "Times New Roman", Charter, serif' }}>
                       "{selectedText.text.substring(0, 80)}{selectedText.text.length > 80 ? '...' : ''}"
                     </p>
@@ -465,9 +488,9 @@ export const TextContent: React.FC<TextContentProps> = ({
                   value={newAnnotationText}
                   onChange={(e) => onSetNewAnnotationText(e.target.value)}
                   placeholder={language === 'en' ? 'Write your note...' : '写下你的批注...'}
-                  className="w-full p-3   border border-theme-card-border rounded-lg 
-                             text-theme-text-primary placeholder-theme-text-tertiary resize-none 
-                             focus:outline-none focus:ring-2 focus:ring-theme-focus-ring 
+                  className="w-full p-3   border border-theme-card rounded-lg
+                             text-theme-primary placeholder-theme-tertiary resize-none
+                             focus:outline-none focus:ring-2 ring-theme-primary 
                              focus:border-transparent transition-all duration-200 leading-relaxed text-sm"
                   style={{
                     fontFamily: 'Georgia, "Times New Roman", Charter, serif'
@@ -482,25 +505,25 @@ export const TextContent: React.FC<TextContentProps> = ({
                     <button
                       onClick={() => onAddUserAnnotation(item.id)}
                       disabled={!newAnnotationText.trim()}
-                      className="px-4 py-2 bg-theme-accent text-theme-card-background rounded-lg 
+                      className="px-4 py-2 bg-theme-accent text-white rounded-lg 
                                  font-medium text-sm hover:bg-theme-accent-hover 
                                  disabled:opacity-50 disabled:cursor-not-allowed 
                                  transition-all duration-200 focus:outline-none focus:ring-2 
-                                 focus:ring-theme-focus-ring font-sans"
+                                 ring-theme-primary font-sans"
                     >
                       {language === 'en' ? 'Save' : '保存'}
                     </button>
                     <button
                       onClick={onCancelAnnotation}
-                      className="px-4 py-2 text-theme-text-secondary hover:text-theme-text-primary 
-                                 hover:bg-theme-surface-secondary rounded-lg transition-all duration-200 
-                                 focus:outline-none focus:ring-2 focus:ring-theme-focus-ring 
+                      className="px-4 py-2 text-theme-secondary hover:text-theme-primary 
+                                 hover:bg-theme-hover rounded-lg transition-all duration-200
+                                 focus:outline-none focus:ring-2 ring-theme-primary 
                                  font-sans text-sm"
                     >
                       {language === 'en' ? 'Cancel' : '取消'}
                     </button>
                   </div>
-                  <p className="text-xs text-theme-text-tertiary font-mono opacity-70">
+                  <p className="text-xs text-theme-tertiary font-mono opacity-70">
                     {newAnnotationText.length}
                   </p>
                 </div>

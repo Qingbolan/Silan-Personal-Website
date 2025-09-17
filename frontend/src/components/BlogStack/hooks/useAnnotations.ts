@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UserAnnotation, SelectedText } from '../types/blog';
+import { getClientFingerprint } from '../../../utils/fingerprint';
 
 export const useAnnotations = (postId?: string) => {
   const [userAnnotations, setUserAnnotations] = useState<Record<string, UserAnnotation>>({});
@@ -116,7 +117,8 @@ export const useAnnotations = (postId?: string) => {
       text: newAnnotationText.trim(),
       selectedText: selectedText.text,
       startOffset: selectedText.startOffset,
-      endOffset: selectedText.endOffset
+      endOffset: selectedText.endOffset,
+      fingerprint: getClientFingerprint()
     };
 
     setUserAnnotations(prev => ({

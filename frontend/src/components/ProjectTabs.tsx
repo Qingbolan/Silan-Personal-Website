@@ -162,7 +162,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
         <ul className="space-y-2">
           {projectData.quickStart?.requirements?.map((req: string, index: number) => (
             <li key={index} className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+              <span className="w-2 h-2 bg-theme-500 rounded-full"></span>
               <span className="text-theme-secondary">{req}</span>
             </li>
           ))}
@@ -191,7 +191,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
             {release.assets?.map((asset: any, assetIndex: number) => (
               <button 
                 key={assetIndex}
-                className="text-blue-600 hover:underline"
+                className="text-theme-600 hover:underline"
               >
                 {asset.name} ({asset.size})
               </button>
@@ -231,7 +231,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
               </div>
               <div className="flex gap-1">
                 {issue.labels?.map((label: string, labelIndex: number) => (
-                  <span key={labelIndex} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <span key={labelIndex} className="px-2 py-1 bg-theme-100 text-theme-800 rounded text-xs">
                     {label}
                   </span>
                 ))}
@@ -343,7 +343,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
                 
                 <Link
                   to={blog.url}
-                  className="flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                  className="flex items-center gap-1 px-3 py-1 text-sm text-theme-600 hover:text-theme-800 hover:bg-theme-50 rounded transition-colors"
                 >
                   {t('projects.readArticle')}
                   <ExternalLink size={14} />
@@ -400,7 +400,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
                     href={projectData.licenseInfo.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    className="text-sm text-theme-600 hover:underline flex items-center gap-1"
                   >
                     {t('projects.viewOnOSI')}
                     <ExternalLink size={12} />

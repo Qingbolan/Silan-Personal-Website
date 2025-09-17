@@ -9,6 +9,7 @@ import (
 	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/predicate"
+	"silan-backend/internal/ent/useridentity"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -180,6 +181,26 @@ func (bcu *BlogCommentUpdate) ClearUserAgent() *BlogCommentUpdate {
 	return bcu
 }
 
+// SetUserIdentityID sets the "user_identity_id" field.
+func (bcu *BlogCommentUpdate) SetUserIdentityID(s string) *BlogCommentUpdate {
+	bcu.mutation.SetUserIdentityID(s)
+	return bcu
+}
+
+// SetNillableUserIdentityID sets the "user_identity_id" field if the given value is not nil.
+func (bcu *BlogCommentUpdate) SetNillableUserIdentityID(s *string) *BlogCommentUpdate {
+	if s != nil {
+		bcu.SetUserIdentityID(*s)
+	}
+	return bcu
+}
+
+// ClearUserIdentityID clears the value of the "user_identity_id" field.
+func (bcu *BlogCommentUpdate) ClearUserIdentityID() *BlogCommentUpdate {
+	bcu.mutation.ClearUserIdentityID()
+	return bcu
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (bcu *BlogCommentUpdate) SetUpdatedAt(t time.Time) *BlogCommentUpdate {
 	bcu.mutation.SetUpdatedAt(t)
@@ -209,6 +230,11 @@ func (bcu *BlogCommentUpdate) AddReplies(b ...*BlogComment) *BlogCommentUpdate {
 		ids[i] = b[i].ID
 	}
 	return bcu.AddReplyIDs(ids...)
+}
+
+// SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
+func (bcu *BlogCommentUpdate) SetUserIdentity(u *UserIdentity) *BlogCommentUpdate {
+	return bcu.SetUserIdentityID(u.ID)
 }
 
 // Mutation returns the BlogCommentMutation object of the builder.
@@ -247,6 +273,12 @@ func (bcu *BlogCommentUpdate) RemoveReplies(b ...*BlogComment) *BlogCommentUpdat
 		ids[i] = b[i].ID
 	}
 	return bcu.RemoveReplyIDs(ids...)
+}
+
+// ClearUserIdentity clears the "user_identity" edge to the UserIdentity entity.
+func (bcu *BlogCommentUpdate) ClearUserIdentity() *BlogCommentUpdate {
+	bcu.mutation.ClearUserIdentity()
+	return bcu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -471,6 +503,35 @@ func (bcu *BlogCommentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if bcu.mutation.UserIdentityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   blogcomment.UserIdentityTable,
+			Columns: []string{blogcomment.UserIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bcu.mutation.UserIdentityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   blogcomment.UserIdentityTable,
+			Columns: []string{blogcomment.UserIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bcu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{blogcomment.Label}
@@ -641,6 +702,26 @@ func (bcuo *BlogCommentUpdateOne) ClearUserAgent() *BlogCommentUpdateOne {
 	return bcuo
 }
 
+// SetUserIdentityID sets the "user_identity_id" field.
+func (bcuo *BlogCommentUpdateOne) SetUserIdentityID(s string) *BlogCommentUpdateOne {
+	bcuo.mutation.SetUserIdentityID(s)
+	return bcuo
+}
+
+// SetNillableUserIdentityID sets the "user_identity_id" field if the given value is not nil.
+func (bcuo *BlogCommentUpdateOne) SetNillableUserIdentityID(s *string) *BlogCommentUpdateOne {
+	if s != nil {
+		bcuo.SetUserIdentityID(*s)
+	}
+	return bcuo
+}
+
+// ClearUserIdentityID clears the value of the "user_identity_id" field.
+func (bcuo *BlogCommentUpdateOne) ClearUserIdentityID() *BlogCommentUpdateOne {
+	bcuo.mutation.ClearUserIdentityID()
+	return bcuo
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (bcuo *BlogCommentUpdateOne) SetUpdatedAt(t time.Time) *BlogCommentUpdateOne {
 	bcuo.mutation.SetUpdatedAt(t)
@@ -670,6 +751,11 @@ func (bcuo *BlogCommentUpdateOne) AddReplies(b ...*BlogComment) *BlogCommentUpda
 		ids[i] = b[i].ID
 	}
 	return bcuo.AddReplyIDs(ids...)
+}
+
+// SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
+func (bcuo *BlogCommentUpdateOne) SetUserIdentity(u *UserIdentity) *BlogCommentUpdateOne {
+	return bcuo.SetUserIdentityID(u.ID)
 }
 
 // Mutation returns the BlogCommentMutation object of the builder.
@@ -708,6 +794,12 @@ func (bcuo *BlogCommentUpdateOne) RemoveReplies(b ...*BlogComment) *BlogCommentU
 		ids[i] = b[i].ID
 	}
 	return bcuo.RemoveReplyIDs(ids...)
+}
+
+// ClearUserIdentity clears the "user_identity" edge to the UserIdentity entity.
+func (bcuo *BlogCommentUpdateOne) ClearUserIdentity() *BlogCommentUpdateOne {
+	bcuo.mutation.ClearUserIdentity()
+	return bcuo
 }
 
 // Where appends a list predicates to the BlogCommentUpdate builder.
@@ -955,6 +1047,35 @@ func (bcuo *BlogCommentUpdateOne) sqlSave(ctx context.Context) (_node *BlogComme
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if bcuo.mutation.UserIdentityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   blogcomment.UserIdentityTable,
+			Columns: []string{blogcomment.UserIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bcuo.mutation.UserIdentityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   blogcomment.UserIdentityTable,
+			Columns: []string{blogcomment.UserIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

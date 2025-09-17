@@ -144,7 +144,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
         return <Play size={16} className="text-red-500" />;
       case 'article':
       default:
-        return <BookOpen size={16} className="text-blue-500" />;
+        return <BookOpen size={16} className="text-theme-500" />;
     }
   };
 

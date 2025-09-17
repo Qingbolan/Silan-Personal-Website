@@ -37,6 +37,7 @@ experience_websites:
   scholarhero: "https://scholarhero.cn/"
   lenovo: "https://www.lenovo.com/"
   ipsos: "https://www.ipsos.com/en-cn"
+  summer: "https://mp.weixin.qq.com/s/SOLfbZpCDSDfk4K5E9L8Sw"
 language: "en"
 ---
 # Silan Hu
@@ -140,6 +141,7 @@ status: Currently looking for PhD, internships and research opportunities
 ### Chaoyang District 'Youth Elite' Internship Program
 
 *Logo*: summer
+*Website*: https://mp.weixin.qq.com/s/SOLfbZpCDSDfk4K5E9L8Sw
 
 **Summer Intern**
 *Jul 2021 – Aug 2021*

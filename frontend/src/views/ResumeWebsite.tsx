@@ -10,7 +10,7 @@ import { ProjectSection, SectionCard, Timeline, TableOfContents, RecentSection, 
 
 
 
-interface ResumeData {
+interface ResumeViewData {
   name: string;
   title: string;
   current: string;
@@ -79,7 +79,7 @@ interface ResumeData {
 
 const ResumeWebsite: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [resumeData, setResumeData] = useState<ResumeViewData | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const { colors } = useTheme();
@@ -145,7 +145,7 @@ const ResumeWebsite: React.FC = () => {
         const data = await fetchResumeData(language);
                 
         if (isMounted) {
-          setResumeData(data);
+          setResumeData(data as unknown as ResumeViewData);
           setLoading(false);
         }
       } catch (err) {

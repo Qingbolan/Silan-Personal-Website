@@ -6,6 +6,7 @@ package handler
 import (
 	"net/http"
 
+	auth "silan-backend/internal/handler/auth"
 	blog "silan-backend/internal/handler/blog"
 	ideas "silan-backend/internal/handler/ideas"
 	plans "silan-backend/internal/handler/plans"
@@ -22,16 +23,49 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			[]rest.Middleware{serverCtx.Cors},
 			[]rest.Route{
 				{
+					// Verify Google ID token and upsert identity
+					Method:  http.MethodPost,
+					Path:    "/google/verify",
+					Handler: auth.GoogleVerifyHandler(serverCtx),
+				},
+			}...,
+		),
+		rest.WithPrefix("/api/v1/auth"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.Cors},
+			[]rest.Route{
+				{
 					// Get blog categories
 					Method:  http.MethodGet,
 					Path:    "/categories",
 					Handler: blog.GetBlogCategoriesHandler(serverCtx),
 				},
 				{
+					// Delete a comment (fingerprint required)
+					Method:  http.MethodDelete,
+					Path:    "/comments/:comment_id",
+					Handler: blog.DeleteBlogCommentHandler(serverCtx),
+				},
+				{
 					// Get blog posts list with pagination and filtering
 					Method:  http.MethodGet,
 					Path:    "/posts",
 					Handler: blog.GetBlogPostsHandler(serverCtx),
+				},
+				{
+					// List comments for a blog post
+					Method:  http.MethodGet,
+					Path:    "/posts/:id/comments",
+					Handler: blog.ListBlogCommentsHandler(serverCtx),
+				},
+				{
+					// Create a comment for a blog post
+					Method:  http.MethodPost,
+					Path:    "/posts/:id/comments",
+					Handler: blog.CreateBlogCommentHandler(serverCtx),
 				},
 				{
 					// Update blog post like count

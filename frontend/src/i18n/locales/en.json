@@ -62,7 +62,6 @@
   "resume": {
     "download_resume": "Download Resume",
     "experience": "Experience",
-    "education": "Education",
     "featured_projects": "Featured Projects",
     "skills": "Skills",
     "loading_profile": "Loading your professional profile...",
@@ -73,7 +72,6 @@
     "code": "Code",
     "demo": "Demo",
     "publications": "Publications",
-    "research": "Research",
     "awards": "Awards",
     "recent_updates": "Recent Updates",
     "view_all": "View All",
@@ -84,10 +82,15 @@
     "research": "Research",
     "publication": "Publication",
     "project": "Project",
+    "WORK": "Work",
+    "EDUCATION": "Education",
+    "RESEARCH": "Research",
+    "PUBLICATION": "Publication",
+    "PROJECT": "Project",
     "status": {
-      "active": "Active",
-      "ongoing": "Ongoing", 
-      "completed": "Completed"
+      "ACTIVE": "Active",
+      "ONGOING": "Ongoing", 
+      "COMPLETED": "Completed"
     },
     "priority": {
       "high": "High Priority",

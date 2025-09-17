@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Divider } from 'antd';
+import { Typography } from 'antd';
 
 const { Text, Link } = Typography;
 
@@ -21,19 +21,19 @@ export const renderMarkdownInline = (text: string): React.ReactNode => {
   const patterns = [
     { 
       regex: /\*\*(.*?)\*\*/g, 
-      render: (match: string, content: string, key: string) => (
+      render: ( content: string, key: string) => (
         <Text strong key={key}>{content}</Text>
       )
     },
     { 
       regex: /\*(.*?)\*/g, 
-      render: (match: string, content: string, key: string) => (
+      render: ( content: string, key: string) => (
         <Text italic key={key}>{content}</Text>
       )
     },
     { 
       regex: /`([^`]+)`/g, 
-      render: (match: string, content: string, key: string) => (
+      render: ( content: string, key: string) => (
         <Text code key={key} style={{ 
           fontSize: '0.9em',
           background: 'var(--color-surface, #f5f5f5)',
@@ -47,7 +47,7 @@ export const renderMarkdownInline = (text: string): React.ReactNode => {
     },
     { 
       regex: /\[([^\]]+)\]\(([^)]+)\)/g, 
-      render: (match: string, linkText: string, url: string, key: string) => (
+      render: ( linkText: string, url: string, key: string) => (
         <Link 
           key={key}
           href={url} 
@@ -81,11 +81,8 @@ export const renderMarkdownInline = (text: string): React.ReactNode => {
       
       if (pattern.regex.source.includes('\\[')) {
         // Link pattern - has 3 groups (full, text, url)
-        element = pattern.render(match[0], match[1], match[2], key);
-      } else {
-        // Other patterns - have 2 groups (full, content)
-        element = pattern.render(match[0], match[1], key);
-      }
+        element = pattern.render( match[1], match[2], key);
+      } 
       
       allMatches.push({
         start: match.index!,

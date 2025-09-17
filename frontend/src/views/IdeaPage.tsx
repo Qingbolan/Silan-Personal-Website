@@ -60,7 +60,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
       case 'published':
         return 'text-theme-success bg-theme-success-20';
       case 'validating':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-theme-600 bg-theme-100';
       case 'experimenting':
         return 'text-purple-600 bg-purple-100';
       case 'hypothesis':
@@ -102,7 +102,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
           <div className={`p-2 rounded-lg ${getStatusClass(idea.status)}`}>
             <Lightbulb size={20} className={
               idea.status === 'published' ? 'text-theme-success' : 
-              idea.status === 'validating' ? 'text-blue-600' :
+              idea.status === 'validating' ? 'text-theme-600' :
               idea.status === 'experimenting' ? 'text-purple-600' :
               idea.status === 'hypothesis' ? 'text-theme-warning' : 
               idea.status === 'concluded' ? 'text-gray-600' :

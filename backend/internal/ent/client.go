@@ -50,6 +50,7 @@ import (
 	"silan-backend/internal/ent/researchprojecttranslation"
 	"silan-backend/internal/ent/sociallink"
 	"silan-backend/internal/ent/user"
+	"silan-backend/internal/ent/useridentity"
 	"silan-backend/internal/ent/workexperience"
 	"silan-backend/internal/ent/workexperiencedetail"
 	"silan-backend/internal/ent/workexperiencedetailtranslation"
@@ -145,6 +146,8 @@ type Client struct {
 	SocialLink *SocialLinkClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// UserIdentity is the client for interacting with the UserIdentity builders.
+	UserIdentity *UserIdentityClient
 	// WorkExperience is the client for interacting with the WorkExperience builders.
 	WorkExperience *WorkExperienceClient
 	// WorkExperienceDetail is the client for interacting with the WorkExperienceDetail builders.
@@ -203,6 +206,7 @@ func (c *Client) init() {
 	c.ResearchProjectTranslation = NewResearchProjectTranslationClient(c.config)
 	c.SocialLink = NewSocialLinkClient(c.config)
 	c.User = NewUserClient(c.config)
+	c.UserIdentity = NewUserIdentityClient(c.config)
 	c.WorkExperience = NewWorkExperienceClient(c.config)
 	c.WorkExperienceDetail = NewWorkExperienceDetailClient(c.config)
 	c.WorkExperienceDetailTranslation = NewWorkExperienceDetailTranslationClient(c.config)
@@ -338,6 +342,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ResearchProjectTranslation:       NewResearchProjectTranslationClient(cfg),
 		SocialLink:                       NewSocialLinkClient(cfg),
 		User:                             NewUserClient(cfg),
+		UserIdentity:                     NewUserIdentityClient(cfg),
 		WorkExperience:                   NewWorkExperienceClient(cfg),
 		WorkExperienceDetail:             NewWorkExperienceDetailClient(cfg),
 		WorkExperienceDetailTranslation:  NewWorkExperienceDetailTranslationClient(cfg),
@@ -400,6 +405,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ResearchProjectTranslation:       NewResearchProjectTranslationClient(cfg),
 		SocialLink:                       NewSocialLinkClient(cfg),
 		User:                             NewUserClient(cfg),
+		UserIdentity:                     NewUserIdentityClient(cfg),
 		WorkExperience:                   NewWorkExperienceClient(cfg),
 		WorkExperienceDetail:             NewWorkExperienceDetailClient(cfg),
 		WorkExperienceDetailTranslation:  NewWorkExperienceDetailTranslationClient(cfg),
@@ -443,8 +449,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ProjectTranslation, c.Publication, c.PublicationAuthor,
 		c.PublicationTranslation, c.RecentUpdate, c.RecentUpdateTranslation,
 		c.ResearchProject, c.ResearchProjectDetail, c.ResearchProjectDetailTranslation,
-		c.ResearchProjectTranslation, c.SocialLink, c.User, c.WorkExperience,
-		c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
+		c.ResearchProjectTranslation, c.SocialLink, c.User, c.UserIdentity,
+		c.WorkExperience, c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
 		c.WorkExperienceTranslation,
 	} {
 		n.Use(hooks...)
@@ -465,8 +471,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ProjectTranslation, c.Publication, c.PublicationAuthor,
 		c.PublicationTranslation, c.RecentUpdate, c.RecentUpdateTranslation,
 		c.ResearchProject, c.ResearchProjectDetail, c.ResearchProjectDetailTranslation,
-		c.ResearchProjectTranslation, c.SocialLink, c.User, c.WorkExperience,
-		c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
+		c.ResearchProjectTranslation, c.SocialLink, c.User, c.UserIdentity,
+		c.WorkExperience, c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
 		c.WorkExperienceTranslation,
 	} {
 		n.Intercept(interceptors...)
@@ -554,6 +560,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SocialLink.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
+	case *UserIdentityMutation:
+		return c.UserIdentity.mutate(ctx, m)
 	case *WorkExperienceMutation:
 		return c.WorkExperience.mutate(ctx, m)
 	case *WorkExperienceDetailMutation:
@@ -1376,6 +1384,22 @@ func (c *BlogCommentClient) QueryReplies(bc *BlogComment) *BlogCommentQuery {
 			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, id),
 			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, blogcomment.RepliesTable, blogcomment.RepliesColumn),
+		)
+		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserIdentity queries the user_identity edge of a BlogComment.
+func (c *BlogCommentClient) QueryUserIdentity(bc *BlogComment) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := bc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, id),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, blogcomment.UserIdentityTable, blogcomment.UserIdentityColumn),
 		)
 		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
 		return fromV, nil
@@ -7545,6 +7569,139 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 	}
 }
 
+// UserIdentityClient is a client for the UserIdentity schema.
+type UserIdentityClient struct {
+	config
+}
+
+// NewUserIdentityClient returns a client for the UserIdentity from the given config.
+func NewUserIdentityClient(c config) *UserIdentityClient {
+	return &UserIdentityClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `useridentity.Hooks(f(g(h())))`.
+func (c *UserIdentityClient) Use(hooks ...Hook) {
+	c.hooks.UserIdentity = append(c.hooks.UserIdentity, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `useridentity.Intercept(f(g(h())))`.
+func (c *UserIdentityClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserIdentity = append(c.inters.UserIdentity, interceptors...)
+}
+
+// Create returns a builder for creating a UserIdentity entity.
+func (c *UserIdentityClient) Create() *UserIdentityCreate {
+	mutation := newUserIdentityMutation(c.config, OpCreate)
+	return &UserIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserIdentity entities.
+func (c *UserIdentityClient) CreateBulk(builders ...*UserIdentityCreate) *UserIdentityCreateBulk {
+	return &UserIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserIdentityClient) MapCreateBulk(slice any, setFunc func(*UserIdentityCreate, int)) *UserIdentityCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserIdentityCreateBulk{err: fmt.Errorf("calling to UserIdentityClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserIdentityCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserIdentity.
+func (c *UserIdentityClient) Update() *UserIdentityUpdate {
+	mutation := newUserIdentityMutation(c.config, OpUpdate)
+	return &UserIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserIdentityClient) UpdateOne(ui *UserIdentity) *UserIdentityUpdateOne {
+	mutation := newUserIdentityMutation(c.config, OpUpdateOne, withUserIdentity(ui))
+	return &UserIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserIdentityClient) UpdateOneID(id string) *UserIdentityUpdateOne {
+	mutation := newUserIdentityMutation(c.config, OpUpdateOne, withUserIdentityID(id))
+	return &UserIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserIdentity.
+func (c *UserIdentityClient) Delete() *UserIdentityDelete {
+	mutation := newUserIdentityMutation(c.config, OpDelete)
+	return &UserIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserIdentityClient) DeleteOne(ui *UserIdentity) *UserIdentityDeleteOne {
+	return c.DeleteOneID(ui.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserIdentityClient) DeleteOneID(id string) *UserIdentityDeleteOne {
+	builder := c.Delete().Where(useridentity.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserIdentityDeleteOne{builder}
+}
+
+// Query returns a query builder for UserIdentity.
+func (c *UserIdentityClient) Query() *UserIdentityQuery {
+	return &UserIdentityQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserIdentity},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserIdentity entity by its id.
+func (c *UserIdentityClient) Get(ctx context.Context, id string) (*UserIdentity, error) {
+	return c.Query().Where(useridentity.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserIdentityClient) GetX(ctx context.Context, id string) *UserIdentity {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserIdentityClient) Hooks() []Hook {
+	return c.hooks.UserIdentity
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserIdentityClient) Interceptors() []Interceptor {
+	return c.inters.UserIdentity
+}
+
+func (c *UserIdentityClient) mutate(ctx context.Context, m *UserIdentityMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserIdentity mutation op: %q", m.Op())
+	}
+}
+
 // WorkExperienceClient is a client for the WorkExperience schema.
 type WorkExperienceClient struct {
 	config
@@ -8233,8 +8390,8 @@ type (
 		ProjectTranslation, Publication, PublicationAuthor, PublicationTranslation,
 		RecentUpdate, RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
 		ResearchProjectDetailTranslation, ResearchProjectTranslation, SocialLink, User,
-		WorkExperience, WorkExperienceDetail, WorkExperienceDetailTranslation,
-		WorkExperienceTranslation []ent.Hook
+		UserIdentity, WorkExperience, WorkExperienceDetail,
+		WorkExperienceDetailTranslation, WorkExperienceTranslation []ent.Hook
 	}
 	inters struct {
 		Award, AwardTranslation, BlogCategory, BlogCategoryTranslation, BlogComment,
@@ -8246,7 +8403,7 @@ type (
 		ProjectTranslation, Publication, PublicationAuthor, PublicationTranslation,
 		RecentUpdate, RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
 		ResearchProjectDetailTranslation, ResearchProjectTranslation, SocialLink, User,
-		WorkExperience, WorkExperienceDetail, WorkExperienceDetailTranslation,
-		WorkExperienceTranslation []ent.Interceptor
+		UserIdentity, WorkExperience, WorkExperienceDetail,
+		WorkExperienceDetailTranslation, WorkExperienceTranslation []ent.Interceptor
 	}
 )

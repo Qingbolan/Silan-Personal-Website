@@ -16,7 +16,6 @@ from ..models import (
     Education, EducationDetail, WorkExperience, WorkExperienceDetail, Award, Publication, PublicationAuthor,
     ResearchProject, ResearchProjectDetail, SocialLink
 )
-from ..parsers import ParserFactory
 from ..utils import ModernLogger, CLIInterface, FileOperations, ConfigManager
 from .content_logic import ContentLogic
 
@@ -619,14 +618,16 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                 if isinstance(details_meta, list) and details_meta and isinstance(details_meta[0], dict):
                     license_str = details_meta[0].get('license')
                     version_str = details_meta[0].get('version')
+                    license_text = details_meta[0].get('license_text')
                 # Fallbacks from top-level parsed fields or frontmatter
                 license_str = content_data.get('license', license_str) or (frontmatter.get('license') if isinstance(frontmatter, dict) else None) or license_str
                 version_str = content_data.get('version', version_str) or (frontmatter.get('version') if isinstance(frontmatter, dict) else None) or version_str
+                license_text = content_data.get('license_text', license_text) or (frontmatter.get('license_text') if isinstance(frontmatter, dict) else None) or license_text
             except Exception:
                 pass
 
             if content or license_str or version_str:
-                self._sync_project_details(session, project, content, license_str, version_str)
+                self._sync_project_details(session, project, content, license_str, license_text, version_str)
 
         except Exception as e:
             raise DatabaseError(f"Failed to sync project: {e}")
@@ -1404,26 +1405,11 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
             )
             session.add(tech)
     
-    def _sync_project_details(self, session: Session, project: Project, content: str, license_str: Optional[str] = None, version_str: Optional[str] = None) -> None:
-        """Sync project details from content, license, and version. Also stores full license text if available."""
+    def _sync_project_details(self, session: Session, project: Project, content: str, license_str: Optional[str] = None, license_text: Optional[str] = None, version_str: Optional[str] = None) -> None:
+        """Sync project details from content, license, and version."""
         # Check if details exist
         details = session.query(ProjectDetail).filter_by(project_id=project.id).first()
-        # Try to read full license text from content folder if not provided
-        license_text: Optional[str] = None
-        try:
-            # Resolve project content folder based on slug
-            # We expect content/projects/{slug}/License or LICENSE
-            from pathlib import Path
-            project_slug = project.slug
-            if project_slug:
-                base = Path.cwd() / 'content' / 'projects' / project_slug
-                for name in ['License', 'LICENSE']:
-                    file_path = base / name
-                    if file_path.exists():
-                        license_text = file_path.read_text(encoding='utf-8')
-                        break
-        except Exception:
-            pass
+        # Note: License text reading is handled by the project parser, not here
         if not details:
             details = ProjectDetail(
                 project_id=project.id,
@@ -1611,20 +1597,8 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
             if language == 'en':
                 return  # This should not happen, but safety check
             
-            # Extract the base name to find the corresponding English post
-            # Example: "vlog.ai-coding-tutorial-zh" -> "vlog.ai-coding-tutorial-en"
             item_name = item.get('name', '')
-            if language in item_name:
-                # Remove language suffix and find English version
-                base_name = item_name.replace(f'-{language}', '-en')
-                
-                # Try to find the English blog post by matching name pattern
-                # We need to find a blog post that was created from the English version
-                # Since we don't have direct slug mapping, we'll try to match by similar titles/content
-                
-                # Get base title by removing language-specific parts
-                base_title = frontmatter.get('title', '').replace('Silan 个人网站：实时演示与教程', 'Silan Personal Website: Live Usage Demo and Tutorial')
-                
+            if language in item_name:                
                 # Try to find English post by matching folder pattern
                 content_path = item.get('path', '')
                 if content_path:

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -25,22 +26,46 @@ const Markdown: React.FC<MarkdownProps> = ({ children, className }) => {
           p: ({ node, ...props }) => (
             <p className="text-theme-secondary my-2 leading-relaxed" {...props} />
           ),
-          a: ({ node, ...props }) => (
-            <a className="text-theme-accent underline hover:opacity-80" {...props} />
-          ),
+          a: ({ node, href, children, ...props }) => {
+            if (!href) {
+              return <span {...props}>{children}</span>;
+            }
+            const isExternal = /^https?:\/\//i.test(href);
+            const commonClass = 'text-theme-accent underline hover:opacity-80 break-all';
+            if (href.startsWith('/')) {
+              return (
+                <Link to={href} className={commonClass} {...(props as any)}>
+                  {children}
+                </Link>
+              );
+            }
+            if (isExternal) {
+              return (
+                <a href={href} target="_blank" rel="noopener noreferrer" className={commonClass} {...props}>
+                  {children}
+                </a>
+              );
+            }
+            return (
+              <a href={href} className={commonClass} {...props}>
+                {children}
+              </a>
+            );
+          },
           ul: ({ node, ...props }) => (
-            <ul className="list-disc pl-5 my-3" {...props} />
+            <ul className="list-disc pl-5 my-3 marker:text-theme-secondary" {...props} />
           ),
           ol: ({ node, ...props }) => (
-            <ol className="list-decimal pl-5 my-3" {...props} />
+            <ol className="list-decimal pl-5 my-3 marker:text-theme-secondary" {...props} />
           ),
           li: ({ node, ...props }) => (
-            <li className="my-1 text-theme-secondary" {...props} />
+            <li className="my-1 text-theme-secondary marker:text-theme-secondary" {...props} />
           ),
           blockquote: ({ node, ...props }) => (
-            <blockquote className="border-l-4 pl-3 my-3 text-theme-secondary" {...props} />
+            <blockquote className="border-l-4 border-theme-primary pl-3 my-3 text-theme-secondary" {...props} />
           ),
-          code: ({ inline, className, children, ...props }) => {
+          code: (codeProps) => {
+            const { inline, className, children, ...props } = codeProps as any;
             if (inline) {
               return (
                 <code
@@ -57,20 +82,20 @@ const Markdown: React.FC<MarkdownProps> = ({ children, className }) => {
               </pre>
             );
           },
-          hr: ({ node, ...props }) => <hr className="my-6 border-theme-border" {...props} />,
+          hr: ({ node, ...props }) => <hr className="my-6 border-theme-card" {...props} />,
           table: ({ node, ...props }) => (
             <div className="overflow-x-auto my-4">
               <table className="w-full border-collapse" {...props} />
             </div>
           ),
           th: ({ node, ...props }) => (
-            <th className="text-left p-2 border border-theme-border bg-theme-surface" {...props} />
+            <th className="text-left p-2 border border-theme-card bg-theme-surface text-theme-primary" {...props} />
           ),
           td: ({ node, ...props }) => (
-            <td className="p-2 border border-theme-border" {...props} />
+            <td className="p-2 border border-theme-card text-theme-secondary" {...props} />
           ),
           img: ({ node, ...props }) => (
-            <img className="rounded-lg my-3" {...props} />
+            <img className="rounded-lg my-3" loading="lazy" {...props} />
           ),
         }}
       >

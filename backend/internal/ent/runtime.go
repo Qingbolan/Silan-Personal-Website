@@ -43,6 +43,7 @@ import (
 	"silan-backend/internal/ent/schema"
 	"silan-backend/internal/ent/sociallink"
 	"silan-backend/internal/ent/user"
+	"silan-backend/internal/ent/useridentity"
 	"silan-backend/internal/ent/workexperience"
 	"silan-backend/internal/ent/workexperiencedetail"
 	"silan-backend/internal/ent/workexperiencedetailtranslation"
@@ -325,11 +326,11 @@ func init() {
 	// blogcomment.UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	blogcomment.UserAgentValidator = blogcommentDescUserAgent.Validators[0].(func(string) error)
 	// blogcommentDescCreatedAt is the schema descriptor for created_at field.
-	blogcommentDescCreatedAt := blogcommentFields[10].Descriptor()
+	blogcommentDescCreatedAt := blogcommentFields[11].Descriptor()
 	// blogcomment.DefaultCreatedAt holds the default value on creation for the created_at field.
 	blogcomment.DefaultCreatedAt = blogcommentDescCreatedAt.Default.(func() time.Time)
 	// blogcommentDescUpdatedAt is the schema descriptor for updated_at field.
-	blogcommentDescUpdatedAt := blogcommentFields[11].Descriptor()
+	blogcommentDescUpdatedAt := blogcommentFields[12].Descriptor()
 	// blogcomment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	blogcomment.DefaultUpdatedAt = blogcommentDescUpdatedAt.Default.(func() time.Time)
 	// blogcomment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1954,6 +1955,30 @@ func init() {
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.
 	user.DefaultID = userDescID.Default.(func() uuid.UUID)
+	useridentityFields := schema.UserIdentity{}.Fields()
+	_ = useridentityFields
+	// useridentityDescProvider is the schema descriptor for provider field.
+	useridentityDescProvider := useridentityFields[1].Descriptor()
+	// useridentity.ProviderValidator is a validator for the "provider" field. It is called by the builders before save.
+	useridentity.ProviderValidator = useridentityDescProvider.Validators[0].(func(string) error)
+	// useridentityDescExternalID is the schema descriptor for external_id field.
+	useridentityDescExternalID := useridentityFields[2].Descriptor()
+	// useridentity.ExternalIDValidator is a validator for the "external_id" field. It is called by the builders before save.
+	useridentity.ExternalIDValidator = useridentityDescExternalID.Validators[0].(func(string) error)
+	// useridentityDescVerified is the schema descriptor for verified field.
+	useridentityDescVerified := useridentityFields[6].Descriptor()
+	// useridentity.DefaultVerified holds the default value on creation for the verified field.
+	useridentity.DefaultVerified = useridentityDescVerified.Default.(bool)
+	// useridentityDescCreatedAt is the schema descriptor for created_at field.
+	useridentityDescCreatedAt := useridentityFields[7].Descriptor()
+	// useridentity.DefaultCreatedAt holds the default value on creation for the created_at field.
+	useridentity.DefaultCreatedAt = useridentityDescCreatedAt.Default.(func() time.Time)
+	// useridentityDescUpdatedAt is the schema descriptor for updated_at field.
+	useridentityDescUpdatedAt := useridentityFields[8].Descriptor()
+	// useridentity.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	useridentity.DefaultUpdatedAt = useridentityDescUpdatedAt.Default.(func() time.Time)
+	// useridentity.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	useridentity.UpdateDefaultUpdatedAt = useridentityDescUpdatedAt.UpdateDefault.(func() time.Time)
 	workexperienceFields := schema.WorkExperience{}.Fields()
 	_ = workexperienceFields
 	// workexperienceDescCompany is the schema descriptor for company field.

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/useridentity"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -116,6 +117,20 @@ func (bcc *BlogCommentCreate) SetNillableUserAgent(s *string) *BlogCommentCreate
 	return bcc
 }
 
+// SetUserIdentityID sets the "user_identity_id" field.
+func (bcc *BlogCommentCreate) SetUserIdentityID(s string) *BlogCommentCreate {
+	bcc.mutation.SetUserIdentityID(s)
+	return bcc
+}
+
+// SetNillableUserIdentityID sets the "user_identity_id" field if the given value is not nil.
+func (bcc *BlogCommentCreate) SetNillableUserIdentityID(s *string) *BlogCommentCreate {
+	if s != nil {
+		bcc.SetUserIdentityID(*s)
+	}
+	return bcc
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (bcc *BlogCommentCreate) SetCreatedAt(t time.Time) *BlogCommentCreate {
 	bcc.mutation.SetCreatedAt(t)
@@ -181,6 +196,11 @@ func (bcc *BlogCommentCreate) AddReplies(b ...*BlogComment) *BlogCommentCreate {
 		ids[i] = b[i].ID
 	}
 	return bcc.AddReplyIDs(ids...)
+}
+
+// SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
+func (bcc *BlogCommentCreate) SetUserIdentity(u *UserIdentity) *BlogCommentCreate {
+	return bcc.SetUserIdentityID(u.ID)
 }
 
 // Mutation returns the BlogCommentMutation object of the builder.
@@ -411,6 +431,23 @@ func (bcc *BlogCommentCreate) createSpec() (*BlogComment, *sqlgraph.CreateSpec) 
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bcc.mutation.UserIdentityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   blogcomment.UserIdentityTable,
+			Columns: []string{blogcomment.UserIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UserIdentityID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

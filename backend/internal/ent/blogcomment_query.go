@@ -10,6 +10,7 @@ import (
 	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/predicate"
+	"silan-backend/internal/ent/useridentity"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -21,13 +22,14 @@ import (
 // BlogCommentQuery is the builder for querying BlogComment entities.
 type BlogCommentQuery struct {
 	config
-	ctx          *QueryContext
-	order        []blogcomment.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.BlogComment
-	withBlogPost *BlogPostQuery
-	withParent   *BlogCommentQuery
-	withReplies  *BlogCommentQuery
+	ctx              *QueryContext
+	order            []blogcomment.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.BlogComment
+	withBlogPost     *BlogPostQuery
+	withParent       *BlogCommentQuery
+	withReplies      *BlogCommentQuery
+	withUserIdentity *UserIdentityQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -123,6 +125,28 @@ func (bcq *BlogCommentQuery) QueryReplies() *BlogCommentQuery {
 			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, selector),
 			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, blogcomment.RepliesTable, blogcomment.RepliesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bcq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUserIdentity chains the current query on the "user_identity" edge.
+func (bcq *BlogCommentQuery) QueryUserIdentity() *UserIdentityQuery {
+	query := (&UserIdentityClient{config: bcq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bcq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bcq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, selector),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, blogcomment.UserIdentityTable, blogcomment.UserIdentityColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bcq.driver.Dialect(), step)
 		return fromU, nil
@@ -317,14 +341,15 @@ func (bcq *BlogCommentQuery) Clone() *BlogCommentQuery {
 		return nil
 	}
 	return &BlogCommentQuery{
-		config:       bcq.config,
-		ctx:          bcq.ctx.Clone(),
-		order:        append([]blogcomment.OrderOption{}, bcq.order...),
-		inters:       append([]Interceptor{}, bcq.inters...),
-		predicates:   append([]predicate.BlogComment{}, bcq.predicates...),
-		withBlogPost: bcq.withBlogPost.Clone(),
-		withParent:   bcq.withParent.Clone(),
-		withReplies:  bcq.withReplies.Clone(),
+		config:           bcq.config,
+		ctx:              bcq.ctx.Clone(),
+		order:            append([]blogcomment.OrderOption{}, bcq.order...),
+		inters:           append([]Interceptor{}, bcq.inters...),
+		predicates:       append([]predicate.BlogComment{}, bcq.predicates...),
+		withBlogPost:     bcq.withBlogPost.Clone(),
+		withParent:       bcq.withParent.Clone(),
+		withReplies:      bcq.withReplies.Clone(),
+		withUserIdentity: bcq.withUserIdentity.Clone(),
 		// clone intermediate query.
 		sql:  bcq.sql.Clone(),
 		path: bcq.path,
@@ -361,6 +386,17 @@ func (bcq *BlogCommentQuery) WithReplies(opts ...func(*BlogCommentQuery)) *BlogC
 		opt(query)
 	}
 	bcq.withReplies = query
+	return bcq
+}
+
+// WithUserIdentity tells the query-builder to eager-load the nodes that are connected to
+// the "user_identity" edge. The optional arguments are used to configure the query builder of the edge.
+func (bcq *BlogCommentQuery) WithUserIdentity(opts ...func(*UserIdentityQuery)) *BlogCommentQuery {
+	query := (&UserIdentityClient{config: bcq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bcq.withUserIdentity = query
 	return bcq
 }
 
@@ -442,10 +478,11 @@ func (bcq *BlogCommentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*BlogComment{}
 		_spec       = bcq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			bcq.withBlogPost != nil,
 			bcq.withParent != nil,
 			bcq.withReplies != nil,
+			bcq.withUserIdentity != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -482,6 +519,12 @@ func (bcq *BlogCommentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		if err := bcq.loadReplies(ctx, query, nodes,
 			func(n *BlogComment) { n.Edges.Replies = []*BlogComment{} },
 			func(n *BlogComment, e *BlogComment) { n.Edges.Replies = append(n.Edges.Replies, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := bcq.withUserIdentity; query != nil {
+		if err := bcq.loadUserIdentity(ctx, query, nodes, nil,
+			func(n *BlogComment, e *UserIdentity) { n.Edges.UserIdentity = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -576,6 +619,35 @@ func (bcq *BlogCommentQuery) loadReplies(ctx context.Context, query *BlogComment
 	}
 	return nil
 }
+func (bcq *BlogCommentQuery) loadUserIdentity(ctx context.Context, query *UserIdentityQuery, nodes []*BlogComment, init func(*BlogComment), assign func(*BlogComment, *UserIdentity)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*BlogComment)
+	for i := range nodes {
+		fk := nodes[i].UserIdentityID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(useridentity.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_identity_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (bcq *BlogCommentQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := bcq.querySpec()
@@ -607,6 +679,9 @@ func (bcq *BlogCommentQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if bcq.withParent != nil {
 			_spec.Node.AddColumnOnce(blogcomment.FieldParentID)
+		}
+		if bcq.withUserIdentity != nil {
+			_spec.Node.AddColumnOnce(blogcomment.FieldUserIdentityID)
 		}
 	}
 	if ps := bcq.predicates; len(ps) > 0 {

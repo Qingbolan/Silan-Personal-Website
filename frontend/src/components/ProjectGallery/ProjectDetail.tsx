@@ -97,7 +97,7 @@ const ProjectDetail: React.FC = () => {
           </h1>
           <Link 
             to="/projects"
-            className="text-blue-600 hover:underline"
+            className="text-theme-600 hover:underline"
           >
             {t('projects.backToProjects')}
           </Link>
@@ -158,7 +158,7 @@ const ProjectDetail: React.FC = () => {
                   {project.tags?.map((tag: string, index: number) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                      className="px-3 py-1 bg-theme-100 text-theme-800 rounded-full text-sm font-medium"
                     >
                       {tag}
                     </span>
@@ -197,7 +197,7 @@ const ProjectDetail: React.FC = () => {
                     href={project.demo}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center justify-center gap-2 bg-theme-600 text-white px-4 py-2 rounded-lg hover:bg-theme-700 transition-colors"
                   >
                     <ExternalLink size={16} />
                     {t('projects.liveDemo')}

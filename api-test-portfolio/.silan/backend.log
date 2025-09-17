@@ -45,3 +45,149 @@ Database: sqlite3 (***)
 Starting Silan Backend Server...
 Server: 0.0.0.0:8888
 Database: sqlite3 (***)
+{"@timestamp":"2025-09-16T16:06:47.509+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-16T16:41:39.120+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T10:01:05.375+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T10:01:30.209+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 2fbef238-37ea-4312-ba60-9f6022ad1191","level":"info"}
+{"@timestamp":"2025-09-17T10:01:30.211+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 2fbef238-37ea-4312-ba60-9f6022ad1191","level":"info"}
+{"@timestamp":"2025-09-17T10:01:35.467+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 2fbef238-37ea-4312-ba60-9f6022ad1191","level":"info"}
+{"@timestamp":"2025-09-17T10:01:35.469+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 2fbef238-37ea-4312-ba60-9f6022ad1191","level":"info"}
+{"@timestamp":"2025-09-17T10:02:33.689+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 2fbef238-37ea-4312-ba60-9f6022ad1191","level":"info"}
+{"@timestamp":"2025-09-17T10:02:33.692+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 2fbef238-37ea-4312-ba60-9f6022ad1191","level":"info"}
+{"@timestamp":"2025-09-17T10:03:11.612+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T10:04:10.059+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:04:10.062+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:04:18.882+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:04:18.884+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:04:22.649+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:04:49.934+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T10:05:28.033+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:05:28.036+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:06:13.305+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:06:37.939+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 6b75141f-bd0e-4135-bcbc-1d86d756b80f","level":"info"}
+{"@timestamp":"2025-09-17T10:06:37.940+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 6b75141f-bd0e-4135-bcbc-1d86d756b80f","level":"info"}
+{"@timestamp":"2025-09-17T10:06:57.104+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post d6e88bce-a2f4-4add-930b-6240c1b684fb","level":"info"}
+{"@timestamp":"2025-09-17T10:06:57.109+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 6b75141f-bd0e-4135-bcbc-1d86d756b80f","level":"info"}
+{"@timestamp":"2025-09-17T10:07:15.528+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post d6e88bce-a2f4-4add-930b-6240c1b684fb","level":"info"}
+{"@timestamp":"2025-09-17T10:18:47.559+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T10:19:05.035+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:19:05.037+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:30:58.351+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T10:31:09.405+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:31:09.406+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:31:20.945+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:31:20.946+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:34:20.123+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:34:20.124+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:34:27.873+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:34:56.337+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:34:56.338+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:35:04.101+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:35:04.102+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:35:12.038+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:36:19.022+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T10:36:19.023+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:01:49.451+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:01:49.454+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:01:56.535+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:43:42.955+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T11:46:04.772+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:46:04.778+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:46:12.936+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:46:12.937+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:30.729+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:30.732+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:37.896+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:37.897+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:39.617+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:39.618+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:43.581+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:43.584+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:46.033+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:46.036+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:50.302+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:52:50.303+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:53:09.074+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:53:09.077+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:53:16.186+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:53:16.188+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:59:21.561+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:59:21.564+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:59:45.180+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T11:59:45.181+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:01:46.807+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:01:46.817+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:02:35.816+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:02:35.819+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:04:16.715+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:04:16.718+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:04:40.361+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:04:40.362+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:04:47.746+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:07:38.899+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:07:38.900+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:12:52.614+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:12:52.621+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:13:09.720+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:13:09.723+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:13:23.505+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:13:23.507+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:14:17.507+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:14:17.512+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:16:31.628+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:16:31.631+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:16:34.574+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:16:34.575+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:16:41.559+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:16:41.560+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:17:32.707+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:17:33.306+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:17:33.312+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:17:35.876+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:17:45.860+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:17:45.863+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:18:45.369+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:18:45.370+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:18:57.528+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:18:57.529+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:19:39.675+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:19:44.945+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:19:44.946+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:19:45.038+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:20:22.142+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:20:22.143+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:20:22.205+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:20:23.333+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:20:23.334+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:20:39.330+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:20:39.331+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:21:15.771+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:21:15.772+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:21:48.233+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:21:48.234+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:22:00.263+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:22:00.265+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}

@@ -476,6 +476,18 @@ func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
 }
 
+// The UserIdentityFunc type is an adapter to allow the use of ordinary
+// function as UserIdentity mutator.
+type UserIdentityFunc func(context.Context, *ent.UserIdentityMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserIdentityFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserIdentityMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserIdentityMutation", m)
+}
+
 // The WorkExperienceFunc type is an adapter to allow the use of ordinary
 // function as WorkExperience mutator.
 type WorkExperienceFunc func(context.Context, *ent.WorkExperienceMutation) (ent.Value, error)

@@ -15,16 +15,17 @@ import (
 )
 
 var (
-	configFile = flag.String("f", "etc/backend-api.yaml", "the config file")
-	dbDriver   = flag.String("db-driver", "", "database driver (mysql, postgres, sqlite3)")
-	dbSource   = flag.String("db-source", "", "database connection string")
-	dbHost     = flag.String("db-host", "", "database host")
-	dbPort     = flag.String("db-port", "", "database port")
-	dbUser     = flag.String("db-user", "", "database user")
-	dbPassword = flag.String("db-password", "", "database password")
-	dbName     = flag.String("db-name", "", "database name")
-	serverHost = flag.String("host", "", "server host")
-	serverPort = flag.Int("port", 0, "server port")
+	configFile     = flag.String("f", "etc/backend-api.yaml", "the config file")
+	dbDriver       = flag.String("db-driver", "", "database driver (mysql, postgres, sqlite3)")
+	dbSource       = flag.String("db-source", "", "database connection string")
+	dbHost         = flag.String("db-host", "", "database host")
+	dbPort         = flag.String("db-port", "", "database port")
+	dbUser         = flag.String("db-user", "", "database user")
+	dbPassword     = flag.String("db-password", "", "database password")
+	dbName         = flag.String("db-name", "", "database name")
+	serverHost     = flag.String("host", "", "server host")
+	serverPort     = flag.Int("port", 0, "server port")
+	googleClientID = flag.String("google-client-id", "", "Google OAuth client ID (optional)")
 )
 
 func main() {
@@ -69,6 +70,10 @@ func main() {
 	}
 	if *serverPort != 0 {
 		c.Port = *serverPort
+	}
+	// Auth flags
+	if *googleClientID != "" {
+		c.Auth.GoogleClientID = *googleClientID
 	}
 
 	// Load environment variables (overrides file config)

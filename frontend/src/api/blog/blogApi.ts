@@ -1,5 +1,5 @@
 import type { BlogData } from '../../components/BlogStack/types/blog';
-import { get, post, formatLanguage } from '../utils';
+import { get, post, formatLanguage, del } from '../utils';
 import { type PaginationRequest, type SearchRequest } from '../config';
 import { processRawContent } from '../../utils/markdownParser';
 
@@ -242,7 +242,7 @@ export const updateBlogViews = async (id: string, language: 'en' | 'zh' = 'en'):
   formData.append('lang', formatLanguage(language));
   
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888'}/api/v1/blog/posts/${id}/views`, {
+    const response = await fetch(`/api/v1/blog/posts/${id}/views`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -328,4 +328,54 @@ export const setCurrentEpisode = async (
     lang: formatLanguage(language)
   });
   return response;
+};
+
+// ----- Comments API -----
+export interface BlogCommentData {
+  id: string;
+  blog_post_id: string;
+  author_name: string;
+  content: string;
+  created_at: string;
+}
+
+export interface BlogCommentListResponse {
+  comments: BlogCommentData[];
+  total: number;
+}
+
+export const listBlogComments = async (
+  postId: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<BlogCommentData[]> => {
+  const res = await get<BlogCommentListResponse>(`/api/v1/blog/posts/${postId}/comments`, {
+    lang: formatLanguage(language)
+  });
+  return res?.comments ?? [];
+};
+
+export const createBlogComment = async (
+  postId: string,
+  authorName: string,
+  authorEmail: string,
+  content: string,
+  fingerprint: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<BlogCommentData> => {
+  const res = await post<BlogCommentData>(`/api/v1/blog/posts/${postId}/comments`, {
+    author_name: authorName,
+    author_email: authorEmail,
+    content,
+    fingerprint,
+    lang: formatLanguage(language)
+  });
+  return res;
+};
+
+export const deleteBlogComment = async (
+  commentId: string,
+  fingerprint: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<void> => {
+  await del(`/api/v1/blog/comments/${commentId}?lang=${formatLanguage(language)}`);
 };

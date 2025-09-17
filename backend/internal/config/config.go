@@ -9,6 +9,7 @@ import (
 type Config struct {
 	rest.RestConf
 	Database DatabaseConfig `json:"database"`
+	Auth     AuthConfig     `json:"auth"`
 }
 
 type DatabaseConfig struct {
@@ -20,6 +21,11 @@ type DatabaseConfig struct {
 	Password string `json:"password,env=DB_PASSWORD"`
 	Name     string `json:"name,env=DB_NAME"`
 	SSLMode  string `json:"ssl_mode,env=DB_SSL_MODE"`
+}
+
+// AuthConfig holds authentication-related settings
+type AuthConfig struct {
+	GoogleClientID string `json:"google_client_id,env=GOOGLE_CLIENT_ID"`
 }
 
 // LoadConfigFromEnv loads configuration from environment variables
@@ -48,6 +54,11 @@ func (c *Config) LoadConfigFromEnv() {
 	}
 	if sslMode := os.Getenv("DB_SSL_MODE"); sslMode != "" {
 		c.Database.SSLMode = sslMode
+	}
+
+	// Auth configuration from env
+	if googleID := os.Getenv("GOOGLE_CLIENT_ID"); googleID != "" {
+		c.Auth.GoogleClientID = googleID
 	}
 
 	// Auto-generate connection string if individual components are provided

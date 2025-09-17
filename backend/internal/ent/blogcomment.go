@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/useridentity"
 	"strings"
 	"time"
 
@@ -37,6 +38,8 @@ type BlogComment struct {
 	IPAddress string `json:"ip_address,omitempty"`
 	// UserAgent holds the value of the "user_agent" field.
 	UserAgent string `json:"user_agent,omitempty"`
+	// Link to authenticated user identity if available
+	UserIdentityID string `json:"user_identity_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -55,9 +58,11 @@ type BlogCommentEdges struct {
 	Parent *BlogComment `json:"parent,omitempty"`
 	// Replies holds the value of the replies edge.
 	Replies []*BlogComment `json:"replies,omitempty"`
+	// UserIdentity holds the value of the user_identity edge.
+	UserIdentity *UserIdentity `json:"user_identity,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // BlogPostOrErr returns the BlogPost value or an error if the edge
@@ -91,6 +96,17 @@ func (e BlogCommentEdges) RepliesOrErr() ([]*BlogComment, error) {
 	return nil, &NotLoadedError{edge: "replies"}
 }
 
+// UserIdentityOrErr returns the UserIdentity value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BlogCommentEdges) UserIdentityOrErr() (*UserIdentity, error) {
+	if e.UserIdentity != nil {
+		return e.UserIdentity, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: useridentity.Label}
+	}
+	return nil, &NotLoadedError{edge: "user_identity"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*BlogComment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -98,7 +114,7 @@ func (*BlogComment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case blogcomment.FieldIsApproved:
 			values[i] = new(sql.NullBool)
-		case blogcomment.FieldAuthorName, blogcomment.FieldAuthorEmail, blogcomment.FieldAuthorWebsite, blogcomment.FieldContent, blogcomment.FieldIPAddress, blogcomment.FieldUserAgent:
+		case blogcomment.FieldAuthorName, blogcomment.FieldAuthorEmail, blogcomment.FieldAuthorWebsite, blogcomment.FieldContent, blogcomment.FieldIPAddress, blogcomment.FieldUserAgent, blogcomment.FieldUserIdentityID:
 			values[i] = new(sql.NullString)
 		case blogcomment.FieldCreatedAt, blogcomment.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -179,6 +195,12 @@ func (bc *BlogComment) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bc.UserAgent = value.String
 			}
+		case blogcomment.FieldUserIdentityID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field user_identity_id", values[i])
+			} else if value.Valid {
+				bc.UserIdentityID = value.String
+			}
 		case blogcomment.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -217,6 +239,11 @@ func (bc *BlogComment) QueryParent() *BlogCommentQuery {
 // QueryReplies queries the "replies" edge of the BlogComment entity.
 func (bc *BlogComment) QueryReplies() *BlogCommentQuery {
 	return NewBlogCommentClient(bc.config).QueryReplies(bc)
+}
+
+// QueryUserIdentity queries the "user_identity" edge of the BlogComment entity.
+func (bc *BlogComment) QueryUserIdentity() *UserIdentityQuery {
+	return NewBlogCommentClient(bc.config).QueryUserIdentity(bc)
 }
 
 // Update returns a builder for updating this BlogComment.
@@ -268,6 +295,9 @@ func (bc *BlogComment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("user_agent=")
 	builder.WriteString(bc.UserAgent)
+	builder.WriteString(", ")
+	builder.WriteString("user_identity_id=")
+	builder.WriteString(bc.UserIdentityID)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(bc.CreatedAt.Format(time.ANSIC))

@@ -266,11 +266,11 @@ const Logo: React.FC = () => {
         >
           Silan Hu
         </motion.div>
-        {/* <div 
+        <div 
           className="text-[10px] text-nowrap tracking-wider uppercase opacity-60 leading-tight -mt-0.5" 
         >
           ZIYUN·2025
-        </div> */}
+        </div>
       </div>
     </Link>
   );
@@ -286,33 +286,16 @@ const TopNavigation: React.FC = () => {
   // Close mobile menu on route change
   useEffect(() => setOpen(false), [pathname]);
 
-  // Handle scroll effects
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     const scrollPosition = window.scrollY;
-  //     setScrolled(scrollPosition > 20);
-  //   };
-
-  //   window.addEventListener('scroll', handleScroll);
-  //   return () => window.removeEventListener('scroll', handleScroll);
-  // }, []);
-
   const items = useMemo(() => NAV_ITEMS(language), [language]);
+  
+  const isItemActive = (currentPath: string, itemPath: string): boolean => {
+    if (itemPath === '/') return currentPath === '/';
+    return currentPath === itemPath || currentPath.startsWith(itemPath + '/');
+  };
 
   return (
     <motion.nav
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-      // style={{
-      //   backgroundColor: scrolled 
-      //     ? `${colors.background}98` // More opaque when scrolled
-      //     : `${colors.background}90`, // Less opaque at top
-      //   borderBottomColor: scrolled 
-      //     ? `${colors.cardBorder}80` 
-      //     : `${colors.cardBorder}30`,
-      //   boxShadow: scrolled 
-      //     ? `0 4px 20px ${colors.shadowMd}` 
-      //     : 'none'
-      // }}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
@@ -340,7 +323,7 @@ const TopNavigation: React.FC = () => {
                   to={item.key}
                   icon={item.icon}
                   label={item.label}
-                  active={pathname === item.key}
+                  active={isItemActive(pathname, item.key)}
                 />
               ))}
             </div>
@@ -436,7 +419,7 @@ const TopNavigation: React.FC = () => {
                       to={item.key}
                       icon={item.icon}
                       label={item.label}
-                      active={pathname === item.key}
+                      active={isItemActive(pathname, item.key)}
                       onClick={() => setOpen(false)}
                       isMobile={true}
                     />

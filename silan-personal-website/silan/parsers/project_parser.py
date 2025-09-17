@@ -41,6 +41,7 @@ class ProjectParser(BaseParser):
         │   ├── videos/
         │   └── docs/
         ├── notes/
+        ├── License
         └── research/
         """
         try:
@@ -156,17 +157,22 @@ class ProjectParser(BaseParser):
                     break
             if license_text:
                 detected = self._detect_license_from_text(license_text)
-                if detected:
-                    # Inject into details metadata for downstream sync
-                    details_list = extracted.metadata.get('details')
-                    if isinstance(details_list, list) and details_list:
-                        if isinstance(details_list[0], dict) and not details_list[0].get('license'):
+                # Inject both license type and full license text into details metadata for downstream sync
+                details_list = extracted.metadata.get('details')
+                if isinstance(details_list, list) and details_list:
+                    if isinstance(details_list[0], dict):
+                        if not details_list[0].get('license') and detected:
                             details_list[0]['license'] = detected
-                    else:
-                        extracted.metadata['details'] = [{'license': detected}]
-                    # Also expose on main_entity for ContentLogic shortcuts
-                    if isinstance(extracted.main_entity, dict) and not extracted.main_entity.get('license'):
+                        if not details_list[0].get('license_text'):
+                            details_list[0]['license_text'] = license_text
+                else:
+                    extracted.metadata['details'] = [{'license': detected or '', 'license_text': license_text}]
+                # Also expose on main_entity for ContentLogic shortcuts
+                if isinstance(extracted.main_entity, dict):
+                    if not extracted.main_entity.get('license') and detected:
                         extracted.main_entity['license'] = detected
+                    if not extracted.main_entity.get('license_text'):
+                        extracted.main_entity['license_text'] = license_text
         except Exception as e:
             self.warning(f"Failed to extract LICENSE from folder: {e}")
 

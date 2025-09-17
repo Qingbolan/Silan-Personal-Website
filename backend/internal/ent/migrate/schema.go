@@ -128,6 +128,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "user_identity_id", Type: field.TypeString, Nullable: true},
 		{Name: "blog_post_id", Type: field.TypeUUID},
 	}
 	// BlogCommentsTable holds the schema information for the "blog_comments" table.
@@ -143,8 +144,14 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "blog_comments_blog_posts_comments",
+				Symbol:     "blog_comments_user_identities_user_identity",
 				Columns:    []*schema.Column{BlogCommentsColumns[11]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "blog_comments_blog_posts_comments",
+				Columns:    []*schema.Column{BlogCommentsColumns[12]},
 				RefColumns: []*schema.Column{BlogPostsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1137,6 +1144,36 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
+	// UserIdentitiesColumns holds the columns for the "user_identities" table.
+	UserIdentitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "provider", Type: field.TypeString},
+		{Name: "external_id", Type: field.TypeString},
+		{Name: "email", Type: field.TypeString, Nullable: true},
+		{Name: "display_name", Type: field.TypeString, Nullable: true},
+		{Name: "avatar_url", Type: field.TypeString, Nullable: true},
+		{Name: "verified", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// UserIdentitiesTable holds the schema information for the "user_identities" table.
+	UserIdentitiesTable = &schema.Table{
+		Name:       "user_identities",
+		Columns:    UserIdentitiesColumns,
+		PrimaryKey: []*schema.Column{UserIdentitiesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "useridentity_provider_external_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserIdentitiesColumns[1], UserIdentitiesColumns[2]},
+			},
+			{
+				Name:    "useridentity_email",
+				Unique:  false,
+				Columns: []*schema.Column{UserIdentitiesColumns[3]},
+			},
+		},
+	}
 	// WorkExperienceColumns holds the columns for the "work_experience" table.
 	WorkExperienceColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1289,6 +1326,7 @@ var (
 		ResearchProjectTranslationsTable,
 		SocialLinksTable,
 		UsersTable,
+		UserIdentitiesTable,
 		WorkExperienceTable,
 		WorkExperienceDetailsTable,
 		WorkExperienceDetailTranslationsTable,
@@ -1315,7 +1353,8 @@ func init() {
 		Table: "blog_category_translations",
 	}
 	BlogCommentsTable.ForeignKeys[0].RefTable = BlogCommentsTable
-	BlogCommentsTable.ForeignKeys[1].RefTable = BlogPostsTable
+	BlogCommentsTable.ForeignKeys[1].RefTable = UserIdentitiesTable
+	BlogCommentsTable.ForeignKeys[2].RefTable = BlogPostsTable
 	BlogCommentsTable.Annotation = &entsql.Annotation{
 		Table: "blog_comments",
 	}
@@ -1465,6 +1504,9 @@ func init() {
 	}
 	UsersTable.Annotation = &entsql.Annotation{
 		Table: "users",
+	}
+	UserIdentitiesTable.Annotation = &entsql.Annotation{
+		Table: "user_identities",
 	}
 	WorkExperienceTable.ForeignKeys[0].RefTable = UsersTable
 	WorkExperienceTable.Annotation = &entsql.Annotation{

@@ -123,6 +123,9 @@ type SocialLink func(*sql.Selector)
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
 
+// UserIdentity is the predicate function for useridentity builders.
+type UserIdentity func(*sql.Selector)
+
 // WorkExperience is the predicate function for workexperience builders.
 type WorkExperience func(*sql.Selector)
 
