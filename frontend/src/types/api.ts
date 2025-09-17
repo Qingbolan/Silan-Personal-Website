@@ -85,13 +85,66 @@ export interface ResumeData {
   current: string;
   contacts: Contact[];
   socialLinks: SocialLink[];
-  education: EducationItem[];
-  experience: ExperienceItem[];
-  research: ResearchItem[];
-  publications: Publication[];
-  awards: Award[];
-  recent_updates: RecentUpdate[];
-  skills: string[];
+  sections: {
+    education: {
+      title: string;
+      content: {
+        school: string;
+        degree: string;
+        date: string;
+        details: string[];
+        logo?: string;
+        website?: string;
+        location?: string;
+      }[];
+    };
+    experience?: {
+      title: string;
+      content: {
+        company: string;
+        role: string;
+        date: string;
+        details: string[];
+        logo?: string;
+        website?: string;
+        location?: string;
+      }[];
+    };
+    research?: {
+      title: string;
+      content: {
+        title: string;
+        location: string;
+        date: string;
+        details: string[];
+      }[];
+    };
+    publications?: {
+      title: string;
+      content: string[];
+    };
+    awards?: {
+      title: string;
+      content: string[];
+    };
+    skills?: {
+      title: string;
+      content: string[];
+    };
+    recent?: {
+      title: string;
+      content: {
+        id: string;
+        title: string;
+        description: string;
+        date: string;
+        tags: string[];
+        type: string;
+        status: string;
+        priority: string;
+      }[];
+    };
+  };
 }
 
 export interface PersonalInfo {
@@ -211,16 +264,16 @@ export interface ProjectDetail {
   fullDescriptionZh?: string;
   image?: string;
   tags: string[];
-  
+
   // Related blogs and articles
   relatedBlogs?: ProjectBlogReference[];
-  
+
   // Version management
   versions: {
     latest: string;
     releases: ProjectRelease[];
   };
-  
+
   // Project status
   status: {
     buildStatus: 'passing' | 'failing' | 'unknown';
@@ -231,7 +284,7 @@ export interface ProjectDetail {
     language: string;
     size: string;
   };
-  
+
   // License information
   licenseInfo?: {
     name: string;
@@ -248,7 +301,7 @@ export interface ProjectDetail {
     description: string;
     descriptionZh?: string;
   };
-  
+
   // Quick start guide
   quickStart: {
     installation: string[];
@@ -258,13 +311,13 @@ export interface ProjectDetail {
     requirements: string[];
     requirementsZh?: string[];
   };
-  
+
   // API documentation
   api?: {
     baseUrl: string;
     endpoints: ApiEndpoint[];
   };
-  
+
   // Community data
   community: {
     contributors: number;
@@ -277,13 +330,13 @@ export interface ProjectDetail {
     };
     discussions: ProjectDiscussion[];
   };
-  
+
   // Dependencies
   dependencies: {
     production: ProjectDependency[];
     development: ProjectDependency[];
   };
-  
+
   // Performance metrics
   performance: {
     benchmarks: ProjectBenchmark[];
@@ -292,7 +345,7 @@ export interface ProjectDetail {
       usage: UsageData[];
     };
   };
-  
+
   // Basic information
   features: string[];
   featuresZh?: string[];

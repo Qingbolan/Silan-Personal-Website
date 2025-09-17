@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { Card, Avatar, Button, Input, Form, Spin, Typography, Space, Tag, message, Popconfirm } from 'antd';
+import { LikeOutlined, LikeFilled, MessageOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
 import { getClientFingerprint } from '../../../utils/fingerprint';
 
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+
+const { TextArea } = Input;
+const { Text, Title } = Typography;
 
 interface Comment {
   id: string;
@@ -36,12 +41,6 @@ interface BlogCommentsProps {
 const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const googleClientId = "423692235373-d2v539b53sm9cppehm4dqgnmjf8o7n23.apps.googleusercontent.com";
-
-  // Debug environment variable loading
-  console.log('🔧 [BlogComments] Environment variables check:');
-  console.log('- import.meta.env:', (import.meta as any)?.env);
-  console.log('- VITE_GOOGLE_CLIENT_ID:', googleClientId);
-  console.log('- loginAvailable will be:', Boolean(googleClientId));
 
   const { language } = useLanguage();
   const { colors } = useTheme();
@@ -120,7 +119,7 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
   // Google login -> verify with backend -> store user locally
   const authWithGoogle = async (idToken: string) => {
     if (!idToken) {
-      alert(language === 'en' ? 'Google credential missing' : '缺少 Google 登录凭证');
+      message.error(language === 'en' ? 'Google credential missing' : '缺少 Google 登录凭证');
       return;
     }
     try {
@@ -138,27 +137,26 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
       try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
     } catch (e: any) {
       console.error('Google login failed:', e);
-      alert(language === 'en' ? 'Google login failed' : 'Google 登录失败');
+      message.error(language === 'en' ? 'Google login failed' : 'Google 登录失败');
     }
   };
 
-  const submitComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitComment = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!authorName.trim() || !content.trim()) return;
     let email = authorEmail.trim();
     if (currentUser && currentUser.email) {
       email = currentUser.email;
     } else {
       if (!email || email.length < 5 || !email.includes('@')) {
-        alert(language === 'en' ? 'Please enter a valid email' : '请输入有效的邮箱');
-
+        message.error(language === 'en' ? 'Please enter a valid email' : '请输入有效的邮箱');
         return;
       }
     }
 
     try {
       setSubmitting(true);
-      const fingerprint = getClientFingerprint();
+      const fingerprint = await getClientFingerprint();
 
       const pid = await resolvePostId();
       if (!pid) throw new Error('missing post id');
@@ -191,7 +189,7 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
       } else {
         const errorData = await response.text();
         console.error('Failed to submit comment:', response.status, errorData);
-        alert(`Failed to submit comment: ${response.status} ${response.statusText}`);
+        message.error(`Failed to submit comment: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to submit comment:', error);
@@ -207,14 +205,14 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
       email = currentUser.email;
     } else {
       if (!email || email.length < 5 || !email.includes('@')) {
-        alert(language === 'en' ? 'Please enter a valid email' : '请输入有效的邮箱');
+        message.error(language === 'en' ? 'Please enter a valid email' : '请输入有效的邮箱');
         return;
       }
     }
 
     try {
       setSubmitting(true);
-      const fingerprint = getClientFingerprint();
+      const fingerprint = await getClientFingerprint();
       const pid = await resolvePostId();
       if (!pid) throw new Error('missing post id');
 
@@ -240,7 +238,7 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
       } else {
         const errorData = await response.text();
         console.error('Failed to submit reply:', response.status, errorData);
-        alert(`Failed to submit reply: ${response.status} ${response.statusText}`);
+        message.error(`Failed to submit reply: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to submit reply:', error);
@@ -250,9 +248,6 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
   };
 
   const deleteComment = async (commentId: string) => {
-    if (!confirm(language === 'en' ? 'Are you sure you want to delete this comment?' : '确定要删除这条评论吗？')) {
-      return;
-    }
 
     try {
       const response = await fetch(`/api/v1/blog/comments/${commentId}?lang=${language}`, {
@@ -262,7 +257,7 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
         },
         body: JSON.stringify({
           user_identity_id: currentUser?.id || '',
-          fingerprint: getClientFingerprint(),
+          fingerprint: await getClientFingerprint(),
         }),
       });
 
@@ -271,7 +266,7 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
       } else {
         const errorData = await response.text();
         console.error('Failed to delete comment:', response.status, errorData);
-        alert(`Failed to delete comment: ${response.status} ${response.statusText}`);
+        message.error(`Failed to delete comment: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to delete comment:', error);
@@ -350,136 +345,136 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
     const displayName = getDisplayName(comment.author_name);
     const hasAvatar = comment.author_avatar_url;
     const canDelete = currentUser?.id && comment.user_identity_id === currentUser.id;
-    const marginLeft = depth * 20;
 
     return (
-      <div key={comment.id} style={{ marginLeft: `${marginLeft}px` }}>
-        <div
-          className="border rounded-lg p-4 mb-4"
-          style={{
-            borderColor: colors.cardBorder,
-            backgroundColor: colors.background,
-          }}
-        >
-          <div className="flex items-start gap-3 mb-3">
-            <div className="flex-shrink-0">
-              {hasAvatar ? (
-                <img
-                  src={comment.author_avatar_url}
-                  alt={displayName}
-                  className="w-10 h-10 rounded-full object-cover border"
-                  style={{ borderColor: colors.cardBorder }}
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-            </div>
+      <div key={comment.id} style={{ marginLeft: depth * 24 }}>
+          <div className="flex items-start gap-3">
+            <Avatar
+              size={depth > 0 ? 32 : 40}
+              src={hasAvatar ? comment.author_avatar_url : undefined}
+              icon={!hasAvatar ? <UserOutlined /> : undefined}
+              style={{
+                backgroundColor: hasAvatar ? undefined : colors.primary,
+                flexShrink: 0
+              }}
+            />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm" style={{ color: colors.textPrimary }}>
+                <Space size="small">
+                  <Text strong style={{ color: colors.textPrimary, fontSize: '14px' }}>
                     {displayName}
-                  </span>
-                  {comment.author_avatar_url && (
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{
-                      backgroundColor: colors.surface,
-                      color: colors.textSecondary
-                    }}>
+                  </Text>
+                  {hasAvatar && (
+                    <Tag color="blue" style={{ fontSize: '10px', margin: 0 }}>
                       {language === 'en' ? 'Verified' : '已验证'}
-                    </span>
+                    </Tag>
                   )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs flex-shrink-0" style={{ color: colors.textSecondary }}>
+                </Space>
+
+                <Space size="small">
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
                     {formatDate(comment.created_at)}
-                  </span>
+                  </Text>
                   {canDelete && (
-                    <button
-                      onClick={() => deleteComment(comment.id)}
-                      className="text-xs px-2 py-1 rounded hover:bg-red-100"
-                      style={{ color: 'red' }}
+                    <Popconfirm
+                      title={language === 'en' ? 'Delete this comment?' : '确定要删除这条评论吗？'}
+                      onConfirm={() => deleteComment(comment.id)}
+                      okText={language === 'en' ? 'Yes' : '确定'}
+                      cancelText={language === 'en' ? 'No' : '取消'}
                     >
-                      {language === 'en' ? 'Delete' : '删除'}
-                    </button>
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                      />
+                    </Popconfirm>
                   )}
-                </div>
+                </Space>
               </div>
 
-              <p style={{ color: colors.textPrimary }} className="whitespace-pre-wrap text-sm leading-relaxed mb-3">
+              <Text style={{ color: colors.textPrimary, fontSize: '14px', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                 {comment.content}
-              </p>
+              </Text>
 
-              <div className="flex items-center gap-3">
-                {/* Like button */}
-                <button
-                  onClick={() => likeComment(comment.id)}
-                  className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-gray-100"
-                  style={{
-                    color: comment.is_liked_by_user ? colors.primary : colors.textSecondary,
-                    backgroundColor: comment.is_liked_by_user ? `${colors.primary}20` : 'transparent'
-                  }}
-                >
-                  <span>{comment.is_liked_by_user ? '❤️' : '🤍'}</span>
-                  <span>{comment.likes_count || 0}</span>
-                </button>
-
-                {/* Reply button */}
-                {loginAvailable && depth < 3 && (
-                  <button
-                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                    className="text-xs px-2 py-1 rounded"
+              <div className="mt-3">
+                <Space size="middle">
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={comment.is_liked_by_user ? <LikeFilled /> : <LikeOutlined />}
+                    onClick={() => likeComment(comment.id)}
                     style={{
-                      backgroundColor: replyingTo === comment.id ? colors.primary : colors.surface,
-                      color: replyingTo === comment.id ? 'white' : colors.textSecondary
+                      color: comment.is_liked_by_user ? '#ff4d4f' : colors.textSecondary,
+                      padding: '2px 8px',
+                      height: 'auto'
                     }}
                   >
-                    {language === 'en' ? 'Reply' : '回复'}
-                  </button>
-                )}
+                    {comment.likes_count || 0}
+                  </Button>
+
+                  {loginAvailable && depth < 3 && (
+                    <Button
+                      type={replyingTo === comment.id ? "primary" : "text"}
+                      size="small"
+                      icon={<MessageOutlined />}
+                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      style={{ padding: '2px 8px', height: 'auto' ,
+                        color: replyingTo === comment.id ? colors.primary : colors.textSecondary
+                      }}
+                    >
+                      {language === 'en' ? 'Reply' : '回复'}
+                    </Button>
+                  )}
+                </Space>
               </div>
 
               {replyingTo === comment.id && (
-                <div className="mt-3 p-3 border rounded" style={{ borderColor: colors.cardBorder }}>
-                  <textarea
+                <Card
+                  size="small"
+                  className="mt-3"
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderColor: colors.cardBorder
+                  }}
+                >
+                  <TextArea
                     placeholder={language === 'en' ? 'Write a reply...' : '写下您的回复...'}
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
-                    className="w-full px-3 py-2 rounded border resize-none mb-2"
-                    style={{ borderColor: colors.cardBorder, backgroundColor: colors.background, color: colors.textPrimary }}
                     rows={2}
                     maxLength={500}
+                    showCount
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.cardBorder,
+                      marginBottom: 12
+                    }}
                   />
-                  <div className="flex gap-2">
-                    <button
+                  <Space>
+                    <Button
+                      type="primary"
+                      size="small"
                       onClick={() => submitReply(comment.id)}
-                      disabled={submitting || !replyContent.trim()}
-                      className="px-3 py-1 rounded text-sm font-medium disabled:opacity-50"
-                      style={{ backgroundColor: colors.primary, color: 'white' }}
+                      loading={submitting}
+                      disabled={!replyContent.trim()}
                     >
-                      {submitting ? (language === 'en' ? 'Submitting...' : '提交中...') : (language === 'en' ? 'Reply' : '回复')}
-                    </button>
-                    <button
+                      {language === 'en' ? 'Reply' : '回复'}
+                    </Button>
+                    <Button
+                      size="small"
                       onClick={() => { setReplyingTo(null); setReplyContent(''); }}
-                      className="px-3 py-1 rounded text-sm"
-                      style={{ backgroundColor: colors.surface, color: colors.textSecondary }}
                     >
                       {language === 'en' ? 'Cancel' : '取消'}
-                    </button>
-                  </div>
-                </div>
+                    </Button>
+                  </Space>
+                </Card>
               )}
             </div>
           </div>
-        </div>
-
         {comment.replies && comment.replies.length > 0 && (
-          <div>
+          <div className="ml-2">
             {comment.replies.map(reply => renderComment(reply, depth + 1))}
           </div>
         )}
@@ -525,55 +520,37 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
   // Hide the entire comments block when login is unavailable and there are no comments
   const shouldHide = !loginAvailable && !loggedIn && !loading && (comments.length === 0 || total === 0);
 
-  // Debug hiding logic
-  console.log('🔧 [BlogComments] Hide logic check:');
-  console.log('- loginAvailable:', loginAvailable);
-  console.log('- loggedIn:', loggedIn);
-  console.log('- loading:', loading);
-  console.log('- comments.length:', comments.length);
-  console.log('- total:', total);
-  console.log('- shouldHide:', shouldHide);
-
   if (shouldHide) {
-    console.log('❌ [BlogComments] Component hidden due to shouldHide logic');
     return null;
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-16">
-      <div
-        className="border rounded-xl p-6"
-        style={{ borderColor: colors.cardBorder, backgroundColor: colors.surface }}
-      >
-
-
-        <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
+    <div className="max-w-4xl mx-auto mt-8">
+      <div>
+        <Title level={4} style={{ color: colors.textPrimary, marginBottom: 16 }}>
           {language === 'en' ? 'Comments' : '评论'} ({total})
-        </h3>
+        </Title>
 
         {/* Auth status / Login */}
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-6">
           {currentUser ? (
-            <div className="flex items-center gap-3 text-sm" style={{ color: colors.textSecondary }}>
-              {currentUser.avatar_url ? (
-                <img
+            <div className="flex items-center justify-between">
+              <Space>
+                <Avatar
+                  size={32}
                   src={currentUser.avatar_url}
-                  alt={currentUser.name || currentUser.email || 'avatar'}
-                  className="w-8 h-8 rounded-full object-cover"
-                  referrerPolicy="no-referrer"
+                  icon={!currentUser.avatar_url ? <UserOutlined /> : undefined}
                 />
-              ) : null}
-              <div>
-                {language === 'en' ? 'Logged in as' : '已登录：'} {currentUser.name || currentUser.email}
-              </div>
-              <button
-                type="button"
+                <Text type="secondary">
+                  {language === 'en' ? 'Logged in as' : '已登录：'} {currentUser.name || currentUser.email}
+                </Text>
+              </Space>
+              <Button
+                size="small"
                 onClick={() => { try { localStorage.removeItem('auth_user'); } catch {}; setCurrentUser(null); }}
-                className="px-2 py-1 rounded border"
-                style={{ borderColor: colors.cardBorder, color: colors.textSecondary }}
               >
                 {language === 'en' ? 'Logout' : '退出'}
-              </button>
+              </Button>
             </div>
           ) : (
             googleClientId ? (
@@ -583,11 +560,11 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
                   if (id) {
                     authWithGoogle(id);
                   } else {
-                    alert(language === 'en' ? 'No credential received' : '未收到登录凭证');
+                    message.error(language === 'en' ? 'No credential received' : '未收到登录凭证');
                   }
                 }}
                 onError={() => {
-                  alert(language === 'en' ? 'Google login failed' : 'Google 登录失败');
+                  message.error(language === 'en' ? 'Google login failed' : 'Google 登录失败');
                 }}
               />
             ) : null
@@ -597,67 +574,95 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
         {/* Comment Form */}
         {loginAvailable ? (
           loggedIn ? (
-            <form onSubmit={submitComment} className="mb-6">
-              {/* Hide email field when logged in */}
-              {!currentUser && (
-                <div className="mb-4">
-                  <input
-                    type="email"
-                    placeholder={language === 'en' ? 'Your email (for verification)' : '邮箱（用于验证）'}
-                    value={authorEmail}
-                    onChange={(e) => setAuthorEmail(e.target.value)}
-                    disabled={false}
-                    className="w-full px-3 py-2 rounded border"
-                    style={{ borderColor: colors.cardBorder, backgroundColor: colors.background, color: colors.textPrimary }}
-                    maxLength={255}
-                    required={!currentUser}
-                  />
-                </div>
-              )}
-              <div className="mb-4">
-                <textarea
-                  placeholder={language === 'en' ? 'Write a comment...' : '写下您的评论...'}
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full px-3 py-2 rounded border resize-none"
-                  style={{ borderColor: colors.cardBorder, backgroundColor: colors.background, color: colors.textPrimary }}
-                  rows={3}
-                  maxLength={500}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={
-                  submitting ||
-                  !(currentUser?.name || authorName.trim()) ||
-                  (!currentUser && (!authorEmail.trim() || !authorEmail.includes('@'))) ||
-                  !content.trim()
-                }
-                className="px-4 py-2 rounded font-medium disabled:opacity-50"
-                style={{ backgroundColor: colors.primary, color: 'white' }}
+            <Card
+              size="small"
+              className="mb-6"
+              style={{
+                backgroundColor: colors.background,
+                borderColor: colors.cardBorder
+              }}
+            >
+              <Form
+                onFinish={() => submitComment()}
+                layout="vertical"
               >
-                {submitting ? (language === 'en' ? 'Submitting...' : '提交中...') : (language === 'en' ? 'Submit Comment' : '提交评论')}
-              </button>
-            </form>
+                {!currentUser && (
+                  <Form.Item
+                    name="email"
+                    rules={[
+                      { required: true, message: language === 'en' ? 'Please enter your email' : '请输入邮箱' },
+                      { type: 'email', message: language === 'en' ? 'Please enter a valid email' : '请输入有效的邮箱' }
+                    ]}
+                  >
+                    <Input
+                      placeholder={language === 'en' ? 'Your email (for verification)' : '邮箱（用于验证）'}
+                      value={authorEmail}
+                      onChange={(e) => setAuthorEmail(e.target.value)}
+                      maxLength={255}
+                      style={{
+                        backgroundColor: colors.background,
+                        borderColor: colors.cardBorder
+                      }}
+                    />
+                  </Form.Item>
+                )}
+                <Form.Item>
+                  <TextArea
+                    placeholder={language === 'en' ? 'Write a comment...' : '写下您的评论...'}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    rows={3}
+                    maxLength={500}
+                    showCount
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.cardBorder
+                    }}
+                  />
+                </Form.Item>
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={submitting}
+                    disabled={
+                      !(currentUser?.name || authorName.trim()) ||
+                      (!currentUser && (!authorEmail.trim() || !authorEmail.includes('@'))) ||
+                      !content.trim()
+                    }
+                  >
+                    {language === 'en' ? 'Submit Comment' : '提交评论'}
+                  </Button>
+                </Form.Item>
+              </Form>
+            </Card>
           ) : (
-            <div className="mb-6 text-sm" style={{ color: colors.textSecondary }}>
-              {language === 'en' ? 'Please login to post a comment.' : '请先登录后再发表评论。'}
-            </div>
+            <Card size="small" className="mb-6">
+              <Text type="secondary">
+                {language === 'en' ? 'Please login to post a comment.' : '请先登录后再发表评论。'}
+              </Text>
+            </Card>
           )
         ) : null}
 
         {/* Comments List */}
         {loading ? (
-          <div className="text-center py-4" style={{ color: colors.textSecondary }}>
-            {language === 'en' ? 'Loading comments...' : '加载评论中...'}
+          <div className="text-center py-8">
+            <Spin size="large" />
+            <div className="mt-2">
+              <Text type="secondary">
+                {language === 'en' ? 'Loading comments...' : '加载评论中...'}
+              </Text>
+            </div>
           </div>
         ) : comments.length === 0 ? (
-          <div className="text-center py-8" style={{ color: colors.textSecondary }}>
-            {language === 'en' ? 'No comments yet. Be the first to comment!' : '暂无评论，来发表第一条评论吧！'}
+          <div className="text-center py-8">
+            <Text type="secondary">
+              {language === 'en' ? 'No comments yet. Be the first to comment!' : '暂无评论，来发表第一条评论吧！'}
+            </Text>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div>
             {comments.filter(comment => !comment.parent_id).map(comment => renderComment(comment))}
           </div>
         )}

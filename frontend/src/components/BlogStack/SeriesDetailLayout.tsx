@@ -493,9 +493,7 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
 
       {/* Comments */}
       <div className={`transition-all duration-300 ${metaSidebarCollapsed ? 'ml-12' : 'ml-80'} ${tocCollapsed ? 'mr-0' : 'mr-60'}`}>
-        <div className="px-4 sm:px-6 lg:px-8">
           <BlogComments postId={post.id} postSlug={post.slug} />
-        </div>
       </div>
 
       {/* Mobile Bottom Navigation */}

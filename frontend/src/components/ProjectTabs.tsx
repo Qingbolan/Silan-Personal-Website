@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Tabs, Space, Card, Tag, Typography } from 'antd';
+import { Tabs, Space, Card, Tag } from 'antd';
 import { 
   BookOpen, 
   Download, 
@@ -13,10 +13,7 @@ import {
   FileText,
   Clock,
   ExternalLink,
-  Scale,
-  CheckCircle,
-  XCircle,
-  AlertCircle
+  Scale
 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { useTranslation } from 'react-i18next';
@@ -114,18 +111,6 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
       <Markdown className="text-lg mb-6">
         {language === 'zh' && projectData.fullDescriptionZh ? projectData.fullDescriptionZh : projectData.fullDescription}
       </Markdown>
-      
-      {/* <h3 className="text-lg font-semibold mb-3 text-theme-primary">
-        {t('projects.keyFeatures')}
-      </h3>
-      <ul className="space-y-2 mb-6">
-        {(language === 'en' ? projectData.features : projectData.featuresZh)?.map((feature: string, index: number) => (
-          <li key={index} className="flex items-start gap-2">
-            <span className="text-green-500 mt-1">✓</span>
-            <span className="text-theme-secondary">{feature}</span>
-          </li>
-        ))}
-      </ul> */}
     </div>
     </Card>
   );
