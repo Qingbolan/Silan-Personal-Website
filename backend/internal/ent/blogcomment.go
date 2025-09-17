@@ -40,6 +40,8 @@ type BlogComment struct {
 	UserAgent string `json:"user_agent,omitempty"`
 	// Link to authenticated user identity if available
 	UserIdentityID string `json:"user_identity_id,omitempty"`
+	// Number of likes for this comment
+	LikesCount int `json:"likes_count,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -60,9 +62,11 @@ type BlogCommentEdges struct {
 	Replies []*BlogComment `json:"replies,omitempty"`
 	// UserIdentity holds the value of the user_identity edge.
 	UserIdentity *UserIdentity `json:"user_identity,omitempty"`
+	// Likes holds the value of the likes edge.
+	Likes []*CommentLike `json:"likes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // BlogPostOrErr returns the BlogPost value or an error if the edge
@@ -107,6 +111,15 @@ func (e BlogCommentEdges) UserIdentityOrErr() (*UserIdentity, error) {
 	return nil, &NotLoadedError{edge: "user_identity"}
 }
 
+// LikesOrErr returns the Likes value or an error if the edge
+// was not loaded in eager-loading.
+func (e BlogCommentEdges) LikesOrErr() ([]*CommentLike, error) {
+	if e.loadedTypes[4] {
+		return e.Likes, nil
+	}
+	return nil, &NotLoadedError{edge: "likes"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*BlogComment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -114,6 +127,8 @@ func (*BlogComment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case blogcomment.FieldIsApproved:
 			values[i] = new(sql.NullBool)
+		case blogcomment.FieldLikesCount:
+			values[i] = new(sql.NullInt64)
 		case blogcomment.FieldAuthorName, blogcomment.FieldAuthorEmail, blogcomment.FieldAuthorWebsite, blogcomment.FieldContent, blogcomment.FieldIPAddress, blogcomment.FieldUserAgent, blogcomment.FieldUserIdentityID:
 			values[i] = new(sql.NullString)
 		case blogcomment.FieldCreatedAt, blogcomment.FieldUpdatedAt:
@@ -201,6 +216,12 @@ func (bc *BlogComment) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bc.UserIdentityID = value.String
 			}
+		case blogcomment.FieldLikesCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field likes_count", values[i])
+			} else if value.Valid {
+				bc.LikesCount = int(value.Int64)
+			}
 		case blogcomment.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -244,6 +265,11 @@ func (bc *BlogComment) QueryReplies() *BlogCommentQuery {
 // QueryUserIdentity queries the "user_identity" edge of the BlogComment entity.
 func (bc *BlogComment) QueryUserIdentity() *UserIdentityQuery {
 	return NewBlogCommentClient(bc.config).QueryUserIdentity(bc)
+}
+
+// QueryLikes queries the "likes" edge of the BlogComment entity.
+func (bc *BlogComment) QueryLikes() *CommentLikeQuery {
+	return NewBlogCommentClient(bc.config).QueryLikes(bc)
 }
 
 // Update returns a builder for updating this BlogComment.
@@ -298,6 +324,9 @@ func (bc *BlogComment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("user_identity_id=")
 	builder.WriteString(bc.UserIdentityID)
+	builder.WriteString(", ")
+	builder.WriteString("likes_count=")
+	builder.WriteString(fmt.Sprintf("%v", bc.LikesCount))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(bc.CreatedAt.Format(time.ANSIC))

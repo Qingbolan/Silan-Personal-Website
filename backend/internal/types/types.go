@@ -66,6 +66,8 @@ type BlogCommentData struct {
 	Content         string            `json:"content"`
 	CreatedAt       string            `json:"created_at"`
 	UserIdentityID  string            `json:"user_identity_id,optional"`
+	LikesCount      int               `json:"likes_count"`
+	IsLikedByUser   bool              `json:"is_liked_by_user"`
 	Replies         []BlogCommentData `json:"replies,optional"`
 }
 
@@ -420,6 +422,20 @@ type IdeaSearchRequest struct {
 
 type IdeaTagsRequest struct {
 	Language string `form:"lang,default=en"`
+}
+
+type LikeCommentRequest struct {
+	CommentID      string `path:"comment_id"`
+	Fingerprint    string `json:"fingerprint"`
+	UserIdentityId string `json:"user_identity_id,optional"`
+	ClientIP       string `json:"client_ip,optional"`
+	UserAgentFull  string `json:"user_agent_full,optional"`
+	Language       string `form:"lang,default=en"`
+}
+
+type LikeCommentResponse struct {
+	LikesCount    int  `json:"likes_count"`
+	IsLikedByUser bool `json:"is_liked_by_user"`
 }
 
 type PersonalInfo struct {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/useridentity"
 	"time"
@@ -201,6 +202,27 @@ func (bcu *BlogCommentUpdate) ClearUserIdentityID() *BlogCommentUpdate {
 	return bcu
 }
 
+// SetLikesCount sets the "likes_count" field.
+func (bcu *BlogCommentUpdate) SetLikesCount(i int) *BlogCommentUpdate {
+	bcu.mutation.ResetLikesCount()
+	bcu.mutation.SetLikesCount(i)
+	return bcu
+}
+
+// SetNillableLikesCount sets the "likes_count" field if the given value is not nil.
+func (bcu *BlogCommentUpdate) SetNillableLikesCount(i *int) *BlogCommentUpdate {
+	if i != nil {
+		bcu.SetLikesCount(*i)
+	}
+	return bcu
+}
+
+// AddLikesCount adds i to the "likes_count" field.
+func (bcu *BlogCommentUpdate) AddLikesCount(i int) *BlogCommentUpdate {
+	bcu.mutation.AddLikesCount(i)
+	return bcu
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (bcu *BlogCommentUpdate) SetUpdatedAt(t time.Time) *BlogCommentUpdate {
 	bcu.mutation.SetUpdatedAt(t)
@@ -235,6 +257,21 @@ func (bcu *BlogCommentUpdate) AddReplies(b ...*BlogComment) *BlogCommentUpdate {
 // SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
 func (bcu *BlogCommentUpdate) SetUserIdentity(u *UserIdentity) *BlogCommentUpdate {
 	return bcu.SetUserIdentityID(u.ID)
+}
+
+// AddLikeIDs adds the "likes" edge to the CommentLike entity by IDs.
+func (bcu *BlogCommentUpdate) AddLikeIDs(ids ...uuid.UUID) *BlogCommentUpdate {
+	bcu.mutation.AddLikeIDs(ids...)
+	return bcu
+}
+
+// AddLikes adds the "likes" edges to the CommentLike entity.
+func (bcu *BlogCommentUpdate) AddLikes(c ...*CommentLike) *BlogCommentUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return bcu.AddLikeIDs(ids...)
 }
 
 // Mutation returns the BlogCommentMutation object of the builder.
@@ -279,6 +316,27 @@ func (bcu *BlogCommentUpdate) RemoveReplies(b ...*BlogComment) *BlogCommentUpdat
 func (bcu *BlogCommentUpdate) ClearUserIdentity() *BlogCommentUpdate {
 	bcu.mutation.ClearUserIdentity()
 	return bcu
+}
+
+// ClearLikes clears all "likes" edges to the CommentLike entity.
+func (bcu *BlogCommentUpdate) ClearLikes() *BlogCommentUpdate {
+	bcu.mutation.ClearLikes()
+	return bcu
+}
+
+// RemoveLikeIDs removes the "likes" edge to CommentLike entities by IDs.
+func (bcu *BlogCommentUpdate) RemoveLikeIDs(ids ...uuid.UUID) *BlogCommentUpdate {
+	bcu.mutation.RemoveLikeIDs(ids...)
+	return bcu
+}
+
+// RemoveLikes removes "likes" edges to CommentLike entities.
+func (bcu *BlogCommentUpdate) RemoveLikes(c ...*CommentLike) *BlogCommentUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return bcu.RemoveLikeIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -396,6 +454,12 @@ func (bcu *BlogCommentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if bcu.mutation.UserAgentCleared() {
 		_spec.ClearField(blogcomment.FieldUserAgent, field.TypeString)
+	}
+	if value, ok := bcu.mutation.LikesCount(); ok {
+		_spec.SetField(blogcomment.FieldLikesCount, field.TypeInt, value)
+	}
+	if value, ok := bcu.mutation.AddedLikesCount(); ok {
+		_spec.AddField(blogcomment.FieldLikesCount, field.TypeInt, value)
 	}
 	if value, ok := bcu.mutation.UpdatedAt(); ok {
 		_spec.SetField(blogcomment.FieldUpdatedAt, field.TypeTime, value)
@@ -525,6 +589,51 @@ func (bcu *BlogCommentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if bcu.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   blogcomment.LikesTable,
+			Columns: []string{blogcomment.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(commentlike.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bcu.mutation.RemovedLikesIDs(); len(nodes) > 0 && !bcu.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   blogcomment.LikesTable,
+			Columns: []string{blogcomment.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(commentlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bcu.mutation.LikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   blogcomment.LikesTable,
+			Columns: []string{blogcomment.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(commentlike.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -722,6 +831,27 @@ func (bcuo *BlogCommentUpdateOne) ClearUserIdentityID() *BlogCommentUpdateOne {
 	return bcuo
 }
 
+// SetLikesCount sets the "likes_count" field.
+func (bcuo *BlogCommentUpdateOne) SetLikesCount(i int) *BlogCommentUpdateOne {
+	bcuo.mutation.ResetLikesCount()
+	bcuo.mutation.SetLikesCount(i)
+	return bcuo
+}
+
+// SetNillableLikesCount sets the "likes_count" field if the given value is not nil.
+func (bcuo *BlogCommentUpdateOne) SetNillableLikesCount(i *int) *BlogCommentUpdateOne {
+	if i != nil {
+		bcuo.SetLikesCount(*i)
+	}
+	return bcuo
+}
+
+// AddLikesCount adds i to the "likes_count" field.
+func (bcuo *BlogCommentUpdateOne) AddLikesCount(i int) *BlogCommentUpdateOne {
+	bcuo.mutation.AddLikesCount(i)
+	return bcuo
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (bcuo *BlogCommentUpdateOne) SetUpdatedAt(t time.Time) *BlogCommentUpdateOne {
 	bcuo.mutation.SetUpdatedAt(t)
@@ -756,6 +886,21 @@ func (bcuo *BlogCommentUpdateOne) AddReplies(b ...*BlogComment) *BlogCommentUpda
 // SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
 func (bcuo *BlogCommentUpdateOne) SetUserIdentity(u *UserIdentity) *BlogCommentUpdateOne {
 	return bcuo.SetUserIdentityID(u.ID)
+}
+
+// AddLikeIDs adds the "likes" edge to the CommentLike entity by IDs.
+func (bcuo *BlogCommentUpdateOne) AddLikeIDs(ids ...uuid.UUID) *BlogCommentUpdateOne {
+	bcuo.mutation.AddLikeIDs(ids...)
+	return bcuo
+}
+
+// AddLikes adds the "likes" edges to the CommentLike entity.
+func (bcuo *BlogCommentUpdateOne) AddLikes(c ...*CommentLike) *BlogCommentUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return bcuo.AddLikeIDs(ids...)
 }
 
 // Mutation returns the BlogCommentMutation object of the builder.
@@ -800,6 +945,27 @@ func (bcuo *BlogCommentUpdateOne) RemoveReplies(b ...*BlogComment) *BlogCommentU
 func (bcuo *BlogCommentUpdateOne) ClearUserIdentity() *BlogCommentUpdateOne {
 	bcuo.mutation.ClearUserIdentity()
 	return bcuo
+}
+
+// ClearLikes clears all "likes" edges to the CommentLike entity.
+func (bcuo *BlogCommentUpdateOne) ClearLikes() *BlogCommentUpdateOne {
+	bcuo.mutation.ClearLikes()
+	return bcuo
+}
+
+// RemoveLikeIDs removes the "likes" edge to CommentLike entities by IDs.
+func (bcuo *BlogCommentUpdateOne) RemoveLikeIDs(ids ...uuid.UUID) *BlogCommentUpdateOne {
+	bcuo.mutation.RemoveLikeIDs(ids...)
+	return bcuo
+}
+
+// RemoveLikes removes "likes" edges to CommentLike entities.
+func (bcuo *BlogCommentUpdateOne) RemoveLikes(c ...*CommentLike) *BlogCommentUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return bcuo.RemoveLikeIDs(ids...)
 }
 
 // Where appends a list predicates to the BlogCommentUpdate builder.
@@ -948,6 +1114,12 @@ func (bcuo *BlogCommentUpdateOne) sqlSave(ctx context.Context) (_node *BlogComme
 	if bcuo.mutation.UserAgentCleared() {
 		_spec.ClearField(blogcomment.FieldUserAgent, field.TypeString)
 	}
+	if value, ok := bcuo.mutation.LikesCount(); ok {
+		_spec.SetField(blogcomment.FieldLikesCount, field.TypeInt, value)
+	}
+	if value, ok := bcuo.mutation.AddedLikesCount(); ok {
+		_spec.AddField(blogcomment.FieldLikesCount, field.TypeInt, value)
+	}
 	if value, ok := bcuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(blogcomment.FieldUpdatedAt, field.TypeTime, value)
 	}
@@ -1076,6 +1248,51 @@ func (bcuo *BlogCommentUpdateOne) sqlSave(ctx context.Context) (_node *BlogComme
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if bcuo.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   blogcomment.LikesTable,
+			Columns: []string{blogcomment.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(commentlike.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bcuo.mutation.RemovedLikesIDs(); len(nodes) > 0 && !bcuo.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   blogcomment.LikesTable,
+			Columns: []string{blogcomment.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(commentlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bcuo.mutation.LikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   blogcomment.LikesTable,
+			Columns: []string{blogcomment.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(commentlike.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

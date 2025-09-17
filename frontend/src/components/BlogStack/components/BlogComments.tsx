@@ -14,6 +14,8 @@ interface Comment {
   content: string;
   created_at: string;
   user_identity_id?: string;
+  likes_count: number;
+  is_liked_by_user: boolean;
   replies?: Comment[];
 }
 
@@ -76,7 +78,26 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
       setLoading(true);
       const pid = await resolvePostId();
       if (!pid) throw new Error('missing post id');
-      const response = await fetch(`/api/v1/blog/posts/${pid}/comments?lang=${language}`);
+
+      // Build query parameters
+      const params = new URLSearchParams({ lang: language });
+
+      // Add fingerprint for like status
+      try {
+        const fingerprint = await getClientFingerprint();
+        if (fingerprint) {
+          params.append('fingerprint', fingerprint);
+        }
+      } catch (error) {
+        console.warn('Failed to get fingerprint:', error);
+      }
+
+      // Add user identity if logged in
+      if (currentUser?.id) {
+        params.append('user_identity_id', currentUser.id);
+      }
+
+      const response = await fetch(`/api/v1/blog/posts/${pid}/comments?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setComments(data.comments || []);
@@ -257,6 +278,66 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
     }
   };
 
+  const likeComment = async (commentId: string) => {
+    try {
+      const fingerprint = await getClientFingerprint();
+      const requestData: any = {
+        lang: language
+      };
+
+      if (fingerprint) {
+        requestData.fingerprint = fingerprint;
+      }
+
+      if (currentUser?.id) {
+        requestData.user_identity_id = currentUser.id;
+      }
+
+      const response = await fetch(`/api/v1/blog/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        // Update the specific comment in state
+        setComments(prevComments => {
+          const updateCommentInTree = (comments: Comment[]): Comment[] => {
+            return comments.map(comment => {
+              if (comment.id === commentId) {
+                return {
+                  ...comment,
+                  likes_count: result.likes_count,
+                  is_liked_by_user: result.is_liked_by_user
+                };
+              }
+
+              if (comment.replies && comment.replies.length > 0) {
+                return {
+                  ...comment,
+                  replies: updateCommentInTree(comment.replies)
+                };
+              }
+
+              return comment;
+            });
+          };
+
+          return updateCommentInTree(prevComments);
+        });
+      } else {
+        const text = await response.text();
+        console.error('Like failed:', response.status, text);
+      }
+    } catch (error) {
+      console.error('Failed to like comment:', error);
+    }
+  };
+
   const renderComment = (comment: Comment, depth: number = 0): React.ReactNode => {
     const getDisplayName = (name: string) => {
       if (!name) return 'Anonymous';
@@ -334,8 +415,22 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
                 {comment.content}
               </p>
 
-              {loginAvailable && depth < 3 && (
-                <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                {/* Like button */}
+                <button
+                  onClick={() => likeComment(comment.id)}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-gray-100"
+                  style={{
+                    color: comment.is_liked_by_user ? colors.primary : colors.textSecondary,
+                    backgroundColor: comment.is_liked_by_user ? `${colors.primary}20` : 'transparent'
+                  }}
+                >
+                  <span>{comment.is_liked_by_user ? '❤️' : '🤍'}</span>
+                  <span>{comment.likes_count || 0}</span>
+                </button>
+
+                {/* Reply button */}
+                {loginAvailable && depth < 3 && (
                   <button
                     onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                     className="text-xs px-2 py-1 rounded"
@@ -346,8 +441,8 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
                   >
                     {language === 'en' ? 'Reply' : '回复'}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
 
               {replyingTo === comment.id && (
                 <div className="mt-3 p-3 border rounded" style={{ borderColor: colors.cardBorder }}>

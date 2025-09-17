@@ -408,6 +408,8 @@ type (
 		Content         string            `json:"content"`
 		CreatedAt       string            `json:"created_at"`
 		UserIdentityID  string            `json:"user_identity_id,optional"`
+		LikesCount      int               `json:"likes_count"`
+		IsLikedByUser   bool              `json:"is_liked_by_user"`
 		Replies         []BlogCommentData `json:"replies,optional"`
 	}
 	BlogCommentListResponse {
@@ -438,6 +440,18 @@ type (
 		ClientIP       string `json:"client_ip,optional"`
 		UserAgentFull  string `json:"user_agent_full,optional"`
 		Language       string `form:"lang,default=en"`
+	}
+	LikeCommentRequest {
+		CommentID      string `path:"comment_id"`
+		Fingerprint    string `json:"fingerprint"`
+		UserIdentityId string `json:"user_identity_id,optional"`
+		ClientIP       string `json:"client_ip,optional"`
+		UserAgentFull  string `json:"user_agent_full,optional"`
+		Language       string `form:"lang,default=en"`
+	}
+	LikeCommentResponse {
+		LikesCount    int  `json:"likes_count"`
+		IsLikedByUser bool `json:"is_liked_by_user"`
 	}
 	BlogListRequest {
 		Page        int    `form:"page,default=1"`
@@ -885,6 +899,10 @@ service backend-api {
 	@doc "Delete a comment (fingerprint required)"
 	@handler DeleteBlogComment
 	delete /comments/:comment_id (DeleteBlogCommentRequest)
+
+	@doc "Like/Unlike a comment"
+	@handler LikeComment
+	post /comments/:comment_id/like (LikeCommentRequest) returns (LikeCommentResponse)
 }
 
 // ========== IDEAS PAGE GROUP ==========

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/useridentity"
 	"time"
 
@@ -131,6 +132,20 @@ func (bcc *BlogCommentCreate) SetNillableUserIdentityID(s *string) *BlogCommentC
 	return bcc
 }
 
+// SetLikesCount sets the "likes_count" field.
+func (bcc *BlogCommentCreate) SetLikesCount(i int) *BlogCommentCreate {
+	bcc.mutation.SetLikesCount(i)
+	return bcc
+}
+
+// SetNillableLikesCount sets the "likes_count" field if the given value is not nil.
+func (bcc *BlogCommentCreate) SetNillableLikesCount(i *int) *BlogCommentCreate {
+	if i != nil {
+		bcc.SetLikesCount(*i)
+	}
+	return bcc
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (bcc *BlogCommentCreate) SetCreatedAt(t time.Time) *BlogCommentCreate {
 	bcc.mutation.SetCreatedAt(t)
@@ -203,6 +218,21 @@ func (bcc *BlogCommentCreate) SetUserIdentity(u *UserIdentity) *BlogCommentCreat
 	return bcc.SetUserIdentityID(u.ID)
 }
 
+// AddLikeIDs adds the "likes" edge to the CommentLike entity by IDs.
+func (bcc *BlogCommentCreate) AddLikeIDs(ids ...uuid.UUID) *BlogCommentCreate {
+	bcc.mutation.AddLikeIDs(ids...)
+	return bcc
+}
+
+// AddLikes adds the "likes" edges to the CommentLike entity.
+func (bcc *BlogCommentCreate) AddLikes(c ...*CommentLike) *BlogCommentCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return bcc.AddLikeIDs(ids...)
+}
+
 // Mutation returns the BlogCommentMutation object of the builder.
 func (bcc *BlogCommentCreate) Mutation() *BlogCommentMutation {
 	return bcc.mutation
@@ -241,6 +271,10 @@ func (bcc *BlogCommentCreate) defaults() {
 	if _, ok := bcc.mutation.IsApproved(); !ok {
 		v := blogcomment.DefaultIsApproved
 		bcc.mutation.SetIsApproved(v)
+	}
+	if _, ok := bcc.mutation.LikesCount(); !ok {
+		v := blogcomment.DefaultLikesCount
+		bcc.mutation.SetLikesCount(v)
 	}
 	if _, ok := bcc.mutation.CreatedAt(); !ok {
 		v := blogcomment.DefaultCreatedAt()
@@ -302,6 +336,9 @@ func (bcc *BlogCommentCreate) check() error {
 		if err := blogcomment.UserAgentValidator(v); err != nil {
 			return &ValidationError{Name: "user_agent", err: fmt.Errorf(`ent: validator failed for field "BlogComment.user_agent": %w`, err)}
 		}
+	}
+	if _, ok := bcc.mutation.LikesCount(); !ok {
+		return &ValidationError{Name: "likes_count", err: errors.New(`ent: missing required field "BlogComment.likes_count"`)}
 	}
 	if _, ok := bcc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "BlogComment.created_at"`)}
@@ -374,6 +411,10 @@ func (bcc *BlogCommentCreate) createSpec() (*BlogComment, *sqlgraph.CreateSpec) 
 	if value, ok := bcc.mutation.UserAgent(); ok {
 		_spec.SetField(blogcomment.FieldUserAgent, field.TypeString, value)
 		_node.UserAgent = value
+	}
+	if value, ok := bcc.mutation.LikesCount(); ok {
+		_spec.SetField(blogcomment.FieldLikesCount, field.TypeInt, value)
+		_node.LikesCount = value
 	}
 	if value, ok := bcc.mutation.CreatedAt(); ok {
 		_spec.SetField(blogcomment.FieldCreatedAt, field.TypeTime, value)
@@ -448,6 +489,22 @@ func (bcc *BlogCommentCreate) createSpec() (*BlogComment, *sqlgraph.CreateSpec) 
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.UserIdentityID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bcc.mutation.LikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   blogcomment.LikesTable,
+			Columns: []string{blogcomment.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(commentlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

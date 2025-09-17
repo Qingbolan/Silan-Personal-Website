@@ -125,6 +125,7 @@ var (
 		{Name: "is_approved", Type: field.TypeBool, Default: false},
 		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
 		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "likes_count", Type: field.TypeInt, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
@@ -139,19 +140,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "blog_comments_blog_comments_parent",
-				Columns:    []*schema.Column{BlogCommentsColumns[10]},
+				Columns:    []*schema.Column{BlogCommentsColumns[11]},
 				RefColumns: []*schema.Column{BlogCommentsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "blog_comments_user_identities_user_identity",
-				Columns:    []*schema.Column{BlogCommentsColumns[11]},
+				Columns:    []*schema.Column{BlogCommentsColumns[12]},
 				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "blog_comments_blog_posts_comments",
-				Columns:    []*schema.Column{BlogCommentsColumns[12]},
+				Columns:    []*schema.Column{BlogCommentsColumns[13]},
 				RefColumns: []*schema.Column{BlogPostsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -329,6 +330,57 @@ var (
 		Name:       "blog_tags",
 		Columns:    BlogTagsColumns,
 		PrimaryKey: []*schema.Column{BlogTagsColumns[0]},
+	}
+	// CommentLikesColumns holds the columns for the "comment_likes" table.
+	CommentLikesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "fingerprint", Type: field.TypeString, Nullable: true},
+		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "comment_id", Type: field.TypeUUID},
+		{Name: "user_identity_id", Type: field.TypeString, Nullable: true},
+	}
+	// CommentLikesTable holds the schema information for the "comment_likes" table.
+	CommentLikesTable = &schema.Table{
+		Name:       "comment_likes",
+		Columns:    CommentLikesColumns,
+		PrimaryKey: []*schema.Column{CommentLikesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "comment_likes_blog_comments_likes",
+				Columns:    []*schema.Column{CommentLikesColumns[4]},
+				RefColumns: []*schema.Column{BlogCommentsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "comment_likes_user_identities_user_identity",
+				Columns:    []*schema.Column{CommentLikesColumns[5]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "commentlike_comment_id_user_identity_id",
+				Unique:  true,
+				Columns: []*schema.Column{CommentLikesColumns[4], CommentLikesColumns[5]},
+			},
+			{
+				Name:    "commentlike_comment_id_fingerprint",
+				Unique:  true,
+				Columns: []*schema.Column{CommentLikesColumns[4], CommentLikesColumns[1]},
+			},
+			{
+				Name:    "commentlike_comment_id",
+				Unique:  false,
+				Columns: []*schema.Column{CommentLikesColumns[4]},
+			},
+			{
+				Name:    "commentlike_user_identity_id",
+				Unique:  false,
+				Columns: []*schema.Column{CommentLikesColumns[5]},
+			},
+		},
 	}
 	// EducationColumns holds the columns for the "education" table.
 	EducationColumns = []*schema.Column{
@@ -1298,6 +1350,7 @@ var (
 		BlogSeriesTable,
 		BlogSeriesTranslationsTable,
 		BlogTagsTable,
+		CommentLikesTable,
 		EducationTable,
 		EducationDetailsTable,
 		EducationDetailTranslationsTable,
@@ -1385,6 +1438,11 @@ func init() {
 	}
 	BlogTagsTable.Annotation = &entsql.Annotation{
 		Table: "blog_tags",
+	}
+	CommentLikesTable.ForeignKeys[0].RefTable = BlogCommentsTable
+	CommentLikesTable.ForeignKeys[1].RefTable = UserIdentitiesTable
+	CommentLikesTable.Annotation = &entsql.Annotation{
+		Table: "comment_likes",
 	}
 	EducationTable.ForeignKeys[0].RefTable = UsersTable
 	EducationTable.Annotation = &entsql.Annotation{

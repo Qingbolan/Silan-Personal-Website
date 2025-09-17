@@ -337,6 +337,9 @@ export interface BlogCommentData {
   author_name: string;
   content: string;
   created_at: string;
+  likes_count: number;
+  is_liked_by_user: boolean;
+  replies?: BlogCommentData[];
 }
 
 export interface BlogCommentListResponse {
@@ -346,11 +349,18 @@ export interface BlogCommentListResponse {
 
 export const listBlogComments = async (
   postId: string,
+  fingerprint?: string,
+  userIdentityId?: string,
   language: 'en' | 'zh' = 'en'
 ): Promise<BlogCommentData[]> => {
-  const res = await get<BlogCommentListResponse>(`/api/v1/blog/posts/${postId}/comments`, {
+  const params: any = {
     lang: formatLanguage(language)
-  });
+  };
+
+  if (fingerprint) params.fingerprint = fingerprint;
+  if (userIdentityId) params.user_identity_id = userIdentityId;
+
+  const res = await get<BlogCommentListResponse>(`/api/v1/blog/posts/${postId}/comments`, params);
   return res?.comments ?? [];
 };
 
@@ -378,4 +388,26 @@ export const deleteBlogComment = async (
   language: 'en' | 'zh' = 'en'
 ): Promise<void> => {
   await del(`/api/v1/blog/comments/${commentId}?lang=${formatLanguage(language)}`);
+};
+
+export interface LikeCommentResponse {
+  likes_count: number;
+  is_liked_by_user: boolean;
+}
+
+export const likeComment = async (
+  commentId: string,
+  fingerprint?: string,
+  userIdentityId?: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<LikeCommentResponse> => {
+  const data: any = {
+    lang: formatLanguage(language)
+  };
+
+  if (fingerprint) data.fingerprint = fingerprint;
+  if (userIdentityId) data.user_identity_id = userIdentityId;
+
+  const res = await post<LikeCommentResponse>(`/api/v1/blog/comments/${commentId}/like`, data);
+  return res;
 };

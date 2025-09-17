@@ -118,3 +118,19 @@ class SocialLink(Base):
     
     # Relationships
     personal_info: Mapped["PersonalInfo"] = relationship(back_populates="social_links")
+
+
+class UserIdentity(Base, TimestampMixin):
+    """Stores third-party OAuth identity and profile (including avatar)"""
+    __tablename__ = "user_identities"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
+    display_name: Mapped[Optional[str]] = mapped_column(String(255))
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500))
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Note: Indexes for unique constraint on (provider, external_id) and email lookup
+    # should be handled by migrations or database-specific implementations

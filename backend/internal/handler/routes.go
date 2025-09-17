@@ -50,6 +50,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Handler: blog.DeleteBlogCommentHandler(serverCtx),
 				},
 				{
+					// Like/Unlike a comment
+					Method:  http.MethodPost,
+					Path:    "/comments/:comment_id/like",
+					Handler: blog.LikeCommentHandler(serverCtx),
+				},
+				{
 					// Get blog posts list with pagination and filtering
 					Method:  http.MethodGet,
 					Path:    "/posts",

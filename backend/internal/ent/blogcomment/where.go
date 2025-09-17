@@ -106,6 +106,11 @@ func UserIdentityID(v string) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldEQ(FieldUserIdentityID, v))
 }
 
+// LikesCount applies equality check predicate on the "likes_count" field. It's identical to LikesCountEQ.
+func LikesCount(v int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldEQ(FieldLikesCount, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldEQ(FieldCreatedAt, v))
@@ -671,6 +676,46 @@ func UserIdentityIDContainsFold(v string) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldContainsFold(FieldUserIdentityID, v))
 }
 
+// LikesCountEQ applies the EQ predicate on the "likes_count" field.
+func LikesCountEQ(v int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldEQ(FieldLikesCount, v))
+}
+
+// LikesCountNEQ applies the NEQ predicate on the "likes_count" field.
+func LikesCountNEQ(v int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldNEQ(FieldLikesCount, v))
+}
+
+// LikesCountIn applies the In predicate on the "likes_count" field.
+func LikesCountIn(vs ...int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldIn(FieldLikesCount, vs...))
+}
+
+// LikesCountNotIn applies the NotIn predicate on the "likes_count" field.
+func LikesCountNotIn(vs ...int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldNotIn(FieldLikesCount, vs...))
+}
+
+// LikesCountGT applies the GT predicate on the "likes_count" field.
+func LikesCountGT(v int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldGT(FieldLikesCount, v))
+}
+
+// LikesCountGTE applies the GTE predicate on the "likes_count" field.
+func LikesCountGTE(v int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldGTE(FieldLikesCount, v))
+}
+
+// LikesCountLT applies the LT predicate on the "likes_count" field.
+func LikesCountLT(v int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldLT(FieldLikesCount, v))
+}
+
+// LikesCountLTE applies the LTE predicate on the "likes_count" field.
+func LikesCountLTE(v int) predicate.BlogComment {
+	return predicate.BlogComment(sql.FieldLTE(FieldLikesCount, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.BlogComment {
 	return predicate.BlogComment(sql.FieldEQ(FieldCreatedAt, v))
@@ -835,6 +880,29 @@ func HasUserIdentity() predicate.BlogComment {
 func HasUserIdentityWith(preds ...predicate.UserIdentity) predicate.BlogComment {
 	return predicate.BlogComment(func(s *sql.Selector) {
 		step := newUserIdentityStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasLikes applies the HasEdge predicate on the "likes" edge.
+func HasLikes() predicate.BlogComment {
+	return predicate.BlogComment(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, LikesTable, LikesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLikesWith applies the HasEdge predicate on the "likes" edge with a given conditions (other predicates).
+func HasLikesWith(preds ...predicate.CommentLike) predicate.BlogComment {
+	return predicate.BlogComment(func(s *sql.Selector) {
+		step := newLikesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

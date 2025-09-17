@@ -39,6 +39,9 @@ type BlogSeriesTranslation func(*sql.Selector)
 // BlogTag is the predicate function for blogtag builders.
 type BlogTag func(*sql.Selector)
 
+// CommentLike is the predicate function for commentlike builders.
+type CommentLike func(*sql.Selector)
+
 // Education is the predicate function for education builders.
 type Education func(*sql.Selector)
 

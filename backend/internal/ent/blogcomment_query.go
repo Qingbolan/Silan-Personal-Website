@@ -9,6 +9,7 @@ import (
 	"math"
 	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/useridentity"
 
@@ -30,6 +31,7 @@ type BlogCommentQuery struct {
 	withParent       *BlogCommentQuery
 	withReplies      *BlogCommentQuery
 	withUserIdentity *UserIdentityQuery
+	withLikes        *CommentLikeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -147,6 +149,28 @@ func (bcq *BlogCommentQuery) QueryUserIdentity() *UserIdentityQuery {
 			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, selector),
 			sqlgraph.To(useridentity.Table, useridentity.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, blogcomment.UserIdentityTable, blogcomment.UserIdentityColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bcq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLikes chains the current query on the "likes" edge.
+func (bcq *BlogCommentQuery) QueryLikes() *CommentLikeQuery {
+	query := (&CommentLikeClient{config: bcq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bcq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bcq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, selector),
+			sqlgraph.To(commentlike.Table, commentlike.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, blogcomment.LikesTable, blogcomment.LikesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bcq.driver.Dialect(), step)
 		return fromU, nil
@@ -350,6 +374,7 @@ func (bcq *BlogCommentQuery) Clone() *BlogCommentQuery {
 		withParent:       bcq.withParent.Clone(),
 		withReplies:      bcq.withReplies.Clone(),
 		withUserIdentity: bcq.withUserIdentity.Clone(),
+		withLikes:        bcq.withLikes.Clone(),
 		// clone intermediate query.
 		sql:  bcq.sql.Clone(),
 		path: bcq.path,
@@ -397,6 +422,17 @@ func (bcq *BlogCommentQuery) WithUserIdentity(opts ...func(*UserIdentityQuery)) 
 		opt(query)
 	}
 	bcq.withUserIdentity = query
+	return bcq
+}
+
+// WithLikes tells the query-builder to eager-load the nodes that are connected to
+// the "likes" edge. The optional arguments are used to configure the query builder of the edge.
+func (bcq *BlogCommentQuery) WithLikes(opts ...func(*CommentLikeQuery)) *BlogCommentQuery {
+	query := (&CommentLikeClient{config: bcq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bcq.withLikes = query
 	return bcq
 }
 
@@ -478,11 +514,12 @@ func (bcq *BlogCommentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*BlogComment{}
 		_spec       = bcq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			bcq.withBlogPost != nil,
 			bcq.withParent != nil,
 			bcq.withReplies != nil,
 			bcq.withUserIdentity != nil,
+			bcq.withLikes != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -525,6 +562,13 @@ func (bcq *BlogCommentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if query := bcq.withUserIdentity; query != nil {
 		if err := bcq.loadUserIdentity(ctx, query, nodes, nil,
 			func(n *BlogComment, e *UserIdentity) { n.Edges.UserIdentity = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := bcq.withLikes; query != nil {
+		if err := bcq.loadLikes(ctx, query, nodes,
+			func(n *BlogComment) { n.Edges.Likes = []*CommentLike{} },
+			func(n *BlogComment, e *CommentLike) { n.Edges.Likes = append(n.Edges.Likes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -645,6 +689,36 @@ func (bcq *BlogCommentQuery) loadUserIdentity(ctx context.Context, query *UserId
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (bcq *BlogCommentQuery) loadLikes(ctx context.Context, query *CommentLikeQuery, nodes []*BlogComment, init func(*BlogComment), assign func(*BlogComment, *CommentLike)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*BlogComment)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(commentlike.FieldCommentID)
+	}
+	query.Where(predicate.CommentLike(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(blogcomment.LikesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CommentID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "comment_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

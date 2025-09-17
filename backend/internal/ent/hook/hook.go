@@ -140,6 +140,18 @@ func (f BlogTagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BlogTagMutation", m)
 }
 
+// The CommentLikeFunc type is an adapter to allow the use of ordinary
+// function as CommentLike mutator.
+type CommentLikeFunc func(context.Context, *ent.CommentLikeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CommentLikeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CommentLikeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CommentLikeMutation", m)
+}
+
 // The EducationFunc type is an adapter to allow the use of ordinary
 // function as Education mutator.
 type EducationFunc func(context.Context, *ent.EducationMutation) (ent.Value, error)

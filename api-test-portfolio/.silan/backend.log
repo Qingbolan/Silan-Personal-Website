@@ -314,3 +314,117 @@ Database: sqlite3 (***)
 {"@timestamp":"2025-09-17T15:48:56.055+08:00","caller":"blog/createblogcommentlogic.go:147","content":"Created reply comment 7e7f62e1-411e-46e4-949e-4d1659f17d16 by authenticated user (author: 胡思蓝（青博蓝）, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
 {"@timestamp":"2025-09-17T15:48:56.061+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post a72e44c7-1317-4e10-bf98-5abef1d25074 from IP ::1","level":"info"}
 {"@timestamp":"2025-09-17T15:48:56.062+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 5 comments (5 root, 7 total) for post a72e44c7-1317-4e10-bf98-5abef1d25074 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:09:53.861+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post a72e44c7-1317-4e10-bf98-5abef1d25074","level":"info"}
+{"@timestamp":"2025-09-17T16:10:01.834+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:10:01.835+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:10:01.896+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:10:01.896+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:10:01.896+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:10:01.897+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:05.801+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:05.819+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:05.835+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:05.942+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:05.942+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:05.943+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:05.943+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:14.988+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:14.999+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:15.027+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:15.168+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:15.169+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:15.170+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:15.170+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:25.482+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:25.499+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:25.505+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:11:25.589+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:25.590+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:25.590+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:25.590+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:46.846+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:46.846+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:56.258+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:11:56.259+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 9 comments (9 root, 9 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:36.549+08:00","caller":"blog/deleteblogcommentlogic.go:62","content":"User authorized to delete comment 82c2cd76-4320-4383-8e84-0ffb2ad54253 (userID: u_fc75385a9031426ca3f893322c0946b2, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
+{"@timestamp":"2025-09-17T16:12:36.550+08:00","caller":"blog/deleteblogcommentlogic.go:93","content":"Deleted comment 82c2cd76-4320-4383-8e84-0ffb2ad54253 and 0 replies","level":"info"}
+{"@timestamp":"2025-09-17T16:12:36.555+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:36.555+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 8 comments (8 root, 8 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:40.530+08:00","caller":"blog/deleteblogcommentlogic.go:62","content":"User authorized to delete comment 4a665101-7031-4e48-83c8-f1b2d8f9aa36 (userID: u_fc75385a9031426ca3f893322c0946b2, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
+{"@timestamp":"2025-09-17T16:12:40.530+08:00","caller":"blog/deleteblogcommentlogic.go:93","content":"Deleted comment 4a665101-7031-4e48-83c8-f1b2d8f9aa36 and 0 replies","level":"info"}
+{"@timestamp":"2025-09-17T16:12:40.534+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:40.534+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 7 comments (7 root, 7 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:44.318+08:00","caller":"blog/deleteblogcommentlogic.go:62","content":"User authorized to delete comment 2b0aa8de-9d06-45f0-9cbb-96efd71ff4f0 (userID: u_fc75385a9031426ca3f893322c0946b2, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
+{"@timestamp":"2025-09-17T16:12:44.319+08:00","caller":"blog/deleteblogcommentlogic.go:93","content":"Deleted comment 2b0aa8de-9d06-45f0-9cbb-96efd71ff4f0 and 0 replies","level":"info"}
+{"@timestamp":"2025-09-17T16:12:44.325+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:44.326+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 6 comments (6 root, 6 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:48.598+08:00","caller":"blog/deleteblogcommentlogic.go:62","content":"User authorized to delete comment bf4a54a4-4f06-4948-8cdb-08ef50c17d4a (userID: u_fc75385a9031426ca3f893322c0946b2, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
+{"@timestamp":"2025-09-17T16:12:48.599+08:00","caller":"blog/deleteblogcommentlogic.go:93","content":"Deleted comment bf4a54a4-4f06-4948-8cdb-08ef50c17d4a and 0 replies","level":"info"}
+{"@timestamp":"2025-09-17T16:12:48.603+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:48.603+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 5 comments (5 root, 5 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:51.900+08:00","caller":"blog/deleteblogcommentlogic.go:62","content":"User authorized to delete comment 7d4a4552-b257-4989-9b34-167887e87d89 (userID: u_fc75385a9031426ca3f893322c0946b2, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
+{"@timestamp":"2025-09-17T16:12:51.901+08:00","caller":"blog/deleteblogcommentlogic.go:93","content":"Deleted comment 7d4a4552-b257-4989-9b34-167887e87d89 and 0 replies","level":"info"}
+{"@timestamp":"2025-09-17T16:12:51.906+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:51.906+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 4 comments (4 root, 4 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:55.775+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:12:55.775+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 4 comments (4 root, 4 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:13:05.952+08:00","caller":"blog/listBlogCommentsHandler.go:26","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:13:05.952+08:00","caller":"blog/listblogcommentslogic.go:136","content":"Returned 4 comments (4 root, 4 total) for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:13:09.930+08:00","caller":"handler/loghandler.go:147","content":"[HTTP] 404 - POST /api/v1/blog/comments/3428f323-3895-4b68-886b-69a62d26fe7a/like - [::1]:62522 - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15","duration":"0.1ms","level":"info","span":"a72208207cd4bb3e","trace":"f3b5e314b6e50ca0e3cfc2c0c656f901"}
+{"@timestamp":"2025-09-17T16:13:45.992+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T16:13:54.031+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:13:54.033+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:13:54.149+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:13:54.149+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 7f67bf42-c74f-4a01-80c1-4eada020bf78 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:18:36.620+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T16:19:04.342+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T16:19:23.300+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:19:23.302+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:19:23.358+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:19:23.358+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:19:23.358+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:19:23.358+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:19:36.593+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:19:36.594+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:19:36.802+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:19:36.802+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:19:36.802+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:19:36.802+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:07.035+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:07.035+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:22.252+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:20:22.253+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:20:22.403+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:22.403+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:22.403+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:22.403+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:40.027+08:00","caller":"blog/createblogcommentlogic.go:147","content":"Created root comment 0e2d193a-eff0-4e70-96e4-b242cc655d6c by authenticated user (author: 胡思蓝（青博蓝）, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
+{"@timestamp":"2025-09-17T16:20:40.032+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:40.033+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 1 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:47.965+08:00","caller":"blog/createblogcommentlogic.go:147","content":"Created reply comment 173d3408-ed1d-4dff-805a-ae620cbf8ab6 by authenticated user (author: 胡思蓝（青博蓝）, ip: ::1, fingerprint: 5epsjz-kk86k3)","level":"info"}
+{"@timestamp":"2025-09-17T16:20:47.972+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:47.973+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 2 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:54.071+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:20:54.073+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:20:54.166+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:54.166+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:54.167+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 2 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:20:54.168+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 2 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:02.456+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:21:02.457+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:21:02.513+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:02.513+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:02.514+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 2 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:02.514+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 2 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:07.981+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:21:07.982+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a","level":"info"}
+{"@timestamp":"2025-09-17T16:21:08.076+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:08.076+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a from IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:08.076+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 2 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}
+{"@timestamp":"2025-09-17T16:21:08.076+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 1 comments (1 root, 2 total) for post 39afb6f8-6e95-480c-bd04-2e1e4e1ac30a to IP ::1","level":"info"}

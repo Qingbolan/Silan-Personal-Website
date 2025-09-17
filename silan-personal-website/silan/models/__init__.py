@@ -6,7 +6,7 @@ All models have been updated to match the Go schema exactly.
 """
 
 from .base import Base, TimestampMixin, UUID, generate_uuid
-from .user import User, Language, PersonalInfo, PersonalInfoTranslation, SocialLink
+from .user import User, Language, PersonalInfo, PersonalInfoTranslation, SocialLink, UserIdentity
 from .education import Education, EducationTranslation, EducationDetail, EducationDetailTranslation
 from .experience import WorkExperience, WorkExperienceTranslation, WorkExperienceDetail, WorkExperienceDetailTranslation
 from .projects import (
@@ -16,7 +16,7 @@ from .projects import (
 from .blog import (
     BlogPost, BlogPostTranslation, BlogCategory, BlogCategoryTranslation,
     BlogTag, BlogPostTag, BlogSeries, BlogSeriesTranslation, BlogComment,
-    BlogContentType, BlogStatus
+    CommentLike, BlogContentType, BlogStatus
 )
 from .ideas import Idea, IdeaTranslation, IdeaStatus, IdeaPriority
 from .research import (
@@ -31,7 +31,7 @@ __all__ = [
     'Base', 'TimestampMixin', 'UUID', 'generate_uuid',
     
     # User & Profile
-    'User', 'Language', 'PersonalInfo', 'PersonalInfoTranslation', 'SocialLink',
+    'User', 'Language', 'PersonalInfo', 'PersonalInfoTranslation', 'SocialLink', 'UserIdentity',
     
     # Education
     'Education', 'EducationTranslation', 'EducationDetail', 'EducationDetailTranslation',
@@ -46,7 +46,7 @@ __all__ = [
     # Blog
     'BlogPost', 'BlogPostTranslation', 'BlogCategory', 'BlogCategoryTranslation',
     'BlogTag', 'BlogPostTag', 'BlogSeries', 'BlogSeriesTranslation', 'BlogComment',
-    'BlogContentType', 'BlogStatus',
+    'CommentLike', 'BlogContentType', 'BlogStatus',
     
     # Ideas
     'Idea', 'IdeaTranslation', 'IdeaStatus', 'IdeaPriority',

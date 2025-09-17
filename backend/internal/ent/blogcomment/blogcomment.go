@@ -35,6 +35,8 @@ const (
 	FieldUserAgent = "user_agent"
 	// FieldUserIdentityID holds the string denoting the user_identity_id field in the database.
 	FieldUserIdentityID = "user_identity_id"
+	// FieldLikesCount holds the string denoting the likes_count field in the database.
+	FieldLikesCount = "likes_count"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -47,6 +49,8 @@ const (
 	EdgeReplies = "replies"
 	// EdgeUserIdentity holds the string denoting the user_identity edge name in mutations.
 	EdgeUserIdentity = "user_identity"
+	// EdgeLikes holds the string denoting the likes edge name in mutations.
+	EdgeLikes = "likes"
 	// Table holds the table name of the blogcomment in the database.
 	Table = "blog_comments"
 	// BlogPostTable is the table that holds the blog_post relation/edge.
@@ -71,6 +75,13 @@ const (
 	UserIdentityInverseTable = "user_identities"
 	// UserIdentityColumn is the table column denoting the user_identity relation/edge.
 	UserIdentityColumn = "user_identity_id"
+	// LikesTable is the table that holds the likes relation/edge.
+	LikesTable = "comment_likes"
+	// LikesInverseTable is the table name for the CommentLike entity.
+	// It exists in this package in order to avoid circular dependency with the "commentlike" package.
+	LikesInverseTable = "comment_likes"
+	// LikesColumn is the table column denoting the likes relation/edge.
+	LikesColumn = "comment_id"
 )
 
 // Columns holds all SQL columns for blogcomment fields.
@@ -86,6 +97,7 @@ var Columns = []string{
 	FieldIPAddress,
 	FieldUserAgent,
 	FieldUserIdentityID,
+	FieldLikesCount,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -115,6 +127,8 @@ var (
 	IPAddressValidator func(string) error
 	// UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	UserAgentValidator func(string) error
+	// DefaultLikesCount holds the default value on creation for the "likes_count" field.
+	DefaultLikesCount int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -183,6 +197,11 @@ func ByUserIdentityID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserIdentityID, opts...).ToFunc()
 }
 
+// ByLikesCountField orders the results by the likes_count field.
+func ByLikesCountField(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLikesCount, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
@@ -227,6 +246,20 @@ func ByUserIdentityField(field string, opts ...sql.OrderTermOption) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newUserIdentityStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByLikesCount orders the results by likes count.
+func ByLikesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newLikesStep(), opts...)
+	}
+}
+
+// ByLikes orders the results by likes terms.
+func ByLikes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLikesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newBlogPostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -253,5 +286,12 @@ func newUserIdentityStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserIdentityInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, UserIdentityTable, UserIdentityColumn),
+	)
+}
+func newLikesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LikesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, LikesTable, LikesColumn),
 	)
 }

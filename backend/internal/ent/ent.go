@@ -18,6 +18,7 @@ import (
 	"silan-backend/internal/ent/blogseries"
 	"silan-backend/internal/ent/blogseriestranslation"
 	"silan-backend/internal/ent/blogtag"
+	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/education"
 	"silan-backend/internal/ent/educationdetail"
 	"silan-backend/internal/ent/educationdetailtranslation"
@@ -127,6 +128,7 @@ func checkColumn(table, column string) error {
 			blogseries.Table:                       blogseries.ValidColumn,
 			blogseriestranslation.Table:            blogseriestranslation.ValidColumn,
 			blogtag.Table:                          blogtag.ValidColumn,
+			commentlike.Table:                      commentlike.ValidColumn,
 			education.Table:                        education.ValidColumn,
 			educationdetail.Table:                  educationdetail.ValidColumn,
 			educationdetailtranslation.Table:       educationdetailtranslation.ValidColumn,

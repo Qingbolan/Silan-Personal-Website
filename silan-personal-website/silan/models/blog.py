@@ -152,7 +152,7 @@ class BlogSeriesTranslation(Base):
 
 class BlogComment(Base, TimestampMixin):
     __tablename__ = "blog_comments"
-    
+
     id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
     blog_post_id: Mapped[str] = mapped_column(UUID, ForeignKey("blog_posts.id"), nullable=False)
     parent_id: Mapped[Optional[str]] = mapped_column(UUID, ForeignKey("blog_comments.id"))
@@ -163,11 +163,27 @@ class BlogComment(Base, TimestampMixin):
     is_approved: Mapped[bool] = mapped_column(Boolean, default=False)
     ip_address: Mapped[Optional[str]] = mapped_column(String(45))
     user_agent: Mapped[Optional[str]] = mapped_column(String(500))
-    
+    user_identity_id: Mapped[Optional[str]] = mapped_column(String(255))  # Link to authenticated user identity if available
+    likes_count: Mapped[int] = mapped_column(Integer, default=0)  # Number of likes for this comment
+
     # Relationships - matching Go schema edges
     blog_post: Mapped["BlogPost"] = relationship(back_populates="comments")
     parent: Mapped[Optional["BlogComment"]] = relationship(remote_side="BlogComment.id", back_populates="replies")
     replies: Mapped[List["BlogComment"]] = relationship(back_populates="parent")
+    likes: Mapped[List["CommentLike"]] = relationship(back_populates="comment", cascade="all, delete-orphan")
+
+
+class CommentLike(Base, TimestampMixin):
+    __tablename__ = "comment_likes"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    comment_id: Mapped[str] = mapped_column(UUID, ForeignKey("blog_comments.id"), nullable=False)
+    user_identity_id: Mapped[Optional[str]] = mapped_column(String(255))  # For authenticated users
+    fingerprint: Mapped[Optional[str]] = mapped_column(String(255))  # For anonymous users
+    ip_address: Mapped[str] = mapped_column(String(45), nullable=False)
+
+    # Relationships
+    comment: Mapped["BlogComment"] = relationship(back_populates="likes")
 
 
 # Association table class for explicit many-to-many relationship - matching Go schema exactly
