@@ -479,7 +479,7 @@ const BlogStack: React.FC = () => {
         setError(null);
 
         // Fetch blog posts from API with language support
-        const fetchedPosts = await fetchBlogPosts(language as 'en' | 'zh');
+        const fetchedPosts = await fetchBlogPosts({}, language as 'en' | 'zh');
 
         if (isMounted) {
           setPosts(fetchedPosts);

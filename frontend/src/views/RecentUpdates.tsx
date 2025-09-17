@@ -189,7 +189,11 @@ const RecentUpdates: React.FC = () => {
         const data = await fetchResumeData(language);
         
         if (isMounted && data.sections.recent) {
-          setRecentData(data.sections.recent.content);
+          const typedContent = data.sections.recent.content.map((item: any) => ({
+            ...item,
+            type: item.type as 'work' | 'education' | 'research' | 'publication' | 'project'
+          }));
+          setRecentData(typedContent);
           setLoading(false);
         }
       } catch (err) {

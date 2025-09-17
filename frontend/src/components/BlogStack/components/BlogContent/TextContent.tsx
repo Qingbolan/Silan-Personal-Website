@@ -76,7 +76,9 @@ export const TextContent: React.FC<TextContentProps> = ({
         )));
 
     if (relevantAnnotations.length === 0) {
-      const result = isFirstParagraph ? renderFirstLetterDropCap(processedText) : processedText;
+      const result = isFirstParagraph && (typeof processedText === 'string' || React.isValidElement(processedText))
+        ? renderFirstLetterDropCap(processedText)
+        : processedText;
       return { content: result, hasBlockElements };
     }
 
@@ -112,10 +114,21 @@ export const TextContent: React.FC<TextContentProps> = ({
       if (startOffset > lastIndex) {
         const beforeText = text.slice(lastIndex, startOffset);
         const processedBeforeText = processMarkdownText(beforeText);
-        if (isFirstParagraph && lastIndex === 0) {
-          parts.push(renderFirstLetterDropCap(processedBeforeText));
-        } else {
-          parts.push(processedBeforeText);
+        if (processedBeforeText !== undefined && processedBeforeText !== null) {
+          if (isFirstParagraph && lastIndex === 0) {
+            if (typeof processedBeforeText === 'string' || React.isValidElement(processedBeforeText)) {
+              const dropCapResult = renderFirstLetterDropCap(processedBeforeText);
+              if (dropCapResult !== undefined && dropCapResult !== null) {
+                if (typeof dropCapResult === 'string' || React.isValidElement(dropCapResult)) {
+                  parts.push(dropCapResult as string | JSX.Element);
+                }
+              }
+            } else if (typeof processedBeforeText === 'string' || React.isValidElement(processedBeforeText)) {
+              parts.push(processedBeforeText as string | JSX.Element);
+            }
+          } else if (typeof processedBeforeText === 'string' || React.isValidElement(processedBeforeText)) {
+            parts.push(processedBeforeText as string | JSX.Element);
+          }
         }
       }
       
@@ -227,7 +240,12 @@ export const TextContent: React.FC<TextContentProps> = ({
     // Add remaining text
     if (lastIndex < text.length) {
       const remainingText = text.slice(lastIndex);
-      parts.push(processMarkdownText(remainingText));
+      const processedRemainingText = processMarkdownText(remainingText);
+      if (processedRemainingText !== undefined && processedRemainingText !== null) {
+        if (typeof processedRemainingText === 'string' || React.isValidElement(processedRemainingText)) {
+          parts.push(processedRemainingText as string | JSX.Element);
+        }
+      }
     }
 
     // Add keys to parts array elements
@@ -239,7 +257,7 @@ export const TextContent: React.FC<TextContentProps> = ({
   };
 
   // Function to render first letter as drop cap
-  const renderFirstLetterDropCap = (content: React.ReactNode) => {
+  const renderFirstLetterDropCap = (content: string | React.ReactElement): React.ReactNode => {
     // If content is a string, process as before
     if (typeof content === 'string') {
       if (!content || content.length === 0) return content;

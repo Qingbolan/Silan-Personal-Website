@@ -38,7 +38,6 @@ export type {
   ResearchItem,
   ExperienceItem,
   RecentUpdate,
-  ResumeSection,
   Plan,
   ProjectWithPlan,
   Project,

@@ -40,7 +40,7 @@ func main() {
 		// Use default config if file doesn't exist
 		c.Name = "silan-backend"
 		c.Host = "0.0.0.0"
-		c.Port = 8888
+		c.Port = 5200
 	}
 
 	// Override with command line flags if provided

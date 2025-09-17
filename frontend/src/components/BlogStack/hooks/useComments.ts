@@ -8,11 +8,11 @@ export const useComments = () => {
   const handleAddComment = () => {
     if (newComment.trim()) {
       const comment: Comment = {
-        id: Date.now(),
-        author: 'Current User',
+        id: Date.now().toString(),
+        blog_post_id: '',
+        author_name: 'Current User',
         content: newComment,
-        timestamp: new Date().toISOString(),
-        likes: 0
+        created_at: new Date().toISOString()
       };
       setComments([...comments, comment]);
       setNewComment('');

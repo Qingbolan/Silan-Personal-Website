@@ -384,7 +384,7 @@ export const createBlogComment = async (
 
 export const deleteBlogComment = async (
   commentId: string,
-  fingerprint: string,
+  _fingerprint: string,
   language: 'en' | 'zh' = 'en'
 ): Promise<void> => {
   await del(`/api/v1/blog/comments/${commentId}?lang=${formatLanguage(language)}`);

@@ -10,7 +10,7 @@ import {
   Bug,
   HelpCircle
 } from 'lucide-react';
-import { Statistic, Card, Row, Col, Button, Input, Select, Checkbox, Tag } from 'antd';
+import { Button, Input, Select, Checkbox, Tag } from 'antd';
 import { useLanguage } from './LanguageContext';
 import { Comment, Reply as ReplyType, CommunityStats } from '../types/community';
 

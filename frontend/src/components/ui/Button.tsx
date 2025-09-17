@@ -7,14 +7,13 @@ type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface CustomButtonProps {
-  children: React.ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
   animate?: boolean;
   fullWidth?: boolean;
 }
 
-interface ButtonProps extends Omit<AntButtonProps, 'size' | 'type'>, CustomButtonProps {}
+interface ButtonProps extends Omit<AntButtonProps, 'size' | 'type' | 'variant'>, CustomButtonProps {}
 
 const Button: React.FC<ButtonProps> = ({
   children,
