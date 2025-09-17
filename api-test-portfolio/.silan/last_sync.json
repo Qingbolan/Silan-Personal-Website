@@ -1,13 +1,13 @@
 {
-  "timestamp": "2025-09-17T03:43:24.135181",
+  "timestamp": "2025-09-17T05:04:06.981653",
   "stats": {
     "total_items": 13,
     "processed_items": 13,
     "success_count": 13,
     "error_count": 0,
     "skipped_count": 0,
-    "created_count": 13,
-    "updated_count": 32,
+    "created_count": 70,
+    "updated_count": 0,
     "deleted_count": 0,
     "sync_errors": [],
     "sync_warnings": []

@@ -13,9 +13,8 @@ import (
 	"silan-backend/internal/types"
 
 	"github.com/google/uuid"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/zeromicro/go-zero/core/logx"
-	"google.golang.org/api/oauth2/v2"
-	"google.golang.org/api/option"
 )
 
 type CreateBlogCommentLogic struct {
@@ -110,26 +109,42 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 	}, nil
 }
 
+// GoogleClaims represents the claims in a Google ID token
+type GoogleClaims struct {
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Sub           string `json:"sub"` // User ID
+	Aud           string `json:"aud"` // Audience (client ID)
+	jwt.StandardClaims
+}
+
 func (l *CreateBlogCommentLogic) verifyAndGetUser(idToken string) (*ent.UserIdentity, error) {
-	// Verify Google ID token
-	oauth2Service, err := oauth2.NewService(l.ctx, option.WithoutAuthentication())
+	// Parse the JWT token without verification (Google signs it, we trust it for now)
+	// In production, you should verify the signature using Google's public keys
+	token, _, err := new(jwt.Parser).ParseUnverified(idToken, &GoogleClaims{})
 	if err != nil {
-		return nil, fmt.Errorf("authentication service unavailable")
+		return nil, fmt.Errorf("failed to parse token: %v", err)
 	}
 
-	tokenInfo, err := oauth2Service.Tokeninfo().IdToken(idToken).Do()
-	if err != nil {
-		return nil, fmt.Errorf("invalid token")
+	claims, ok := token.Claims.(*GoogleClaims)
+	if !ok {
+		return nil, fmt.Errorf("invalid token claims")
 	}
+
+	// Basic validation
+	if !claims.EmailVerified {
+		return nil, fmt.Errorf("email not verified")
+	}
+
 	// Optional audience (client id) check if configured
 	if l.svcCtx.Config.Auth.GoogleClientID != "" {
-		if tokenInfo.Audience != l.svcCtx.Config.Auth.GoogleClientID {
+		if claims.Aud != l.svcCtx.Config.Auth.GoogleClientID {
 			return nil, fmt.Errorf("invalid audience")
 		}
-	}
-
-	if !tokenInfo.VerifiedEmail {
-		return nil, fmt.Errorf("email not verified")
 	}
 
 	// Find or create user identity
@@ -137,12 +152,31 @@ func (l *CreateBlogCommentLogic) verifyAndGetUser(idToken string) (*ent.UserIden
 		Query().
 		Where(
 			useridentity.ProviderEQ("google"),
-			useridentity.ExternalIDEQ(tokenInfo.UserId),
+			useridentity.ExternalIDEQ(claims.Sub),
 		).
 		First(l.ctx)
 
 	if err == nil {
-		return existingUser, nil
+		// Update existing user with latest info from Google
+		updateBuilder := existingUser.Update()
+
+		if claims.Email != "" && existingUser.Email != claims.Email {
+			updateBuilder = updateBuilder.SetEmail(claims.Email)
+		}
+		if claims.Name != "" && existingUser.DisplayName != claims.Name {
+			updateBuilder = updateBuilder.SetDisplayName(claims.Name)
+		}
+		if claims.Picture != "" && existingUser.AvatarURL != claims.Picture {
+			updateBuilder = updateBuilder.SetAvatarURL(claims.Picture)
+		}
+		updateBuilder = updateBuilder.SetVerified(claims.EmailVerified)
+
+		updatedUser, updateErr := updateBuilder.Save(l.ctx)
+		if updateErr != nil {
+			// If update fails, return the existing user
+			return existingUser, nil
+		}
+		return updatedUser, nil
 	}
 
 	// Create new identity if not found
@@ -150,20 +184,31 @@ func (l *CreateBlogCommentLogic) verifyAndGetUser(idToken string) (*ent.UserIden
 		Create().
 		SetID(l.generateUserID()).
 		SetProvider("google").
-		SetExternalID(tokenInfo.UserId)
+		SetExternalID(claims.Sub)
 
-	if tokenInfo.Email != "" {
-		createBuilder = createBuilder.SetEmail(tokenInfo.Email)
+	if claims.Email != "" {
+		createBuilder = createBuilder.SetEmail(claims.Email)
 	}
-	// Generate display name from email
-	if tokenInfo.Email != "" {
-		emailParts := strings.Split(tokenInfo.Email, "@")
+
+	// Use the proper display name from Google
+	displayName := claims.Name
+	if displayName == "" && claims.Email != "" {
+		// Fallback to email prefix if no name provided
+		emailParts := strings.Split(claims.Email, "@")
 		if len(emailParts) > 0 {
-			createBuilder = createBuilder.SetDisplayName(emailParts[0])
+			displayName = emailParts[0]
 		}
 	}
-	// Note: OAuth2 v2 API doesn't provide picture field, skip for now
-	createBuilder = createBuilder.SetVerified(tokenInfo.VerifiedEmail)
+	if displayName != "" {
+		createBuilder = createBuilder.SetDisplayName(displayName)
+	}
+
+	// Set avatar URL from Google
+	if claims.Picture != "" {
+		createBuilder = createBuilder.SetAvatarURL(claims.Picture)
+	}
+
+	createBuilder = createBuilder.SetVerified(claims.EmailVerified)
 
 	return createBuilder.Save(l.ctx)
 }

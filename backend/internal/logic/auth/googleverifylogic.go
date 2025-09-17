@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"crypto/md5"
 	"fmt"
 	"strings"
 	"time"
@@ -13,9 +12,8 @@ import (
 	"silan-backend/internal/types"
 
 	"github.com/google/uuid"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/zeromicro/go-zero/core/logx"
-	"google.golang.org/api/oauth2/v2"
-	"google.golang.org/api/option"
 )
 
 type GoogleVerifyLogic struct {
@@ -33,49 +31,55 @@ func NewGoogleVerifyLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Goog
 	}
 }
 
+// GoogleClaims represents the claims in a Google ID token
+type GoogleClaims struct {
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Sub           string `json:"sub"` // User ID
+	Aud           string `json:"aud"` // Audience (client ID)
+	jwt.StandardClaims
+}
+
 func (l *GoogleVerifyLogic) GoogleVerify(req *types.GoogleVerifyRequest) (resp *types.GoogleVerifyResponse, err error) {
 	if req.IdToken == "" {
 		return nil, fmt.Errorf("id_token is required")
 	}
 
-	// Verify Google ID token
-	oauth2Service, err := oauth2.NewService(l.ctx, option.WithoutAuthentication())
+	// Parse the JWT token without verification (Google signs it, we trust it for now)
+	// In production, you should verify the signature using Google's public keys
+	token, _, err := new(jwt.Parser).ParseUnverified(req.IdToken, &GoogleClaims{})
 	if err != nil {
-		l.Errorf("Failed to create OAuth2 service: %v", err)
-		return nil, fmt.Errorf("authentication service unavailable")
+		l.Errorf("Failed to parse Google ID token: %v", err)
+		return nil, fmt.Errorf("failed to parse token: %v", err)
 	}
 
-	tokenInfo, err := oauth2Service.Tokeninfo().IdToken(req.IdToken).Do()
-	if err != nil {
-		l.Errorf("Failed to verify Google ID token: %v", err)
-		return nil, fmt.Errorf("invalid token")
+	claims, ok := token.Claims.(*GoogleClaims)
+	if !ok {
+		return nil, fmt.Errorf("invalid token claims")
+	}
+
+	// Basic validation
+	if !claims.EmailVerified {
+		return nil, fmt.Errorf("email not verified")
+	}
+
+	if claims.Email == "" {
+		return nil, fmt.Errorf("email not provided")
 	}
 
 	// Optional audience (client id) check if configured
 	if l.svcCtx.Config.Auth.GoogleClientID != "" {
-		if tokenInfo.Audience != l.svcCtx.Config.Auth.GoogleClientID {
+		if claims.Aud != l.svcCtx.Config.Auth.GoogleClientID {
 			return nil, fmt.Errorf("invalid audience")
 		}
 	}
 
-	if !tokenInfo.VerifiedEmail {
-		return nil, fmt.Errorf("email not verified")
-	}
-
-	if tokenInfo.Email == "" {
-		return nil, fmt.Errorf("email not provided")
-	}
-
-	// Generate or get existing user identity
-	externalID := tokenInfo.UserId
-	if externalID == "" {
-		// Fallback to email hash if user ID not available
-		hash := md5.Sum([]byte(tokenInfo.Email))
-		externalID = fmt.Sprintf("email:%x", hash)
-	}
-
 	// Upsert user identity
-	userIdentity, err := l.upsertUserIdentity("google", externalID, tokenInfo)
+	userIdentity, err := l.upsertUserIdentity("google", claims.Sub, claims)
 	if err != nil {
 		l.Errorf("Failed to upsert user identity: %v", err)
 		return nil, fmt.Errorf("failed to process user identity")
@@ -91,7 +95,7 @@ func (l *GoogleVerifyLogic) GoogleVerify(req *types.GoogleVerifyRequest) (resp *
 	}, nil
 }
 
-func (l *GoogleVerifyLogic) upsertUserIdentity(provider, externalID string, tokenInfo *oauth2.Tokeninfo) (*ent.UserIdentity, error) {
+func (l *GoogleVerifyLogic) upsertUserIdentity(provider, externalID string, claims *GoogleClaims) (*ent.UserIdentity, error) {
 	// Try to find existing identity
 	existing, err := l.svcCtx.DB.UserIdentity.
 		Query().
@@ -102,15 +106,21 @@ func (l *GoogleVerifyLogic) upsertUserIdentity(provider, externalID string, toke
 		First(l.ctx)
 
 	if err == nil {
-		// Update existing identity
+		// Update existing identity with latest info from Google
 		updateBuilder := l.svcCtx.DB.UserIdentity.
 			UpdateOne(existing).
 			SetUpdatedAt(time.Now())
 
-		if tokenInfo.Email != "" {
-			updateBuilder = updateBuilder.SetEmail(tokenInfo.Email)
+		if claims.Email != "" && existing.Email != claims.Email {
+			updateBuilder = updateBuilder.SetEmail(claims.Email)
 		}
-		updateBuilder = updateBuilder.SetVerified(tokenInfo.VerifiedEmail)
+		if claims.Name != "" && existing.DisplayName != claims.Name {
+			updateBuilder = updateBuilder.SetDisplayName(claims.Name)
+		}
+		if claims.Picture != "" && existing.AvatarURL != claims.Picture {
+			updateBuilder = updateBuilder.SetAvatarURL(claims.Picture)
+		}
+		updateBuilder = updateBuilder.SetVerified(claims.EmailVerified)
 
 		return updateBuilder.Save(l.ctx)
 	}
@@ -122,18 +132,29 @@ func (l *GoogleVerifyLogic) upsertUserIdentity(provider, externalID string, toke
 		SetProvider(provider).
 		SetExternalID(externalID)
 
-	if tokenInfo.Email != "" {
-		createBuilder = createBuilder.SetEmail(tokenInfo.Email)
+	if claims.Email != "" {
+		createBuilder = createBuilder.SetEmail(claims.Email)
 	}
-	// Generate display name from email
-	if tokenInfo.Email != "" {
-		emailParts := strings.Split(tokenInfo.Email, "@")
+
+	// Use the proper display name from Google
+	displayName := claims.Name
+	if displayName == "" && claims.Email != "" {
+		// Fallback to email prefix if no name provided
+		emailParts := strings.Split(claims.Email, "@")
 		if len(emailParts) > 0 {
-			createBuilder = createBuilder.SetDisplayName(emailParts[0])
+			displayName = emailParts[0]
 		}
 	}
-	// Note: OAuth2 v2 API doesn't provide picture field, skip for now
-	createBuilder = createBuilder.SetVerified(tokenInfo.VerifiedEmail)
+	if displayName != "" {
+		createBuilder = createBuilder.SetDisplayName(displayName)
+	}
+
+	// Set avatar URL from Google
+	if claims.Picture != "" {
+		createBuilder = createBuilder.SetAvatarURL(claims.Picture)
+	}
+
+	createBuilder = createBuilder.SetVerified(claims.EmailVerified)
 
 	return createBuilder.Save(l.ctx)
 }

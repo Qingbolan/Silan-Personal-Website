@@ -191,3 +191,63 @@ Database: sqlite3 (***)
 {"@timestamp":"2025-09-17T12:21:48.234+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
 {"@timestamp":"2025-09-17T12:22:00.263+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
 {"@timestamp":"2025-09-17T12:22:00.265+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:47:33.521+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:47:33.523+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:50:05.726+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:50:05.728+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:50:31.948+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:50:31.949+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:52:27.452+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:52:27.453+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:54:12.038+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T12:54:48.405+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:54:48.406+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:54:55.273+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T12:54:55.274+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T13:03:06.109+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 3c7d9181-2abc-40ad-8b07-fe868ff225e6","level":"info"}
+{"@timestamp":"2025-09-17T13:03:54.024+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:8888
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-17T13:04:32.083+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:04:32.085+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:05:03.141+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:05:03.142+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:05:07.903+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:05:07.904+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:06:18.993+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:06:18.994+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:02.105+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:07.158+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:07.161+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:07.510+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:10.005+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:10.008+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:10.306+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:10.703+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:10.708+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:11.061+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:28.642+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:08:28.645+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:11:41.038+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:11:41.040+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:12:15.867+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:12:15.869+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:14:57.262+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:14:58.950+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post a72e44c7-1317-4e10-bf98-5abef1d25074","level":"info"}
+{"@timestamp":"2025-09-17T13:14:58.951+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post a72e44c7-1317-4e10-bf98-5abef1d25074","level":"info"}
+{"@timestamp":"2025-09-17T13:15:08.535+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post a72e44c7-1317-4e10-bf98-5abef1d25074","level":"info"}
+{"@timestamp":"2025-09-17T13:15:09.984+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:15:09.985+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:28:59.828+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:28:59.829+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:29:01.140+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:29:01.148+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:29:19.318+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T13:29:31.160+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 211fb2db-cdd5-4689-9598-2dee1b92806b","level":"info"}
+{"@timestamp":"2025-09-17T13:29:31.161+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 211fb2db-cdd5-4689-9598-2dee1b92806b","level":"info"}
+{"@timestamp":"2025-09-17T14:00:57.311+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}
+{"@timestamp":"2025-09-17T14:00:57.312+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 7f67bf42-c74f-4a01-80c1-4eada020bf78","level":"info"}

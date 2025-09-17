@@ -146,13 +146,18 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
           author_email: email,
           content: content.trim(),
           fingerprint,
+          // Send user_identity_id if user is logged in
+          user_identity_id: currentUser?.id || '',
         }),
       });
 
       if (response.ok) {
-        setAuthorName('');
-        setAuthorEmail('');
-        setContent('');
+        // Only clear name/email for anonymous users, not for logged-in users
+        if (!currentUser) {
+          setAuthorName('');
+          setAuthorEmail('');
+        }
+        setContent(''); // Always clear content
         loadComments();
       } else {
         const errorData = await response.text();
@@ -277,19 +282,6 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
         {loginAvailable ? (
           loggedIn ? (
             <form onSubmit={submitComment} className="mb-6">
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder={language === 'en' ? 'Your name' : '您的姓名'}
-                  value={currentUser?.name || authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                  disabled={!!currentUser}
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ borderColor: colors.cardBorder, backgroundColor: colors.background, color: colors.textPrimary }}
-                  maxLength={50}
-                  required={!currentUser}
-                />
-              </div>
               {/* Hide email field when logged in */}
               {!currentUser && (
                 <div className="mb-4">
@@ -350,38 +342,95 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="border rounded-lg p-4"
-                style={{
-                  borderColor: colors.cardBorder,
-                  backgroundColor: colors.background,
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {comment.author_avatar_url ? (
-                      <img
-                        src={comment.author_avatar_url}
-                        alt={comment.author_name}
-                        className="w-8 h-8 rounded-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : null}
-                    <span className="font-medium" style={{ color: colors.textPrimary }}>
-                      {comment.author_name}
-                    </span>
+            {comments.map((comment) => {
+              // // Generate avatar fallback using first letter of name
+              // const getAvatarFallback = (name: string) => {
+              //   const colorIndex = name.charCodeAt(0) % colors_avatar.length;
+              //   return {
+              //     backgroundColor: colors_avatar[colorIndex],
+              //     color: 'white',
+              //     display: 'flex',
+              //     alignItems: 'center',
+              //     justifyContent: 'center',
+              //     fontSize: '14px',
+              //     fontWeight: 'bold'
+              //   };
+              // };
+
+              // Clean up author name (remove email domain if it's an email)
+              const getDisplayName = (name: string) => {
+                if (!name) return 'Anonymous';
+                // If it looks like an email, just use the part before @
+                if (name.includes('@')) {
+                  return name.split('@')[0];
+                }
+                return name;
+              };
+
+              const displayName = getDisplayName(comment.author_name);
+              const hasAvatar = comment.author_avatar_url;
+
+              return (
+                <div
+                  key={comment.id}
+                  className="border rounded-lg p-4"
+                  style={{
+                    borderColor: colors.cardBorder,
+                    backgroundColor: colors.background,
+                  }}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    {/* Avatar - always show, either real image or fallback */}
+                    <div className="flex-shrink-0">
+                      {hasAvatar ? (
+                        <img
+                          src={comment.author_avatar_url}
+                          alt={displayName}
+                          className="w-10 h-10 rounded-full object-cover border"
+                          style={{ borderColor: colors.cardBorder }}
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            // If image fails to load, replace with fallback
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                    </div>
+
+                    {/* Comment content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Author name and timestamp */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm" style={{ color: colors.textPrimary }}>
+                            {displayName}
+                          </span>
+                          {comment.author_avatar_url && (
+                            <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                              backgroundColor: colors.surface,
+                              color: colors.textSecondary
+                            }}>
+                              {language === 'en' ? 'Verified' : '已验证'}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs flex-shrink-0" style={{ color: colors.textSecondary }}>
+                          {formatDate(comment.created_at)}
+                        </span>
+                      </div>
+
+                      {/* Comment text */}
+                      <p style={{ color: colors.textPrimary }} className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {comment.content}
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-sm" style={{ color: colors.textSecondary }}>
-                    {formatDate(comment.created_at)}
-                  </span>
                 </div>
-                <p style={{ color: colors.textPrimary }} className="whitespace-pre-wrap">
-                  {comment.content}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
