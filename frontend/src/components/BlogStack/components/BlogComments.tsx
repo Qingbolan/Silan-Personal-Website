@@ -8,10 +8,13 @@ import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 interface Comment {
   id: string;
   blog_post_id: string;
+  parent_id?: string;
   author_name: string;
   author_avatar_url?: string;
   content: string;
   created_at: string;
+  user_identity_id?: string;
+  replies?: Comment[];
 }
 
 interface CurrentUser {
@@ -41,6 +44,8 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
   const { language } = useLanguage();
   const { colors } = useTheme();
   const [comments, setComments] = useState<Comment[]>([]);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
   const loginAvailable = Boolean(googleClientId);
   const loggedIn = Boolean(currentUser?.email || currentUser?.name);
   const [loading, setLoading] = useState(true);
@@ -148,6 +153,7 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
           fingerprint,
           // Send user_identity_id if user is logged in
           user_identity_id: currentUser?.id || '',
+          parent_id: replyingTo || '',
         }),
       });
 
@@ -158,6 +164,8 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
           setAuthorEmail('');
         }
         setContent(''); // Always clear content
+        setReplyingTo(null);
+        setReplyContent('');
         loadComments();
       } else {
         const errorData = await response.text();
@@ -169,6 +177,219 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const submitReply = async (parentId: string) => {
+    if (!replyContent.trim()) return;
+    let email = authorEmail.trim();
+    if (currentUser && currentUser.email) {
+      email = currentUser.email;
+    } else {
+      if (!email || email.length < 5 || !email.includes('@')) {
+        alert(language === 'en' ? 'Please enter a valid email' : '请输入有效的邮箱');
+        return;
+      }
+    }
+
+    try {
+      setSubmitting(true);
+      const fingerprint = getClientFingerprint();
+      const pid = await resolvePostId();
+      if (!pid) throw new Error('missing post id');
+
+      const response = await fetch(`/api/v1/blog/posts/${pid}/comments?lang=${language}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          author_name: (currentUser?.name || authorName).trim(),
+          author_email: email,
+          content: replyContent.trim(),
+          fingerprint,
+          user_identity_id: currentUser?.id || '',
+          parent_id: parentId,
+        }),
+      });
+
+      if (response.ok) {
+        setReplyContent('');
+        setReplyingTo(null);
+        loadComments();
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to submit reply:', response.status, errorData);
+        alert(`Failed to submit reply: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Failed to submit reply:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!confirm(language === 'en' ? 'Are you sure you want to delete this comment?' : '确定要删除这条评论吗？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/blog/comments/${commentId}?lang=${language}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_identity_id: currentUser?.id || '',
+          fingerprint: getClientFingerprint(),
+        }),
+      });
+
+      if (response.ok) {
+        loadComments();
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to delete comment:', response.status, errorData);
+        alert(`Failed to delete comment: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+    }
+  };
+
+  const renderComment = (comment: Comment, depth: number = 0): React.ReactNode => {
+    const getDisplayName = (name: string) => {
+      if (!name) return 'Anonymous';
+      if (name.includes('@')) {
+        return name.split('@')[0];
+      }
+      return name;
+    };
+
+    const displayName = getDisplayName(comment.author_name);
+    const hasAvatar = comment.author_avatar_url;
+    const canDelete = currentUser?.id && comment.user_identity_id === currentUser.id;
+    const marginLeft = depth * 20;
+
+    return (
+      <div key={comment.id} style={{ marginLeft: `${marginLeft}px` }}>
+        <div
+          className="border rounded-lg p-4 mb-4"
+          style={{
+            borderColor: colors.cardBorder,
+            backgroundColor: colors.background,
+          }}
+        >
+          <div className="flex items-start gap-3 mb-3">
+            <div className="flex-shrink-0">
+              {hasAvatar ? (
+                <img
+                  src={comment.author_avatar_url}
+                  alt={displayName}
+                  className="w-10 h-10 rounded-full object-cover border"
+                  style={{ borderColor: colors.cardBorder }}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm" style={{ color: colors.textPrimary }}>
+                    {displayName}
+                  </span>
+                  {comment.author_avatar_url && (
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                      backgroundColor: colors.surface,
+                      color: colors.textSecondary
+                    }}>
+                      {language === 'en' ? 'Verified' : '已验证'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs flex-shrink-0" style={{ color: colors.textSecondary }}>
+                    {formatDate(comment.created_at)}
+                  </span>
+                  {canDelete && (
+                    <button
+                      onClick={() => deleteComment(comment.id)}
+                      className="text-xs px-2 py-1 rounded hover:bg-red-100"
+                      style={{ color: 'red' }}
+                    >
+                      {language === 'en' ? 'Delete' : '删除'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <p style={{ color: colors.textPrimary }} className="whitespace-pre-wrap text-sm leading-relaxed mb-3">
+                {comment.content}
+              </p>
+
+              {loginAvailable && depth < 3 && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                    className="text-xs px-2 py-1 rounded"
+                    style={{
+                      backgroundColor: replyingTo === comment.id ? colors.primary : colors.surface,
+                      color: replyingTo === comment.id ? 'white' : colors.textSecondary
+                    }}
+                  >
+                    {language === 'en' ? 'Reply' : '回复'}
+                  </button>
+                </div>
+              )}
+
+              {replyingTo === comment.id && (
+                <div className="mt-3 p-3 border rounded" style={{ borderColor: colors.cardBorder }}>
+                  <textarea
+                    placeholder={language === 'en' ? 'Write a reply...' : '写下您的回复...'}
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    className="w-full px-3 py-2 rounded border resize-none mb-2"
+                    style={{ borderColor: colors.cardBorder, backgroundColor: colors.background, color: colors.textPrimary }}
+                    rows={2}
+                    maxLength={500}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => submitReply(comment.id)}
+                      disabled={submitting || !replyContent.trim()}
+                      className="px-3 py-1 rounded text-sm font-medium disabled:opacity-50"
+                      style={{ backgroundColor: colors.primary, color: 'white' }}
+                    >
+                      {submitting ? (language === 'en' ? 'Submitting...' : '提交中...') : (language === 'en' ? 'Reply' : '回复')}
+                    </button>
+                    <button
+                      onClick={() => { setReplyingTo(null); setReplyContent(''); }}
+                      className="px-3 py-1 rounded text-sm"
+                      style={{ backgroundColor: colors.surface, color: colors.textSecondary }}
+                    >
+                      {language === 'en' ? 'Cancel' : '取消'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {comment.replies && comment.replies.length > 0 && (
+          <div>
+            {comment.replies.map(reply => renderComment(reply, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -342,95 +563,7 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId, postSlug }) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {comments.map((comment) => {
-              // // Generate avatar fallback using first letter of name
-              // const getAvatarFallback = (name: string) => {
-              //   const colorIndex = name.charCodeAt(0) % colors_avatar.length;
-              //   return {
-              //     backgroundColor: colors_avatar[colorIndex],
-              //     color: 'white',
-              //     display: 'flex',
-              //     alignItems: 'center',
-              //     justifyContent: 'center',
-              //     fontSize: '14px',
-              //     fontWeight: 'bold'
-              //   };
-              // };
-
-              // Clean up author name (remove email domain if it's an email)
-              const getDisplayName = (name: string) => {
-                if (!name) return 'Anonymous';
-                // If it looks like an email, just use the part before @
-                if (name.includes('@')) {
-                  return name.split('@')[0];
-                }
-                return name;
-              };
-
-              const displayName = getDisplayName(comment.author_name);
-              const hasAvatar = comment.author_avatar_url;
-
-              return (
-                <div
-                  key={comment.id}
-                  className="border rounded-lg p-4"
-                  style={{
-                    borderColor: colors.cardBorder,
-                    backgroundColor: colors.background,
-                  }}
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    {/* Avatar - always show, either real image or fallback */}
-                    <div className="flex-shrink-0">
-                      {hasAvatar ? (
-                        <img
-                          src={comment.author_avatar_url}
-                          alt={displayName}
-                          className="w-10 h-10 rounded-full object-cover border"
-                          style={{ borderColor: colors.cardBorder }}
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            // If image fails to load, replace with fallback
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const fallback = target.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
-                    </div>
-
-                    {/* Comment content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Author name and timestamp */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm" style={{ color: colors.textPrimary }}>
-                            {displayName}
-                          </span>
-                          {comment.author_avatar_url && (
-                            <span className="text-xs px-2 py-0.5 rounded-full" style={{
-                              backgroundColor: colors.surface,
-                              color: colors.textSecondary
-                            }}>
-                              {language === 'en' ? 'Verified' : '已验证'}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs flex-shrink-0" style={{ color: colors.textSecondary }}>
-                          {formatDate(comment.created_at)}
-                        </span>
-                      </div>
-
-                      {/* Comment text */}
-                      <p style={{ color: colors.textPrimary }} className="whitespace-pre-wrap text-sm leading-relaxed">
-                        {comment.content}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {comments.filter(comment => !comment.parent_id).map(comment => renderComment(comment))}
           </div>
         )}
       </div>

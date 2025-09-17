@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -41,27 +42,54 @@ func (l *DeleteBlogCommentLogic) DeleteBlogComment(req *types.DeleteBlogCommentR
 	// Check authorization
 	authorized := false
 
-	// Method 1: Check fingerprint for anonymous users
-	if req.Fingerprint != "" && strings.Contains(c.UserAgent, "fp:"+req.Fingerprint) {
+	// Method 1: Check user identity ownership (for logged-in users)
+	if req.UserIdentityId != "" && c.UserIdentityID != "" && c.UserIdentityID == req.UserIdentityId {
 		authorized = true
 	}
 
-	// Method 2: Placeholder for user ownership verification
-	if !authorized {
-		// TODO: verify ownership via user identity if available
+	// Method 2: Check fingerprint for anonymous users (fallback)
+	if !authorized && req.Fingerprint != "" && strings.Contains(c.UserAgent, "fp:"+req.Fingerprint) {
+		authorized = true
 	}
 
 	if !authorized {
+		l.Errorf("Unauthorized delete attempt for comment %s from IP %s, UserAgent: %s",
+			req.CommentID, req.ClientIP, req.UserAgentFull)
 		return fmt.Errorf("forbidden: insufficient permissions to delete this comment")
 	}
 
-	return l.svcCtx.DB.BlogComment.DeleteOneID(cid).Exec(l.ctx)
+	// Log the deletion for audit trail
+	l.Infof("User authorized to delete comment %s (userID: %s, ip: %s, fingerprint: %s)",
+		req.CommentID, req.UserIdentityId, req.ClientIP, req.Fingerprint)
+
+	// Delete the comment and all its replies (cascade delete)
+	return l.deleteCommentWithReplies(cid)
 }
 
-// Helper function to verify user identity (for future use)
-func (l *DeleteBlogCommentLogic) verifyUserOwnership(userIdentityId string, comment interface{}) bool {
-	// This would check if the authenticated user owns the comment
-	// Implementation depends on your authentication middleware
-	return false
-}
+// deleteCommentWithReplies recursively deletes a comment and all its replies
+func (l *DeleteBlogCommentLogic) deleteCommentWithReplies(commentID uuid.UUID) error {
+	// First, find all direct replies to this comment
+	replies, err := l.svcCtx.DB.BlogComment.
+		Query().
+		Where(blogcomment.ParentIDEQ(commentID)).
+		All(l.ctx)
+	if err != nil {
+		return fmt.Errorf("failed to find replies: %v", err)
+	}
 
+	// Recursively delete all replies first
+	for _, reply := range replies {
+		if err := l.deleteCommentWithReplies(reply.ID); err != nil {
+			return fmt.Errorf("failed to delete reply %s: %v", reply.ID, err)
+		}
+	}
+
+	// Finally, delete the comment itself
+	err = l.svcCtx.DB.BlogComment.DeleteOneID(commentID).Exec(l.ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment %s: %v", commentID, err)
+	}
+
+	l.Infof("Deleted comment %s and %d replies", commentID, len(replies))
+	return nil
+}

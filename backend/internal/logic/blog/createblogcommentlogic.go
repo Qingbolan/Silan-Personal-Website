@@ -42,6 +42,26 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 		return nil, err
 	}
 
+	// Validate parent comment if this is a reply
+	var parentID *uuid.UUID
+	if req.ParentId != "" {
+		pid, err := uuid.Parse(req.ParentId)
+		if err != nil {
+			return nil, fmt.Errorf("invalid parent_id format")
+		}
+
+		// Check if parent comment exists and belongs to the same post
+		parentComment, err := l.svcCtx.DB.BlogComment.Get(l.ctx, pid)
+		if err != nil {
+			return nil, fmt.Errorf("parent comment not found")
+		}
+		if parentComment.BlogPostID != postID {
+			return nil, fmt.Errorf("parent comment belongs to different post")
+		}
+
+		parentID = &pid
+	}
+
 	// Handle authentication
 	var userIdentity *ent.UserIdentity
 	var authorName, authorEmail, avatarURL string
@@ -81,6 +101,12 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 		avatarURL = l.lookupAvatarByEmail(req.AuthorEmail)
 	}
 
+	// Prepare user agent string with fingerprint and browser info
+	userAgent := "fp:" + req.Fingerprint
+	if req.UserAgentFull != "" {
+		userAgent += " | " + req.UserAgentFull
+	}
+
 	// Create comment
 	createBuilder := l.svcCtx.DB.BlogComment.Create().
 		SetBlogPostID(postID).
@@ -88,7 +114,16 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 		SetAuthorEmail(authorEmail).
 		SetContent(req.Content).
 		SetIsApproved(true).
-		SetUserAgent("fp:" + req.Fingerprint)
+		SetUserAgent(userAgent)
+
+	// Set IP address if provided
+	if req.ClientIP != "" {
+		createBuilder = createBuilder.SetIPAddress(req.ClientIP)
+	}
+
+	if parentID != nil {
+		createBuilder = createBuilder.SetParentID(*parentID)
+	}
 
 	if userIdentity != nil {
 		createBuilder = createBuilder.SetUserIdentityID(userIdentity.ID)
@@ -99,13 +134,39 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 		return nil, err
 	}
 
+	// Log the comment creation for audit trail
+	commentType := "root"
+	if parentID != nil {
+		commentType = "reply"
+	}
+	userType := "anonymous"
+	if userIdentity != nil {
+		userType = "authenticated"
+	}
+
+	l.Infof("Created %s comment %s by %s user (author: %s, ip: %s, fingerprint: %s)",
+		commentType, c.ID, userType, authorName, req.ClientIP, req.Fingerprint)
+
+	var parentIDStr string
+	if parentID != nil {
+		parentIDStr = parentID.String()
+	}
+
+	var userIdentityIDStr string
+	if userIdentity != nil {
+		userIdentityIDStr = userIdentity.ID
+	}
+
 	return &types.BlogCommentData{
-		ID:              c.ID.String(),
-		BlogPostID:      c.BlogPostID.String(),
-		AuthorName:      c.AuthorName,
+		ID:             c.ID.String(),
+		BlogPostID:     c.BlogPostID.String(),
+		ParentID:       parentIDStr,
+		AuthorName:     c.AuthorName,
 		AuthorAvatarURL: avatarURL,
-		Content:         c.Content,
-		CreatedAt:       c.CreatedAt.Format(time.RFC3339),
+		Content:        c.Content,
+		CreatedAt:      c.CreatedAt.Format(time.RFC3339),
+		UserIdentityID: userIdentityIDStr,
+		Replies:        []types.BlogCommentData{},
 	}, nil
 }
 

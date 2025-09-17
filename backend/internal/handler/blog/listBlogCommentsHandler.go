@@ -7,6 +7,7 @@ import (
 	"silan-backend/internal/logic/blog"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
+	"silan-backend/internal/utils"
 )
 
 // List comments for a blog post
@@ -19,7 +20,12 @@ func ListBlogCommentsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := blog.NewListBlogCommentsLogic(r.Context(), svcCtx)
-		resp, err := l.ListBlogComments(&req)
+		// Log the request for analytics (optional)
+		clientIP := utils.GetClientIP(r)
+		userAgent := utils.GetUserAgent(r)
+		l.Infof("Comments list request for post %s from IP %s", req.ID, clientIP)
+
+		resp, err := l.ListBlogComments(&req, clientIP, userAgent)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

@@ -58,12 +58,15 @@ type BlogCategory struct {
 }
 
 type BlogCommentData struct {
-	ID              string `json:"id"`
-	BlogPostID      string `json:"blog_post_id"`
-	AuthorName      string `json:"author_name"`
-	AuthorAvatarURL string `json:"author_avatar_url,optional"`
-	Content         string `json:"content"`
-	CreatedAt       string `json:"created_at"`
+	ID              string            `json:"id"`
+	BlogPostID      string            `json:"blog_post_id"`
+	ParentID        string            `json:"parent_id,optional"`
+	AuthorName      string            `json:"author_name"`
+	AuthorAvatarURL string            `json:"author_avatar_url,optional"`
+	Content         string            `json:"content"`
+	CreatedAt       string            `json:"created_at"`
+	UserIdentityID  string            `json:"user_identity_id,optional"`
+	Replies         []BlogCommentData `json:"replies,optional"`
 }
 
 type BlogCommentListRequest struct {
@@ -193,12 +196,15 @@ type Contact struct {
 
 type CreateBlogCommentRequest struct {
 	ID             string `path:"id"`
+	ParentId       string `json:"parent_id,optional"`
 	AuthorName     string `json:"author_name"`
 	AuthorEmail    string `json:"author_email"`
 	Content        string `json:"content"`
 	Fingerprint    string `json:"fingerprint"`
 	UserIdentityId string `json:"user_identity_id,optional"`
 	IdToken        string `json:"id_token,optional"`
+	ClientIP       string `json:"client_ip,optional"`
+	UserAgentFull  string `json:"user_agent_full,optional"`
 	Language       string `form:"lang,default=en"`
 }
 
@@ -228,9 +234,12 @@ type CreateProjectRequest struct {
 }
 
 type DeleteBlogCommentRequest struct {
-	CommentID   string `path:"comment_id"`
-	Fingerprint string `json:"fingerprint"`
-	Language    string `form:"lang,default=en"`
+	CommentID      string `path:"comment_id"`
+	Fingerprint    string `json:"fingerprint"`
+	UserIdentityId string `json:"user_identity_id,optional"`
+	ClientIP       string `json:"client_ip,optional"`
+	UserAgentFull  string `json:"user_agent_full,optional"`
+	Language       string `form:"lang,default=en"`
 }
 
 type DeleteIdeaRequest struct {

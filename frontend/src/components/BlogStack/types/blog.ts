@@ -49,11 +49,15 @@ export interface BlogData {
 }
 
 export interface Comment {
-  id: number;
-  author: string;
+  id: string;
+  blog_post_id: string;
+  parent_id?: string;
+  author_name: string;
+  author_avatar_url?: string;
   content: string;
-  timestamp: string;
-  likes: number;
+  created_at: string;
+  user_identity_id?: string;
+  replies?: Comment[];
 }
 
 export interface UserAnnotation {
