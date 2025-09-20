@@ -6,7 +6,7 @@ from typing import Optional
 
 from .interfaces import ICommand
 from .exceptions import ValidationError
-from ..utils.logger import ModernLogger
+from silan.utils import ModernLogger
 
 
 class BaseCommand(ICommand):

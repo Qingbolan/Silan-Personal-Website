@@ -22,10 +22,12 @@ __url__ = "https://github.com/Qingbolan/AIPro-Resume"
 from .silan import cli
 from .parsers import ParserFactory, ParsedContentCollection
 from .utils.config import ConfigManager
+from .utils import *
 
 __all__ = [
     'cli',
     'ParserFactory',
     'ParsedContentCollection',
-    'ConfigManager'
+    'ConfigManager',
+    'ModernLogger',
 ]

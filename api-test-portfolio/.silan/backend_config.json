@@ -1,7 +1,7 @@
 {
   "database": {
     "type": "sqlite",
-    "path": "portfolio.db?_fk=1"
+    "path": "portfolio.db"
   },
   "server": {
     "host": "0.0.0.0",

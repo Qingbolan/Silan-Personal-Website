@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"silan-backend/internal/ent"
 	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
@@ -35,21 +34,21 @@ func (l *DeleteCommentLogic) DeleteComment(req *types.DeleteIdeaCommentRequest) 
 		return fmt.Errorf("invalid comment id")
 	}
 
-	// Load comment meta using entgo
-	comment, err := l.svcCtx.DB.Comment.Query().Where(comment.IDEQ(commentUUID), comment.EntityTypeEQ("idea")).Only(l.ctx)
+	// Load comment meta using entgo with entity_type filter (like blog implementation)
+	cmt, err := l.svcCtx.DB.Comment.Query().
+		Where(comment.IDEQ(commentUUID)).
+		Where(comment.EntityTypeHasPrefix("idea")).
+		Only(l.ctx)
 	if err != nil {
-		if ent.IsNotFound(err) {
-			return fmt.Errorf("comment not found")
-		}
-		return err
+		return fmt.Errorf("comment not found")
 	}
 
 	// Authorization: identity or fingerprint match in user_agent
 	authorized := false
-	if req.UserIdentityId != "" && comment.UserIdentityID != "" && req.UserIdentityId == comment.UserIdentityID {
+	if req.UserIdentityId != "" && cmt.UserIdentityID != "" && req.UserIdentityId == cmt.UserIdentityID {
 		authorized = true
 	}
-	if !authorized && req.Fingerprint != "" && strings.Contains(comment.UserAgent, "fp:"+req.Fingerprint) {
+	if !authorized && req.Fingerprint != "" && strings.Contains(cmt.UserAgent, "fp:"+req.Fingerprint) {
 		authorized = true
 	}
 	if !authorized {
@@ -66,9 +65,10 @@ func (l *DeleteCommentLogic) deleteWithReplies(commentID string) error {
 		return err
 	}
 
-	// Find replies using entgo
+	// Find replies using entgo (filter by entity_type like blog implementation)
 	replies, err := l.svcCtx.DB.Comment.Query().
 		Where(comment.ParentIDEQ(commentUUID)).
+		Where(comment.EntityTypeHasPrefix("idea")).
 		All(l.ctx)
 	if err != nil {
 		return err
@@ -85,5 +85,3 @@ func (l *DeleteCommentLogic) deleteWithReplies(commentID string) error {
 	err = l.svcCtx.DB.Comment.DeleteOneID(commentUUID).Exec(l.ctx)
 	return err
 }
-
-

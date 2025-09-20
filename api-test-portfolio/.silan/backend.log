@@ -1,5 +1,12 @@
-2025/09/19 17:15:53 warning: failed creating schema resources: sqlite: foreign_keys pragma is off: missing "_fk=1" in the connection string
 Starting Silan Backend Server...
 Server: 0.0.0.0:5200
 Database: sqlite3 (***)
-{"@timestamp":"2025-09-19T17:23:21.888+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:5200
+Database: sqlite3 (***)
+{"@timestamp":"2025-09-20T23:27:07.364+08:00","caller":"handler/loghandler.go:147","content":"[HTTP] 404 - GET /api/ideas?lang=en - [::1]:64195 - curl/8.7.1","duration":"0.0ms","level":"info","span":"ada8b8bfa24ae1f5","trace":"1dad6e18b48db85b5b67a7349855f302"}
+{"@timestamp":"2025-09-20T23:27:49.354+08:00","caller":"handler/loghandler.go:147","content":"[HTTP] 404 - DELETE /api/v1/comments/784f8450-95f1-48d0-8539-01feffa8bc3e - [::1]:64326 - curl/8.7.1","duration":"0.0ms","level":"info","span":"f23d0534b1e78bb2","trace":"e831ee34ecb9ceadf43537bb438507d3"}
+{"@timestamp":"2025-09-20T23:36:07.742+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+Starting Silan Backend Server...
+Server: 0.0.0.0:5200
+Database: sqlite3 (***)

@@ -1,9 +1,2 @@
-Starting Silan Backend Server...
-Server: 0.0.0.0:5200
-Database: sqlite3 (../../api-***olio.db)
-{"@timestamp":"2025-07-11T15:56:37.524+08:00","caller":"handler/loghandler.go:147","content":"[HTTP] 200 - OPTIONS /api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views - [::1]:51980 - curl/8.7.1","duration":"0.2ms","level":"info","span":"010265bde8f36611","trace":"535a8d653c95bf486442110477d832c5"}
-{"@timestamp":"2025-07-11T15:56:52.759+08:00","caller":"handler/loghandler.go:147","content":"[HTTP] 200 - POST /api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views?lang=en - [::1]:51993 - curl/8.7.1","duration":"5.8ms","level":"info","span":"c675427c1a898889","trace":"2ed9598c87ee8e927de2ff831a7de1e3"}
-{"@timestamp":"2025-07-11T15:57:24.001+08:00","caller":"stat/usage.go:61","content":"CPU: 0m, MEMORY: Alloc=2.4Mi, TotalAlloc=4.0Mi, Sys=13.6Mi, NumGC=1","level":"stat"}
-{"@timestamp":"2025-07-11T15:57:24.002+08:00","caller":"load/sheddingstat.go:61","content":"(api) shedding_stat [1m], cpu: 0, total: 2, pass: 2, drop: 0","level":"stat"}
-{"@timestamp":"2025-07-11T15:57:37.524+08:00","caller":"stat/metrics.go:210","content":"(backend-api) - qps: 0.0/s, drops: 0, avg time: 2.5ms, med: 5.7ms, 90th: 5.7ms, 99th: 5.7ms, 99.9th: 5.7ms","level":"stat"}
-{"@timestamp":"2025-07-11T15:58:23.387+08:00","caller":"proc/shutdown.go:58","content":"Got signal SIGTERM, shutting down...","level":"info"}
+2025/09/20 22:19:04 error: config file etc/backend-api.yaml, "auth" is not set
+exit status 1

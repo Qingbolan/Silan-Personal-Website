@@ -234,7 +234,7 @@ export const deleteIdeaComment = async (
   commentId: string,
   payload: { fingerprint: string; userIdentityId?: string; language?: 'en' | 'zh' }
 ): Promise<void> => {
-  await del(`/api/v1/ideas/comments/${commentId}?lang=${formatLanguage(payload.language || 'en')}`, {
+  await del(`/api/v1/ideas/comments/${commentId}`, {
     fingerprint: payload.fingerprint,
     user_identity_id: payload.userIdentityId || '',
   });

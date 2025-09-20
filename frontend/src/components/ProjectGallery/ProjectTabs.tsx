@@ -15,11 +15,11 @@ import {
   ExternalLink,
   Scale
 } from 'lucide-react';
-import { useLanguage } from './LanguageContext';
+import { useLanguage } from '../LanguageContext';
 import { useTranslation } from 'react-i18next';
-import CommunityFeedback from './CommunityFeedback';
+import CommunityFeedback from '../IdeaPage/CommunityFeedback';
 import { Link } from 'react-router-dom';
-import Markdown from './ui/Markdown';
+import Markdown from '../ui/Markdown';
 
 interface ProjectTabsProps {
   projectData: any; // 简化处理，实际使用时会有完整类型

@@ -11,10 +11,10 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { Button, Input, Select, Checkbox, Tag, Popconfirm, message } from 'antd';
-import { useLanguage } from './LanguageContext';
-import { Comment, Reply as ReplyType, CommunityStats } from '../types/community';
-import { getClientFingerprint } from '../utils/fingerprint';
-import { listIdeaComments, createIdeaComment, likeIdeaComment, deleteIdeaComment, type IdeaCommentData } from '../api/ideas/ideaApi';
+import { useLanguage } from '../LanguageContext';
+import { Comment, Reply as ReplyType, CommunityStats } from '../../types/community';
+import { getClientFingerprint } from '../../utils/fingerprint';
+import { listIdeaComments, createIdeaComment, likeIdeaComment, deleteIdeaComment, type IdeaCommentData } from '../../api/ideas/ideaApi';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 const { TextArea } = Input;

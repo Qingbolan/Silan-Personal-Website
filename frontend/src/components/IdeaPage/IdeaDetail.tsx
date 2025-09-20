@@ -18,9 +18,10 @@ import {
   BarChart3,
   Beaker
 } from 'lucide-react';
+import { Tabs, Space } from 'antd';
 import { useTheme } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
-import CommunityFeedback from '../CommunityFeedback';
+import CommunityFeedback from './CommunityFeedback';
 import { IdeaData } from '../../types';
 import { fetchIdeaById } from '../../api/ideas/ideaApi';
 
@@ -378,8 +379,8 @@ const IdeaDetail: React.FC = () => {
 
   const renderDiscussion = () => <CommunityFeedback projectId={`idea-${idea.id}`} />;
 
-  const renderContent = () => {
-    switch (activeTab) {
+  const renderContent = (tabKey: string = activeTab) => {
+    switch (tabKey) {
       case 'abstract': return renderAbstract();
       case 'progress': return renderProgress();
       case 'results': return renderResults();
@@ -462,28 +463,36 @@ const IdeaDetail: React.FC = () => {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="border-b border-theme-surface mb-8">
-          <nav className="flex space-x-8 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-theme-primary text-theme-primary'
-                    : 'border-transparent text-theme-secondary hover:text-theme-primary hover:border-theme-secondary'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </motion.div>
-
-        <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
-          {renderContent()}
-        </motion.div>
+        <div className="mb-8">
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={tabs.map((tab) => ({
+              key: tab.id,
+              label: (
+                <Space>
+                  {tab.icon}
+                  {tab.label}
+                </Space>
+              ),
+              children: (
+                <motion.div
+                  key={tab.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderContent(tab.id)}
+                </motion.div>
+              )
+            }))}
+            size="large"
+            tabBarStyle={{
+              borderBottom: '1px solid var(--color-card-border)',
+              marginBottom: '24px'
+            }}
+          />
+        </div>
       </div>
     </motion.div>
   );

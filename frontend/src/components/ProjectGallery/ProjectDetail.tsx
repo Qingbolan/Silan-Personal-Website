@@ -16,7 +16,7 @@ import { useLanguage } from '../LanguageContext';
 import { getPlanDisplay } from '../../utils/iconMap';
 import { fetchAnnualPlanByName } from '../../api/plans/planApi';
 import { fetchProjectDetailById } from '../../api';
-import ProjectTabs from '../ProjectTabs';
+import ProjectTabs from './ProjectTabs';
 import type { ProjectDetail as ProjectDetailType } from '../../types/api';
 
 const ProjectDetail: React.FC = () => {
