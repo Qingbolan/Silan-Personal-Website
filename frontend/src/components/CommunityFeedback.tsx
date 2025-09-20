@@ -18,7 +18,6 @@ import { listIdeaComments, createIdeaComment, likeIdeaComment, deleteIdeaComment
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 const { TextArea } = Input;
-const { Option } = Select;
 
 interface CommunityFeedbackProps {
   projectId?: string;
@@ -47,7 +46,7 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
     likes: node.likes_count,
     replies: (node.replies || []).map(mapIdeaToCommunityReply),
     tags: [],
-    type: 'general',
+    type: (node.type as Comment['type']) || 'general',
     status: undefined,
     isAnonymous: !node.user_identity_id,
   });
@@ -65,8 +64,7 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
   const [comments, setComments] = useState<Comment[]>([]);
   const [ownerMap, setOwnerMap] = useState<Record<string, string>>({});
   const [newComment, setNewComment] = useState('');
-  const [selectedType, setSelectedType] = useState<Comment['type']>('general');
-  const [filterType, setFilterType] = useState<'all' | Comment['type']>('all');
+  const [filterType, setFilterType] = useState<'general' | Comment['type']>('general');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
@@ -123,7 +121,11 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         try {
           const fp = getClientFingerprint();
           const user = getCurrentUser();
-          const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+          const typesToLoad: Comment['type'][] = ['general', 'suggestion', 'question', 'bug-report'];
+          const results = await Promise.all(
+            typesToLoad.map(t => listIdeaComments(ideaId, t, fp, user?.id || undefined, language as 'en' | 'zh'))
+          );
+          const items: IdeaCommentData[] = results.flat();
           if (cancelled) return;
           // Build owner map for delete permission (user_identity based)
           const owners: Record<string, string> = {};
@@ -136,9 +138,8 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
           collectOwners(items);
           setOwnerMap(owners);
 
-          const mapped = items
-            .filter(Boolean)
-            .map(mapIdeaToCommunity);
+          const mapped = items.filter(Boolean).map(mapIdeaToCommunity)
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
           setComments(mapped);
           updateStats(mapped);
         } catch (e) {
@@ -165,7 +166,7 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
     };
     load();
     return () => { cancelled = true; };
-  }, [projectId, isIdea, ideaId, language]);
+  }, [projectId, isIdea, ideaId, language, filterType]);
 
   // Save comments to localStorage (only for non-idea local mode)
   useEffect(() => {
@@ -205,7 +206,7 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
           newComment.trim(),
           fp,
           {
-            type: 'general',
+            type: filterType,
             userIdentityId: user?.id,
             authorName: user?.name || (isAnonymous ? (language === 'en' ? 'Anonymous' : '匿名用户') : 'User'),
             authorEmail: user?.email || (isAnonymous ? 'anonymous@example.com' : ''),
@@ -213,11 +214,17 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
           }
         );
         setNewComment('');
-        // reload from server for accurate tree/like counts
-        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
-        const mapped = items.map(mapIdeaToCommunity);
-        setComments(mapped);
-        updateStats(mapped);
+        // reload from server for accurate tree/like counts; always aggregate all types for stats
+        {
+          const typesToLoad: Comment['type'][] = ['general', 'suggestion', 'question', 'bug-report'];
+          const results = await Promise.all(
+            typesToLoad.map(t => listIdeaComments(ideaId, t, fp, user?.id || undefined, language as 'en' | 'zh'))
+          );
+          const merged = results.flat().map(mapIdeaToCommunity)
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+          setComments(merged);
+          updateStats(merged);
+        }
       } catch (e) {
         console.error('Failed to create idea comment:', e);
       }
@@ -232,8 +239,8 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
       likes: 0,
       replies: [],
       tags: [],
-      type: selectedType,
-      status: selectedType === 'suggestion' ? 'open' : undefined,
+      type: filterType,
+      status: filterType === 'suggestion' ? 'open' : undefined,
       isAnonymous
     };
 
@@ -248,12 +255,15 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
       try {
         const fp = getClientFingerprint();
         const user = getCurrentUser();
+        // Use the parent's type
+        const parent = comments.find(c => c.id === commentId);
+        const parentType = parent?.type || 'general';
         await createIdeaComment(
           ideaId,
           replyContent.trim(),
           fp,
           {
-            type: 'general',
+            type: parentType,
             userIdentityId: user?.id,
             authorName: user?.name || (isAnonymous ? (language === 'en' ? 'Anonymous' : '匿名用户') : 'User'),
             authorEmail: user?.email || (isAnonymous ? 'anonymous@example.com' : ''),
@@ -263,10 +273,16 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         );
         setReplyContent('');
         setShowReplyForm(null);
-        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
-        const mapped = items.map(mapIdeaToCommunity);
-        setComments(mapped);
-        updateStats(mapped);
+        {
+          const typesToLoad: Comment['type'][] = ['general', 'suggestion', 'question', 'bug-report'];
+          const results = await Promise.all(
+            typesToLoad.map(t => listIdeaComments(ideaId, t, fp, user?.id || undefined, language as 'en' | 'zh'))
+          );
+          const merged = results.flat().map(mapIdeaToCommunity)
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+          setComments(merged);
+          updateStats(merged);
+        }
       } catch (e) {
         console.error('Failed to create reply:', e);
       }
@@ -298,10 +314,16 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         const fp = getClientFingerprint();
         const user = getCurrentUser();
         await likeIdeaComment(commentId, fp, user?.id || undefined, language as 'en' | 'zh');
-        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
-        const mapped = items.map(mapIdeaToCommunity);
-        setComments(mapped);
-        updateStats(mapped);
+        {
+          const typesToLoad: Comment['type'][] = ['general', 'suggestion', 'question', 'bug-report'];
+          const results = await Promise.all(
+            typesToLoad.map(t => listIdeaComments(ideaId, t, fp, user?.id || undefined, language as 'en' | 'zh'))
+          );
+          const merged = results.flat().map(mapIdeaToCommunity)
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+          setComments(merged);
+          updateStats(merged);
+        }
       } catch (e) {
         console.error('Failed to like idea comment:', e);
       }
@@ -321,10 +343,16 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         const fp = getClientFingerprint();
         const user = getCurrentUser();
         await likeIdeaComment(replyId, fp, user?.id || undefined, language as 'en' | 'zh');
-        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
-        const mapped = items.map(mapIdeaToCommunity);
-        setComments(mapped);
-        updateStats(mapped);
+        {
+          const typesToLoad: Comment['type'][] = ['general', 'suggestion', 'question', 'bug-report'];
+          const results = await Promise.all(
+            typesToLoad.map(t => listIdeaComments(ideaId, t, fp, user?.id || undefined, language as 'en' | 'zh'))
+          );
+          const merged = results.flat().map(mapIdeaToCommunity)
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+          setComments(merged);
+          updateStats(merged);
+        }
       } catch (e) {
         console.error('Failed to like idea reply:', e);
       }
@@ -351,10 +379,14 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         const fp = getClientFingerprint();
         const user = getCurrentUser();
         await deleteIdeaComment(commentId, { fingerprint: fp, userIdentityId: user?.id, language: language as 'en' | 'zh' });
-        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
-        const mapped = items.map(mapIdeaToCommunity);
-        setComments(mapped);
-        updateStats(mapped);
+        const typesToLoad: Comment['type'][] = ['general', 'suggestion', 'question', 'bug-report'];
+        const results = await Promise.all(
+          typesToLoad.map(t => listIdeaComments(ideaId, t, fp, user?.id || undefined, language as 'en' | 'zh'))
+        );
+        const merged = results.flat().map(mapIdeaToCommunity)
+          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        setComments(merged);
+        updateStats(merged);
       } catch (e) {
         console.error('Failed to delete comment:', e);
       }
@@ -369,10 +401,14 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         const fp = getClientFingerprint();
         const user = getCurrentUser();
         await deleteIdeaComment(replyId, { fingerprint: fp, userIdentityId: user?.id, language: language as 'en' | 'zh' });
-        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
-        const mapped = items.map(mapIdeaToCommunity);
-        setComments(mapped);
-        updateStats(mapped);
+        const typesToLoad: Comment['type'][] = ['general', 'suggestion', 'question', 'bug-report'];
+        const results = await Promise.all(
+          typesToLoad.map(t => listIdeaComments(ideaId, t, fp, user?.id || undefined, language as 'en' | 'zh'))
+        );
+        const merged = results.flat().map(mapIdeaToCommunity)
+          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        setComments(merged);
+        updateStats(merged);
       } catch (e) {
         console.error('Failed to delete reply:', e);
       }
@@ -390,7 +426,7 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
   };
 
   const filteredComments = comments.filter(comment =>
-    filterType === 'all' || comment.type === filterType
+    comment.type === filterType
   );
 
   const typeIcons = {
@@ -452,36 +488,34 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap gap-2">
+        {['general', 'suggestion', 'question', 'bug-report'].map((type) => (
+          <button
+            key={type}
+            onClick={() => setFilterType(type as any)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              filterType === type
+                ? 'bg-theme-primary text-white'
+                : 'bg-theme-surface text-theme-secondary hover:bg-theme-hover'
+            }`}
+          >
+            <span className="text-sm">
+              {type === 'general' && (language === 'en' ? 'General' : '一般')}
+              {type === 'suggestion' && (language === 'en' ? 'Suggestions' : '建议')}
+              {type === 'question' && (language === 'en' ? 'Questions' : '问题')}
+              {type === 'bug-report' && (language === 'en' ? 'Bug Reports' : '错误报告')}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {/* New Comment Form */}
       <div className="bg-theme-card rounded-xl p-6 shadow-theme-md">
         <h3 className="text-lg font-semibold mb-4 text-theme-primary flex items-center gap-2">
           <Plus size={20} />
           {language === 'en' ? 'Share Your Thoughts' : '分享您的想法'}
         </h3>
-
-        {/* Comment Type Selection */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {Object.entries(typeIcons).map(([type, icon]) => (
-            <button
-              key={type}
-              onClick={() => setSelectedType(type as Comment['type'])}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                selectedType === type
-                  ? 'bg-theme-primary text-white'
-                  : 'bg-theme-surface text-theme-secondary hover:bg-theme-hover'
-              }`}
-            >
-              {icon}
-              <span className="text-sm">
-                {type === 'general' && (language === 'en' ? 'General' : '一般留言')}
-                {type === 'suggestion' && (language === 'en' ? 'Suggestion' : '建议')}
-                {type === 'question' && (language === 'en' ? 'Question' : '问题')}
-                {type === 'bug-report' && (language === 'en' ? 'Bug Report' : '错误报告')}
-              </span>
-            </button>
-          ))}
-        </div>
-
         {/* Auth (Idea only) */}
         {isIdea && (
           <div className="mb-3 flex items-center justify-between">
@@ -531,30 +565,6 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2">
-        {['all', 'general', 'suggestion', 'question', 'bug-report'].map((type) => (
-          <button
-            key={type}
-            onClick={() => setFilterType(type as any)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              filterType === type
-                ? 'bg-theme-primary text-white'
-                : 'bg-theme-surface text-theme-secondary hover:bg-theme-hover'
-            }`}
-          >
-            {type !== 'all' && typeIcons[type as keyof typeof typeIcons]}
-            <span className="text-sm">
-              {type === 'all' && (language === 'en' ? 'All' : '全部')}
-              {type === 'general' && (language === 'en' ? 'General' : '一般')}
-              {type === 'suggestion' && (language === 'en' ? 'Suggestions' : '建议')}
-              {type === 'question' && (language === 'en' ? 'Questions' : '问题')}
-              {type === 'bug-report' && (language === 'en' ? 'Bug Reports' : '错误报告')}
-            </span>
-          </button>
-        ))}
-      </div>
-
       {/* Comments List */}
       <div className="space-y-4">
         <AnimatePresence>
@@ -591,17 +601,27 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
                       size="small"
                       style={{ minWidth: '100px' }}
                       aria-label={language === 'en' ? 'Update status' : '更新状态'}
-                    >
-                      <Option value="open">
-                        <Tag color="blue">{language === 'en' ? 'Open' : '未解决'}</Tag>
-                      </Option>
-                      <Option value="in-progress">
-                        <Tag color="orange">{language === 'en' ? 'In Progress' : '处理中'}</Tag>
-                      </Option>
-                      <Option value="resolved">
-                        <Tag color="green">{language === 'en' ? 'Resolved' : '已解决'}</Tag>
-                      </Option>
-                    </Select>
+                      options={[
+                        {
+                          value: 'open',
+                          label: (
+                            <Tag color="blue">{language === 'en' ? 'Open' : '未解决'}</Tag>
+                          ),
+                        },
+                        {
+                          value: 'in-progress',
+                          label: (
+                            <Tag color="orange">{language === 'en' ? 'In Progress' : '处理中'}</Tag>
+                          ),
+                        },
+                        {
+                          value: 'resolved',
+                          label: (
+                            <Tag color="green">{language === 'en' ? 'Resolved' : '已解决'}</Tag>
+                          ),
+                        },
+                      ]}
+                    />
                   )}
                 </div>
               </div>
