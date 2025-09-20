@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/user"
@@ -340,6 +342,26 @@ func (iu *IdeaUpdate) AddLikeCount(i int) *IdeaUpdate {
 	return iu
 }
 
+// SetCategory sets the "category" field.
+func (iu *IdeaUpdate) SetCategory(s string) *IdeaUpdate {
+	iu.mutation.SetCategory(s)
+	return iu
+}
+
+// SetNillableCategory sets the "category" field if the given value is not nil.
+func (iu *IdeaUpdate) SetNillableCategory(s *string) *IdeaUpdate {
+	if s != nil {
+		iu.SetCategory(*s)
+	}
+	return iu
+}
+
+// ClearCategory clears the value of the "category" field.
+func (iu *IdeaUpdate) ClearCategory() *IdeaUpdate {
+	iu.mutation.ClearCategory()
+	return iu
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (iu *IdeaUpdate) SetUpdatedAt(t time.Time) *IdeaUpdate {
 	iu.mutation.SetUpdatedAt(t)
@@ -379,6 +401,36 @@ func (iu *IdeaUpdate) AddBlogPosts(b ...*BlogPost) *IdeaUpdate {
 		ids[i] = b[i].ID
 	}
 	return iu.AddBlogPostIDs(ids...)
+}
+
+// AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
+func (iu *IdeaUpdate) AddCommentIDs(ids ...uuid.UUID) *IdeaUpdate {
+	iu.mutation.AddCommentIDs(ids...)
+	return iu
+}
+
+// AddComments adds the "comments" edges to the Comment entity.
+func (iu *IdeaUpdate) AddComments(c ...*Comment) *IdeaUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iu.AddCommentIDs(ids...)
+}
+
+// AddTagIDs adds the "tags" edge to the IdeaTag entity by IDs.
+func (iu *IdeaUpdate) AddTagIDs(ids ...uuid.UUID) *IdeaUpdate {
+	iu.mutation.AddTagIDs(ids...)
+	return iu
+}
+
+// AddTags adds the "tags" edges to the IdeaTag entity.
+func (iu *IdeaUpdate) AddTags(i ...*IdeaTag) *IdeaUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return iu.AddTagIDs(ids...)
 }
 
 // Mutation returns the IdeaMutation object of the builder.
@@ -432,6 +484,48 @@ func (iu *IdeaUpdate) RemoveBlogPosts(b ...*BlogPost) *IdeaUpdate {
 		ids[i] = b[i].ID
 	}
 	return iu.RemoveBlogPostIDs(ids...)
+}
+
+// ClearComments clears all "comments" edges to the Comment entity.
+func (iu *IdeaUpdate) ClearComments() *IdeaUpdate {
+	iu.mutation.ClearComments()
+	return iu
+}
+
+// RemoveCommentIDs removes the "comments" edge to Comment entities by IDs.
+func (iu *IdeaUpdate) RemoveCommentIDs(ids ...uuid.UUID) *IdeaUpdate {
+	iu.mutation.RemoveCommentIDs(ids...)
+	return iu
+}
+
+// RemoveComments removes "comments" edges to Comment entities.
+func (iu *IdeaUpdate) RemoveComments(c ...*Comment) *IdeaUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iu.RemoveCommentIDs(ids...)
+}
+
+// ClearTags clears all "tags" edges to the IdeaTag entity.
+func (iu *IdeaUpdate) ClearTags() *IdeaUpdate {
+	iu.mutation.ClearTags()
+	return iu
+}
+
+// RemoveTagIDs removes the "tags" edge to IdeaTag entities by IDs.
+func (iu *IdeaUpdate) RemoveTagIDs(ids ...uuid.UUID) *IdeaUpdate {
+	iu.mutation.RemoveTagIDs(ids...)
+	return iu
+}
+
+// RemoveTags removes "tags" edges to IdeaTag entities.
+func (iu *IdeaUpdate) RemoveTags(i ...*IdeaTag) *IdeaUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return iu.RemoveTagIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -490,6 +584,11 @@ func (iu *IdeaUpdate) check() error {
 	if v, ok := iu.mutation.Priority(); ok {
 		if err := idea.PriorityValidator(v); err != nil {
 			return &ValidationError{Name: "priority", err: fmt.Errorf(`ent: validator failed for field "Idea.priority": %w`, err)}
+		}
+	}
+	if v, ok := iu.mutation.Category(); ok {
+		if err := idea.CategoryValidator(v); err != nil {
+			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "Idea.category": %w`, err)}
 		}
 	}
 	if iu.mutation.UserCleared() && len(iu.mutation.UserIDs()) > 0 {
@@ -590,6 +689,12 @@ func (iu *IdeaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := iu.mutation.AddedLikeCount(); ok {
 		_spec.AddField(idea.FieldLikeCount, field.TypeInt, value)
+	}
+	if value, ok := iu.mutation.Category(); ok {
+		_spec.SetField(idea.FieldCategory, field.TypeString, value)
+	}
+	if iu.mutation.CategoryCleared() {
+		_spec.ClearField(idea.FieldCategory, field.TypeString)
 	}
 	if value, ok := iu.mutation.UpdatedAt(); ok {
 		_spec.SetField(idea.FieldUpdatedAt, field.TypeTime, value)
@@ -706,6 +811,96 @@ func (iu *IdeaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(blogpost.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iu.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   idea.CommentsTable,
+			Columns: []string{idea.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !iu.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   idea.CommentsTable,
+			Columns: []string{idea.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.CommentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   idea.CommentsTable,
+			Columns: []string{idea.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iu.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   idea.TagsTable,
+			Columns: idea.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideatag.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.RemovedTagsIDs(); len(nodes) > 0 && !iu.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   idea.TagsTable,
+			Columns: idea.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideatag.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   idea.TagsTable,
+			Columns: idea.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideatag.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1041,6 +1236,26 @@ func (iuo *IdeaUpdateOne) AddLikeCount(i int) *IdeaUpdateOne {
 	return iuo
 }
 
+// SetCategory sets the "category" field.
+func (iuo *IdeaUpdateOne) SetCategory(s string) *IdeaUpdateOne {
+	iuo.mutation.SetCategory(s)
+	return iuo
+}
+
+// SetNillableCategory sets the "category" field if the given value is not nil.
+func (iuo *IdeaUpdateOne) SetNillableCategory(s *string) *IdeaUpdateOne {
+	if s != nil {
+		iuo.SetCategory(*s)
+	}
+	return iuo
+}
+
+// ClearCategory clears the value of the "category" field.
+func (iuo *IdeaUpdateOne) ClearCategory() *IdeaUpdateOne {
+	iuo.mutation.ClearCategory()
+	return iuo
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (iuo *IdeaUpdateOne) SetUpdatedAt(t time.Time) *IdeaUpdateOne {
 	iuo.mutation.SetUpdatedAt(t)
@@ -1080,6 +1295,36 @@ func (iuo *IdeaUpdateOne) AddBlogPosts(b ...*BlogPost) *IdeaUpdateOne {
 		ids[i] = b[i].ID
 	}
 	return iuo.AddBlogPostIDs(ids...)
+}
+
+// AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
+func (iuo *IdeaUpdateOne) AddCommentIDs(ids ...uuid.UUID) *IdeaUpdateOne {
+	iuo.mutation.AddCommentIDs(ids...)
+	return iuo
+}
+
+// AddComments adds the "comments" edges to the Comment entity.
+func (iuo *IdeaUpdateOne) AddComments(c ...*Comment) *IdeaUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iuo.AddCommentIDs(ids...)
+}
+
+// AddTagIDs adds the "tags" edge to the IdeaTag entity by IDs.
+func (iuo *IdeaUpdateOne) AddTagIDs(ids ...uuid.UUID) *IdeaUpdateOne {
+	iuo.mutation.AddTagIDs(ids...)
+	return iuo
+}
+
+// AddTags adds the "tags" edges to the IdeaTag entity.
+func (iuo *IdeaUpdateOne) AddTags(i ...*IdeaTag) *IdeaUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return iuo.AddTagIDs(ids...)
 }
 
 // Mutation returns the IdeaMutation object of the builder.
@@ -1133,6 +1378,48 @@ func (iuo *IdeaUpdateOne) RemoveBlogPosts(b ...*BlogPost) *IdeaUpdateOne {
 		ids[i] = b[i].ID
 	}
 	return iuo.RemoveBlogPostIDs(ids...)
+}
+
+// ClearComments clears all "comments" edges to the Comment entity.
+func (iuo *IdeaUpdateOne) ClearComments() *IdeaUpdateOne {
+	iuo.mutation.ClearComments()
+	return iuo
+}
+
+// RemoveCommentIDs removes the "comments" edge to Comment entities by IDs.
+func (iuo *IdeaUpdateOne) RemoveCommentIDs(ids ...uuid.UUID) *IdeaUpdateOne {
+	iuo.mutation.RemoveCommentIDs(ids...)
+	return iuo
+}
+
+// RemoveComments removes "comments" edges to Comment entities.
+func (iuo *IdeaUpdateOne) RemoveComments(c ...*Comment) *IdeaUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iuo.RemoveCommentIDs(ids...)
+}
+
+// ClearTags clears all "tags" edges to the IdeaTag entity.
+func (iuo *IdeaUpdateOne) ClearTags() *IdeaUpdateOne {
+	iuo.mutation.ClearTags()
+	return iuo
+}
+
+// RemoveTagIDs removes the "tags" edge to IdeaTag entities by IDs.
+func (iuo *IdeaUpdateOne) RemoveTagIDs(ids ...uuid.UUID) *IdeaUpdateOne {
+	iuo.mutation.RemoveTagIDs(ids...)
+	return iuo
+}
+
+// RemoveTags removes "tags" edges to IdeaTag entities.
+func (iuo *IdeaUpdateOne) RemoveTags(i ...*IdeaTag) *IdeaUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return iuo.RemoveTagIDs(ids...)
 }
 
 // Where appends a list predicates to the IdeaUpdate builder.
@@ -1204,6 +1491,11 @@ func (iuo *IdeaUpdateOne) check() error {
 	if v, ok := iuo.mutation.Priority(); ok {
 		if err := idea.PriorityValidator(v); err != nil {
 			return &ValidationError{Name: "priority", err: fmt.Errorf(`ent: validator failed for field "Idea.priority": %w`, err)}
+		}
+	}
+	if v, ok := iuo.mutation.Category(); ok {
+		if err := idea.CategoryValidator(v); err != nil {
+			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "Idea.category": %w`, err)}
 		}
 	}
 	if iuo.mutation.UserCleared() && len(iuo.mutation.UserIDs()) > 0 {
@@ -1322,6 +1614,12 @@ func (iuo *IdeaUpdateOne) sqlSave(ctx context.Context) (_node *Idea, err error) 
 	if value, ok := iuo.mutation.AddedLikeCount(); ok {
 		_spec.AddField(idea.FieldLikeCount, field.TypeInt, value)
 	}
+	if value, ok := iuo.mutation.Category(); ok {
+		_spec.SetField(idea.FieldCategory, field.TypeString, value)
+	}
+	if iuo.mutation.CategoryCleared() {
+		_spec.ClearField(idea.FieldCategory, field.TypeString)
+	}
 	if value, ok := iuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(idea.FieldUpdatedAt, field.TypeTime, value)
 	}
@@ -1437,6 +1735,96 @@ func (iuo *IdeaUpdateOne) sqlSave(ctx context.Context) (_node *Idea, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(blogpost.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iuo.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   idea.CommentsTable,
+			Columns: []string{idea.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !iuo.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   idea.CommentsTable,
+			Columns: []string{idea.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.CommentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   idea.CommentsTable,
+			Columns: []string{idea.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iuo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   idea.TagsTable,
+			Columns: idea.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideatag.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.RemovedTagsIDs(); len(nodes) > 0 && !iuo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   idea.TagsTable,
+			Columns: idea.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideatag.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   idea.TagsTable,
+			Columns: idea.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideatag.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

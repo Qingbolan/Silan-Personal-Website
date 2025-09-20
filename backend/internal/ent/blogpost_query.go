@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"math"
 	"silan-backend/internal/ent/blogcategory"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/blogposttag"
 	"silan-backend/internal/ent/blogposttranslation"
 	"silan-backend/internal/ent/blogseries"
 	"silan-backend/internal/ent/blogtag"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/user"
@@ -38,7 +38,7 @@ type BlogPostQuery struct {
 	withIdeas        *IdeaQuery
 	withTags         *BlogTagQuery
 	withTranslations *BlogPostTranslationQuery
-	withComments     *BlogCommentQuery
+	withComments     *CommentQuery
 	withBlogPostTags *BlogPostTagQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -209,8 +209,8 @@ func (bpq *BlogPostQuery) QueryTranslations() *BlogPostTranslationQuery {
 }
 
 // QueryComments chains the current query on the "comments" edge.
-func (bpq *BlogPostQuery) QueryComments() *BlogCommentQuery {
-	query := (&BlogCommentClient{config: bpq.config}).Query()
+func (bpq *BlogPostQuery) QueryComments() *CommentQuery {
+	query := (&CommentClient{config: bpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := bpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -221,7 +221,7 @@ func (bpq *BlogPostQuery) QueryComments() *BlogCommentQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(blogpost.Table, blogpost.FieldID, selector),
-			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
+			sqlgraph.To(comment.Table, comment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, blogpost.CommentsTable, blogpost.CommentsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bpq.driver.Dialect(), step)
@@ -526,8 +526,8 @@ func (bpq *BlogPostQuery) WithTranslations(opts ...func(*BlogPostTranslationQuer
 
 // WithComments tells the query-builder to eager-load the nodes that are connected to
 // the "comments" edge. The optional arguments are used to configure the query builder of the edge.
-func (bpq *BlogPostQuery) WithComments(opts ...func(*BlogCommentQuery)) *BlogPostQuery {
-	query := (&BlogCommentClient{config: bpq.config}).Query()
+func (bpq *BlogPostQuery) WithComments(opts ...func(*CommentQuery)) *BlogPostQuery {
+	query := (&CommentClient{config: bpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -693,8 +693,8 @@ func (bpq *BlogPostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Bl
 	}
 	if query := bpq.withComments; query != nil {
 		if err := bpq.loadComments(ctx, query, nodes,
-			func(n *BlogPost) { n.Edges.Comments = []*BlogComment{} },
-			func(n *BlogPost, e *BlogComment) { n.Edges.Comments = append(n.Edges.Comments, e) }); err != nil {
+			func(n *BlogPost) { n.Edges.Comments = []*Comment{} },
+			func(n *BlogPost, e *Comment) { n.Edges.Comments = append(n.Edges.Comments, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -915,7 +915,7 @@ func (bpq *BlogPostQuery) loadTranslations(ctx context.Context, query *BlogPostT
 	}
 	return nil
 }
-func (bpq *BlogPostQuery) loadComments(ctx context.Context, query *BlogCommentQuery, nodes []*BlogPost, init func(*BlogPost), assign func(*BlogPost, *BlogComment)) error {
+func (bpq *BlogPostQuery) loadComments(ctx context.Context, query *CommentQuery, nodes []*BlogPost, init func(*BlogPost), assign func(*BlogPost, *Comment)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*BlogPost)
 	for i := range nodes {
@@ -925,10 +925,8 @@ func (bpq *BlogPostQuery) loadComments(ctx context.Context, query *BlogCommentQu
 			init(nodes[i])
 		}
 	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(blogcomment.FieldBlogPostID)
-	}
-	query.Where(predicate.BlogComment(func(s *sql.Selector) {
+	query.withFKs = true
+	query.Where(predicate.Comment(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(blogpost.CommentsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
@@ -936,10 +934,13 @@ func (bpq *BlogPostQuery) loadComments(ctx context.Context, query *BlogCommentQu
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.BlogPostID
-		node, ok := nodeids[fk]
+		fk := n.blog_post_comments
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "blog_post_comments" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "blog_post_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "blog_post_comments" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

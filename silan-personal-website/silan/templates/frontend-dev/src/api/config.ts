@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8888', // 移除重复的 /api/v1，后端API路径已包含
+  BASE_URL: 'http://localhost:5200', // 移除重复的 /api/v1，后端API路径已包含
   DEFAULT_HEADERS: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

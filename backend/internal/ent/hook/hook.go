@@ -56,18 +56,6 @@ func (f BlogCategoryTranslationFunc) Mutate(ctx context.Context, m ent.Mutation)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BlogCategoryTranslationMutation", m)
 }
 
-// The BlogCommentFunc type is an adapter to allow the use of ordinary
-// function as BlogComment mutator.
-type BlogCommentFunc func(context.Context, *ent.BlogCommentMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f BlogCommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.BlogCommentMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BlogCommentMutation", m)
-}
-
 // The BlogPostFunc type is an adapter to allow the use of ordinary
 // function as BlogPost mutator.
 type BlogPostFunc func(context.Context, *ent.BlogPostMutation) (ent.Value, error)
@@ -140,6 +128,18 @@ func (f BlogTagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BlogTagMutation", m)
 }
 
+// The CommentFunc type is an adapter to allow the use of ordinary
+// function as Comment mutator.
+type CommentFunc func(context.Context, *ent.CommentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CommentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CommentMutation", m)
+}
+
 // The CommentLikeFunc type is an adapter to allow the use of ordinary
 // function as CommentLike mutator.
 type CommentLikeFunc func(context.Context, *ent.CommentLikeMutation) (ent.Value, error)
@@ -210,6 +210,18 @@ func (f IdeaFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IdeaMutation", m)
+}
+
+// The IdeaTagFunc type is an adapter to allow the use of ordinary
+// function as IdeaTag mutator.
+type IdeaTagFunc func(context.Context, *ent.IdeaTagMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IdeaTagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IdeaTagMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IdeaTagMutation", m)
 }
 
 // The IdeaTranslationFunc type is an adapter to allow the use of ordinary

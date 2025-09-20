@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MessageSquare, 
-  Plus, 
-  Heart, 
-  Reply, 
+import {
+  MessageSquare,
+  Plus,
+  Heart,
+  Reply,
   Send,
   Lightbulb,
   Bug,
   HelpCircle
 } from 'lucide-react';
-import { Button, Input, Select, Checkbox, Tag } from 'antd';
+import { Button, Input, Select, Checkbox, Tag, Popconfirm, message } from 'antd';
 import { useLanguage } from './LanguageContext';
 import { Comment, Reply as ReplyType, CommunityStats } from '../types/community';
+import { getClientFingerprint } from '../utils/fingerprint';
+import { listIdeaComments, createIdeaComment, likeIdeaComment, deleteIdeaComment, type IdeaCommentData } from '../api/ideas/ideaApi';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -22,9 +25,45 @@ interface CommunityFeedbackProps {
 }
 
 const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'default' }) => {
+  const isIdea = projectId.startsWith('idea-');
+  const ideaId = isIdea ? projectId.replace(/^idea-/, '') : '';
+
+  const getCurrentUser = (): { id?: string; name?: string; email?: string } | null => {
+    try {
+      const raw = localStorage.getItem('auth_user');
+      if (!raw) return null;
+      const u = JSON.parse(raw);
+      if (u && (u.id || u.email || u.name)) return u;
+    } catch {}
+    return null;
+  };
+
+  const mapIdeaToCommunity = (node: IdeaCommentData): Comment => ({
+    id: node.id,
+    author: node.author_name || 'User',
+    avatar: node.author_avatar_url,
+    content: node.content,
+    timestamp: new Date(node.created_at),
+    likes: node.likes_count,
+    replies: (node.replies || []).map(mapIdeaToCommunityReply),
+    tags: [],
+    type: 'general',
+    status: undefined,
+    isAnonymous: !node.user_identity_id,
+  });
+  const mapIdeaToCommunityReply = (node: IdeaCommentData): ReplyType => ({
+    id: node.id,
+    author: node.author_name || 'User',
+    avatar: node.author_avatar_url,
+    content: node.content,
+    timestamp: new Date(node.created_at),
+    likes: node.likes_count,
+    isAnonymous: !node.user_identity_id,
+  });
   const { language } = useLanguage();
-  
+
   const [comments, setComments] = useState<Comment[]>([]);
+  const [ownerMap, setOwnerMap] = useState<Record<string, string>>({});
   const [newComment, setNewComment] = useState('');
   const [selectedType, setSelectedType] = useState<Comment['type']>('general');
   const [filterType, setFilterType] = useState<'all' | Comment['type']>('all');
@@ -39,28 +78,102 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
     contributors: 0
   });
 
-  // Load comments from localStorage
+  // Auth state for showing login parity with Blog
+  const [currentUser, setCurrentUser] = useState<any>(null);
   useEffect(() => {
-    const storedComments = localStorage.getItem(`community-comments-${projectId}`);
-    if (storedComments) {
-      const parsed = JSON.parse(storedComments).map((comment: any) => ({
-        ...comment,
-        timestamp: new Date(comment.timestamp),
-        replies: comment.replies.map((reply: any) => ({
-          ...reply,
-          timestamp: new Date(reply.timestamp)
-        }))
-      }));
-      setComments(parsed);
-      updateStats(parsed);
-    }
-  }, [projectId]);
+    try {
+      const raw = localStorage.getItem('auth_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (u && (u.id || u.email)) setCurrentUser(u);
+      }
+    } catch {}
+  }, []);
 
-  // Save comments to localStorage
+  const authWithGoogle = async (idToken: string) => {
+    if (!idToken) {
+      message.error(language === 'en' ? 'Google credential missing' : '缺少 Google 登录凭证');
+      return;
+    }
+    try {
+      const resp = await fetch(`/api/v1/auth/google/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error(t || `HTTP ${resp.status}`);
+      }
+      const user = await resp.json();
+      setCurrentUser(user);
+      try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
+    } catch (e) {
+      console.error('Google login failed:', e);
+      message.error(language === 'en' ? 'Google login failed' : 'Google 登录失败');
+    }
+  };
+
+
+  // Load comments
   useEffect(() => {
-    localStorage.setItem(`community-comments-${projectId}`, JSON.stringify(comments));
+    let cancelled = false;
+    const load = async () => {
+      if (isIdea && ideaId) {
+        try {
+          const fp = getClientFingerprint();
+          const user = getCurrentUser();
+          const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+          if (cancelled) return;
+          // Build owner map for delete permission (user_identity based)
+          const owners: Record<string, string> = {};
+          const collectOwners = (nodes: IdeaCommentData[]) => {
+            nodes.forEach(n => {
+              if (n.user_identity_id) owners[n.id] = n.user_identity_id;
+              if (n.replies && n.replies.length) collectOwners(n.replies);
+            });
+          };
+          collectOwners(items);
+          setOwnerMap(owners);
+
+          const mapped = items
+            .filter(Boolean)
+            .map(mapIdeaToCommunity);
+          setComments(mapped);
+          updateStats(mapped);
+        } catch (e) {
+          console.warn('Failed to load idea comments:', e);
+        }
+      } else {
+        const storedComments = localStorage.getItem(`community-comments-${projectId}`);
+        if (storedComments) {
+          const parsed = JSON.parse(storedComments).map((comment: any) => ({
+            ...comment,
+            timestamp: new Date(comment.timestamp),
+            replies: comment.replies.map((reply: any) => ({
+              ...reply,
+              timestamp: new Date(reply.timestamp)
+            }))
+          }));
+          setComments(parsed);
+          updateStats(parsed);
+        } else {
+          setComments([]);
+          updateStats([]);
+        }
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [projectId, isIdea, ideaId, language]);
+
+  // Save comments to localStorage (only for non-idea local mode)
+  useEffect(() => {
+    if (!isIdea) {
+      localStorage.setItem(`community-comments-${projectId}`, JSON.stringify(comments));
+    }
     updateStats(comments);
-  }, [comments, projectId]);
+  }, [comments, projectId, isIdea]);
 
   const updateStats = (commentsList: Comment[]) => {
     const totalComments = commentsList.length;
@@ -80,8 +193,36 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
-  const submitComment = () => {
+  const submitComment = async () => {
     if (!newComment.trim()) return;
+
+    if (isIdea && ideaId) {
+      try {
+        const fp = getClientFingerprint();
+        const user = getCurrentUser();
+        await createIdeaComment(
+          ideaId,
+          newComment.trim(),
+          fp,
+          {
+            type: 'general',
+            userIdentityId: user?.id,
+            authorName: user?.name || (isAnonymous ? (language === 'en' ? 'Anonymous' : '匿名用户') : 'User'),
+            authorEmail: user?.email || (isAnonymous ? 'anonymous@example.com' : ''),
+            language: language as 'en' | 'zh',
+          }
+        );
+        setNewComment('');
+        // reload from server for accurate tree/like counts
+        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+        const mapped = items.map(mapIdeaToCommunity);
+        setComments(mapped);
+        updateStats(mapped);
+      } catch (e) {
+        console.error('Failed to create idea comment:', e);
+      }
+      return;
+    }
 
     const comment: Comment = {
       id: generateId(),
@@ -100,8 +241,37 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
     setNewComment('');
   };
 
-  const submitReply = (commentId: string) => {
+  const submitReply = async (commentId: string) => {
     if (!replyContent.trim()) return;
+
+    if (isIdea && ideaId) {
+      try {
+        const fp = getClientFingerprint();
+        const user = getCurrentUser();
+        await createIdeaComment(
+          ideaId,
+          replyContent.trim(),
+          fp,
+          {
+            type: 'general',
+            userIdentityId: user?.id,
+            authorName: user?.name || (isAnonymous ? (language === 'en' ? 'Anonymous' : '匿名用户') : 'User'),
+            authorEmail: user?.email || (isAnonymous ? 'anonymous@example.com' : ''),
+            parentId: commentId,
+            language: language as 'en' | 'zh',
+          }
+        );
+        setReplyContent('');
+        setShowReplyForm(null);
+        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+        const mapped = items.map(mapIdeaToCommunity);
+        setComments(mapped);
+        updateStats(mapped);
+      } catch (e) {
+        console.error('Failed to create reply:', e);
+      }
+      return;
+    }
 
     const reply: ReplyType = {
       id: generateId(),
@@ -112,27 +282,57 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
       isAnonymous
     };
 
-    setComments(prev => prev.map(comment => 
-      comment.id === commentId 
+    setComments(prev => prev.map(comment =>
+      comment.id === commentId
         ? { ...comment, replies: [...comment.replies, reply] }
         : comment
     ));
-    
+
     setReplyContent('');
     setShowReplyForm(null);
   };
 
-  const likeComment = (commentId: string) => {
-    setComments(prev => prev.map(comment => 
-      comment.id === commentId 
+  const likeComment = async (commentId: string) => {
+    if (isIdea && ideaId) {
+      try {
+        const fp = getClientFingerprint();
+        const user = getCurrentUser();
+        await likeIdeaComment(commentId, fp, user?.id || undefined, language as 'en' | 'zh');
+        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+        const mapped = items.map(mapIdeaToCommunity);
+        setComments(mapped);
+        updateStats(mapped);
+      } catch (e) {
+        console.error('Failed to like idea comment:', e);
+      }
+      return;
+    }
+
+    setComments(prev => prev.map(comment =>
+      comment.id === commentId
         ? { ...comment, likes: comment.likes + 1 }
         : comment
     ));
   };
 
-  const likeReply = (commentId: string, replyId: string) => {
-    setComments(prev => prev.map(comment => 
-      comment.id === commentId 
+  const likeReply = async (commentId: string, replyId: string) => {
+    if (isIdea && ideaId) {
+      try {
+        const fp = getClientFingerprint();
+        const user = getCurrentUser();
+        await likeIdeaComment(replyId, fp, user?.id || undefined, language as 'en' | 'zh');
+        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+        const mapped = items.map(mapIdeaToCommunity);
+        setComments(mapped);
+        updateStats(mapped);
+      } catch (e) {
+        console.error('Failed to like idea reply:', e);
+      }
+      return;
+    }
+
+    setComments(prev => prev.map(comment =>
+      comment.id === commentId
         ? {
             ...comment,
             replies: comment.replies.map(reply =>
@@ -145,15 +345,51 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
     ));
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (isIdea && ideaId) {
+      try {
+        const fp = getClientFingerprint();
+        const user = getCurrentUser();
+        await deleteIdeaComment(commentId, { fingerprint: fp, userIdentityId: user?.id, language: language as 'en' | 'zh' });
+        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+        const mapped = items.map(mapIdeaToCommunity);
+        setComments(mapped);
+        updateStats(mapped);
+      } catch (e) {
+        console.error('Failed to delete comment:', e);
+      }
+      return;
+    }
+    setComments(prev => prev.filter(c => c.id !== commentId));
+  };
+
+  const handleDeleteReply = async (commentId: string, replyId: string) => {
+    if (isIdea && ideaId) {
+      try {
+        const fp = getClientFingerprint();
+        const user = getCurrentUser();
+        await deleteIdeaComment(replyId, { fingerprint: fp, userIdentityId: user?.id, language: language as 'en' | 'zh' });
+        const items = await listIdeaComments(ideaId, 'general', fp, user?.id || undefined, language as 'en' | 'zh');
+        const mapped = items.map(mapIdeaToCommunity);
+        setComments(mapped);
+        updateStats(mapped);
+      } catch (e) {
+        console.error('Failed to delete reply:', e);
+      }
+      return;
+    }
+    setComments(prev => prev.map(c => c.id === commentId ? { ...c, replies: c.replies.filter(r => r.id !== replyId) } : c));
+  };
+
   const updateCommentStatus = (commentId: string, status: Comment['status']) => {
-    setComments(prev => prev.map(comment => 
-      comment.id === commentId 
+    setComments(prev => prev.map(comment =>
+      comment.id === commentId
         ? { ...comment, status }
         : comment
     ));
   };
 
-  const filteredComments = comments.filter(comment => 
+  const filteredComments = comments.filter(comment =>
     filterType === 'all' || comment.type === filterType
   );
 
@@ -207,6 +443,8 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
           </div>
         </div>
         <div className="bg-theme-card rounded-xl p-4 shadow-theme-md">
+
+
           <div className="text-2xl font-bold text-theme-primary">{stats.contributors}</div>
           <div className="text-sm text-theme-secondary">
             {language === 'en' ? 'Contributors' : '参与者'}
@@ -220,7 +458,7 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
           <Plus size={20} />
           {language === 'en' ? 'Share Your Thoughts' : '分享您的想法'}
         </h3>
-        
+
         {/* Comment Type Selection */}
         <div className="flex flex-wrap gap-2 mb-4">
           {Object.entries(typeIcons).map(([type, icon]) => (
@@ -244,6 +482,23 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
           ))}
         </div>
 
+        {/* Auth (Idea only) */}
+        {isIdea && (
+          <div className="mb-3 flex items-center justify-between">
+            {currentUser ? (
+              <div className="text-sm text-theme-secondary">
+                {(language === 'en' ? 'Logged in as: ' : '已登录：')}
+                <span className="text-theme-primary font-medium">{currentUser.name || currentUser.email}</span>
+                <Button size="small" className="ml-3" onClick={() => { try { localStorage.removeItem('auth_user'); } catch {}; setCurrentUser(null); }}>
+                  {language === 'en' ? 'Logout' : '退出'}
+                </Button>
+              </div>
+            ) : (
+              <GoogleLogin onSuccess={(cred: CredentialResponse) => { const id = cred?.credential || ''; authWithGoogle(id); }} />
+            )}
+          </div>
+        )}
+
         {/* Comment Input */}
         <TextArea
           value={newComment}
@@ -260,8 +515,10 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
             onChange={(e) => setIsAnonymous(e.target.checked)}
           >
             {language === 'en' ? 'Post anonymously' : '匿名发布'}
+
+
           </Checkbox>
-          
+
           <Button
             type="primary"
             onClick={submitComment}
@@ -312,15 +569,19 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
               {/* Comment Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white font-semibold">
-                    {comment.isAnonymous ? '?' : comment.author[0].toUpperCase()}
-                  </div>
+                  {comment.avatar ? (
+                    <img src={comment.avatar} alt={comment.author} className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white font-semibold">
+                      {comment.isAnonymous ? '?' : comment.author[0].toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <div className="font-medium text-theme-primary">{comment.author}</div>
                     <div className="text-sm text-theme-secondary">{formatRelativeTime(comment.timestamp)}</div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {typeIcons[comment.type]}
                   {comment.status && (
@@ -359,7 +620,7 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
                   <Heart size={16} />
                   <span className="text-sm">{comment.likes}</span>
                 </button>
-                
+
                 <button
                   onClick={() => setShowReplyForm(showReplyForm === comment.id ? null : comment.id)}
                   className="flex items-center gap-2 text-theme-secondary hover:text-theme-primary transition-colors"
@@ -369,6 +630,26 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
                     {language === 'en' ? 'Reply' : '回复'} ({comment.replies.length})
                   </span>
                 </button>
+
+                    {/* Delete (only for owner) */}
+                    {(() => {
+                      const u = getCurrentUser();
+                      const canDelete = Boolean(isIdea && u?.id && ownerMap[comment.id] === u.id);
+                      if (!canDelete) return null;
+                      return (
+                        <Popconfirm
+                          title={language === 'en' ? 'Delete this comment?' : '确定要删除这条评论吗？'}
+                          onConfirm={() => handleDeleteComment(comment.id)}
+                          okText={language === 'en' ? 'Yes' : '确定'}
+                          cancelText={language === 'en' ? 'No' : '取消'}
+                        >
+                          <button className="text-sm text-red-500 hover:text-red-600">
+                            {language === 'en' ? 'Delete' : '删除'}
+                          </button>
+                        </Popconfirm>
+                      );
+                    })()}
+
               </div>
 
               {/* Reply Form */}
@@ -408,9 +689,13 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
                 <div className="mt-4 pt-4 border-t border-theme-surface space-y-3">
                   {comment.replies.map((reply) => (
                     <div key={reply.id} className="flex gap-3">
-                      <div className="w-8 h-8 bg-gradient-secondary rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                        {reply.isAnonymous ? '?' : reply.author[0].toUpperCase()}
-                      </div>
+                      {reply.avatar ? (
+                        <img src={reply.avatar} alt={reply.author} className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 bg-gradient-secondary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                          {reply.isAnonymous ? '?' : reply.author[0].toUpperCase()}
+                        </div>
+                      )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-theme-primary text-sm">{reply.author}</span>
@@ -424,6 +709,26 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
                           <Heart size={14} />
                           <span className="text-xs">{reply.likes}</span>
                         </button>
+
+                          {/* Delete reply (only for owner) */}
+                          {(() => {
+                            const u = getCurrentUser();
+                            const canDelete = Boolean(isIdea && u?.id && ownerMap[reply.id] === u.id);
+                            if (!canDelete) return null;
+                            return (
+                              <Popconfirm
+                                title={language === 'en' ? 'Delete this reply?' : '\u786e\u5b9a\u8981\u5220\u9664\u8fd9\u6761\u56de\u590d\u5417\uff1f'}
+                                onConfirm={() => handleDeleteReply(comment.id, reply.id)}
+                                okText={language === 'en' ? 'Yes' : '\u786e\u5b9a'}
+                                cancelText={language === 'en' ? 'No' : '\u53d6\u6d88'}
+                              >
+                                <button className="text-xs text-red-500 hover:text-red-600 ml-3">
+                                  {language === 'en' ? 'Delete' : '\u5220\u9664'}
+                                </button>
+                              </Popconfirm>
+                            );
+                          })()}
+
                       </div>
                     </div>
                   ))}
@@ -444,4 +749,4 @@ const CommunityFeedback: React.FC<CommunityFeedbackProps> = ({ projectId = 'defa
   );
 };
 
-export default CommunityFeedback; 
+export default CommunityFeedback;

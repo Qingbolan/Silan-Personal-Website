@@ -210,6 +210,22 @@ type CreateBlogCommentRequest struct {
 	Language       string `form:"lang,default=en"`
 }
 
+type CreateIdeaCommentRequest struct {
+	ID             string `path:"id"`
+	ParentId       string `json:"parent_id,optional"`
+	AuthorName     string `json:"author_name,optional"`
+	AuthorEmail    string `json:"author_email,optional"`
+	AuthorWebsite  string `json:"author_website,optional"`
+	Content        string `json:"content"`
+	Type           string `json:"type"`
+	IsApproved     bool   `json:"is_approved,optional"`
+	Fingerprint    string `json:"fingerprint"`
+	UserAgentFull  string `json:"user_agent_full,optional"`
+	ClientIP       string `json:"client_ip,optional"`
+	UserIdentityId string `json:"user_identity_id,optional"`
+	Language       string `form:"lang,default=en"`
+}
+
 type CreateIdeaRequest struct {
 	Title                string   `json:"title"`
 	Description          string   `json:"description"`
@@ -242,6 +258,12 @@ type DeleteBlogCommentRequest struct {
 	ClientIP       string `json:"client_ip,optional"`
 	UserAgentFull  string `json:"user_agent_full,optional"`
 	Language       string `form:"lang,default=en"`
+}
+
+type DeleteIdeaCommentRequest struct {
+	CommentID      string `path:"comment_id"`
+	Fingerprint    string `json:"fingerprint"`
+	UserIdentityId string `json:"user_identity_id,optional"`
 }
 
 type DeleteIdeaRequest struct {
@@ -327,6 +349,32 @@ type GraphRequest struct {
 
 type IdeaCategoriesRequest struct {
 	Language string `form:"lang,default=en"`
+}
+
+type IdeaCommentData struct {
+	ID              string            `json:"id"`
+	IdeaID          string            `json:"idea_id"`
+	ParentID        string            `json:"parent_id,optional"`
+	AuthorName      string            `json:"author_name"`
+	AuthorAvatarURL string            `json:"author_avatar_url,optional"`
+	Content         string            `json:"content"`
+	Type            string            `json:"type"`
+	CreatedAt       string            `json:"created_at"`
+	UserIdentityID  string            `json:"user_identity_id,optional"`
+	LikesCount      int               `json:"likes_count"`
+	IsLikedByUser   bool              `json:"is_liked_by_user"`
+	Replies         []IdeaCommentData `json:"replies,optional"`
+}
+
+type IdeaCommentListRequest struct {
+	ID       string `path:"id"`
+	Type     string `form:"type,default=general"`
+	Language string `form:"lang,default=en"`
+}
+
+type IdeaCommentListResponse struct {
+	Comments []IdeaCommentData `json:"comments"`
+	Total    int               `json:"total"`
 }
 
 type IdeaData struct {

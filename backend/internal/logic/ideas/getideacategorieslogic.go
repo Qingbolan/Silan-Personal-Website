@@ -3,6 +3,8 @@ package ideas
 import (
 	"context"
 
+	"silan-backend/internal/ent"
+	"silan-backend/internal/ent/idea"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -25,35 +27,28 @@ func NewGetIdeaCategoriesLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *GetIdeaCategoriesLogic) GetIdeaCategories(req *types.IdeaCategoriesRequest) (resp []string, err error) {
-	// Note: The current idea schema doesn't have categories as a separate entity
-	// This would need to be implemented when the schema is updated to include
-	// a proper category field or relationship
-
-	// For now, return some default categories based on research fields
-	categories := []string{
-		"AI & Machine Learning",
-		"Data Science",
-		"Web Development",
-		"Mobile Development",
-		"Cloud Computing",
-		"Cybersecurity",
-		"IoT",
-		"Blockchain",
-		"Computer Vision",
-		"Natural Language Processing",
-		"Robotics",
-		"Software Engineering",
-		"Database Systems",
-		"Distributed Systems",
-		"Research & Development",
+	// Get distinct categories using entgo
+	ideas, err := l.svcCtx.DB.Idea.Query().
+		Where(idea.CategoryNEQ("")).
+		Where(idea.CategoryNotNil()).
+		Order(ent.Asc(idea.FieldCategory)).
+		All(l.ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// In a real implementation, you would query the database for unique categories
-	// For example:
-	// categories, err := l.svcCtx.DB.Idea.Query().
-	//     Select(idea.FieldCategory).
-	//     Distinct().
-	//     All(l.ctx)
+	// Extract unique categories
+	categorySet := make(map[string]bool)
+	var categories []string
+	for _, ideaItem := range ideas {
+		if ideaItem.Category != "" && !categorySet[ideaItem.Category] {
+			categorySet[ideaItem.Category] = true
+			categories = append(categories, ideaItem.Category)
+		}
+	}
 
+	if categories == nil {
+		categories = []string{}
+	}
 	return categories, nil
 }

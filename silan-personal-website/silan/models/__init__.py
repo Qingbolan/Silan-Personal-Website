@@ -15,10 +15,10 @@ from .projects import (
 )
 from .blog import (
     BlogPost, BlogPostTranslation, BlogCategory, BlogCategoryTranslation,
-    BlogTag, BlogPostTag, BlogSeries, BlogSeriesTranslation, BlogComment,
-    CommentLike, BlogContentType, BlogStatus
+    BlogTag, BlogPostTag, BlogSeries, BlogSeriesTranslation,
+    BlogContentType, BlogStatus
 )
-from .ideas import Idea, IdeaTranslation, IdeaStatus, IdeaPriority
+from .ideas import Idea, IdeaTranslation, IdeaTag, Comment, CommentLike, IdeaStatus, IdeaPriority
 from .research import (
     ResearchProject, ResearchProjectTranslation, ResearchProjectDetail,
     ResearchProjectDetailTranslation, Publication, PublicationTranslation,
@@ -45,11 +45,11 @@ __all__ = [
     
     # Blog
     'BlogPost', 'BlogPostTranslation', 'BlogCategory', 'BlogCategoryTranslation',
-    'BlogTag', 'BlogPostTag', 'BlogSeries', 'BlogSeriesTranslation', 'BlogComment',
-    'CommentLike', 'BlogContentType', 'BlogStatus',
-    
-    # Ideas
-    'Idea', 'IdeaTranslation', 'IdeaStatus', 'IdeaPriority',
+    'BlogTag', 'BlogPostTag', 'BlogSeries', 'BlogSeriesTranslation',
+    'BlogContentType', 'BlogStatus',
+
+    # Ideas & Comments
+    'Idea', 'IdeaTranslation', 'IdeaTag', 'Comment', 'CommentLike', 'IdeaStatus', 'IdeaPriority',
     
     # Research
     'ResearchProject', 'ResearchProjectTranslation', 'ResearchProjectDetail',

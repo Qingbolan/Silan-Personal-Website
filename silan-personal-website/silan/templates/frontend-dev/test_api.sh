@@ -2,7 +2,7 @@
 
 # API Test Script for Silan Personal Website API
 # Base URL for the API server
-BASE_URL="http://localhost:8888"
+BASE_URL="http://localhost:5200"
 
 # Colors for output
 RED='\033[0;31m'

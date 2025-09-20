@@ -18,9 +18,6 @@ type BlogCategory func(*sql.Selector)
 // BlogCategoryTranslation is the predicate function for blogcategorytranslation builders.
 type BlogCategoryTranslation func(*sql.Selector)
 
-// BlogComment is the predicate function for blogcomment builders.
-type BlogComment func(*sql.Selector)
-
 // BlogPost is the predicate function for blogpost builders.
 type BlogPost func(*sql.Selector)
 
@@ -39,6 +36,9 @@ type BlogSeriesTranslation func(*sql.Selector)
 // BlogTag is the predicate function for blogtag builders.
 type BlogTag func(*sql.Selector)
 
+// Comment is the predicate function for comment builders.
+type Comment func(*sql.Selector)
+
 // CommentLike is the predicate function for commentlike builders.
 type CommentLike func(*sql.Selector)
 
@@ -56,6 +56,9 @@ type EducationTranslation func(*sql.Selector)
 
 // Idea is the predicate function for idea builders.
 type Idea func(*sql.Selector)
+
+// IdeaTag is the predicate function for ideatag builders.
+type IdeaTag func(*sql.Selector)
 
 // IdeaTranslation is the predicate function for ideatranslation builders.
 type IdeaTranslation func(*sql.Selector)

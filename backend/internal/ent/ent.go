@@ -11,19 +11,20 @@ import (
 	"silan-backend/internal/ent/awardtranslation"
 	"silan-backend/internal/ent/blogcategory"
 	"silan-backend/internal/ent/blogcategorytranslation"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/blogposttag"
 	"silan-backend/internal/ent/blogposttranslation"
 	"silan-backend/internal/ent/blogseries"
 	"silan-backend/internal/ent/blogseriestranslation"
 	"silan-backend/internal/ent/blogtag"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/education"
 	"silan-backend/internal/ent/educationdetail"
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
 	"silan-backend/internal/ent/personalinfo"
@@ -121,19 +122,20 @@ func checkColumn(table, column string) error {
 			awardtranslation.Table:                 awardtranslation.ValidColumn,
 			blogcategory.Table:                     blogcategory.ValidColumn,
 			blogcategorytranslation.Table:          blogcategorytranslation.ValidColumn,
-			blogcomment.Table:                      blogcomment.ValidColumn,
 			blogpost.Table:                         blogpost.ValidColumn,
 			blogposttag.Table:                      blogposttag.ValidColumn,
 			blogposttranslation.Table:              blogposttranslation.ValidColumn,
 			blogseries.Table:                       blogseries.ValidColumn,
 			blogseriestranslation.Table:            blogseriestranslation.ValidColumn,
 			blogtag.Table:                          blogtag.ValidColumn,
+			comment.Table:                          comment.ValidColumn,
 			commentlike.Table:                      commentlike.ValidColumn,
 			education.Table:                        education.ValidColumn,
 			educationdetail.Table:                  educationdetail.ValidColumn,
 			educationdetailtranslation.Table:       educationdetailtranslation.ValidColumn,
 			educationtranslation.Table:             educationtranslation.ValidColumn,
 			idea.Table:                             idea.ValidColumn,
+			ideatag.Table:                          ideatag.ValidColumn,
 			ideatranslation.Table:                  ideatranslation.ValidColumn,
 			language.Table:                         language.ValidColumn,
 			personalinfo.Table:                     personalinfo.ValidColumn,

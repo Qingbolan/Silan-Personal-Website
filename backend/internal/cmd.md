@@ -1088,13 +1088,13 @@
  1088  q
  1089  silan backend status
  1090  q
- 1091  curl -s http://localhost:8888/api/v1/resume/ | head -n 20
+ 1091  curl -s http://localhost:5200/api/v1/resume/ | head -n 20
  1092  q
  1093  silan db-sync --db-type sqlite --db-path portfolio.db --create-tables
  1094  q
- 1095  curl -s http://localhost:8888/api/v1/projects/ | python -m json.tool
+ 1095  curl -s http://localhost:5200/api/v1/projects/ | python -m json.tool
  1096  q
- 1097  curl -v http://localhost:8888/api/v1/projects/
+ 1097  curl -v http://localhost:5200/api/v1/projects/
  1098  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
  1099  cd /tmp/test-portfolio && silan backend stop
  1100  q
@@ -1191,7 +1191,7 @@
  1191  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db\n
  1192  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
  1193  cd backend/go-server && go run backend.go
- 1194  curl -i -X OPTIONS http://localhost:8888/api/v1/resume -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: GET" -H "Access-Control-Request-Headers: Content-Type"
+ 1194  curl -i -X OPTIONS http://localhost:5200/api/v1/resume -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: GET" -H "Access-Control-Request-Headers: Content-Type"
  1195  go build backend.go
  1196  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db\n
  1197  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
@@ -1290,10 +1290,10 @@
  1290  npm run dev
  1291  ./silan-backend --help 2>&1 || ./backend --help 2>&1 || echo "No help available"
  1292  ./silan-backend -f etc/backend-api.yaml
- 1293  sleep 3 && curl -s "http://localhost:8888/api/v1/ideas" | head -c 200
- 1294  curl -s "http://localhost:8888/api/v1/projects" | head -c 200
- 1295  curl -s "http://localhost:8888/api/v1/projects/48d72f8e-1775-4e01-a46e-82d86f63f117/detail" | head -c 300
- 1296  curl -s "http://localhost:8888/api/v1/ideas/1" | head -c 200
+ 1293  sleep 3 && curl -s "http://localhost:5200/api/v1/ideas" | head -c 200
+ 1294  curl -s "http://localhost:5200/api/v1/projects" | head -c 200
+ 1295  curl -s "http://localhost:5200/api/v1/projects/48d72f8e-1775-4e01-a46e-82d86f63f117/detail" | head -c 300
+ 1296  curl -s "http://localhost:5200/api/v1/ideas/1" | head -c 200
  1297  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm start
  1298  sleep 5 && curl -s "http://localhost:3000" | head -c 100
  1299  /usr/bin/python3 /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/printEnvVariablesToFile.py /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/deactivate/zsh/envVars.txt
@@ -1301,55 +1301,55 @@
  1301  find . -name "*.db" -o -name "default*" | head -10
  1302  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
  1303  sleep 5 && curl -s "http://localhost:5173" | head -c 100
- 1304  curl -s "http://localhost:8888/api/v1/ideas" | jq -r '.ideas | length'
- 1305  curl -s "http://localhost:8888/api/v1/projects" | jq -r '.projects | length'
- 1306  curl -s "http://localhost:8888/api/v1/projects" | jq '.projects[0] | keys'
- 1307  curl -s "http://localhost:8888/api/v1/projects" | jq '.projects[0]'
+ 1304  curl -s "http://localhost:5200/api/v1/ideas" | jq -r '.ideas | length'
+ 1305  curl -s "http://localhost:5200/api/v1/projects" | jq -r '.projects | length'
+ 1306  curl -s "http://localhost:5200/api/v1/projects" | jq '.projects[0] | keys'
+ 1307  curl -s "http://localhost:5200/api/v1/projects" | jq '.projects[0]'
  1308  cd api-test-portfolio && ls -la
  1309  sqlite3 portfolio.db "SELECT COUNT(*) FROM ideas;"
  1310  sqlite3 portfolio.db "SELECT id, title, is_public FROM ideas;"
  1311  sqlite3 portfolio.db "UPDATE ideas SET is_public = 1 WHERE id IN ('5e71afa3-1972-47e4-ba7f-1c50dfc98b53', 'bd2b0668-0a80-46c1-96d0-9efbb0cf6d33');"
- 1312  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && curl -s "http://localhost:8888/api/v1/ideas" | jq '.ideas | length'
- 1313  curl -s "http://localhost:8888/api/v1/ideas/bd2b0668-0a80-46c1-96d0-9efbb0cf6d33" | jq '.title'
+ 1312  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && curl -s "http://localhost:5200/api/v1/ideas" | jq '.ideas | length'
+ 1313  curl -s "http://localhost:5200/api/v1/ideas/bd2b0668-0a80-46c1-96d0-9efbb0cf6d33" | jq '.title'
  1314  curl -s "http://localhost:5173" | head -c 100
  1315  ps aux | grep -E "(vite|npm|node)" | grep -v grep
  1316  lsof -i :5173
  1317  lsof -i :3000 && echo "---3000---" && lsof -i :4173 && echo "---4173---" && lsof -i :5174
  1318  curl -s "http://localhost:3000" | head -c 200
- 1319  curl -s "http://localhost:8888/api/v1/projects" | jq '.projects[0].id'
- 1320  curl -s "http://localhost:8888/api/v1/projects/48d72f8e-1775-4e01-a46e-82d86f63f117/detail" | jq '.'
+ 1319  curl -s "http://localhost:5200/api/v1/projects" | jq '.projects[0].id'
+ 1320  curl -s "http://localhost:5200/api/v1/projects/48d72f8e-1775-4e01-a46e-82d86f63f117/detail" | jq '.'
  1321  cd backend/go-server && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
- 1322  sleep 3 && curl -s "http://localhost:8888/api/v1/projects/48d72f8e-1775-4e01-a46e-82d86f63f117/detail" | jq '.detailed_description' | head -c 100
+ 1322  sleep 3 && curl -s "http://localhost:5200/api/v1/projects/48d72f8e-1775-4e01-a46e-82d86f63f117/detail" | jq '.detailed_description' | head -c 100
  1323  curl -s "http://localhost:3001" | head -c 100
- 1324  curl -s "http://localhost:8888/api/v1/projects/id/48d72f8e-1775-4e01-a46e-82d86f63f117" | jq '.name'
+ 1324  curl -s "http://localhost:5200/api/v1/projects/id/48d72f8e-1775-4e01-a46e-82d86f63f117" | jq '.name'
  1325  go build backend.go
  1326  cd backend/go-server && ls -la
  1327  ./silan-backend -f etc/backend-api.yaml
- 1328  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts | length'
- 1329  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[0]'
- 1330  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
+ 1328  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts | length'
+ 1329  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[0]'
+ 1330  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
  1331  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && goctl api go -api api/backend.api -dir .
  1332  touch internal/handler/blog/getblogpostbyidhandler.go
  1333  pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
- 1334  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/posts/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
- 1335  curl -s "http://localhost:8888/api/v1/blog/posts/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
- 1336  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title}'
+ 1334  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
+ 1335  curl -s "http://localhost:5200/api/v1/blog/posts/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
+ 1336  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title}'
  1337  goctl api go -api api/backend.api -dir . && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
- 1338  sleep 5 && curl -s "http://localhost:8888/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
- 1339  curl -s "http://localhost:8888/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
+ 1338  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
+ 1339  curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
  1340  pkill -f silan-backend && sleep 2 && cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && ./silan-backend -f etc/backend-api.yaml
- 1341  sleep 5 && curl -s "http://localhost:8888/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
- 1342  curl -s "http://localhost:8888/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
+ 1341  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
+ 1342  curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
  1343  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "UPDATE blog_posts SET slug = 'code-refactoring-llm' WHERE title LIKE '%Code Refactoring%';"
  1344  sqlite3 portfolio.db "UPDATE blog_posts SET slug = 'scalable-ai-systems' WHERE title LIKE '%Scalable AI Systems%';"
  1345  sqlite3 portfolio.db "SELECT id, title, slug FROM blog_posts;"
- 1346  curl -s "http://localhost:8888/api/v1/blog/posts/code-refactoring-llm" | jq '.title'
- 1347  curl -s "http://localhost:8888/api/v1/blog/posts/code-refactoring-llm" | jq '.content'
+ 1346  curl -s "http://localhost:5200/api/v1/blog/posts/code-refactoring-llm" | jq '.title'
+ 1347  curl -s "http://localhost:5200/api/v1/blog/posts/code-refactoring-llm" | jq '.content'
  1348  curl -s "http://localhost:3001" | head -c 100
  1349  sqlite3 portfolio.db "UPDATE blog_posts SET content_type = 'vlog' WHERE slug = 'scalable-ai-systems';"
  1350  sqlite3 portfolio.db "UPDATE blog_posts SET content = '# Building Scalable AI Systems: Lessons from Production\n\nWelcome to this comprehensive video blog on building scalable AI systems. In this presentation, I''ll share critical insights gained from deploying AI systems at scale in production environments.\n\n> \"The real challenge in AI isn''t building models—it''s building systems that work reliably at scale.\"\n\nThumbnail](/api/placeholder/800/450)\n\n## Video Overview\n\nIn this 45-minute deep dive, we explore:\n- Architecture patterns for scalable AI systems\n- Common pitfalls and how to avoid them\n- Real-world case studies from production deployments\n- Performance optimization strategies\n\n### Key Takeaways\n\n1. **Infrastructure Design**: How to design systems that can handle varying loads\n2. **Model Serving**: Best practices for serving ML models at scale\n3. **Monitoring & Observability**: Essential metrics for AI systems\n4. **Cost Optimization**: Balancing performance and cost\n\n## Production Case Studies\n\n### Case Study 1: Real-time Recommendation System\n- **Scale**: 10M+ requests per day\n- **Latency**: <50ms p99\n- **Architecture**: Microservices with Redis caching\n\n### Case Study 2: Computer Vision Pipeline\n- **Throughput**: 1000+ images per second\n- **GPU Utilization**: 85%+ sustained\n- **Cost Savings**: 40% through optimization\n\n## Technical Deep Dive\n\n```python\n# Example: Scalable model serving with FastAPI\nfrom fastapi import FastAPI\nimport asyncio\nimport torch\n\napp = FastAPI()\n\nclass ModelServer:\n    def __init__(self):\n        self.model = torch.load(\"model.pt\")\n        self.batch_queue = []\n        \n    async def batch_predict(self, inputs):\n        # Batching for efficiency\n        predictions = self.model(torch.stack(inputs))\n        return predictions.cpu().numpy()\n\n@app.post(\"/predict\")\nasync def predict(data: PredictionRequest):\n    result = await model_server.batch_predict([data.features])\n    return {\"prediction\": result[0].tolist()}\n```\n\n## Lessons Learned\n\n### What Worked Well\n- Microservices architecture for modularity\n- Comprehensive monitoring from day one\n- Gradual rollout strategies\n- Automated testing pipelines\n\n### What We''d Do Differently\n- Earlier investment in observability\n- More aggressive caching strategies\n- Better resource estimation\n- Proactive scaling policies\n\n## Conclusion\n\nBuilding scalable AI systems requires careful planning, robust architecture, and continuous optimization. The key is to start simple and scale incrementally while maintaining reliability.\n\n---\n\n**Video Resources**:\n- [Slides Download](example.com/slides)\n- [Code Examples](github.com/example/ai-scaling)\n- [Further Reading](example.com/resources)' WHERE slug = 'scalable-ai-systems';"
  1351  sqlite3 portfolio.db < vlog_content.sql
- 1352  curl -s "http://localhost:8888/api/v1/blog/posts/scalable-ai-systems" | jq '.type'
+ 1352  curl -s "http://localhost:5200/api/v1/blog/posts/scalable-ai-systems" | jq '.type'
  1353  sqlite3 portfolio.db "INSERT INTO blog_series (id, title, slug, description, status, episode_count) VALUES ('550e8400-e29b-41d4-a716-446655440000', 'AI Research Deep Dive', 'ai-research-series', 'A comprehensive series exploring cutting-edge AI research topics', 'active', 3);"
  1354  sqlite3 portfolio.db ".schema blog_series"
  1355  sqlite3 portfolio.db "INSERT INTO blog_series (id, title, slug, description, status, episode_count, created_at, updated_at) VALUES ('550e8400-e29b-41d4-a716-446655440000', 'AI Research Deep Dive', 'ai-research-series', 'A comprehensive series exploring cutting-edge AI research topics', 'active', 3, datetime('now'), datetime('now'));"
@@ -1357,31 +1357,31 @@
  1357  sqlite3 portfolio.db < series_episode.sql
  1358  sqlite3 portfolio.db ".schema blog_posts"
  1359  sqlite3 portfolio.db < series_episode.sql
- 1360  curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '{title, series_title, episode_number}'
+ 1360  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{title, series_title, episode_number}'
  1361  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
- 1362  sleep 5 && curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '{title, series_title, episode_number, total_episodes}'
+ 1362  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{title, series_title, episode_number, total_episodes}'
  1363  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "SELECT bp.title, bp.series_id, bs.title as series_title FROM blog_posts bp LEFT JOIN blog_series bs ON bp.series_id = bs.id WHERE bp.slug = 'neural-networks-foundation';"
  1364  sqlite3 portfolio.db "UPDATE blog_posts SET content_type = 'series' WHERE slug = 'neural-networks-foundation';"
- 1365  curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '{title, type, series_title, episode_number, total_episodes}'
+ 1365  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{title, type, series_title, episode_number, total_episodes}'
  1366  sqlite3 portfolio.db "SELECT title, series_order, content_type FROM blog_posts WHERE slug = 'neural-networks-foundation';"
- 1367  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title, type, slug}'
+ 1367  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, type, slug}'
  1368  curl -s "http://localhost:3001" | head -c 200
  1369  go build backend.go
  1370  curl -s "http://localhost:3001" | head -c 200
  1371  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1372  curl -s "http://localhost:8888/api/v1/blog/posts/660e8400-e29b-41d4-a716-446655440001"
+ 1372  curl -s "http://localhost:5200/api/v1/blog/posts/660e8400-e29b-41d4-a716-446655440001"
  1373  ps aux | grep silan-backend | grep -v grep
  1374  cd backend/go-server && ./silan-backend -f etc/backend-api.yaml
  1375  cd api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug FROM blog_posts WHERE id = '660e8400-e29b-41d4-a716-446655440001';"
- 1376  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '.title'
+ 1376  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '.title'
  1377  curl -s "http://localhost:3001" | head -c 100
- 1378  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
+ 1378  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
  1379  cd backend/go-server && goctl api go -api api/backend.api -dir .
  1380  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && goctl api go -api api/backend.api -dir .
  1381  pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
- 1382  sleep 5 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
+ 1382  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
  1383  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug FROM blog_posts;"
- 1384  curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '{id, title, slug, type}'
+ 1384  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{id, title, slug, type}'
  1385  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && go generate ./ent
  1386  sqlite3 portfolio.db "SELECT id, title, slug, LENGTH(slug) as slug_length, slug IS NULL as is_null FROM blog_posts WHERE id = '660e8400-e29b-41d4-a716-446655440001';"
  1387  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db ".schema blog_posts"
@@ -1389,39 +1389,39 @@
  1389  go build backend.go
  1390  ps aux | grep silan-backend | grep -v grep
  1391  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && ./silan-backend -f etc/backend-api.yaml
- 1392  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}' | head -20
- 1393  curl -s "http://localhost:8888/api/v1/blog/posts"
+ 1392  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}' | head -20
+ 1393  curl -s "http://localhost:5200/api/v1/blog/posts"
  1394  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1395  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
- 1396  sleep 5 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
+ 1396  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
  1397  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1398  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && goctl api go -api api/backend.api -dir .
  1399  pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
- 1400  sleep 5 && curl -X POST "http://localhost:8888/api/v1/blog/posts/660e8400-e29b-41d4-a716-446655440001/views" -H "Content-Type: application/json"
+ 1400  sleep 5 && curl -X POST "http://localhost:5200/api/v1/blog/posts/660e8400-e29b-41d4-a716-446655440001/views" -H "Content-Type: application/json"
  1401  ps aux | grep silan-backend | grep -v grep
  1402  ./silan-backend -f etc/backend-api.yaml
- 1403  pkill -f silan-backend && sleep 3 && ps aux | grep 8888 | grep -v grep
+ 1403  pkill -f silan-backend && sleep 3 && ps aux | grep 5200 | grep -v grep
  1404  go build -o silan-backend . && ./silan-backend -f etc/backend-api.yaml
- 1405  sleep 5 && curl -X POST "http://localhost:8888/api/v1/blog/posts/660e8400-e29b-41d4-a716-446655440001/views" -H "Content-Type: application/json"
- 1406  curl -s "http://localhost:8888/api/v1/blog/posts" | head -50
+ 1405  sleep 5 && curl -X POST "http://localhost:5200/api/v1/blog/posts/660e8400-e29b-41d4-a716-446655440001/views" -H "Content-Type: application/json"
+ 1406  curl -s "http://localhost:5200/api/v1/blog/posts" | head -50
  1407  curl -s "http://localhost:3001" | head -c 100
  1408  /usr/bin/python3 /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/printEnvVariablesToFile.py /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/deactivate/zsh/envVars.txt
  1409  claude
  1410  cd backend/go-server && ps aux | grep "backend-api" | grep -v grep
  1411  go run backend.go
- 1412  sleep 3 && curl -v http://localhost:8888/api/v1/blog/posts
+ 1412  sleep 3 && curl -v http://localhost:5200/api/v1/blog/posts
  1413  ps aux | grep backend
  1414  go mod tidy
  1415  go run backend.go
  1416  go build backend.go
  1417  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1418  cd backend/go-server && netstat -an | grep 8888
- 1419  curl -s http://localhost:8888/api/v1/blog/posts | head -20
- 1420  curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq .
- 1421  curl -s "http://localhost:8888/api/v1/blog/series/550e8400-e29b-41d4-a716-446655440000" | jq .
+ 1418  cd backend/go-server && netstat -an | grep 5200
+ 1419  curl -s http://localhost:5200/api/v1/blog/posts | head -20
+ 1420  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq .
+ 1421  curl -s "http://localhost:5200/api/v1/blog/series/550e8400-e29b-41d4-a716-446655440000" | jq .
  1422  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm start
  1423  sleep 5 && curl -s "http://localhost:3000"
- 1424  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '.series_id'
+ 1424  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '.series_id'
  1425  ps aux | grep -E "(npm|backend)" | grep -v grep
  1426  npm start
  1427  sleep 10 && curl -s "http://localhost:3000" | head -20
@@ -1439,16 +1439,16 @@
  1439  sleep 10 && curl -s http://localhost:5173 | head -20
  1440  lsof -i :5173
  1441  npm run dev
- 1442  curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '.content[0]'
+ 1442  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '.content[0]'
  1443  npm install react-markdown rehype-highlight remark-gfm remark-math rehype-katex prismjs
  1444  ps aux | grep -E "(vite|npm)" | grep -v grep
  1445  npm run dev
  1446  pkill -f vite && pkill -f npm
  1447  npm run dev
  1448  sleep 8 && curl -I http://localhost:3000
- 1449  lsof -i :8888
+ 1449  lsof -i :5200
  1450  node test_api_mapping.cjs
- 1451  curl -s "http://localhost:8888/api/v1/blog/posts/neural-networks-foundation" | jq '.content[0]'
+ 1451  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '.content[0]'
  1452  curl -s "http://localhost:3000" | head -10
  1453  node test_markdown_parser.cjs
  1454  curl -s "http://localhost:3000/blog/660e8400-e29b-41d4-a716-446655440001" > /dev/null && echo "Frontend accessible"
@@ -1456,41 +1456,41 @@
  1456  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && rm -rf node_modules/.vite && npm run dev
  1457  npm list uuid
  1458  ps aux | grep -E "(backend|vite|npm)" | grep -v grep
- 1459  curl -X GET "http://localhost:8888/api/v1/blog/posts" | head -20
- 1460  curl -X POST "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Content-Type: application/json" -d '{"lang": "en"}' -v
- 1461  curl -X OPTIONS "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: POST" -v
+ 1459  curl -X GET "http://localhost:5200/api/v1/blog/posts" | head -20
+ 1460  curl -X POST "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Content-Type: application/json" -d '{"lang": "en"}' -v
+ 1461  curl -X OPTIONS "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: POST" -v
  1462  /usr/bin/python3 /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/printEnvVariablesToFile.py /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/deactivate/zsh/envVars.txt
- 1463  curl -X OPTIONS "http://localhost:8888/api/v1/blog/posts" -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: GET" -v
+ 1463  curl -X OPTIONS "http://localhost:5200/api/v1/blog/posts" -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: GET" -v
  1464  curl -s "http://localhost:3000" | head -10
  1465  ps aux | grep -E "(backend|silan)" | grep -v grep
  1466  ps aux | grep -E "backend|40621" | grep -v grep
  1467  cd backend/go-server && ls -la | grep backend
  1468  kill 40621
  1469  cd backend/go-server && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1470  sleep 2 && curl -X OPTIONS "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: POST" -v
- 1471  curl -X GET "http://localhost:8888/api/v1/blog/posts" | head -20
+ 1470  sleep 2 && curl -X OPTIONS "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: POST" -v
+ 1471  curl -X GET "http://localhost:5200/api/v1/blog/posts" | head -20
  1472  cd ../../ && ls -la api-test-portfolio/
  1473  file api-test-portfolio/portfolio.db
  1474  sqlite3 api-test-portfolio/portfolio.db "SELECT name FROM sqlite_master WHERE type='table';"
  1475  sqlite3 api-test-portfolio/portfolio.db "SELECT COUNT(*) FROM blog_posts;"
  1476  sqlite3 api-test-portfolio/portfolio.db "SELECT id, title, slug FROM blog_posts;"
  1477  sqlite3 api-test-portfolio/portfolio.db "SELECT id FROM blog_posts WHERE id = '5f92be68-ed58-4c52-8410-229c410b7b35';"
- 1478  curl -X GET "http://localhost:8888/api/v1/blog/posts/id/5f92be68-ed58-4c52-8410-229c410b7b35?lang=en" | head -10
+ 1478  curl -X GET "http://localhost:5200/api/v1/blog/posts/id/5f92be68-ed58-4c52-8410-229c410b7b35?lang=en" | head -10
  1479  pkill -f "vite\|npm run dev"
  1480  rm -rf node_modules/.vite .vite dist && npm run dev
  1481  sleep 3 && curl -s http://localhost:3000 | head -5
- 1482  curl -s "http://localhost:8888/api/v1/blog/posts/id/5f92be68-ed58-4c52-8410-229c410b7b35?lang=en" | jq -r '.title' 2>/dev/null || echo "Backend API working"
- 1483  curl -X POST "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views?lang=en" -H "Content-Type: application/json" -v
+ 1482  curl -s "http://localhost:5200/api/v1/blog/posts/id/5f92be68-ed58-4c52-8410-229c410b7b35?lang=en" | jq -r '.title' 2>/dev/null || echo "Backend API working"
+ 1483  curl -X POST "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views?lang=en" -H "Content-Type: application/json" -v
  1484  cd backend/go-server && pkill -f backend
  1485  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1486  sleep 2 && curl -X OPTIONS "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3002" -H "Access-Control-Request-Method: POST" -v
+ 1486  sleep 2 && curl -X OPTIONS "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3002" -H "Access-Control-Request-Method: POST" -v
  1487  ps aux | grep backend | grep -v grep
  1488  nohup ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db > backend.log 2>&1 &
- 1489  sleep 3 && curl -X OPTIONS "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3002" -H "Access-Control-Request-Method: POST" -v
+ 1489  sleep 3 && curl -X OPTIONS "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3002" -H "Access-Control-Request-Method: POST" -v
  1490  pkill -f backend
  1491  go build -o backend . && nohup ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db > backend.log 2>&1 &
- 1492  sleep 3 && curl -X OPTIONS "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3002" -H "Access-Control-Request-Method: POST" -v
- 1493  curl -X POST "http://localhost:8888/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views?lang=en" -H "Origin: http://localhost:3002" -H "Content-Type: application/json" -v
+ 1492  sleep 3 && curl -X OPTIONS "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views" -H "Origin: http://localhost:3002" -H "Access-Control-Request-Method: POST" -v
+ 1493  curl -X POST "http://localhost:5200/api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views?lang=en" -H "Origin: http://localhost:3002" -H "Content-Type: application/json" -v
  1494  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1495  ssh sigxgp2.d2.comp.nus.edu.sg
  1496  ssh zhangsq@sigxgp2.d2.comp.nus.edu.sg
@@ -1513,21 +1513,21 @@
  1513  ls -la *.db
  1514  ./backend --help
  1515  rm -rf default.db portfolio.db && ls -la *.db
- 1516  sleep 5 && curl -X GET "http://localhost:8888/api/v1/blog/posts?lang=en" | head -20
+ 1516  sleep 5 && curl -X GET "http://localhost:5200/api/v1/blog/posts?lang=en" | head -20
  1517  ./backend -f etc/backend-api.yaml &
  1518  pkill -f backend
  1519  rm -f ../../api-test-portfolio/portfolio.db
- 1520  sleep 5 && curl -X GET "http://localhost:8888/api/v1/blog/posts?lang=en"
+ 1520  sleep 5 && curl -X GET "http://localhost:5200/api/v1/blog/posts?lang=en"
  1521  ./backend -f etc/backend-api.yaml &
  1522  cd backend/go-server && ls -la *.log
  1523  ./backend -f etc/backend-api.yaml
  1524  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1525  chmod +x backend
- 1526  sleep 3 && curl -X GET "http://localhost:8888/api/v1/blog/posts?lang=en"
+ 1526  sleep 3 && curl -X GET "http://localhost:5200/api/v1/blog/posts?lang=en"
  1527  ./backend -f etc/backend-api.yaml &
  1528  pkill -f backend
  1529  cd backend/go-server && chmod +x backend
- 1530  sleep 5 && curl -X GET "http://localhost:8888/api/v1/blog/posts?lang=en"
+ 1530  sleep 5 && curl -X GET "http://localhost:5200/api/v1/blog/posts?lang=en"
  1531  ./backend -f etc/backend-api.yaml &
  1532  ps aux | grep backend
  1533  go build -o backend .
@@ -1606,14 +1606,14 @@
  1606  cd ../go-server
  1607  go generate ./internal/ent
  1608  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1609  sleep 3 && curl -s http://localhost:8888/api/v1/resume/ | head -20
- 1610  curl -s http://localhost:8888/api/v1/resume/ | jq . | head -30
+ 1609  sleep 3 && curl -s http://localhost:5200/api/v1/resume/ | head -20
+ 1610  curl -s http://localhost:5200/api/v1/resume/ | jq . | head -30
  1611  ps aux | grep backend
  1612  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1613  curl -s http://localhost:8888/api/v1/resume/personal\?lang\=en
- 1614  curl -s http://localhost:8888/api/v1/projects/\?page\=1\&size\=5
+ 1613  curl -s http://localhost:5200/api/v1/resume/personal\?lang\=en
+ 1614  curl -s http://localhost:5200/api/v1/projects/\?page\=1\&size\=5
  1615  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db 2>&1 | head -20
- 1616  netstat -an | grep 8888
+ 1616  netstat -an | grep 5200
  1617  grep -n "Fields\[8\]" internal/ent/runtime.go
  1618  go build backend.go
  1619  grep -n "Fields\[8\]" internal/ent/runtime.go
@@ -1633,7 +1633,7 @@
  1633  go install entgo.io/ent/cmd/ent@latest
  1634  ls -la internal/
  1635  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 1636  sleep 2 && curl -s "http://localhost:8888/api/v1/resume/personal?lang=en" | head -20
+ 1636  sleep 2 && curl -s "http://localhost:5200/api/v1/resume/personal?lang=en" | head -20
  1637  find . -name "*.api" -o -name "*.yaml" -o -name "goctl*"
  1638  which goctl
  1639  goctl api go -api api/backend.api -dir .
@@ -1735,50 +1735,50 @@
  1735  netstat -an | grep :8080
  1736  go build backend.go
  1737  ls -la etc/
- 1738  netstat -an | grep :8888
+ 1738  netstat -an | grep :5200
  1739  ls -la ../../api-test-portfolio/
  1740  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1741  go run backend.go -f etc/backend-api.yaml
- 1742  sleep 3 && netstat -an | grep :8888
+ 1742  sleep 3 && netstat -an | grep :5200
  1743  ps aux | grep backend
- 1744  lsof -i :8888
- 1745  curl -X GET "http://localhost:8888/api/v1/resume/personal?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1746  curl -X GET "http://localhost:8888/api/v1/resume/education?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1747  curl -X GET "http://localhost:8888/api/v1/resume/experience?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1748  curl -X GET "http://localhost:8888/api/v1/projects/?page=1&size=5&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1749  curl -X GET "http://localhost:8888/api/v1/blog/posts?page=1&size=5&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1750  curl -X GET "http://localhost:8888/api/v1/ideas/?page=1&size=5&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1751  curl -X GET "http://localhost:8888/api/v1/resume/awards?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1752  curl -X GET "http://localhost:8888/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1744  lsof -i :5200
+ 1745  curl -X GET "http://localhost:5200/api/v1/resume/personal?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1746  curl -X GET "http://localhost:5200/api/v1/resume/education?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1747  curl -X GET "http://localhost:5200/api/v1/resume/experience?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1748  curl -X GET "http://localhost:5200/api/v1/projects/?page=1&size=5&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1749  curl -X GET "http://localhost:5200/api/v1/blog/posts?page=1&size=5&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1750  curl -X GET "http://localhost:5200/api/v1/ideas/?page=1&size=5&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1751  curl -X GET "http://localhost:5200/api/v1/resume/awards?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1752  curl -X GET "http://localhost:5200/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1753  sqlite3 ../../api-test-portfolio/portfolio.db ".schema publication_authors" 2>/dev/null || echo "Table does not exist"
- 1754  curl -X GET "http://localhost:8888/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1754  curl -X GET "http://localhost:5200/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1755  pkill -f backend
  1756  go run backend.go -f etc/backend-api.yaml
- 1757  cd backend/go-server && sleep 3 && curl -X GET "http://localhost:8888/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1757  cd backend/go-server && sleep 3 && curl -X GET "http://localhost:5200/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1758  go build backend.go
- 1759  sleep 3 && curl -X GET "http://localhost:8888/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1759  sleep 3 && curl -X GET "http://localhost:5200/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1760  ps aux | grep backend
  1761  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1762  go run backend.go -f etc/backend-api.yaml 2>&1 | head -10
- 1763  lsof -i :8888
- 1764  curl -X GET "http://localhost:8888/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1765  curl -X GET "http://localhost:8888/api/v1/resume/research?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1766  curl -X GET "http://localhost:8888/api/v1/resume/recent?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1767  curl -X GET "http://localhost:8888/api/v1/plans/annual?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1768  curl -X GET "http://localhost:8888/api/v1/blog/categories?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1769  curl -X GET "http://localhost:8888/api/v1/blog/tags?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1770  curl -X GET "http://localhost:8888/api/v1/projects/categories?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1771  curl -X GET "http://localhost:8888/api/v1/projects/id/3a0c845e-6c87-4355-aae3-7eca95f6cfde?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1772  curl -X GET "http://localhost:8888/api/v1/resume/?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1773  curl -X GET "http://localhost:8888/api/v1/projects/id/nonexistent-id?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1774  curl -X POST "http://localhost:8888/api/v1/blog/posts/ede1900c-a040-4368-8bf2-62b86699c54a/likes?lang=en" -H "Content-Type: application/json" -d '{"increment": true}' -w "\n%{http_code}\n"
+ 1763  lsof -i :5200
+ 1764  curl -X GET "http://localhost:5200/api/v1/resume/publications?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1765  curl -X GET "http://localhost:5200/api/v1/resume/research?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1766  curl -X GET "http://localhost:5200/api/v1/resume/recent?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1767  curl -X GET "http://localhost:5200/api/v1/plans/annual?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1768  curl -X GET "http://localhost:5200/api/v1/blog/categories?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1769  curl -X GET "http://localhost:5200/api/v1/blog/tags?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1770  curl -X GET "http://localhost:5200/api/v1/projects/categories?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1771  curl -X GET "http://localhost:5200/api/v1/projects/id/3a0c845e-6c87-4355-aae3-7eca95f6cfde?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1772  curl -X GET "http://localhost:5200/api/v1/resume/?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1773  curl -X GET "http://localhost:5200/api/v1/projects/id/nonexistent-id?lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1774  curl -X POST "http://localhost:5200/api/v1/blog/posts/ede1900c-a040-4368-8bf2-62b86699c54a/likes?lang=en" -H "Content-Type: application/json" -d '{"increment": true}' -w "\n%{http_code}\n"
  1775  cd api-test-portfolio && python -m silan.cli database sync --help
  1776  cd ../../api-test-portfolio && python -m silan.cli database sync --help
  1777  python -m silan.cli --help
  1778  python -m silan.cli db-sync --help
  1779  python -m silan.cli db-sync --db-type sqlite --db-path portfolio.db --create-tables
- 1780  cd ../backend/go-server && curl -X GET "http://localhost:8888/api/v1/projects/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1781  curl -X GET "http://localhost:8888/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1780  cd ../backend/go-server && curl -X GET "http://localhost:5200/api/v1/projects/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1781  curl -X GET "http://localhost:5200/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1782  cd ../../api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug, description FROM projects LIMIT 5;"
  1783  sqlite3 portfolio.db "SELECT id, title, abstract FROM ideas LIMIT 5;"
  1784  sqlite3 portfolio.db "SELECT title, is_public FROM projects;"
@@ -1787,10 +1787,10 @@
  1787  sqlite3 portfolio.db "SELECT title, status, is_public FROM ideas WHERE title IS NOT NULL;"
  1788  grep -A5 -B5 "status:" content/projects/ai-chatbot/config.yaml
  1789  grep -H "status:" content/projects/*/config.yaml
- 1790  cd ../backend/go-server && curl -X GET "http://localhost:8888/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1790  cd ../backend/go-server && curl -X GET "http://localhost:5200/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1791  cd ../../api-test-portfolio && python -c "\nimport sqlite3\nconn = sqlite3.connect('portfolio.db')\ncursor = conn.cursor()\ncursor.execute('UPDATE ideas SET is_public = 1 WHERE title IS NOT NULL')\nconn.commit()\nprint(f'Updated {cursor.rowcount} ideas to be public')\nconn.close()\n"
- 1792  cd ../backend/go-server && curl -X GET "http://localhost:8888/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
- 1793  curl -X GET "http://localhost:8888/api/v1/projects/?page=1&size=10&lang=en" -H "Content-Type: application/json"
+ 1792  cd ../backend/go-server && curl -X GET "http://localhost:5200/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1793  curl -X GET "http://localhost:5200/api/v1/projects/?page=1&size=10&lang=en" -H "Content-Type: application/json"
  1794  silan db-sync
  1795  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1796  cd backend/file-system
@@ -1823,9 +1823,9 @@
  1823  python3 -c "\nimport sys\nsys.path.append('../backend/file-system')\nfrom pathlib import Path\nimport frontmatter\nimport re\n\nfile_path = Path('content/ideas/ai-code-refactoring-tool/README.md')\nwith open(file_path, 'r', encoding='utf-8') as f:\n    post = frontmatter.load(f)\n\ncontent = post.content\n\ndef extract_section(content, section_name):\n    for level in ['##', '###', '####']:\n        pattern = rf'\n{level}\s+{re.escape(section_name)}\s*\n(.*?)(?=\n{level}\s+|\Z)'\n        match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)\n        if match:\n            return match.group(1).strip()\n    return ''\n\nprint('Testing section extraction:')\nmotivation = extract_section(content, 'Motivation')\nprint('Motivation found:', len(motivation) > 0)\nif motivation:\n    print('Motivation preview:', motivation[:200])\nelse:\n    print('No motivation found')\n\n# Also test Abstract\nabstract = extract_section(content, 'Abstract')\nprint('\\nAbstract found:', len(abstract) > 0)\nif abstract:\n    print('Abstract preview:', abstract[:200])\n"
  1824  python3 -c "\nimport sys\nsys.path.append('../backend/file-system')\nfrom pathlib import Path\nimport frontmatter\nimport re\n\n# Simulate the exact parser flow\nfile_path = Path('content/ideas/ai-code-refactoring-tool/README.md')\nwith open(file_path, 'r', encoding='utf-8') as f:\n    post = frontmatter.load(f)\n\nmetadata = post.metadata\ncontent = post.content\n\nprint('Metadata:', metadata)\nprint('Content length:', len(content))\n\n# Simulate the IdeaParser._extract_idea_data logic exactly\ndef extract_section(content, section_name):\n    for level in ['##', '###', '####']:\n        pattern = rf'\n{level}\s+{re.escape(section_name)}\s*\n(.*?)(?=\n{level}\s+|\Z)'\n        match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)\n        if match:\n            return match.group(1).strip()\n    return ''\n\n# Extract title\ntitle = metadata.get('title', '')\nif not title:\n    lines = content.split('\n')\n    for line in lines:\n        line = line.strip()\n        if line.startswith('# '):\n            title = line[2:].strip()\n            break\n\nprint('Extracted title:', title)\n\n# Extract abstract  \nabstract = metadata.get('abstract', metadata.get('description', ''))\nif not abstract:\n    abstract_section = extract_section(content, 'Abstract')\n    if abstract_section:\n        abstract = abstract_section.split('\n\n')[0].strip()\n    elif title:\n        abstract = f'An innovative idea focusing on {title.lower()}'\n\nprint('Extracted abstract:', abstract[:100] + '...' if len(abstract) > 100 else abstract)\n\n# Extract motivation - this is the new logic\nmotivation = ''\nmotivation_section = extract_section(content, 'Motivation')\nprint('Motivation section found:', len(motivation_section) > 0)\nif motivation_section:\n    motivation = motivation_section\n    print('Setting motivation from section')\nelse:\n    problem_section = extract_section(content, 'Problem')\n    if problem_section:\n        motivation = problem_section\n        print('Setting motivation from problem section')\n\nif not motivation:\n    motivation = metadata.get('motivation', '')\n    print('Setting motivation from metadata')\n\nprint('Final motivation:', motivation[:100] + '...' if len(motivation) > 100 else motivation)\n"
  1825  python3 -c "\nimport sys\nsys.path.append('../backend/file-system')\n\nfrom pathlib import Path\nfrom silan.parsers.idea_parser import IdeaParser\n\n# Create parser\nparser = IdeaParser(Path('.'))\n\n# Parse one folder\nidea_folder = Path('content/ideas/ai-code-refactoring-tool')\nextracted = parser.parse_folder(idea_folder)\nif extracted:\n    motivation = extracted.main_entity.get('motivation')\n    print('Extracted motivation type:', type(motivation))\n    print('Extracted motivation value:', repr(motivation))\n    print('Is None?', motivation is None)\n    print('Is empty string?', motivation == '')\n    print('Bool value:', bool(motivation))\n    if motivation:\n        print('Length:', len(motivation))\n        print('First 100 chars:', motivation[:100])\nelse:\n    print('Parsing failed')\n"
- 1826  cd ../backend/go-server && curl -X GET "http://localhost:8888/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1826  cd ../backend/go-server && curl -X GET "http://localhost:5200/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1827  cd ../../api-test-portfolio && sqlite3 portfolio.db "UPDATE ideas SET is_public = 1; SELECT COUNT(*) FROM ideas WHERE is_public = 1;"
- 1828  cd ../backend/go-server && curl -X GET "http://localhost:8888/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1828  cd ../backend/go-server && curl -X GET "http://localhost:5200/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1829  cd ../../api-test-portfolio && sqlite3 portfolio.db "SELECT title, length(motivation), motivation FROM ideas WHERE title IS NOT NULL AND title != '';" | head -10
  1830  python3 -c "\nimport sys\nsys.path.append('../backend/file-system')\nfrom pathlib import Path\nimport frontmatter\nimport re\n\n# Read the file\nfile_path = Path('content/ideas/ai-code-refactoring-tool/README.md')\nwith open(file_path, 'r', encoding='utf-8') as f:\n    post = frontmatter.load(f)\n\nmetadata = post.metadata\ncontent = post.content\n\nprint('Metadata keys:', list(metadata.keys()))\n\n# Test the exact logic from the parser\ndef extract_section(content, section_name):\n    for level in ['##', '###', '####']:\n        pattern = rf'\n{level}\s+{re.escape(section_name)}\s*\n(.*?)(?=\n{level}\s+|\Z)'\n        match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)\n        if match:\n            return match.group(1).strip()\n    return ''\n\n# Test motivation extraction (exact parser logic)\nmotivation = ''\nprint('\\nTesting motivation extraction:')\nmotivation_section = extract_section(content, 'Motivation')\nprint('Motivation section found:', len(motivation_section) > 0)\nif motivation_section:\n    motivation = motivation_section\n    print('Set motivation from motivation section, length:', len(motivation))\n    print('First 100 chars:', motivation[:100])\nelse:\n    print('No motivation section found')\n    problem_section = extract_section(content, 'Problem')\n    print('Problem section found:', len(problem_section) > 0)\n    if problem_section:\n        motivation = problem_section\n        print('Set motivation from problem section, length:', len(motivation))\n        print('First 100 chars:', problem_section[:100])\n\nif not motivation:\n    motivation = metadata.get('motivation', '')\n    print('Set motivation from metadata:', repr(motivation))\n\nprint('\\nFinal motivation:')\nprint('Type:', type(motivation))\nprint('Length:', len(motivation))\nprint('Is empty:', motivation == '')\nprint('Bool value:', bool(motivation))\n"
  1831  sqlite3 portfolio.db "DELETE FROM ideas;" && echo "Deleted all ideas"
@@ -1854,7 +1854,7 @@
  1854  sqlite3 portfolio.db "DELETE FROM ideas;" && echo "Deleted all ideas"
  1855  python -m silan.cli db-sync --db-type sqlite --db-path portfolio.db --create-tables
  1856  sqlite3 portfolio.db "SELECT title, length(motivation), substr(motivation, 1, 100) FROM ideas WHERE title IS NOT NULL AND title != '';"
- 1857  cd ../backend/go-server && curl -X GET "http://localhost:8888/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
+ 1857  cd ../backend/go-server && curl -X GET "http://localhost:5200/api/v1/ideas/?page=1&size=10&lang=en" -H "Content-Type: application/json" -w "\n%{http_code}\n"
  1858  cd ../../api-test-portfolio && python3 -c "\nimport sys\nsys.path.append('../backend/file-system')\n\nfrom pathlib import Path\nfrom silan.parsers.idea_parser import IdeaParser\nimport frontmatter\n\n# Direct test of the actual parser being used by the sync command\nparser = IdeaParser(Path('.'))\n\n# Test both ideas\nfor idea_name in ['ai-code-refactoring-tool', 'quantum-ml-framework']:\n    print(f'=== Testing {idea_name} ===')\n    idea_folder = Path(f'content/ideas/{idea_name}')\n    \n    if idea_folder.exists():\n        extracted = parser.parse_folder(idea_folder)\n        if extracted:\n            main_entity = extracted.main_entity\n            print(f'Title: {main_entity.get(\"title\")}')\n            print(f'Motivation length: {len(main_entity.get(\"motivation\", \"\"))}')\n            print(f'Motivation type: {type(main_entity.get(\"motivation\", \"\"))}')\n            print(f'Motivation bool: {bool(main_entity.get(\"motivation\", \"\"))}')\n            if main_entity.get('motivation'):\n                print(f'Motivation preview: {main_entity.get(\"motivation\")[:100]}...')\n            print(f'All keys: {list(main_entity.keys())}')\n        else:\n            print('Parsing failed')\n    else:\n        print('Folder not found')\n    print()\n"
  1859  python3 -c "\nimport sys\nsys.path.append('../backend/file-system')\n\nfrom pathlib import Path\nfrom silan.parsers.idea_parser import IdeaParser\nimport frontmatter\n\n# Create a debug parser to trace the exact flow\nclass DetailedDebugParser(IdeaParser):\n    def parse_folder(self, folder_path):\n        print(f'=== DEBUG parse_folder for {folder_path} ===')\n        \n        try:\n            # Look for main content file\n            main_files = ['README.md', 'index.md', 'idea.md']\n            main_file = None\n            \n            for filename in main_files:\n                file_path = folder_path / filename\n                if file_path.exists():\n                    main_file = file_path\n                    print(f'Found main file: {main_file}')\n                    break\n            \n            if not main_file:\n                print('No main file found')\n                return None\n            \n            # Parse main content file\n            extracted = self.parse_file(main_file)\n            if not extracted:\n                print('parse_file failed')\n                return None\n            \n            print(f'After parse_file, motivation length: {len(extracted.main_entity.get(\"motivation\", \"\"))}')\n            \n            # Load idea configuration if exists\n            config_file = folder_path / 'config.yaml'\n            config_data = {}\n            if config_file.exists():\n                import yaml\n                try:\n                    with open(config_file, 'r', encoding='utf-8') as f:\n                        config_data = yaml.safe_load(f) or {}\n                    print(f'Loaded config data with keys: {list(config_data.keys())}')\n                except Exception as e:\n                    print(f'Error reading config.yaml: {e}')\n            \n            # Enhance extracted data with folder structure\n            print(f'Before enhance_with_folder_data, motivation length: {len(extracted.main_entity.get(\"motivation\", \"\"))}')\n            self._enhance_with_folder_data(extracted, folder_path, config_data)\n            print(f'After enhance_with_folder_data, motivation length: {len(extracted.main_entity.get(\"motivation\", \"\"))}')\n            \n            return extracted\n            \n        except Exception as e:\n            print(f'Error in parse_folder: {e}')\n            return None\n\n# Test with debug parser\nparser = DetailedDebugParser(Path('.'))\nidea_folder = Path('content/ideas/ai-code-refactoring-tool')\nresult = parser.parse_folder(idea_folder)\n\nif result:\n    print(f'\\nFinal result motivation length: {len(result.main_entity.get(\"motivation\", \"\"))}')\nelse:\n    print('\\nParsing failed')\n"
  1860  python3 -c "\nimport sys\nsys.path.append('../backend/file-system')\n\nfrom pathlib import Path\nfrom silan.parsers.idea_parser import IdeaParser\nimport frontmatter\n\n# Create a debug parser to trace the parse_file flow\nclass ParseFileDebugParser(IdeaParser):\n    def parse_file(self, file_path):\n        print(f'=== DEBUG parse_file for {file_path} ===')\n        \n        try:\n            # Read file with frontmatter\n            with open(file_path, 'r', encoding='utf-8') as f:\n                post = frontmatter.load(f)\n            \n            print(f'Frontmatter keys: {list(post.metadata.keys())}')\n            print(f'Content length: {len(post.content)}')\n            \n            # Test _extract_section directly\n            motivation_section = self._extract_section(post.content, 'Motivation')\n            print(f'Direct _extract_section result length: {len(motivation_section)}')\n            \n            # Calculate content hash for change detection\n            content_hash = self._calculate_content_hash(post)\n            \n            # Extract basic metadata\n            metadata = post.metadata\n            content = post.content\n            \n            # Create base extracted content\n            from silan.parsers.base_parser import ExtractedContent\n            from datetime import datetime\n            \n            extracted = ExtractedContent(\n                content_type=self._get_content_type(),\n                file_path=str(file_path),\n                language=metadata.get('language', 'en'),\n                content_hash=content_hash,\n                metadata=metadata,\n                tags=metadata.get('tags', []),\n                categories=metadata.get('categories', [])\n            )\n            \n            print(f'Before _parse_content call')\n            \n            # Parse content using specialized parser\n            self._parse_content(post, extracted)\n            \n            print(f'After _parse_content, motivation length: {len(extracted.main_entity.get(\"motivation\", \"\"))}')\n            \n            # Validate extracted content\n            self._validate_content(extracted)\n            \n            # Calculate extraction quality\n            extracted.extraction_quality = self._calculate_quality(extracted)\n            \n            return extracted\n            \n        except Exception as e:\n            print(f'Error in parse_file: {e}')\n            import traceback\n            traceback.print_exc()\n            return None\n\n# Test with debug parser\nparser = ParseFileDebugParser(Path('.'))\nfile_path = Path('content/ideas/ai-code-refactoring-tool/README.md')\nresult = parser.parse_file(file_path)\n\nif result:\n    print(f'\\nFinal parse_file result motivation length: {len(result.main_entity.get(\"motivation\", \"\"))}')\nelse:\n    print('\\nparse_file failed')\n"
@@ -1877,19 +1877,19 @@
  1877  python -m silan.cli db-sync --db-type sqlite --db-path portfolio.db --create-tables
  1878  sqlite3 portfolio.db "SELECT title, LENGTH(motivation) as motivation_length FROM ideas;"
  1879  cd ../backend/go-server && go run backend.go -f etc/backend-api.yaml &
- 1880  sleep 3 && curl -s "http://localhost:8888/api/ideas" | jq '.data[0].motivation' | head -c 100
- 1881  curl -s "http://localhost:8888/api/ideas" | head -200
+ 1880  sleep 3 && curl -s "http://localhost:5200/api/ideas" | jq '.data[0].motivation' | head -c 100
+ 1881  curl -s "http://localhost:5200/api/ideas" | head -200
  1882  ps aux | grep backend
  1883  kill 94612 && sleep 2 && cd ../backend/go-server && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 1884  sleep 3 && curl -s "http://localhost:8888/api/ideas" | jq '.'
- 1885  curl -v "http://localhost:8888/api/ideas"
+ 1884  sleep 3 && curl -s "http://localhost:5200/api/ideas" | jq '.'
+ 1885  curl -v "http://localhost:5200/api/ideas"
  1886  cat ../backend/go-server/etc/backend-api.yaml
- 1887  ps aux | grep backend && lsof -i :8888
+ 1887  ps aux | grep backend && lsof -i :5200
  1888  cd ../backend/go-server && ls -la
  1889  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1890  ./backend -f etc/backend-api.yaml
- 1891  sleep 3 && curl -s "http://localhost:8888/api/ideas" | jq '.'
- 1892  curl -s "http://localhost:8888/api/v1/ideas/" | jq '.'
+ 1891  sleep 3 && curl -s "http://localhost:5200/api/ideas" | jq '.'
+ 1892  curl -s "http://localhost:5200/api/v1/ideas/" | jq '.'
  1893  pkill -f backend
  1894  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1895  cd ../../api-test-portfolio && sqlite3 portfolio.db "SELECT title, slug, status FROM projects;"
@@ -1905,9 +1905,9 @@
  1905  sqlite3 portfolio.db "DELETE FROM projects WHERE slug = 'untitled';"
  1906  sqlite3 portfolio.db "SELECT title, slug, status FROM projects ORDER BY title;"
  1907  cd ../backend/go-server && ./backend -f etc/backend-api.yaml &
- 1908  sleep 3 && curl -s "http://localhost:8888/api/v1/projects/" | jq '.projects | length'
- 1909  curl -s "http://localhost:8888/api/v1/projects/" | jq '.projects[] | {title, slug, status, description}'
- 1910  curl -s "http://localhost:8888/api/v1/projects/" | jq '.'
+ 1908  sleep 3 && curl -s "http://localhost:5200/api/v1/projects/" | jq '.projects | length'
+ 1909  curl -s "http://localhost:5200/api/v1/projects/" | jq '.projects[] | {title, slug, status, description}'
+ 1910  curl -s "http://localhost:5200/api/v1/projects/" | jq '.'
  1911  pkill -f backend
  1912  cd ../backend/file-system && pip install -e . && cd ../../api-test-portfolio
  1913  python -m silan.cli db-sync --db-type sqlite --db-path portfolio.db --create-tables
@@ -1964,27 +1964,27 @@
  1964  rm content/blog/test-vlog-simple.md && cd ../backend/file-system && pip install -e . && cd ../../api-test-portfolio
  1965  cd ../backend/go-server && ls -la
  1966  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 1967  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {title, content_type, series_name: .series.title}' | head -20
- 1968  curl -v "http://localhost:8888/api/v1/blog/posts"
+ 1967  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {title, content_type, series_name: .series.title}' | head -20
+ 1968  curl -v "http://localhost:5200/api/v1/blog/posts"
  1969  ps aux | grep backend
  1970  pkill -f backend
  1971  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1972  chmod +x ./backend
  1973  go build -o backend backend.go
  1974  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 1975  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | select(.type == "VLOG") | {title, type, series_title, episode_number}'
+ 1975  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | select(.type == "VLOG") | {title, type, series_title, episode_number}'
  1976  cd ../../api-test-portfolio && sqlite3 portfolio.db "SELECT bp.title, bp.content_type, bp.series_id, bs.title as series_title FROM blog_posts bp LEFT JOIN blog_series bs ON bp.series_id = bs.id WHERE bp.content_type = 'VLOG';"
  1977  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1978  sqlite3 portfolio.db "SELECT id, title FROM blog_series LIMIT 5;"
  1979  sqlite3 portfolio.db "SELECT title, content_type, status, series_id FROM blog_posts WHERE content_type = 'VLOG';"
  1980  sqlite3 portfolio.db "UPDATE blog_posts SET content_type = 'vlog' WHERE content_type = 'VLOG';"
  1981  sqlite3 portfolio.db "UPDATE blog_posts SET status = 'published' WHERE status = 'PUBLISHED';"
- 1982  cd ../backend/go-server && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | select(.type == "vlog") | {title, type, series_title, episode_number}'
+ 1982  cd ../backend/go-server && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | select(.type == "vlog") | {title, type, series_title, episode_number}'
  1983  cd ../../api-test-portfolio && rm -f content/blog/test-* && cd ../backend/file-system && pip install -e . && cd ../../api-test-portfolio
  1984  cd ../backend/file-system && pip install -e . && cd ../../api-test-portfolio
- 1985  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {title, type, series_title, episode_number}' | head -20
+ 1985  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {title, type, series_title, episode_number}' | head -20
  1986  sqlite3 portfolio.db "UPDATE blog_posts SET content_type = LOWER(content_type);"
- 1987  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {title, type, series_title, episode_number}' | head -15
+ 1987  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {title, type, series_title, episode_number}' | head -15
  1988  pkill -f backend
  1989  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  1990  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug, description, episode_count FROM blog_series LIMIT 5;"
@@ -1993,54 +1993,54 @@
  1993  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "UPDATE blog_series SET episode_count = (SELECT COUNT(*) FROM blog_posts WHERE series_id = blog_series.id) WHERE id = 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42';"
  1994  sqlite3 portfolio.db "SELECT id, title, episode_count FROM blog_series WHERE id = 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42';"
  1995  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && chmod +x backend && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 1996  sleep 3 && curl -X GET "http://localhost:8888/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" -H "Content-Type: application/json" | jq
- 1997  curl -X GET "http://localhost:8888/api/v1/blog/posts" -H "Content-Type: application/json" | jq '.posts[] | select(.series_id != null)'
+ 1996  sleep 3 && curl -X GET "http://localhost:5200/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" -H "Content-Type: application/json" | jq
+ 1997  curl -X GET "http://localhost:5200/api/v1/blog/posts" -H "Content-Type: application/json" | jq '.posts[] | select(.series_id != null)'
  1998  cd backend/go-server && chmod +x backend && ls -la backend
  1999  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  2000  cd api-test-portfolio && sqlite3 portfolio.db "SELECT * FROM blog_series;" && echo "--- Blog posts with series ---" && sqlite3 portfolio.db "SELECT id, title, series_id, series_order FROM blog_posts WHERE series_id IS NOT NULL ORDER BY series_order;"
  2001  cd ../.. && pwd && ls -la | grep api-test
  2002  cd api-test-portfolio && sqlite3 portfolio.db "SELECT * FROM blog_series;" && echo "--- Blog posts with series ---" && sqlite3 portfolio.db "SELECT id, title, series_id, series_order FROM blog_posts WHERE series_id IS NOT NULL ORDER BY series_order;"
- 2003  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.' | head -50
- 2004  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | select(.title == "Test VLOG: Building AI Chatbots")'
- 2005  curl -s "http://localhost:8888/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
+ 2003  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.' | head -50
+ 2004  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | select(.title == "Test VLOG: Building AI Chatbots")'
+ 2005  curl -s "http://localhost:5200/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
  2006  pkill -f "backend.*-db-driver" && sleep 2
  2007  cd ../backend/go-server && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 2008  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number}'
- 2009  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number}'
+ 2008  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number}'
+ 2009  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number}'
  2010  ps aux | grep backend
  2011  cd ../backend/go-server && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 2012  sleep 2 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number}'
- 2013  curl -s "http://localhost:8888/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
+ 2012  sleep 2 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number}'
+ 2013  curl -s "http://localhost:5200/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
  2014  pkill -f "backend.*-db-driver" && sleep 2
  2015  go build -o backend backend.go && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 2016  sleep 3 && curl -s "http://localhost:8888/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
+ 2016  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
  2017  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  2018  cd ../../api-test-portfolio && sqlite3 portfolio.db "INSERT INTO blog_posts (id, user_id, series_id, title, slug, excerpt, content, content_type, status, reading_time_minutes, series_order, published_at, created_at, updated_at) VALUES ('12345678-1234-5678-9abc-def012345678', (SELECT id FROM users LIMIT 1), 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42', 'Episode 2: Advanced AI Techniques', 'episode-2-advanced-ai-techniques', 'Second episode covering advanced AI techniques', 'In this episode, we dive deeper into advanced AI techniques...', 'vlog', 'published', 5, 2, '2024-07-13 10:00:00', '2024-07-13 10:00:00', '2024-07-13 10:00:00');"
  2019  sqlite3 portfolio.db "PRAGMA table_info(blog_posts);"
  2020  sqlite3 portfolio.db "INSERT INTO blog_posts (id, user_id, series_id, title, slug, excerpt, content, content_type, status, is_featured, reading_time_minutes, view_count, like_count, comment_count, series_order, published_at, created_at, updated_at) VALUES ('12345678-1234-5678-9abc-def012345678', (SELECT id FROM users LIMIT 1), 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42', 'Episode 2: Advanced AI Techniques', 'episode-2-advanced-ai-techniques', 'Second episode covering advanced AI techniques', 'In this episode, we dive deeper into advanced AI techniques and explore machine learning algorithms...', 'vlog', 'published', 0, 5, 0, 0, 0, 2, '2024-07-13 10:00:00', '2024-07-13 10:00:00', '2024-07-13 10:00:00');"
  2021  sqlite3 portfolio.db "INSERT INTO blog_posts (id, user_id, series_id, title, slug, excerpt, content, content_type, status, is_featured, reading_time_minutes, view_count, like_count, comment_count, series_order, published_at, created_at, updated_at) VALUES ('87654321-8765-4321-dcba-210987654321', (SELECT id FROM users LIMIT 1), 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42', 'Episode 3: Deploying AI Models', 'episode-3-deploying-ai-models', 'Third episode about deploying AI models to production', 'This episode covers the complete process of deploying AI models to production environments...', 'vlog', 'published', 0, 8, 0, 0, 0, 3, '2024-07-14 10:00:00', '2024-07-14 10:00:00', '2024-07-14 10:00:00');"
- 2022  curl -s "http://localhost:8888/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
+ 2022  curl -s "http://localhost:5200/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" | jq '.'
  2023  sqlite3 portfolio.db "UPDATE blog_series SET episode_count = (SELECT COUNT(*) FROM blog_posts WHERE series_id = blog_series.id) WHERE id = 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42';"
- 2024  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number, total_episodes}'
+ 2024  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number, total_episodes}'
  2025  cd ../../.. && npm run dev
- 2026  sleep 2 && curl -s "http://localhost:8888/api/v1/blog/posts" | jq '[.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number, total_episodes}]'
- 2027  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '.posts[] | {id, title, type, series_id, series_title, episode_number}' | head -20
+ 2026  sleep 2 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '[.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number, total_episodes}]'
+ 2027  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, type, series_id, series_title, episode_number}' | head -20
  2028  cd ../../.. && ls -la package.json
  2029  cd GitHub/AIPro-Resume && ls -la package.json
  2030  npm run dev
- 2031  curl -s "http://localhost:8888/api/v1/blog/posts" | jq '[.posts[] | {title: .title[0:50], type, series_id: (.series_id != null), series_title, episode_number}]'
+ 2031  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '[.posts[] | {title: .title[0:50], type, series_id: (.series_id != null), series_title, episode_number}]'
  2032  cd backend/go-server && pkill -f "backend.*-db-driver" && sleep 2
  2033  go build -o backend backend.go && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 2034  curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type" -i "http://localhost:8888/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
- 2035  curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: GET" -i "http://localhost:8888/api/v1/blog/posts"
- 2036  curl -X POST -H "Origin: http://localhost:3001" -H "Content-Type: application/json" -i "http://localhost:8888/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
+ 2034  curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type" -i "http://localhost:5200/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
+ 2035  curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: GET" -i "http://localhost:5200/api/v1/blog/posts"
+ 2036  curl -X POST -H "Origin: http://localhost:3001" -H "Content-Type: application/json" -i "http://localhost:5200/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
  2037  pkill -f "backend.*-db-driver" && sleep 2
  2038  go build -o backend backend.go && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 2039  sleep 3 && curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type" -i "http://localhost:8888/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
+ 2039  sleep 3 && curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type" -i "http://localhost:5200/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
  2040  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
  2041  pkill -f "backend.*-db-driver" && sleep 2 && go build -o backend backend.go && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
- 2042  sleep 3 && curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type" -i "http://localhost:8888/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
- 2043  curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "lang=en" "http://localhost:8888/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
+ 2042  sleep 3 && curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type" -i "http://localhost:5200/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
+ 2043  curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "lang=en" "http://localhost:5200/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
  2044  cd ../../..
  2045  cd AIPro-Resume
  2046  ssh zhangsq@sigxgp2.d2.comp.nus.edu.sg

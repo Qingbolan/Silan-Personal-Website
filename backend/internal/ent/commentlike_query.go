@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/useridentity"
@@ -25,7 +24,6 @@ type CommentLikeQuery struct {
 	order            []commentlike.OrderOption
 	inters           []Interceptor
 	predicates       []predicate.CommentLike
-	withComment      *BlogCommentQuery
 	withUserIdentity *UserIdentityQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -61,28 +59,6 @@ func (clq *CommentLikeQuery) Unique(unique bool) *CommentLikeQuery {
 func (clq *CommentLikeQuery) Order(o ...commentlike.OrderOption) *CommentLikeQuery {
 	clq.order = append(clq.order, o...)
 	return clq
-}
-
-// QueryComment chains the current query on the "comment" edge.
-func (clq *CommentLikeQuery) QueryComment() *BlogCommentQuery {
-	query := (&BlogCommentClient{config: clq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := clq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := clq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(commentlike.Table, commentlike.FieldID, selector),
-			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, commentlike.CommentTable, commentlike.CommentColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(clq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // QueryUserIdentity chains the current query on the "user_identity" edge.
@@ -299,23 +275,11 @@ func (clq *CommentLikeQuery) Clone() *CommentLikeQuery {
 		order:            append([]commentlike.OrderOption{}, clq.order...),
 		inters:           append([]Interceptor{}, clq.inters...),
 		predicates:       append([]predicate.CommentLike{}, clq.predicates...),
-		withComment:      clq.withComment.Clone(),
 		withUserIdentity: clq.withUserIdentity.Clone(),
 		// clone intermediate query.
 		sql:  clq.sql.Clone(),
 		path: clq.path,
 	}
-}
-
-// WithComment tells the query-builder to eager-load the nodes that are connected to
-// the "comment" edge. The optional arguments are used to configure the query builder of the edge.
-func (clq *CommentLikeQuery) WithComment(opts ...func(*BlogCommentQuery)) *CommentLikeQuery {
-	query := (&BlogCommentClient{config: clq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	clq.withComment = query
-	return clq
 }
 
 // WithUserIdentity tells the query-builder to eager-load the nodes that are connected to
@@ -407,8 +371,7 @@ func (clq *CommentLikeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*CommentLike{}
 		_spec       = clq.querySpec()
-		loadedTypes = [2]bool{
-			clq.withComment != nil,
+		loadedTypes = [1]bool{
 			clq.withUserIdentity != nil,
 		}
 	)
@@ -430,12 +393,6 @@ func (clq *CommentLikeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := clq.withComment; query != nil {
-		if err := clq.loadComment(ctx, query, nodes, nil,
-			func(n *CommentLike, e *BlogComment) { n.Edges.Comment = e }); err != nil {
-			return nil, err
-		}
-	}
 	if query := clq.withUserIdentity; query != nil {
 		if err := clq.loadUserIdentity(ctx, query, nodes, nil,
 			func(n *CommentLike, e *UserIdentity) { n.Edges.UserIdentity = e }); err != nil {
@@ -445,35 +402,6 @@ func (clq *CommentLikeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	return nodes, nil
 }
 
-func (clq *CommentLikeQuery) loadComment(ctx context.Context, query *BlogCommentQuery, nodes []*CommentLike, init func(*CommentLike), assign func(*CommentLike, *BlogComment)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*CommentLike)
-	for i := range nodes {
-		fk := nodes[i].CommentID
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(blogcomment.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "comment_id" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
 func (clq *CommentLikeQuery) loadUserIdentity(ctx context.Context, query *UserIdentityQuery, nodes []*CommentLike, init func(*CommentLike), assign func(*CommentLike, *UserIdentity)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*CommentLike)
@@ -528,9 +456,6 @@ func (clq *CommentLikeQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != commentlike.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
-		}
-		if clq.withComment != nil {
-			_spec.Node.AddColumnOnce(commentlike.FieldCommentID)
 		}
 		if clq.withUserIdentity != nil {
 			_spec.Node.AddColumnOnce(commentlike.FieldUserIdentityID)

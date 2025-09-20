@@ -28,7 +28,7 @@ silan backend install
 silan backend start
 
 # 5. Your website is ready!
-# - API: http://localhost:8888
+# - API: http://localhost:5200
 # - Static files: serve the 'dist' directory with nginx
 ```
 

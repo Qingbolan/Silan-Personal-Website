@@ -141,7 +141,7 @@ class BackendLogic(ModernLogger):
             # Prepare and start backend
             server_config = config.get('server', {})
             host = server_config.get('host', '0.0.0.0')
-            port = server_config.get('port', 8888)
+            port = server_config.get('port', 5200)
 
             self.backend_starting(host, port)
 
@@ -403,7 +403,7 @@ class BackendLogic(ModernLogger):
             config = self._load_backend_config()
             server_config = config.get('server', {})
             host = server_config.get('host', '0.0.0.0')
-            port = server_config.get('port', 8888)
+            port = server_config.get('port', 5200)
 
             # Calculate uptime
             uptime = 'Unknown'
@@ -533,7 +533,7 @@ class BackendLogic(ModernLogger):
         if 'server' in config:
             server_config = config['server']
             host = server_config.get('host', '0.0.0.0')
-            port = server_config.get('port', 8888)
+            port = server_config.get('port', 5200)
             config_display['Server URL'] = f"http://{host}:{port}"
 
         config_display['Mode'] = 'Daemon' if config.get('daemon', False) else 'Interactive'

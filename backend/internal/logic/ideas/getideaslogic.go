@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 
 	"silan-backend/internal/ent"
 	"silan-backend/internal/ent/idea"
@@ -72,6 +73,7 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 	// Apply pagination
 	offset := (req.Page - 1) * req.Size
 	ideas, err := query.
+		WithTags().
 		Order(ent.Desc(idea.FieldUpdatedAt)).
 		Limit(req.Size).
 		Offset(offset).
@@ -79,6 +81,8 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 	if err != nil {
 		return nil, err
 	}
+
+	// Category now comes directly from Ent field after schema sync
 
 	var result []types.IdeaData
 	for _, ideaEntity := range ideas {
@@ -96,10 +100,16 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 			estimatedDuration = fmt.Sprintf("%d months", ideaEntity.EstimatedDurationMonths)
 		}
 
-		// For now, we'll use empty slices for tags and categories
-		// These would need to be implemented when the schema is updated
-		var tags []string
-		var category string
+		// Tags from M2M edge (IdeaTag)
+		tags := []string{}
+		if ideaEntity.Edges.Tags != nil && len(ideaEntity.Edges.Tags) > 0 {
+			for _, t := range ideaEntity.Edges.Tags {
+				if t.Name != "" {
+					tags = append(tags, t.Name)
+				}
+			}
+		}
+		category := ideaEntity.Category
 
 		result = append(result, types.IdeaData{
 			ID:                   ideaEntity.ID.String(),
@@ -107,7 +117,7 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 			Description:          abstract,
 			Category:             category,
 			Tags:                 tags,
-			Status:               string(ideaEntity.Status),
+			Status:               strings.ToLower(string(ideaEntity.Status)),
 			CreatedAt:            ideaEntity.CreatedAt.Format("2006-01-02T15:04:05Z"),
 			LastUpdated:          ideaEntity.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 			Abstract:             abstract,
@@ -117,7 +127,7 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 			OpenForCollaboration: ideaEntity.CollaborationNeeded,
 			EstimatedDuration:    estimatedDuration,
 			FundingStatus:        requiredResources,
-			Difficulty:           string(ideaEntity.Priority),
+			Difficulty:           strings.ToLower(string(ideaEntity.Priority)),
 		})
 	}
 

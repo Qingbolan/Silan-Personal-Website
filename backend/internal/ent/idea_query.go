@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"math"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/user"
@@ -30,6 +32,8 @@ type IdeaQuery struct {
 	withUser         *UserQuery
 	withTranslations *IdeaTranslationQuery
 	withBlogPosts    *BlogPostQuery
+	withComments     *CommentQuery
+	withTags         *IdeaTagQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +129,50 @@ func (iq *IdeaQuery) QueryBlogPosts() *BlogPostQuery {
 			sqlgraph.From(idea.Table, idea.FieldID, selector),
 			sqlgraph.To(blogpost.Table, blogpost.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, idea.BlogPostsTable, idea.BlogPostsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryComments chains the current query on the "comments" edge.
+func (iq *IdeaQuery) QueryComments() *CommentQuery {
+	query := (&CommentClient{config: iq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := iq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := iq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(idea.Table, idea.FieldID, selector),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, idea.CommentsTable, idea.CommentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTags chains the current query on the "tags" edge.
+func (iq *IdeaQuery) QueryTags() *IdeaTagQuery {
+	query := (&IdeaTagClient{config: iq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := iq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := iq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(idea.Table, idea.FieldID, selector),
+			sqlgraph.To(ideatag.Table, ideatag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, idea.TagsTable, idea.TagsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
 		return fromU, nil
@@ -327,6 +375,8 @@ func (iq *IdeaQuery) Clone() *IdeaQuery {
 		withUser:         iq.withUser.Clone(),
 		withTranslations: iq.withTranslations.Clone(),
 		withBlogPosts:    iq.withBlogPosts.Clone(),
+		withComments:     iq.withComments.Clone(),
+		withTags:         iq.withTags.Clone(),
 		// clone intermediate query.
 		sql:  iq.sql.Clone(),
 		path: iq.path,
@@ -363,6 +413,28 @@ func (iq *IdeaQuery) WithBlogPosts(opts ...func(*BlogPostQuery)) *IdeaQuery {
 		opt(query)
 	}
 	iq.withBlogPosts = query
+	return iq
+}
+
+// WithComments tells the query-builder to eager-load the nodes that are connected to
+// the "comments" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *IdeaQuery) WithComments(opts ...func(*CommentQuery)) *IdeaQuery {
+	query := (&CommentClient{config: iq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	iq.withComments = query
+	return iq
+}
+
+// WithTags tells the query-builder to eager-load the nodes that are connected to
+// the "tags" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *IdeaQuery) WithTags(opts ...func(*IdeaTagQuery)) *IdeaQuery {
+	query := (&IdeaTagClient{config: iq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	iq.withTags = query
 	return iq
 }
 
@@ -444,10 +516,12 @@ func (iq *IdeaQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Idea, e
 	var (
 		nodes       = []*Idea{}
 		_spec       = iq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
 			iq.withUser != nil,
 			iq.withTranslations != nil,
 			iq.withBlogPosts != nil,
+			iq.withComments != nil,
+			iq.withTags != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -485,6 +559,20 @@ func (iq *IdeaQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Idea, e
 		if err := iq.loadBlogPosts(ctx, query, nodes,
 			func(n *Idea) { n.Edges.BlogPosts = []*BlogPost{} },
 			func(n *Idea, e *BlogPost) { n.Edges.BlogPosts = append(n.Edges.BlogPosts, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := iq.withComments; query != nil {
+		if err := iq.loadComments(ctx, query, nodes,
+			func(n *Idea) { n.Edges.Comments = []*Comment{} },
+			func(n *Idea, e *Comment) { n.Edges.Comments = append(n.Edges.Comments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := iq.withTags; query != nil {
+		if err := iq.loadTags(ctx, query, nodes,
+			func(n *Idea) { n.Edges.Tags = []*IdeaTag{} },
+			func(n *Idea, e *IdeaTag) { n.Edges.Tags = append(n.Edges.Tags, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -577,6 +665,98 @@ func (iq *IdeaQuery) loadBlogPosts(ctx context.Context, query *BlogPostQuery, no
 			return fmt.Errorf(`unexpected referenced foreign-key "ideas_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (iq *IdeaQuery) loadComments(ctx context.Context, query *CommentQuery, nodes []*Idea, init func(*Idea), assign func(*Idea, *Comment)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Idea)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(idea.CommentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.idea_comments
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "idea_comments" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "idea_comments" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (iq *IdeaQuery) loadTags(ctx context.Context, query *IdeaTagQuery, nodes []*Idea, init func(*Idea), assign func(*Idea, *IdeaTag)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Idea)
+	nids := make(map[uuid.UUID]map[*Idea]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(idea.TagsTable)
+		s.Join(joinT).On(s.C(ideatag.FieldID), joinT.C(idea.TagsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(idea.TagsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(idea.TagsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(uuid.UUID)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := *values[0].(*uuid.UUID)
+				inValue := *values[1].(*uuid.UUID)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Idea]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*IdeaTag](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "tags" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
 	}
 	return nil
 }

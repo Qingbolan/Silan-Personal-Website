@@ -4,7 +4,6 @@ package ent
 
 import (
 	"fmt"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/useridentity"
 	"strings"
@@ -20,7 +19,7 @@ type CommentLike struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// CommentID holds the value of the "comment_id" field.
+	// Generic comment ID - can reference any Comment
 	CommentID uuid.UUID `json:"comment_id,omitempty"`
 	// ID of the authenticated user who liked
 	UserIdentityID string `json:"user_identity_id,omitempty"`
@@ -30,6 +29,8 @@ type CommentLike struct {
 	IPAddress string `json:"ip_address,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CommentLikeQuery when eager-loading is set.
 	Edges        CommentLikeEdges `json:"edges"`
@@ -38,24 +39,11 @@ type CommentLike struct {
 
 // CommentLikeEdges holds the relations/edges for other nodes in the graph.
 type CommentLikeEdges struct {
-	// Comment holds the value of the comment edge.
-	Comment *BlogComment `json:"comment,omitempty"`
 	// UserIdentity holds the value of the user_identity edge.
 	UserIdentity *UserIdentity `json:"user_identity,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
-}
-
-// CommentOrErr returns the Comment value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e CommentLikeEdges) CommentOrErr() (*BlogComment, error) {
-	if e.Comment != nil {
-		return e.Comment, nil
-	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: blogcomment.Label}
-	}
-	return nil, &NotLoadedError{edge: "comment"}
+	loadedTypes [1]bool
 }
 
 // UserIdentityOrErr returns the UserIdentity value or an error if the edge
@@ -63,7 +51,7 @@ func (e CommentLikeEdges) CommentOrErr() (*BlogComment, error) {
 func (e CommentLikeEdges) UserIdentityOrErr() (*UserIdentity, error) {
 	if e.UserIdentity != nil {
 		return e.UserIdentity, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[0] {
 		return nil, &NotFoundError{label: useridentity.Label}
 	}
 	return nil, &NotLoadedError{edge: "user_identity"}
@@ -76,7 +64,7 @@ func (*CommentLike) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case commentlike.FieldUserIdentityID, commentlike.FieldFingerprint, commentlike.FieldIPAddress:
 			values[i] = new(sql.NullString)
-		case commentlike.FieldCreatedAt:
+		case commentlike.FieldCreatedAt, commentlike.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case commentlike.FieldID, commentlike.FieldCommentID:
 			values[i] = new(uuid.UUID)
@@ -131,6 +119,12 @@ func (cl *CommentLike) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				cl.CreatedAt = value.Time
 			}
+		case commentlike.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				cl.UpdatedAt = value.Time
+			}
 		default:
 			cl.selectValues.Set(columns[i], values[i])
 		}
@@ -142,11 +136,6 @@ func (cl *CommentLike) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (cl *CommentLike) Value(name string) (ent.Value, error) {
 	return cl.selectValues.Get(name)
-}
-
-// QueryComment queries the "comment" edge of the CommentLike entity.
-func (cl *CommentLike) QueryComment() *BlogCommentQuery {
-	return NewCommentLikeClient(cl.config).QueryComment(cl)
 }
 
 // QueryUserIdentity queries the "user_identity" edge of the CommentLike entity.
@@ -191,6 +180,9 @@ func (cl *CommentLike) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(cl.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(cl.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

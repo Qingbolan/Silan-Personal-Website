@@ -5,7 +5,7 @@
  * 验证所有更新后的API是否正确指向后端接口
  */
 
-const API_BASE_URL = 'http://localhost:8888';
+const API_BASE_URL = 'http://localhost:5200';
 
 // 所有API端点列表（与backend.api对应）
 const API_ENDPOINTS = {
@@ -138,7 +138,7 @@ function showUsage() {
   node test_updated_apis.js
 
 前提条件:
-  1. 后端服务运行在 http://localhost:8888
+  1. 后端服务运行在 http://localhost:5200
   2. 后端实现了 backend.api 中定义的所有端点
 
 测试内容:

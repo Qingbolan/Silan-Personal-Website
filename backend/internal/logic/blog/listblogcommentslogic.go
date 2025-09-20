@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"silan-backend/internal/ent/blogcomment"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
@@ -35,10 +35,10 @@ func (l *ListBlogCommentsLogic) ListBlogComments(req *types.BlogCommentListReque
 		return nil, err
 	}
 
-	list, err := l.svcCtx.DB.BlogComment.
+	list, err := l.svcCtx.DB.Comment.
 		Query().
-		Where(blogcomment.BlogPostIDEQ(postID)).
-		Order(blogcomment.ByCreatedAt()).
+		Where(comment.EntityIDEQ(postID), comment.EntityTypeEQ("blog")).
+		Order(comment.ByCreatedAt()).
 		All(l.ctx)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (l *ListBlogCommentsLogic) ListBlogComments(req *types.BlogCommentListReque
 
 		comment := types.BlogCommentData{
 			ID:             c.ID.String(),
-			BlogPostID:     c.BlogPostID.String(),
+			BlogPostID:     c.EntityID.String(),
 			ParentID:       parentIDStr,
 			AuthorName:     c.AuthorName,
 			AuthorAvatarURL: lookupAvatar(c.AuthorEmail),

@@ -83,7 +83,7 @@ type BlogPostEdges struct {
 	// Translations holds the value of the translations edge.
 	Translations []*BlogPostTranslation `json:"translations,omitempty"`
 	// Comments holds the value of the comments edge.
-	Comments []*BlogComment `json:"comments,omitempty"`
+	Comments []*Comment `json:"comments,omitempty"`
 	// BlogPostTags holds the value of the blog_post_tags edge.
 	BlogPostTags []*BlogPostTag `json:"blog_post_tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -155,7 +155,7 @@ func (e BlogPostEdges) TranslationsOrErr() ([]*BlogPostTranslation, error) {
 
 // CommentsOrErr returns the Comments value or an error if the edge
 // was not loaded in eager-loading.
-func (e BlogPostEdges) CommentsOrErr() ([]*BlogComment, error) {
+func (e BlogPostEdges) CommentsOrErr() ([]*Comment, error) {
 	if e.loadedTypes[6] {
 		return e.Comments, nil
 	}
@@ -371,7 +371,7 @@ func (bp *BlogPost) QueryTranslations() *BlogPostTranslationQuery {
 }
 
 // QueryComments queries the "comments" edge of the BlogPost entity.
-func (bp *BlogPost) QueryComments() *BlogCommentQuery {
+func (bp *BlogPost) QueryComments() *CommentQuery {
 	return NewBlogPostClient(bp.config).QueryComments(bp)
 }
 

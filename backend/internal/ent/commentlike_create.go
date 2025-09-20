@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/useridentity"
 	"time"
@@ -85,6 +84,20 @@ func (clc *CommentLikeCreate) SetNillableCreatedAt(t *time.Time) *CommentLikeCre
 	return clc
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (clc *CommentLikeCreate) SetUpdatedAt(t time.Time) *CommentLikeCreate {
+	clc.mutation.SetUpdatedAt(t)
+	return clc
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (clc *CommentLikeCreate) SetNillableUpdatedAt(t *time.Time) *CommentLikeCreate {
+	if t != nil {
+		clc.SetUpdatedAt(*t)
+	}
+	return clc
+}
+
 // SetID sets the "id" field.
 func (clc *CommentLikeCreate) SetID(u uuid.UUID) *CommentLikeCreate {
 	clc.mutation.SetID(u)
@@ -97,11 +110,6 @@ func (clc *CommentLikeCreate) SetNillableID(u *uuid.UUID) *CommentLikeCreate {
 		clc.SetID(*u)
 	}
 	return clc
-}
-
-// SetComment sets the "comment" edge to the BlogComment entity.
-func (clc *CommentLikeCreate) SetComment(b *BlogComment) *CommentLikeCreate {
-	return clc.SetCommentID(b.ID)
 }
 
 // SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
@@ -148,6 +156,10 @@ func (clc *CommentLikeCreate) defaults() {
 		v := commentlike.DefaultCreatedAt()
 		clc.mutation.SetCreatedAt(v)
 	}
+	if _, ok := clc.mutation.UpdatedAt(); !ok {
+		v := commentlike.DefaultUpdatedAt()
+		clc.mutation.SetUpdatedAt(v)
+	}
 	if _, ok := clc.mutation.ID(); !ok {
 		v := commentlike.DefaultID()
 		clc.mutation.SetID(v)
@@ -167,8 +179,8 @@ func (clc *CommentLikeCreate) check() error {
 	if _, ok := clc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "CommentLike.created_at"`)}
 	}
-	if len(clc.mutation.CommentIDs()) == 0 {
-		return &ValidationError{Name: "comment", err: errors.New(`ent: missing required edge "CommentLike.comment"`)}
+	if _, ok := clc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "CommentLike.updated_at"`)}
 	}
 	return nil
 }
@@ -205,6 +217,10 @@ func (clc *CommentLikeCreate) createSpec() (*CommentLike, *sqlgraph.CreateSpec) 
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
+	if value, ok := clc.mutation.CommentID(); ok {
+		_spec.SetField(commentlike.FieldCommentID, field.TypeUUID, value)
+		_node.CommentID = value
+	}
 	if value, ok := clc.mutation.Fingerprint(); ok {
 		_spec.SetField(commentlike.FieldFingerprint, field.TypeString, value)
 		_node.Fingerprint = value
@@ -217,22 +233,9 @@ func (clc *CommentLikeCreate) createSpec() (*CommentLike, *sqlgraph.CreateSpec) 
 		_spec.SetField(commentlike.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if nodes := clc.mutation.CommentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   commentlike.CommentTable,
-			Columns: []string{commentlike.CommentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.CommentID = nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
+	if value, ok := clc.mutation.UpdatedAt(); ok {
+		_spec.SetField(commentlike.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
 	}
 	if nodes := clc.mutation.UserIdentityIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

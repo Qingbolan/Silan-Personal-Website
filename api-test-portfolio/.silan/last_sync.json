@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-17T08:18:44.717400",
+  "timestamp": "2025-09-19T17:42:40.965008",
   "stats": {
     "total_items": 13,
     "processed_items": 13,
@@ -14,7 +14,15 @@
   },
   "database_config": {
     "type": "sqlite",
-    "path": "./portfolio.db"
+    "sqlite": {
+      "path": "portfolio.db"
+    },
+    "settings": {
+      "create_tables": true,
+      "backup_before_sync": true,
+      "auto_migrate": true
+    },
+    "path": "portfolio.db"
   },
   "dry_run": false
 }

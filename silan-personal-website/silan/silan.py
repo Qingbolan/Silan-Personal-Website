@@ -169,7 +169,7 @@ class SilanCLI:
         @click.option('--database', help='Database name (MySQL/PostgreSQL only)')
         @click.option('--db-path', default='portfolio.db', help='Database file path (SQLite only)')
         @click.option('--server-host', default='0.0.0.0', help='Backend server host')
-        @click.option('--server-port', default=8888, help='Backend server port')
+        @click.option('--server-port', default=5200, help='Backend server port')
         @click.option('--google-client-id', help='Google OAuth Client ID (optional, passed to backend as --google-client-id)')
 
         @click.option('--daemon', '-d', is_flag=True, help='Run backend as daemon')

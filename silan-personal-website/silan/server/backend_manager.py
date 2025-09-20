@@ -67,7 +67,7 @@ class BackendManager(IManager,ModernLogger):
             if 'server' in config:
                 server_config = config['server']
                 cmd.extend(['--host', server_config.get('host', '0.0.0.0')])
-                cmd.extend(['--port', str(server_config.get('port', 8888))])
+                cmd.extend(['--port', str(server_config.get('port', 5200))])
             
             # Start the process
             daemon_mode = config.get('daemon', False)
@@ -184,7 +184,7 @@ class BackendManager(IManager,ModernLogger):
             config = self._load_config()
             server_config = config.get('server', {})
             host = server_config.get('host', '0.0.0.0')
-            port = server_config.get('port', 8888)
+            port = server_config.get('port', 5200)
             
             # Calculate uptime
             try:

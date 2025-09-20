@@ -1,7 +1,7 @@
 """Ideas-related models"""
 
-from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer, Enum, Numeric
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer, Enum, Numeric, Table, Column, and_, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 import enum
@@ -9,7 +9,7 @@ import enum
 from .base import Base, TimestampMixin, UUID, generate_uuid
 
 if TYPE_CHECKING:
-    from .user import User, Language
+    from .user import User, Language, UserIdentity
     from .blog import BlogPost
 
 
@@ -52,11 +52,18 @@ class Idea(Base, TimestampMixin):
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     like_count: Mapped[int] = mapped_column(Integer, default=0)
-    
+    category: Mapped[Optional[str]] = mapped_column(String(100), default="")
+
     # Relationships - matching Go schema edges
     user: Mapped["User"] = relationship(back_populates="ideas")
     translations: Mapped[List["IdeaTranslation"]] = relationship(back_populates="idea", cascade="all, delete-orphan")
     blog_posts: Mapped[List["BlogPost"]] = relationship(back_populates="ideas")
+    tags: Mapped[List["IdeaTag"]] = relationship("IdeaTag", secondary="idea_tags_join", back_populates="ideas")
+    comments: Mapped[List["Comment"]] = relationship(
+        "Comment",
+        primaryjoin="and_(Idea.id == foreign(Comment.entity_id), Comment.entity_type == 'idea')",
+        viewonly=True
+    )
 
 class IdeaTranslation(Base):
     __tablename__ = "idea_translations"
@@ -75,3 +82,69 @@ class IdeaTranslation(Base):
     # Relationships
     idea: Mapped["Idea"] = relationship(back_populates="translations")
     language: Mapped["Language"] = relationship(back_populates="idea_translations")
+
+
+class IdeaTag(Base, TimestampMixin):
+    """IdeaTag model - matching Go IdeaTag schema"""
+    __tablename__ = "idea_tags"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+
+    # Relationships - many-to-many with ideas
+    ideas: Mapped[List["Idea"]] = relationship("Idea", secondary="idea_tags_join", back_populates="tags")
+
+
+class Comment(Base, TimestampMixin):
+    """Unified Comment model for both blog posts and ideas - matching Go Comment schema"""
+    __tablename__ = "comments"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    entity_type: Mapped[str] = mapped_column(String, nullable=False)  # "blog" or "idea"
+    entity_id: Mapped[str] = mapped_column(UUID, nullable=False)  # ID of the blog post or idea
+    parent_id: Mapped[Optional[str]] = mapped_column(UUID, ForeignKey("comments.id"))
+    author_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    author_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    author_website: Mapped[Optional[str]] = mapped_column(String(500))
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    is_approved: Mapped[bool] = mapped_column(Boolean, default=False)
+    type: Mapped[str] = mapped_column(String, default="general")
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500))
+    user_identity_id: Mapped[Optional[str]] = mapped_column(String, ForeignKey("user_identities.id"))
+    likes_count: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Relationships
+    parent: Mapped[Optional["Comment"]] = relationship("Comment", remote_side="Comment.id", back_populates="replies")
+    replies: Mapped[List["Comment"]] = relationship("Comment", back_populates="parent")
+    user_identity: Mapped[Optional["UserIdentity"]] = relationship("UserIdentity")
+    likes: Mapped[List["CommentLike"]] = relationship(
+        "CommentLike",
+        cascade="all, delete-orphan",
+        primaryjoin="Comment.id == foreign(CommentLike.comment_id)",
+        viewonly=True
+    )
+
+
+class CommentLike(Base, TimestampMixin):
+    """CommentLike model - matching Go CommentLike schema"""
+    __tablename__ = "comment_likes"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    comment_id: Mapped[str] = mapped_column(UUID, nullable=False)  # Generic comment ID - can reference any Comment
+    user_identity_id: Mapped[Optional[str]] = mapped_column(String, ForeignKey("user_identities.id"))
+    fingerprint: Mapped[Optional[str]] = mapped_column(String)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
+
+    # Relationships
+    user_identity: Mapped[Optional["UserIdentity"]] = relationship("UserIdentity")
+
+
+# Association table for idea-tag many-to-many relationship
+idea_tags_join = Table(
+    "idea_tags_join",
+    Base.metadata,
+    Column("idea_id", UUID, ForeignKey("ideas.id"), primary_key=True),
+    Column("idea_tag_id", UUID, ForeignKey("idea_tags.id"), primary_key=True),
+)

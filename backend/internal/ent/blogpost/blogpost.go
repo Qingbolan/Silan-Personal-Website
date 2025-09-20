@@ -115,12 +115,12 @@ const (
 	// TranslationsColumn is the table column denoting the translations relation/edge.
 	TranslationsColumn = "blog_post_id"
 	// CommentsTable is the table that holds the comments relation/edge.
-	CommentsTable = "blog_comments"
-	// CommentsInverseTable is the table name for the BlogComment entity.
-	// It exists in this package in order to avoid circular dependency with the "blogcomment" package.
-	CommentsInverseTable = "blog_comments"
+	CommentsTable = "comments"
+	// CommentsInverseTable is the table name for the Comment entity.
+	// It exists in this package in order to avoid circular dependency with the "comment" package.
+	CommentsInverseTable = "comments"
 	// CommentsColumn is the table column denoting the comments relation/edge.
-	CommentsColumn = "blog_post_id"
+	CommentsColumn = "blog_post_comments"
 	// BlogPostTagsTable is the table that holds the blog_post_tags relation/edge.
 	BlogPostTagsTable = "blog_post_tags"
 	// BlogPostTagsInverseTable is the table name for the BlogPostTag entity.

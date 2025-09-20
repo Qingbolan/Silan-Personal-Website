@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"silan-backend/internal/ent/blogcategory"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/blogposttranslation"
 	"silan-backend/internal/ent/blogseries"
 	"silan-backend/internal/ent/blogtag"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
 	"silan-backend/internal/ent/user"
 	"time"
@@ -340,17 +340,17 @@ func (bpc *BlogPostCreate) AddTranslations(b ...*BlogPostTranslation) *BlogPostC
 	return bpc.AddTranslationIDs(ids...)
 }
 
-// AddCommentIDs adds the "comments" edge to the BlogComment entity by IDs.
+// AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
 func (bpc *BlogPostCreate) AddCommentIDs(ids ...uuid.UUID) *BlogPostCreate {
 	bpc.mutation.AddCommentIDs(ids...)
 	return bpc
 }
 
-// AddComments adds the "comments" edges to the BlogComment entity.
-func (bpc *BlogPostCreate) AddComments(b ...*BlogComment) *BlogPostCreate {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// AddComments adds the "comments" edges to the Comment entity.
+func (bpc *BlogPostCreate) AddComments(c ...*Comment) *BlogPostCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
 	return bpc.AddCommentIDs(ids...)
 }
@@ -710,7 +710,7 @@ func (bpc *BlogPostCreate) createSpec() (*BlogPost, *sqlgraph.CreateSpec) {
 			Columns: []string{blogpost.CommentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

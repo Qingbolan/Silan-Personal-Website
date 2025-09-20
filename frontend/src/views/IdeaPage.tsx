@@ -6,6 +6,7 @@ import { useTheme } from '../components/ThemeContext';
 import { useLanguage } from '../components/LanguageContext';
 import { IdeaData } from '../types';
 import { fetchIdeas } from '../api';
+import { getIdeaCategories, getIdeaStatuses } from '../api/ideas/ideaApi';
 
 interface IdeaCardProps {
   idea: IdeaData;
@@ -15,7 +16,7 @@ interface IdeaCardProps {
 
 const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
   const { language } = useLanguage();
-  
+
   // Guard against null/undefined idea
   if (!idea) {
     return null;
@@ -101,10 +102,10 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
         <div className="flex items-center space-x-3">
           <div className={`p-2 rounded-lg ${getStatusClass(idea.status)}`}>
             <Lightbulb size={20} className={
-              idea.status === 'published' ? 'text-theme-success' : 
+              idea.status === 'published' ? 'text-theme-success' :
               idea.status === 'validating' ? 'text-theme-600' :
               idea.status === 'experimenting' ? 'text-purple-600' :
-              idea.status === 'hypothesis' ? 'text-theme-warning' : 
+              idea.status === 'hypothesis' ? 'text-theme-warning' :
               idea.status === 'concluded' ? 'text-gray-600' :
               'text-theme-accent'
             } />
@@ -118,7 +119,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
             </p>
           </div>
         </div>
-        
+
         <motion.div
           className={`px-3 py-1 rounded-full text-xs font-semibold status-badge ${getStatusClass(idea.status)}`}
           whileHover={{ scale: 1.05 }}
@@ -194,16 +195,17 @@ const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick }) => {
 };
 
 const IdeaPage: React.FC = () => {
+  const { colors } = useTheme();
+  const { language } = useLanguage();
+
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
   const [filteredIdeas, setFilteredIdeas] = useState<IdeaData[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [categories, setCategories] = useState<string[]>([language === 'en' ? 'All' : '全部']);
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { colors } = useTheme();
-  const { language } = useLanguage();
   const navigate = useNavigate();
 
   // Set CSS variables based on current theme
@@ -222,15 +224,15 @@ const IdeaPage: React.FC = () => {
   // Load ideas
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadIdeas = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Fetch ideas from API with language support
         const fetchedIdeas = await fetchIdeas({}, language as 'en' | 'zh');
-        
+
         if (isMounted) {
           setIdeas(fetchedIdeas);
           setFilteredIdeas(fetchedIdeas);
@@ -278,7 +280,7 @@ const IdeaPage: React.FC = () => {
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(idea => 
+      filtered = filtered.filter(idea =>
         idea.title.toLowerCase().includes(searchLower) ||
         idea.description.toLowerCase().includes(searchLower) ||
         idea.tags.some(tag => tag.toLowerCase().includes(searchLower))
@@ -292,31 +294,39 @@ const IdeaPage: React.FC = () => {
     setFilteredIdeas(filteredIdeasMemo);
   }, [filteredIdeasMemo]);
 
-  const categories = useMemo(() => {
-    const allCategories = Array.from(new Set(ideas.map(idea => idea.category)));
-    return [language === 'en' ? 'All' : '全部', ...allCategories];
-  }, [ideas, language]);
-
-  const statuses = useMemo(() => {
-    const statusLabels = ['All', 'draft', 'hypothesis', 'experimenting', 'validating', 'published', 'concluded'];
-    return statusLabels.map(status => {
-      if (status === 'All') {
-        return language === 'en' ? 'All' : '全部';
-      }
-      if (language === 'zh') {
-        switch (status) {
-          case 'draft': return '草案';
-          case 'hypothesis': return '假设';
-          case 'experimenting': return '实验中';
-          case 'validating': return '验证中';
-          case 'published': return '已发表';
-          case 'concluded': return '已结论';
-          default: return status;
+  // Load dynamic categories from backend
+  useEffect(() => {
+    let mounted = true;
+    const loadCats = async () => {
+      try {
+        const cats = await getIdeaCategories(language as 'en' | 'zh');
+        if (!mounted) return;
+        const labelAll = language === 'en' ? 'All' : '全部';
+        setCategories([labelAll, ...cats.filter(Boolean)]);
+        // Keep selectedCategory valid
+        if (!cats.includes(selectedCategory) && selectedCategory !== labelAll) {
+          setSelectedCategory(labelAll);
         }
+      } catch (e) {
+        // keep default
       }
-      return status;
-    });
+    };
+    loadCats();
+    return () => { mounted = false; };
   }, [language]);
+
+  const [statuses, setStatuses] = useState<string[]>([language === 'en' ? 'All' : '全部']);
+
+  // Load statuses (static list)
+  useEffect(() => {
+    const labelAll = language === 'en' ? 'All' : '全部';
+    const localized = getIdeaStatuses(language as 'en' | 'zh');
+    setStatuses([labelAll, ...localized]);
+    // Keep selectedStatus valid
+    if (!localized.includes(selectedStatus) && selectedStatus !== labelAll) {
+      setSelectedStatus(labelAll);
+    }
+  }, [language, selectedStatus]);
 
   const handleIdeaView = useCallback((idea: IdeaData) => {
     // Navigate to idea detail page
@@ -337,8 +347,8 @@ const IdeaPage: React.FC = () => {
           role="status"
           aria-live="polite"
         >
-          <Lightbulb 
-            size={48} 
+          <Lightbulb
+            size={48}
             className="mx-auto mb-4 animate-pulse text-theme-accent"
           />
           <p className="text-theme-secondary">
@@ -387,7 +397,7 @@ const IdeaPage: React.FC = () => {
             {language === 'en' ? 'Ideas' : '想法'}
           </h1>
           <p className="text-xl max-w-3xl mx-auto text-theme-secondary">
-            {language === 'en' 
+            {language === 'en'
               ? "A collection of my thoughts, concepts, and potential projects in various stages of development."
               : "我在各个开发阶段的想法、概念和潜在项目的集合。"
             }
@@ -403,8 +413,8 @@ const IdeaPage: React.FC = () => {
         >
           {/* Search Bar */}
           <div className="relative max-w-md mx-auto">
-            <Search 
-              size={20} 
+            <Search
+              size={20}
               className="absolute left-4 top-1/2 transform -translate-y-1/2 text-theme-tertiary"
             />
             <input
@@ -488,7 +498,7 @@ const IdeaPage: React.FC = () => {
               {language === 'en' ? 'No ideas found' : '未找到想法'}
             </h3>
             <p className="text-theme-secondary">
-              {language === 'en' 
+              {language === 'en'
                 ? 'Try adjusting your filters or search terms.'
                 : '尝试调整您的筛选器或搜索词。'
               }
@@ -500,4 +510,4 @@ const IdeaPage: React.FC = () => {
   );
 };
 
-export default IdeaPage; 
+export default IdeaPage;

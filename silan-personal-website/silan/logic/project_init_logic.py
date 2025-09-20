@@ -387,7 +387,7 @@ database:
 backend:
   enabled: {str(self.with_backend).lower()}
   host: "0.0.0.0"
-  port: 8888
+  port: 5200
   cors:
     enabled: true
     origins:
@@ -940,7 +940,7 @@ License information...
 
 server:
   host: "0.0.0.0"
-  port: 8888
+  port: 5200
   debug: false
   
 database:
@@ -1028,7 +1028,7 @@ DB_NAME=portfolio
 
 # Server Configuration
 SERVER_HOST=0.0.0.0
-SERVER_PORT=8888
+SERVER_PORT=5200
 
 # Security
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production

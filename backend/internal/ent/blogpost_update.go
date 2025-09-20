@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"silan-backend/internal/ent/blogcategory"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/blogposttranslation"
 	"silan-backend/internal/ent/blogseries"
 	"silan-backend/internal/ent/blogtag"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/user"
@@ -427,17 +427,17 @@ func (bpu *BlogPostUpdate) AddTranslations(b ...*BlogPostTranslation) *BlogPostU
 	return bpu.AddTranslationIDs(ids...)
 }
 
-// AddCommentIDs adds the "comments" edge to the BlogComment entity by IDs.
+// AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
 func (bpu *BlogPostUpdate) AddCommentIDs(ids ...uuid.UUID) *BlogPostUpdate {
 	bpu.mutation.AddCommentIDs(ids...)
 	return bpu
 }
 
-// AddComments adds the "comments" edges to the BlogComment entity.
-func (bpu *BlogPostUpdate) AddComments(b ...*BlogComment) *BlogPostUpdate {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// AddComments adds the "comments" edges to the Comment entity.
+func (bpu *BlogPostUpdate) AddComments(c ...*Comment) *BlogPostUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
 	return bpu.AddCommentIDs(ids...)
 }
@@ -513,23 +513,23 @@ func (bpu *BlogPostUpdate) RemoveTranslations(b ...*BlogPostTranslation) *BlogPo
 	return bpu.RemoveTranslationIDs(ids...)
 }
 
-// ClearComments clears all "comments" edges to the BlogComment entity.
+// ClearComments clears all "comments" edges to the Comment entity.
 func (bpu *BlogPostUpdate) ClearComments() *BlogPostUpdate {
 	bpu.mutation.ClearComments()
 	return bpu
 }
 
-// RemoveCommentIDs removes the "comments" edge to BlogComment entities by IDs.
+// RemoveCommentIDs removes the "comments" edge to Comment entities by IDs.
 func (bpu *BlogPostUpdate) RemoveCommentIDs(ids ...uuid.UUID) *BlogPostUpdate {
 	bpu.mutation.RemoveCommentIDs(ids...)
 	return bpu
 }
 
-// RemoveComments removes "comments" edges to BlogComment entities.
-func (bpu *BlogPostUpdate) RemoveComments(b ...*BlogComment) *BlogPostUpdate {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// RemoveComments removes "comments" edges to Comment entities.
+func (bpu *BlogPostUpdate) RemoveComments(c ...*Comment) *BlogPostUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
 	return bpu.RemoveCommentIDs(ids...)
 }
@@ -921,7 +921,7 @@ func (bpu *BlogPostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{blogpost.CommentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -934,7 +934,7 @@ func (bpu *BlogPostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{blogpost.CommentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -950,7 +950,7 @@ func (bpu *BlogPostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{blogpost.CommentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1369,17 +1369,17 @@ func (bpuo *BlogPostUpdateOne) AddTranslations(b ...*BlogPostTranslation) *BlogP
 	return bpuo.AddTranslationIDs(ids...)
 }
 
-// AddCommentIDs adds the "comments" edge to the BlogComment entity by IDs.
+// AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
 func (bpuo *BlogPostUpdateOne) AddCommentIDs(ids ...uuid.UUID) *BlogPostUpdateOne {
 	bpuo.mutation.AddCommentIDs(ids...)
 	return bpuo
 }
 
-// AddComments adds the "comments" edges to the BlogComment entity.
-func (bpuo *BlogPostUpdateOne) AddComments(b ...*BlogComment) *BlogPostUpdateOne {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// AddComments adds the "comments" edges to the Comment entity.
+func (bpuo *BlogPostUpdateOne) AddComments(c ...*Comment) *BlogPostUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
 	return bpuo.AddCommentIDs(ids...)
 }
@@ -1455,23 +1455,23 @@ func (bpuo *BlogPostUpdateOne) RemoveTranslations(b ...*BlogPostTranslation) *Bl
 	return bpuo.RemoveTranslationIDs(ids...)
 }
 
-// ClearComments clears all "comments" edges to the BlogComment entity.
+// ClearComments clears all "comments" edges to the Comment entity.
 func (bpuo *BlogPostUpdateOne) ClearComments() *BlogPostUpdateOne {
 	bpuo.mutation.ClearComments()
 	return bpuo
 }
 
-// RemoveCommentIDs removes the "comments" edge to BlogComment entities by IDs.
+// RemoveCommentIDs removes the "comments" edge to Comment entities by IDs.
 func (bpuo *BlogPostUpdateOne) RemoveCommentIDs(ids ...uuid.UUID) *BlogPostUpdateOne {
 	bpuo.mutation.RemoveCommentIDs(ids...)
 	return bpuo
 }
 
-// RemoveComments removes "comments" edges to BlogComment entities.
-func (bpuo *BlogPostUpdateOne) RemoveComments(b ...*BlogComment) *BlogPostUpdateOne {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// RemoveComments removes "comments" edges to Comment entities.
+func (bpuo *BlogPostUpdateOne) RemoveComments(c ...*Comment) *BlogPostUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
 	return bpuo.RemoveCommentIDs(ids...)
 }
@@ -1893,7 +1893,7 @@ func (bpuo *BlogPostUpdateOne) sqlSave(ctx context.Context) (_node *BlogPost, er
 			Columns: []string{blogpost.CommentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1906,7 +1906,7 @@ func (bpuo *BlogPostUpdateOne) sqlSave(ctx context.Context) (_node *BlogPost, er
 			Columns: []string{blogpost.CommentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1922,7 +1922,7 @@ func (bpuo *BlogPostUpdateOne) sqlSave(ctx context.Context) (_node *BlogPost, er
 			Columns: []string{blogpost.CommentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

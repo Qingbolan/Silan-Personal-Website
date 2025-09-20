@@ -1,7 +1,7 @@
 """Blog-related models"""
 
-from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer, Enum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer, Enum, and_, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 import enum
@@ -9,8 +9,8 @@ import enum
 from .base import Base, TimestampMixin, UUID, generate_uuid
 
 if TYPE_CHECKING:
-    from .user import User, Language
-    from .ideas import Idea
+    from .user import User, Language, UserIdentity
+    from .ideas import Idea, CommentLike, Comment
 
 
 class BlogContentType(enum.Enum):
@@ -85,7 +85,11 @@ class BlogPost(Base, TimestampMixin):
     ideas: Mapped[Optional["Idea"]] = relationship(back_populates="blog_posts")
     tags: Mapped[List["BlogTag"]] = relationship(secondary="blog_post_tags", back_populates="blog_posts")
     translations: Mapped[List["BlogPostTranslation"]] = relationship(back_populates="blog_post", cascade="all, delete-orphan")
-    comments: Mapped[List["BlogComment"]] = relationship(back_populates="blog_post", cascade="all, delete-orphan")
+    comments: Mapped[List["Comment"]] = relationship(
+        "Comment",
+        primaryjoin="and_(BlogPost.id == foreign(Comment.entity_id), Comment.entity_type == 'blog')",
+        viewonly=True
+    )
 
 
 class BlogPostTranslation(Base):
@@ -150,40 +154,6 @@ class BlogSeriesTranslation(Base):
     language: Mapped["Language"] = relationship(back_populates="blog_series_translations")
 
 
-class BlogComment(Base, TimestampMixin):
-    __tablename__ = "blog_comments"
-
-    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
-    blog_post_id: Mapped[str] = mapped_column(UUID, ForeignKey("blog_posts.id"), nullable=False)
-    parent_id: Mapped[Optional[str]] = mapped_column(UUID, ForeignKey("blog_comments.id"))
-    author_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    author_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    author_website: Mapped[Optional[str]] = mapped_column(String(500))
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    is_approved: Mapped[bool] = mapped_column(Boolean, default=False)
-    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
-    user_agent: Mapped[Optional[str]] = mapped_column(String(500))
-    user_identity_id: Mapped[Optional[str]] = mapped_column(String(255))  # Link to authenticated user identity if available
-    likes_count: Mapped[int] = mapped_column(Integer, default=0)  # Number of likes for this comment
-
-    # Relationships - matching Go schema edges
-    blog_post: Mapped["BlogPost"] = relationship(back_populates="comments")
-    parent: Mapped[Optional["BlogComment"]] = relationship(remote_side="BlogComment.id", back_populates="replies")
-    replies: Mapped[List["BlogComment"]] = relationship(back_populates="parent")
-    likes: Mapped[List["CommentLike"]] = relationship(back_populates="comment", cascade="all, delete-orphan")
-
-
-class CommentLike(Base, TimestampMixin):
-    __tablename__ = "comment_likes"
-
-    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
-    comment_id: Mapped[str] = mapped_column(UUID, ForeignKey("blog_comments.id"), nullable=False)
-    user_identity_id: Mapped[Optional[str]] = mapped_column(String(255))  # For authenticated users
-    fingerprint: Mapped[Optional[str]] = mapped_column(String(255))  # For anonymous users
-    ip_address: Mapped[str] = mapped_column(String(45), nullable=False)
-
-    # Relationships
-    comment: Mapped["BlogComment"] = relationship(back_populates="likes")
 
 
 # Association table class for explicit many-to-many relationship - matching Go schema exactly

@@ -274,7 +274,7 @@ START OPTIONS:
   --database DATABASE    Database name
   --db-path PATH         SQLite database path [default: portfolio.db]
   --server-host HOST     Backend server host [default: 0.0.0.0]
-  --server-port PORT     Backend server port [default: 8888]
+  --server-port PORT     Backend server port [default: 5200]
   --daemon               Run as daemon process
   --config-file FILE     Custom configuration file
 
@@ -419,7 +419,7 @@ COMMON ISSUES AND SOLUTIONS:
 2. BACKEND SERVER WON'T START:
    Problem: "Failed to start backend server"
    Solutions:
-   • Check if port is already in use: lsof -i :8888
+   • Check if port is already in use: lsof -i :5200
    • Install/rebuild binary: silan backend install
    • Check logs: silan backend logs
    • Try different port: silan backend start --server-port 3000
@@ -470,7 +470,7 @@ COMMON ISSUES AND SOLUTIONS:
    • Check server status: silan backend status
    • Verify database sync: silan db-sync
    • Check logs: silan backend logs
-   • Test with curl: curl http://localhost:8888/api/blog/posts
+   • Test with curl: curl http://localhost:5200/api/blog/posts
 
 DEBUGGING COMMANDS:
   silan status                     # Overall system status

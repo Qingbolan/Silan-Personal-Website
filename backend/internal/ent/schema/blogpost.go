@@ -106,6 +106,6 @@ func (BlogPost) Edges() []ent.Edge {
 		edge.To("tags", BlogTag.Type).
 			Through("blog_post_tags", BlogPostTag.Type),
 		edge.To("translations", BlogPostTranslation.Type),
-		edge.To("comments", BlogComment.Type),
+		edge.To("comments", Comment.Type),
 	}
 }

@@ -68,6 +68,10 @@ func (Idea) Fields() []ent.Field {
 			Default(0),
 		field.Int("like_count").
 			Default(0),
+		field.String("category").
+			MaxLen(100).
+			Default("").
+			Optional(),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
@@ -87,5 +91,9 @@ func (Idea) Edges() []ent.Edge {
 			Unique(),
 		edge.To("translations", IdeaTranslation.Type),
 		edge.To("blog_posts", BlogPost.Type),
+		edge.To("comments", Comment.Type),
+		// Many-to-many: idea <-> tags
+		edge.To("tags", IdeaTag.Type).
+			StorageKey(edge.Table("idea_tags_join")),
 	}
 }

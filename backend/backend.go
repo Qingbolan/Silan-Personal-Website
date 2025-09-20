@@ -111,6 +111,12 @@ func main() {
 				"http://127.0.0.1:3000",
 				"http://127.0.0.1:3001",
 				"http://127.0.0.1:5173",
+				// Production domains
+				"https://silan.tech",
+				"https://www.silan.tech",
+				// NUS domain where the site may be embedded or proxied
+				"https://www.comp.nus.edu.sg",
+				"https://comp.nus.edu.sg",
 			}
 
 			// Check if the origin is allowed
@@ -121,6 +127,9 @@ func main() {
 					break
 				}
 			}
+
+			// Ensure caches know the response may vary by Origin
+			w.Header().Add("Vary", "Origin")
 
 			if isAllowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)

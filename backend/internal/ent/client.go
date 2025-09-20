@@ -15,19 +15,20 @@ import (
 	"silan-backend/internal/ent/awardtranslation"
 	"silan-backend/internal/ent/blogcategory"
 	"silan-backend/internal/ent/blogcategorytranslation"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/blogposttag"
 	"silan-backend/internal/ent/blogposttranslation"
 	"silan-backend/internal/ent/blogseries"
 	"silan-backend/internal/ent/blogseriestranslation"
 	"silan-backend/internal/ent/blogtag"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/education"
 	"silan-backend/internal/ent/educationdetail"
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
 	"silan-backend/internal/ent/personalinfo"
@@ -77,8 +78,6 @@ type Client struct {
 	BlogCategory *BlogCategoryClient
 	// BlogCategoryTranslation is the client for interacting with the BlogCategoryTranslation builders.
 	BlogCategoryTranslation *BlogCategoryTranslationClient
-	// BlogComment is the client for interacting with the BlogComment builders.
-	BlogComment *BlogCommentClient
 	// BlogPost is the client for interacting with the BlogPost builders.
 	BlogPost *BlogPostClient
 	// BlogPostTag is the client for interacting with the BlogPostTag builders.
@@ -91,6 +90,8 @@ type Client struct {
 	BlogSeriesTranslation *BlogSeriesTranslationClient
 	// BlogTag is the client for interacting with the BlogTag builders.
 	BlogTag *BlogTagClient
+	// Comment is the client for interacting with the Comment builders.
+	Comment *CommentClient
 	// CommentLike is the client for interacting with the CommentLike builders.
 	CommentLike *CommentLikeClient
 	// Education is the client for interacting with the Education builders.
@@ -103,6 +104,8 @@ type Client struct {
 	EducationTranslation *EducationTranslationClient
 	// Idea is the client for interacting with the Idea builders.
 	Idea *IdeaClient
+	// IdeaTag is the client for interacting with the IdeaTag builders.
+	IdeaTag *IdeaTagClient
 	// IdeaTranslation is the client for interacting with the IdeaTranslation builders.
 	IdeaTranslation *IdeaTranslationClient
 	// Language is the client for interacting with the Language builders.
@@ -174,19 +177,20 @@ func (c *Client) init() {
 	c.AwardTranslation = NewAwardTranslationClient(c.config)
 	c.BlogCategory = NewBlogCategoryClient(c.config)
 	c.BlogCategoryTranslation = NewBlogCategoryTranslationClient(c.config)
-	c.BlogComment = NewBlogCommentClient(c.config)
 	c.BlogPost = NewBlogPostClient(c.config)
 	c.BlogPostTag = NewBlogPostTagClient(c.config)
 	c.BlogPostTranslation = NewBlogPostTranslationClient(c.config)
 	c.BlogSeries = NewBlogSeriesClient(c.config)
 	c.BlogSeriesTranslation = NewBlogSeriesTranslationClient(c.config)
 	c.BlogTag = NewBlogTagClient(c.config)
+	c.Comment = NewCommentClient(c.config)
 	c.CommentLike = NewCommentLikeClient(c.config)
 	c.Education = NewEducationClient(c.config)
 	c.EducationDetail = NewEducationDetailClient(c.config)
 	c.EducationDetailTranslation = NewEducationDetailTranslationClient(c.config)
 	c.EducationTranslation = NewEducationTranslationClient(c.config)
 	c.Idea = NewIdeaClient(c.config)
+	c.IdeaTag = NewIdeaTagClient(c.config)
 	c.IdeaTranslation = NewIdeaTranslationClient(c.config)
 	c.Language = NewLanguageClient(c.config)
 	c.PersonalInfo = NewPersonalInfoClient(c.config)
@@ -311,19 +315,20 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AwardTranslation:                 NewAwardTranslationClient(cfg),
 		BlogCategory:                     NewBlogCategoryClient(cfg),
 		BlogCategoryTranslation:          NewBlogCategoryTranslationClient(cfg),
-		BlogComment:                      NewBlogCommentClient(cfg),
 		BlogPost:                         NewBlogPostClient(cfg),
 		BlogPostTag:                      NewBlogPostTagClient(cfg),
 		BlogPostTranslation:              NewBlogPostTranslationClient(cfg),
 		BlogSeries:                       NewBlogSeriesClient(cfg),
 		BlogSeriesTranslation:            NewBlogSeriesTranslationClient(cfg),
 		BlogTag:                          NewBlogTagClient(cfg),
+		Comment:                          NewCommentClient(cfg),
 		CommentLike:                      NewCommentLikeClient(cfg),
 		Education:                        NewEducationClient(cfg),
 		EducationDetail:                  NewEducationDetailClient(cfg),
 		EducationDetailTranslation:       NewEducationDetailTranslationClient(cfg),
 		EducationTranslation:             NewEducationTranslationClient(cfg),
 		Idea:                             NewIdeaClient(cfg),
+		IdeaTag:                          NewIdeaTagClient(cfg),
 		IdeaTranslation:                  NewIdeaTranslationClient(cfg),
 		Language:                         NewLanguageClient(cfg),
 		PersonalInfo:                     NewPersonalInfoClient(cfg),
@@ -375,19 +380,20 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AwardTranslation:                 NewAwardTranslationClient(cfg),
 		BlogCategory:                     NewBlogCategoryClient(cfg),
 		BlogCategoryTranslation:          NewBlogCategoryTranslationClient(cfg),
-		BlogComment:                      NewBlogCommentClient(cfg),
 		BlogPost:                         NewBlogPostClient(cfg),
 		BlogPostTag:                      NewBlogPostTagClient(cfg),
 		BlogPostTranslation:              NewBlogPostTranslationClient(cfg),
 		BlogSeries:                       NewBlogSeriesClient(cfg),
 		BlogSeriesTranslation:            NewBlogSeriesTranslationClient(cfg),
 		BlogTag:                          NewBlogTagClient(cfg),
+		Comment:                          NewCommentClient(cfg),
 		CommentLike:                      NewCommentLikeClient(cfg),
 		Education:                        NewEducationClient(cfg),
 		EducationDetail:                  NewEducationDetailClient(cfg),
 		EducationDetailTranslation:       NewEducationDetailTranslationClient(cfg),
 		EducationTranslation:             NewEducationTranslationClient(cfg),
 		Idea:                             NewIdeaClient(cfg),
+		IdeaTag:                          NewIdeaTagClient(cfg),
 		IdeaTranslation:                  NewIdeaTranslationClient(cfg),
 		Language:                         NewLanguageClient(cfg),
 		PersonalInfo:                     NewPersonalInfoClient(cfg),
@@ -446,10 +452,10 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Award, c.AwardTranslation, c.BlogCategory, c.BlogCategoryTranslation,
-		c.BlogComment, c.BlogPost, c.BlogPostTag, c.BlogPostTranslation, c.BlogSeries,
-		c.BlogSeriesTranslation, c.BlogTag, c.CommentLike, c.Education,
+		c.BlogPost, c.BlogPostTag, c.BlogPostTranslation, c.BlogSeries,
+		c.BlogSeriesTranslation, c.BlogTag, c.Comment, c.CommentLike, c.Education,
 		c.EducationDetail, c.EducationDetailTranslation, c.EducationTranslation,
-		c.Idea, c.IdeaTranslation, c.Language, c.PersonalInfo,
+		c.Idea, c.IdeaTag, c.IdeaTranslation, c.Language, c.PersonalInfo,
 		c.PersonalInfoTranslation, c.Project, c.ProjectDetail,
 		c.ProjectDetailTranslation, c.ProjectImage, c.ProjectImageTranslation,
 		c.ProjectRelationship, c.ProjectTechnology, c.ProjectTranslation,
@@ -468,10 +474,10 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Award, c.AwardTranslation, c.BlogCategory, c.BlogCategoryTranslation,
-		c.BlogComment, c.BlogPost, c.BlogPostTag, c.BlogPostTranslation, c.BlogSeries,
-		c.BlogSeriesTranslation, c.BlogTag, c.CommentLike, c.Education,
+		c.BlogPost, c.BlogPostTag, c.BlogPostTranslation, c.BlogSeries,
+		c.BlogSeriesTranslation, c.BlogTag, c.Comment, c.CommentLike, c.Education,
 		c.EducationDetail, c.EducationDetailTranslation, c.EducationTranslation,
-		c.Idea, c.IdeaTranslation, c.Language, c.PersonalInfo,
+		c.Idea, c.IdeaTag, c.IdeaTranslation, c.Language, c.PersonalInfo,
 		c.PersonalInfoTranslation, c.Project, c.ProjectDetail,
 		c.ProjectDetailTranslation, c.ProjectImage, c.ProjectImageTranslation,
 		c.ProjectRelationship, c.ProjectTechnology, c.ProjectTranslation,
@@ -496,8 +502,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.BlogCategory.mutate(ctx, m)
 	case *BlogCategoryTranslationMutation:
 		return c.BlogCategoryTranslation.mutate(ctx, m)
-	case *BlogCommentMutation:
-		return c.BlogComment.mutate(ctx, m)
 	case *BlogPostMutation:
 		return c.BlogPost.mutate(ctx, m)
 	case *BlogPostTagMutation:
@@ -510,6 +514,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.BlogSeriesTranslation.mutate(ctx, m)
 	case *BlogTagMutation:
 		return c.BlogTag.mutate(ctx, m)
+	case *CommentMutation:
+		return c.Comment.mutate(ctx, m)
 	case *CommentLikeMutation:
 		return c.CommentLike.mutate(ctx, m)
 	case *EducationMutation:
@@ -522,6 +528,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EducationTranslation.mutate(ctx, m)
 	case *IdeaMutation:
 		return c.Idea.mutate(ctx, m)
+	case *IdeaTagMutation:
+		return c.IdeaTag.mutate(ctx, m)
 	case *IdeaTranslationMutation:
 		return c.IdeaTranslation.mutate(ctx, m)
 	case *LanguageMutation:
@@ -1243,219 +1251,6 @@ func (c *BlogCategoryTranslationClient) mutate(ctx context.Context, m *BlogCateg
 	}
 }
 
-// BlogCommentClient is a client for the BlogComment schema.
-type BlogCommentClient struct {
-	config
-}
-
-// NewBlogCommentClient returns a client for the BlogComment from the given config.
-func NewBlogCommentClient(c config) *BlogCommentClient {
-	return &BlogCommentClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `blogcomment.Hooks(f(g(h())))`.
-func (c *BlogCommentClient) Use(hooks ...Hook) {
-	c.hooks.BlogComment = append(c.hooks.BlogComment, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `blogcomment.Intercept(f(g(h())))`.
-func (c *BlogCommentClient) Intercept(interceptors ...Interceptor) {
-	c.inters.BlogComment = append(c.inters.BlogComment, interceptors...)
-}
-
-// Create returns a builder for creating a BlogComment entity.
-func (c *BlogCommentClient) Create() *BlogCommentCreate {
-	mutation := newBlogCommentMutation(c.config, OpCreate)
-	return &BlogCommentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of BlogComment entities.
-func (c *BlogCommentClient) CreateBulk(builders ...*BlogCommentCreate) *BlogCommentCreateBulk {
-	return &BlogCommentCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *BlogCommentClient) MapCreateBulk(slice any, setFunc func(*BlogCommentCreate, int)) *BlogCommentCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &BlogCommentCreateBulk{err: fmt.Errorf("calling to BlogCommentClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*BlogCommentCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &BlogCommentCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for BlogComment.
-func (c *BlogCommentClient) Update() *BlogCommentUpdate {
-	mutation := newBlogCommentMutation(c.config, OpUpdate)
-	return &BlogCommentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *BlogCommentClient) UpdateOne(bc *BlogComment) *BlogCommentUpdateOne {
-	mutation := newBlogCommentMutation(c.config, OpUpdateOne, withBlogComment(bc))
-	return &BlogCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *BlogCommentClient) UpdateOneID(id uuid.UUID) *BlogCommentUpdateOne {
-	mutation := newBlogCommentMutation(c.config, OpUpdateOne, withBlogCommentID(id))
-	return &BlogCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for BlogComment.
-func (c *BlogCommentClient) Delete() *BlogCommentDelete {
-	mutation := newBlogCommentMutation(c.config, OpDelete)
-	return &BlogCommentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *BlogCommentClient) DeleteOne(bc *BlogComment) *BlogCommentDeleteOne {
-	return c.DeleteOneID(bc.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BlogCommentClient) DeleteOneID(id uuid.UUID) *BlogCommentDeleteOne {
-	builder := c.Delete().Where(blogcomment.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BlogCommentDeleteOne{builder}
-}
-
-// Query returns a query builder for BlogComment.
-func (c *BlogCommentClient) Query() *BlogCommentQuery {
-	return &BlogCommentQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeBlogComment},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a BlogComment entity by its id.
-func (c *BlogCommentClient) Get(ctx context.Context, id uuid.UUID) (*BlogComment, error) {
-	return c.Query().Where(blogcomment.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *BlogCommentClient) GetX(ctx context.Context, id uuid.UUID) *BlogComment {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryBlogPost queries the blog_post edge of a BlogComment.
-func (c *BlogCommentClient) QueryBlogPost(bc *BlogComment) *BlogPostQuery {
-	query := (&BlogPostClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := bc.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, id),
-			sqlgraph.To(blogpost.Table, blogpost.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, blogcomment.BlogPostTable, blogcomment.BlogPostColumn),
-		)
-		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryParent queries the parent edge of a BlogComment.
-func (c *BlogCommentClient) QueryParent(bc *BlogComment) *BlogCommentQuery {
-	query := (&BlogCommentClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := bc.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, id),
-			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, blogcomment.ParentTable, blogcomment.ParentColumn),
-		)
-		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryReplies queries the replies edge of a BlogComment.
-func (c *BlogCommentClient) QueryReplies(bc *BlogComment) *BlogCommentQuery {
-	query := (&BlogCommentClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := bc.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, id),
-			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, blogcomment.RepliesTable, blogcomment.RepliesColumn),
-		)
-		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryUserIdentity queries the user_identity edge of a BlogComment.
-func (c *BlogCommentClient) QueryUserIdentity(bc *BlogComment) *UserIdentityQuery {
-	query := (&UserIdentityClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := bc.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, id),
-			sqlgraph.To(useridentity.Table, useridentity.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, blogcomment.UserIdentityTable, blogcomment.UserIdentityColumn),
-		)
-		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryLikes queries the likes edge of a BlogComment.
-func (c *BlogCommentClient) QueryLikes(bc *BlogComment) *CommentLikeQuery {
-	query := (&CommentLikeClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := bc.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(blogcomment.Table, blogcomment.FieldID, id),
-			sqlgraph.To(commentlike.Table, commentlike.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, blogcomment.LikesTable, blogcomment.LikesColumn),
-		)
-		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *BlogCommentClient) Hooks() []Hook {
-	return c.hooks.BlogComment
-}
-
-// Interceptors returns the client interceptors.
-func (c *BlogCommentClient) Interceptors() []Interceptor {
-	return c.inters.BlogComment
-}
-
-func (c *BlogCommentClient) mutate(ctx context.Context, m *BlogCommentMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&BlogCommentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&BlogCommentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&BlogCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&BlogCommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown BlogComment mutation op: %q", m.Op())
-	}
-}
-
 // BlogPostClient is a client for the BlogPost schema.
 type BlogPostClient struct {
 	config
@@ -1661,13 +1456,13 @@ func (c *BlogPostClient) QueryTranslations(bp *BlogPost) *BlogPostTranslationQue
 }
 
 // QueryComments queries the comments edge of a BlogPost.
-func (c *BlogPostClient) QueryComments(bp *BlogPost) *BlogCommentQuery {
-	query := (&BlogCommentClient{config: c.config}).Query()
+func (c *BlogPostClient) QueryComments(bp *BlogPost) *CommentQuery {
+	query := (&CommentClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := bp.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(blogpost.Table, blogpost.FieldID, id),
-			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
+			sqlgraph.To(comment.Table, comment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, blogpost.CommentsTable, blogpost.CommentsColumn),
 		)
 		fromV = sqlgraph.Neighbors(bp.driver.Dialect(), step)
@@ -2493,6 +2288,187 @@ func (c *BlogTagClient) mutate(ctx context.Context, m *BlogTagMutation) (Value, 
 	}
 }
 
+// CommentClient is a client for the Comment schema.
+type CommentClient struct {
+	config
+}
+
+// NewCommentClient returns a client for the Comment from the given config.
+func NewCommentClient(c config) *CommentClient {
+	return &CommentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `comment.Hooks(f(g(h())))`.
+func (c *CommentClient) Use(hooks ...Hook) {
+	c.hooks.Comment = append(c.hooks.Comment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `comment.Intercept(f(g(h())))`.
+func (c *CommentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Comment = append(c.inters.Comment, interceptors...)
+}
+
+// Create returns a builder for creating a Comment entity.
+func (c *CommentClient) Create() *CommentCreate {
+	mutation := newCommentMutation(c.config, OpCreate)
+	return &CommentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Comment entities.
+func (c *CommentClient) CreateBulk(builders ...*CommentCreate) *CommentCreateBulk {
+	return &CommentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CommentClient) MapCreateBulk(slice any, setFunc func(*CommentCreate, int)) *CommentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CommentCreateBulk{err: fmt.Errorf("calling to CommentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CommentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CommentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Comment.
+func (c *CommentClient) Update() *CommentUpdate {
+	mutation := newCommentMutation(c.config, OpUpdate)
+	return &CommentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CommentClient) UpdateOne(co *Comment) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withComment(co))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CommentClient) UpdateOneID(id uuid.UUID) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withCommentID(id))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Comment.
+func (c *CommentClient) Delete() *CommentDelete {
+	mutation := newCommentMutation(c.config, OpDelete)
+	return &CommentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CommentClient) DeleteOne(co *Comment) *CommentDeleteOne {
+	return c.DeleteOneID(co.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CommentClient) DeleteOneID(id uuid.UUID) *CommentDeleteOne {
+	builder := c.Delete().Where(comment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CommentDeleteOne{builder}
+}
+
+// Query returns a query builder for Comment.
+func (c *CommentClient) Query() *CommentQuery {
+	return &CommentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeComment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Comment entity by its id.
+func (c *CommentClient) Get(ctx context.Context, id uuid.UUID) (*Comment, error) {
+	return c.Query().Where(comment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CommentClient) GetX(ctx context.Context, id uuid.UUID) *Comment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryParent queries the parent edge of a Comment.
+func (c *CommentClient) QueryParent(co *Comment) *CommentQuery {
+	query := (&CommentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, id),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, comment.ParentTable, comment.ParentColumn),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReplies queries the replies edge of a Comment.
+func (c *CommentClient) QueryReplies(co *Comment) *CommentQuery {
+	query := (&CommentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, id),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, comment.RepliesTable, comment.RepliesColumn),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserIdentity queries the user_identity edge of a Comment.
+func (c *CommentClient) QueryUserIdentity(co *Comment) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, id),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, comment.UserIdentityTable, comment.UserIdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CommentClient) Hooks() []Hook {
+	return c.hooks.Comment
+}
+
+// Interceptors returns the client interceptors.
+func (c *CommentClient) Interceptors() []Interceptor {
+	return c.inters.Comment
+}
+
+func (c *CommentClient) mutate(ctx context.Context, m *CommentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CommentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CommentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Comment mutation op: %q", m.Op())
+	}
+}
+
 // CommentLikeClient is a client for the CommentLike schema.
 type CommentLikeClient struct {
 	config
@@ -2599,22 +2575,6 @@ func (c *CommentLikeClient) GetX(ctx context.Context, id uuid.UUID) *CommentLike
 		panic(err)
 	}
 	return obj
-}
-
-// QueryComment queries the comment edge of a CommentLike.
-func (c *CommentLikeClient) QueryComment(cl *CommentLike) *BlogCommentQuery {
-	query := (&BlogCommentClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := cl.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(commentlike.Table, commentlike.FieldID, id),
-			sqlgraph.To(blogcomment.Table, blogcomment.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, commentlike.CommentTable, commentlike.CommentColumn),
-		)
-		fromV = sqlgraph.Neighbors(cl.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // QueryUserIdentity queries the user_identity edge of a CommentLike.
@@ -3490,6 +3450,38 @@ func (c *IdeaClient) QueryBlogPosts(i *Idea) *BlogPostQuery {
 	return query
 }
 
+// QueryComments queries the comments edge of a Idea.
+func (c *IdeaClient) QueryComments(i *Idea) *CommentQuery {
+	query := (&CommentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(idea.Table, idea.FieldID, id),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, idea.CommentsTable, idea.CommentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTags queries the tags edge of a Idea.
+func (c *IdeaClient) QueryTags(i *Idea) *IdeaTagQuery {
+	query := (&IdeaTagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(idea.Table, idea.FieldID, id),
+			sqlgraph.To(ideatag.Table, ideatag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, idea.TagsTable, idea.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *IdeaClient) Hooks() []Hook {
 	return c.hooks.Idea
@@ -3512,6 +3504,155 @@ func (c *IdeaClient) mutate(ctx context.Context, m *IdeaMutation) (Value, error)
 		return (&IdeaDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Idea mutation op: %q", m.Op())
+	}
+}
+
+// IdeaTagClient is a client for the IdeaTag schema.
+type IdeaTagClient struct {
+	config
+}
+
+// NewIdeaTagClient returns a client for the IdeaTag from the given config.
+func NewIdeaTagClient(c config) *IdeaTagClient {
+	return &IdeaTagClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ideatag.Hooks(f(g(h())))`.
+func (c *IdeaTagClient) Use(hooks ...Hook) {
+	c.hooks.IdeaTag = append(c.hooks.IdeaTag, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ideatag.Intercept(f(g(h())))`.
+func (c *IdeaTagClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IdeaTag = append(c.inters.IdeaTag, interceptors...)
+}
+
+// Create returns a builder for creating a IdeaTag entity.
+func (c *IdeaTagClient) Create() *IdeaTagCreate {
+	mutation := newIdeaTagMutation(c.config, OpCreate)
+	return &IdeaTagCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IdeaTag entities.
+func (c *IdeaTagClient) CreateBulk(builders ...*IdeaTagCreate) *IdeaTagCreateBulk {
+	return &IdeaTagCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IdeaTagClient) MapCreateBulk(slice any, setFunc func(*IdeaTagCreate, int)) *IdeaTagCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IdeaTagCreateBulk{err: fmt.Errorf("calling to IdeaTagClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IdeaTagCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IdeaTagCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IdeaTag.
+func (c *IdeaTagClient) Update() *IdeaTagUpdate {
+	mutation := newIdeaTagMutation(c.config, OpUpdate)
+	return &IdeaTagUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IdeaTagClient) UpdateOne(it *IdeaTag) *IdeaTagUpdateOne {
+	mutation := newIdeaTagMutation(c.config, OpUpdateOne, withIdeaTag(it))
+	return &IdeaTagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IdeaTagClient) UpdateOneID(id uuid.UUID) *IdeaTagUpdateOne {
+	mutation := newIdeaTagMutation(c.config, OpUpdateOne, withIdeaTagID(id))
+	return &IdeaTagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IdeaTag.
+func (c *IdeaTagClient) Delete() *IdeaTagDelete {
+	mutation := newIdeaTagMutation(c.config, OpDelete)
+	return &IdeaTagDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IdeaTagClient) DeleteOne(it *IdeaTag) *IdeaTagDeleteOne {
+	return c.DeleteOneID(it.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IdeaTagClient) DeleteOneID(id uuid.UUID) *IdeaTagDeleteOne {
+	builder := c.Delete().Where(ideatag.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IdeaTagDeleteOne{builder}
+}
+
+// Query returns a query builder for IdeaTag.
+func (c *IdeaTagClient) Query() *IdeaTagQuery {
+	return &IdeaTagQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIdeaTag},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IdeaTag entity by its id.
+func (c *IdeaTagClient) Get(ctx context.Context, id uuid.UUID) (*IdeaTag, error) {
+	return c.Query().Where(ideatag.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IdeaTagClient) GetX(ctx context.Context, id uuid.UUID) *IdeaTag {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryIdeas queries the ideas edge of a IdeaTag.
+func (c *IdeaTagClient) QueryIdeas(it *IdeaTag) *IdeaQuery {
+	query := (&IdeaClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := it.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ideatag.Table, ideatag.FieldID, id),
+			sqlgraph.To(idea.Table, idea.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, ideatag.IdeasTable, ideatag.IdeasPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(it.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IdeaTagClient) Hooks() []Hook {
+	return c.hooks.IdeaTag
+}
+
+// Interceptors returns the client interceptors.
+func (c *IdeaTagClient) Interceptors() []Interceptor {
+	return c.inters.IdeaTag
+}
+
+func (c *IdeaTagClient) mutate(ctx context.Context, m *IdeaTagMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IdeaTagCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IdeaTagUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IdeaTagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IdeaTagDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IdeaTag mutation op: %q", m.Op())
 	}
 }
 
@@ -8570,10 +8711,10 @@ func (c *WorkExperienceTranslationClient) mutate(ctx context.Context, m *WorkExp
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Award, AwardTranslation, BlogCategory, BlogCategoryTranslation, BlogComment,
-		BlogPost, BlogPostTag, BlogPostTranslation, BlogSeries, BlogSeriesTranslation,
-		BlogTag, CommentLike, Education, EducationDetail, EducationDetailTranslation,
-		EducationTranslation, Idea, IdeaTranslation, Language, PersonalInfo,
+		Award, AwardTranslation, BlogCategory, BlogCategoryTranslation, BlogPost,
+		BlogPostTag, BlogPostTranslation, BlogSeries, BlogSeriesTranslation, BlogTag,
+		Comment, CommentLike, Education, EducationDetail, EducationDetailTranslation,
+		EducationTranslation, Idea, IdeaTag, IdeaTranslation, Language, PersonalInfo,
 		PersonalInfoTranslation, Project, ProjectDetail, ProjectDetailTranslation,
 		ProjectImage, ProjectImageTranslation, ProjectRelationship, ProjectTechnology,
 		ProjectTranslation, Publication, PublicationAuthor, PublicationTranslation,
@@ -8583,10 +8724,10 @@ type (
 		WorkExperienceDetailTranslation, WorkExperienceTranslation []ent.Hook
 	}
 	inters struct {
-		Award, AwardTranslation, BlogCategory, BlogCategoryTranslation, BlogComment,
-		BlogPost, BlogPostTag, BlogPostTranslation, BlogSeries, BlogSeriesTranslation,
-		BlogTag, CommentLike, Education, EducationDetail, EducationDetailTranslation,
-		EducationTranslation, Idea, IdeaTranslation, Language, PersonalInfo,
+		Award, AwardTranslation, BlogCategory, BlogCategoryTranslation, BlogPost,
+		BlogPostTag, BlogPostTranslation, BlogSeries, BlogSeriesTranslation, BlogTag,
+		Comment, CommentLike, Education, EducationDetail, EducationDetailTranslation,
+		EducationTranslation, Idea, IdeaTag, IdeaTranslation, Language, PersonalInfo,
 		PersonalInfoTranslation, Project, ProjectDetail, ProjectDetailTranslation,
 		ProjectImage, ProjectImageTranslation, ProjectRelationship, ProjectTechnology,
 		ProjectTranslation, Publication, PublicationAuthor, PublicationTranslation,

@@ -265,7 +265,7 @@ class CLILogic(SilanCLILogger):
             
             backend_config = {
                 'database': db_config,
-                'server': {'host': '0.0.0.0', 'port': 8888},
+                'server': {'host': '0.0.0.0', 'port': 5200},
                 'daemon': False
             }
             

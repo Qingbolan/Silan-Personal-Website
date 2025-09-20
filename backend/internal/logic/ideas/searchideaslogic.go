@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 
 	"silan-backend/internal/ent"
 	"silan-backend/internal/ent/idea"
@@ -102,67 +103,67 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 
 		// For now, we'll use empty slices for tags and categories
 		// These would need to be implemented when the schema is updated
-		var tags []string
-		var category string
+		tags := []string{}
+		category := ""
 
 		// Create empty slices for complex fields
 		var futureDirections []string
-		if futureDirections == nil {
+		if len(futureDirections) == 0 {
 			futureDirections = []string{}
 		}
 
 		var techStack []string
-		if techStack == nil {
+		if len(techStack) == 0 {
 			techStack = []string{}
 		}
 
 		var keywords []string
-		if keywords == nil {
+		if len(keywords) == 0 {
 			keywords = []string{}
 		}
 
 		var keyFindings []string
-		if keyFindings == nil {
+		if len(keyFindings) == 0 {
 			keyFindings = []string{}
 		}
 
 		var limitations []string
-		if limitations == nil {
+		if len(limitations) == 0 {
 			limitations = []string{}
 		}
 
 		var collaborators []types.Collaborator
-		if collaborators == nil {
+		if len(collaborators) == 0 {
 			collaborators = []types.Collaborator{}
 		}
 
 		var experiments []types.Experiment
-		if experiments == nil {
+		if len(experiments) == 0 {
 			experiments = []types.Experiment{}
 		}
 
 		var relatedWorks []types.Reference
-		if relatedWorks == nil {
+		if len(relatedWorks) == 0 {
 			relatedWorks = []types.Reference{}
 		}
 
 		var citations []types.Reference
-		if citations == nil {
+		if len(citations) == 0 {
 			citations = []types.Reference{}
 		}
 
 		var feedbackRequested []types.FeedbackType
-		if feedbackRequested == nil {
+		if len(feedbackRequested) == 0 {
 			feedbackRequested = []types.FeedbackType{}
 		}
 
 		var publications []types.IdeaPublicationRef
-		if publications == nil {
+		if len(publications) == 0 {
 			publications = []types.IdeaPublicationRef{}
 		}
 
 		var conferences []string
-		if conferences == nil {
+		if len(conferences) == 0 {
 			conferences = []string{}
 		}
 
@@ -172,7 +173,7 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 			Description:          abstract,
 			Category:             category,
 			Tags:                 tags,
-			Status:               string(ideaEntity.Status),
+			Status:               strings.ToLower(string(ideaEntity.Status)),
 			CreatedAt:            ideaEntity.CreatedAt.Format("2006-01-02T15:04:05Z"),
 			LastUpdated:          ideaEntity.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 			Abstract:             abstract,
@@ -191,7 +192,7 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 			Conferences:          conferences,
 			KeyFindings:          keyFindings,
 			Limitations:          limitations,
-			Difficulty:           string(ideaEntity.Priority),
+			Difficulty:           strings.ToLower(string(ideaEntity.Priority)),
 			Keywords:             keywords,
 			EstimatedDuration:    estimatedDuration,
 			FundingStatus:        requiredResources,

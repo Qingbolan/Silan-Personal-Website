@@ -7,19 +7,20 @@ import (
 	"silan-backend/internal/ent/awardtranslation"
 	"silan-backend/internal/ent/blogcategory"
 	"silan-backend/internal/ent/blogcategorytranslation"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/blogposttag"
 	"silan-backend/internal/ent/blogposttranslation"
 	"silan-backend/internal/ent/blogseries"
 	"silan-backend/internal/ent/blogseriestranslation"
 	"silan-backend/internal/ent/blogtag"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/education"
 	"silan-backend/internal/ent/educationdetail"
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
 	"silan-backend/internal/ent/personalinfo"
@@ -268,82 +269,6 @@ func init() {
 	blogcategorytranslationDescID := blogcategorytranslationFields[0].Descriptor()
 	// blogcategorytranslation.DefaultID holds the default value on creation for the id field.
 	blogcategorytranslation.DefaultID = blogcategorytranslationDescID.Default.(func() uuid.UUID)
-	blogcommentFields := schema.BlogComment{}.Fields()
-	_ = blogcommentFields
-	// blogcommentDescAuthorName is the schema descriptor for author_name field.
-	blogcommentDescAuthorName := blogcommentFields[3].Descriptor()
-	// blogcomment.AuthorNameValidator is a validator for the "author_name" field. It is called by the builders before save.
-	blogcomment.AuthorNameValidator = func() func(string) error {
-		validators := blogcommentDescAuthorName.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(author_name string) error {
-			for _, fn := range fns {
-				if err := fn(author_name); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// blogcommentDescAuthorEmail is the schema descriptor for author_email field.
-	blogcommentDescAuthorEmail := blogcommentFields[4].Descriptor()
-	// blogcomment.AuthorEmailValidator is a validator for the "author_email" field. It is called by the builders before save.
-	blogcomment.AuthorEmailValidator = func() func(string) error {
-		validators := blogcommentDescAuthorEmail.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(author_email string) error {
-			for _, fn := range fns {
-				if err := fn(author_email); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// blogcommentDescAuthorWebsite is the schema descriptor for author_website field.
-	blogcommentDescAuthorWebsite := blogcommentFields[5].Descriptor()
-	// blogcomment.AuthorWebsiteValidator is a validator for the "author_website" field. It is called by the builders before save.
-	blogcomment.AuthorWebsiteValidator = blogcommentDescAuthorWebsite.Validators[0].(func(string) error)
-	// blogcommentDescContent is the schema descriptor for content field.
-	blogcommentDescContent := blogcommentFields[6].Descriptor()
-	// blogcomment.ContentValidator is a validator for the "content" field. It is called by the builders before save.
-	blogcomment.ContentValidator = blogcommentDescContent.Validators[0].(func(string) error)
-	// blogcommentDescIsApproved is the schema descriptor for is_approved field.
-	blogcommentDescIsApproved := blogcommentFields[7].Descriptor()
-	// blogcomment.DefaultIsApproved holds the default value on creation for the is_approved field.
-	blogcomment.DefaultIsApproved = blogcommentDescIsApproved.Default.(bool)
-	// blogcommentDescIPAddress is the schema descriptor for ip_address field.
-	blogcommentDescIPAddress := blogcommentFields[8].Descriptor()
-	// blogcomment.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
-	blogcomment.IPAddressValidator = blogcommentDescIPAddress.Validators[0].(func(string) error)
-	// blogcommentDescUserAgent is the schema descriptor for user_agent field.
-	blogcommentDescUserAgent := blogcommentFields[9].Descriptor()
-	// blogcomment.UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
-	blogcomment.UserAgentValidator = blogcommentDescUserAgent.Validators[0].(func(string) error)
-	// blogcommentDescLikesCount is the schema descriptor for likes_count field.
-	blogcommentDescLikesCount := blogcommentFields[11].Descriptor()
-	// blogcomment.DefaultLikesCount holds the default value on creation for the likes_count field.
-	blogcomment.DefaultLikesCount = blogcommentDescLikesCount.Default.(int)
-	// blogcommentDescCreatedAt is the schema descriptor for created_at field.
-	blogcommentDescCreatedAt := blogcommentFields[12].Descriptor()
-	// blogcomment.DefaultCreatedAt holds the default value on creation for the created_at field.
-	blogcomment.DefaultCreatedAt = blogcommentDescCreatedAt.Default.(func() time.Time)
-	// blogcommentDescUpdatedAt is the schema descriptor for updated_at field.
-	blogcommentDescUpdatedAt := blogcommentFields[13].Descriptor()
-	// blogcomment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	blogcomment.DefaultUpdatedAt = blogcommentDescUpdatedAt.Default.(func() time.Time)
-	// blogcomment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	blogcomment.UpdateDefaultUpdatedAt = blogcommentDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// blogcommentDescID is the schema descriptor for id field.
-	blogcommentDescID := blogcommentFields[0].Descriptor()
-	// blogcomment.DefaultID holds the default value on creation for the id field.
-	blogcomment.DefaultID = blogcommentDescID.Default.(func() uuid.UUID)
 	blogpostFields := schema.BlogPost{}.Fields()
 	_ = blogpostFields
 	// blogpostDescTitle is the schema descriptor for title field.
@@ -610,6 +535,86 @@ func init() {
 	blogtagDescID := blogtagFields[0].Descriptor()
 	// blogtag.DefaultID holds the default value on creation for the id field.
 	blogtag.DefaultID = blogtagDescID.Default.(func() uuid.UUID)
+	commentFields := schema.Comment{}.Fields()
+	_ = commentFields
+	// commentDescAuthorName is the schema descriptor for author_name field.
+	commentDescAuthorName := commentFields[4].Descriptor()
+	// comment.AuthorNameValidator is a validator for the "author_name" field. It is called by the builders before save.
+	comment.AuthorNameValidator = func() func(string) error {
+		validators := commentDescAuthorName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(author_name string) error {
+			for _, fn := range fns {
+				if err := fn(author_name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// commentDescAuthorEmail is the schema descriptor for author_email field.
+	commentDescAuthorEmail := commentFields[5].Descriptor()
+	// comment.AuthorEmailValidator is a validator for the "author_email" field. It is called by the builders before save.
+	comment.AuthorEmailValidator = func() func(string) error {
+		validators := commentDescAuthorEmail.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(author_email string) error {
+			for _, fn := range fns {
+				if err := fn(author_email); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// commentDescAuthorWebsite is the schema descriptor for author_website field.
+	commentDescAuthorWebsite := commentFields[6].Descriptor()
+	// comment.AuthorWebsiteValidator is a validator for the "author_website" field. It is called by the builders before save.
+	comment.AuthorWebsiteValidator = commentDescAuthorWebsite.Validators[0].(func(string) error)
+	// commentDescContent is the schema descriptor for content field.
+	commentDescContent := commentFields[7].Descriptor()
+	// comment.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	comment.ContentValidator = commentDescContent.Validators[0].(func(string) error)
+	// commentDescType is the schema descriptor for type field.
+	commentDescType := commentFields[8].Descriptor()
+	// comment.DefaultType holds the default value on creation for the type field.
+	comment.DefaultType = commentDescType.Default.(string)
+	// commentDescIsApproved is the schema descriptor for is_approved field.
+	commentDescIsApproved := commentFields[9].Descriptor()
+	// comment.DefaultIsApproved holds the default value on creation for the is_approved field.
+	comment.DefaultIsApproved = commentDescIsApproved.Default.(bool)
+	// commentDescIPAddress is the schema descriptor for ip_address field.
+	commentDescIPAddress := commentFields[10].Descriptor()
+	// comment.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
+	comment.IPAddressValidator = commentDescIPAddress.Validators[0].(func(string) error)
+	// commentDescUserAgent is the schema descriptor for user_agent field.
+	commentDescUserAgent := commentFields[11].Descriptor()
+	// comment.UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
+	comment.UserAgentValidator = commentDescUserAgent.Validators[0].(func(string) error)
+	// commentDescLikesCount is the schema descriptor for likes_count field.
+	commentDescLikesCount := commentFields[13].Descriptor()
+	// comment.DefaultLikesCount holds the default value on creation for the likes_count field.
+	comment.DefaultLikesCount = commentDescLikesCount.Default.(int)
+	// commentDescCreatedAt is the schema descriptor for created_at field.
+	commentDescCreatedAt := commentFields[14].Descriptor()
+	// comment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	comment.DefaultCreatedAt = commentDescCreatedAt.Default.(func() time.Time)
+	// commentDescUpdatedAt is the schema descriptor for updated_at field.
+	commentDescUpdatedAt := commentFields[15].Descriptor()
+	// comment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	comment.DefaultUpdatedAt = commentDescUpdatedAt.Default.(func() time.Time)
+	// comment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	comment.UpdateDefaultUpdatedAt = commentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// commentDescID is the schema descriptor for id field.
+	commentDescID := commentFields[0].Descriptor()
+	// comment.DefaultID holds the default value on creation for the id field.
+	comment.DefaultID = commentDescID.Default.(func() uuid.UUID)
 	commentlikeFields := schema.CommentLike{}.Fields()
 	_ = commentlikeFields
 	// commentlikeDescIPAddress is the schema descriptor for ip_address field.
@@ -620,6 +625,12 @@ func init() {
 	commentlikeDescCreatedAt := commentlikeFields[5].Descriptor()
 	// commentlike.DefaultCreatedAt holds the default value on creation for the created_at field.
 	commentlike.DefaultCreatedAt = commentlikeDescCreatedAt.Default.(func() time.Time)
+	// commentlikeDescUpdatedAt is the schema descriptor for updated_at field.
+	commentlikeDescUpdatedAt := commentlikeFields[6].Descriptor()
+	// commentlike.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	commentlike.DefaultUpdatedAt = commentlikeDescUpdatedAt.Default.(func() time.Time)
+	// commentlike.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	commentlike.UpdateDefaultUpdatedAt = commentlikeDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// commentlikeDescID is the schema descriptor for id field.
 	commentlikeDescID := commentlikeFields[0].Descriptor()
 	// commentlike.DefaultID holds the default value on creation for the id field.
@@ -834,12 +845,18 @@ func init() {
 	ideaDescLikeCount := ideaFields[17].Descriptor()
 	// idea.DefaultLikeCount holds the default value on creation for the like_count field.
 	idea.DefaultLikeCount = ideaDescLikeCount.Default.(int)
+	// ideaDescCategory is the schema descriptor for category field.
+	ideaDescCategory := ideaFields[18].Descriptor()
+	// idea.DefaultCategory holds the default value on creation for the category field.
+	idea.DefaultCategory = ideaDescCategory.Default.(string)
+	// idea.CategoryValidator is a validator for the "category" field. It is called by the builders before save.
+	idea.CategoryValidator = ideaDescCategory.Validators[0].(func(string) error)
 	// ideaDescCreatedAt is the schema descriptor for created_at field.
-	ideaDescCreatedAt := ideaFields[18].Descriptor()
+	ideaDescCreatedAt := ideaFields[19].Descriptor()
 	// idea.DefaultCreatedAt holds the default value on creation for the created_at field.
 	idea.DefaultCreatedAt = ideaDescCreatedAt.Default.(func() time.Time)
 	// ideaDescUpdatedAt is the schema descriptor for updated_at field.
-	ideaDescUpdatedAt := ideaFields[19].Descriptor()
+	ideaDescUpdatedAt := ideaFields[20].Descriptor()
 	// idea.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	idea.DefaultUpdatedAt = ideaDescUpdatedAt.Default.(func() time.Time)
 	// idea.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -848,6 +865,58 @@ func init() {
 	ideaDescID := ideaFields[0].Descriptor()
 	// idea.DefaultID holds the default value on creation for the id field.
 	idea.DefaultID = ideaDescID.Default.(func() uuid.UUID)
+	ideatagFields := schema.IdeaTag{}.Fields()
+	_ = ideatagFields
+	// ideatagDescName is the schema descriptor for name field.
+	ideatagDescName := ideatagFields[1].Descriptor()
+	// ideatag.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	ideatag.NameValidator = func() func(string) error {
+		validators := ideatagDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ideatagDescSlug is the schema descriptor for slug field.
+	ideatagDescSlug := ideatagFields[2].Descriptor()
+	// ideatag.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	ideatag.SlugValidator = func() func(string) error {
+		validators := ideatagDescSlug.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(slug string) error {
+			for _, fn := range fns {
+				if err := fn(slug); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ideatagDescCreatedAt is the schema descriptor for created_at field.
+	ideatagDescCreatedAt := ideatagFields[3].Descriptor()
+	// ideatag.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ideatag.DefaultCreatedAt = ideatagDescCreatedAt.Default.(func() time.Time)
+	// ideatagDescUpdatedAt is the schema descriptor for updated_at field.
+	ideatagDescUpdatedAt := ideatagFields[4].Descriptor()
+	// ideatag.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ideatag.DefaultUpdatedAt = ideatagDescUpdatedAt.Default.(func() time.Time)
+	// ideatag.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ideatag.UpdateDefaultUpdatedAt = ideatagDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ideatagDescID is the schema descriptor for id field.
+	ideatagDescID := ideatagFields[0].Descriptor()
+	// ideatag.DefaultID holds the default value on creation for the id field.
+	ideatag.DefaultID = ideatagDescID.Default.(func() uuid.UUID)
 	ideatranslationFields := schema.IdeaTranslation{}.Fields()
 	_ = ideatranslationFields
 	// ideatranslationDescLanguageCode is the schema descriptor for language_code field.

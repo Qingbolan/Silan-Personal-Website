@@ -35,7 +35,7 @@ func (l *LikeCommentLogic) LikeComment(req *types.LikeCommentRequest) (resp *typ
 	}
 
 	// Check if comment exists
-	_, err = l.svcCtx.DB.BlogComment.Get(l.ctx, commentID)
+	_, err = l.svcCtx.DB.Comment.Get(l.ctx, commentID)
 	if err != nil {
 		return nil, fmt.Errorf("comment not found: %w", err)
 	}
@@ -86,7 +86,7 @@ func (l *LikeCommentLogic) LikeComment(req *types.LikeCommentRequest) (resp *typ
 		}
 
 		// Decrease likes count
-		updatedComment, err := tx.BlogComment.UpdateOneID(commentID).
+		updatedComment, err := tx.Comment.UpdateOneID(commentID).
 			AddLikesCount(-1).
 			Save(l.ctx)
 		if err != nil {
@@ -114,7 +114,7 @@ func (l *LikeCommentLogic) LikeComment(req *types.LikeCommentRequest) (resp *typ
 		}
 
 		// Increase likes count
-		updatedComment, err := tx.BlogComment.UpdateOneID(commentID).
+		updatedComment, err := tx.Comment.UpdateOneID(commentID).
 			AddLikesCount(1).
 			Save(l.ctx)
 		if err != nil {

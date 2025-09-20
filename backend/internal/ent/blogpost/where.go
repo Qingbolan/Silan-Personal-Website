@@ -1151,7 +1151,7 @@ func HasComments() predicate.BlogPost {
 }
 
 // HasCommentsWith applies the HasEdge predicate on the "comments" edge with a given conditions (other predicates).
-func HasCommentsWith(preds ...predicate.BlogComment) predicate.BlogPost {
+func HasCommentsWith(preds ...predicate.Comment) predicate.BlogPost {
 	return predicate.BlogPost(func(s *sql.Selector) {
 		step := newCommentsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {

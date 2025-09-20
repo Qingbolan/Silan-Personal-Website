@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"silan-backend/internal/ent/blogcomment"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -34,7 +34,7 @@ func (l *DeleteBlogCommentLogic) DeleteBlogComment(req *types.DeleteBlogCommentR
 		return err
 	}
 
-	c, err := l.svcCtx.DB.BlogComment.Get(l.ctx, cid)
+	c, err := l.svcCtx.DB.Comment.Query().Where(comment.IDEQ(cid), comment.EntityTypeEQ("blog")).Only(l.ctx)
 	if err != nil {
 		return err
 	}
@@ -69,9 +69,9 @@ func (l *DeleteBlogCommentLogic) DeleteBlogComment(req *types.DeleteBlogCommentR
 // deleteCommentWithReplies recursively deletes a comment and all its replies
 func (l *DeleteBlogCommentLogic) deleteCommentWithReplies(commentID uuid.UUID) error {
 	// First, find all direct replies to this comment
-	replies, err := l.svcCtx.DB.BlogComment.
+	replies, err := l.svcCtx.DB.Comment.
 		Query().
-		Where(blogcomment.ParentIDEQ(commentID)).
+		Where(comment.ParentIDEQ(commentID), comment.EntityTypeEQ("blog")).
 		All(l.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to find replies: %v", err)
@@ -85,7 +85,7 @@ func (l *DeleteBlogCommentLogic) deleteCommentWithReplies(commentID uuid.UUID) e
 	}
 
 	// Finally, delete the comment itself
-	err = l.svcCtx.DB.BlogComment.DeleteOneID(commentID).Exec(l.ctx)
+	err = l.svcCtx.DB.Comment.DeleteOneID(commentID).Exec(l.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete comment %s: %v", commentID, err)
 	}

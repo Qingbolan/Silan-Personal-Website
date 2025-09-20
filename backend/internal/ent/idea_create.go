@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"silan-backend/internal/ent/blogpost"
+	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/user"
 	"time"
@@ -238,6 +240,20 @@ func (ic *IdeaCreate) SetNillableLikeCount(i *int) *IdeaCreate {
 	return ic
 }
 
+// SetCategory sets the "category" field.
+func (ic *IdeaCreate) SetCategory(s string) *IdeaCreate {
+	ic.mutation.SetCategory(s)
+	return ic
+}
+
+// SetNillableCategory sets the "category" field if the given value is not nil.
+func (ic *IdeaCreate) SetNillableCategory(s *string) *IdeaCreate {
+	if s != nil {
+		ic.SetCategory(*s)
+	}
+	return ic
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (ic *IdeaCreate) SetCreatedAt(t time.Time) *IdeaCreate {
 	ic.mutation.SetCreatedAt(t)
@@ -315,6 +331,36 @@ func (ic *IdeaCreate) AddBlogPosts(b ...*BlogPost) *IdeaCreate {
 	return ic.AddBlogPostIDs(ids...)
 }
 
+// AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
+func (ic *IdeaCreate) AddCommentIDs(ids ...uuid.UUID) *IdeaCreate {
+	ic.mutation.AddCommentIDs(ids...)
+	return ic
+}
+
+// AddComments adds the "comments" edges to the Comment entity.
+func (ic *IdeaCreate) AddComments(c ...*Comment) *IdeaCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ic.AddCommentIDs(ids...)
+}
+
+// AddTagIDs adds the "tags" edge to the IdeaTag entity by IDs.
+func (ic *IdeaCreate) AddTagIDs(ids ...uuid.UUID) *IdeaCreate {
+	ic.mutation.AddTagIDs(ids...)
+	return ic
+}
+
+// AddTags adds the "tags" edges to the IdeaTag entity.
+func (ic *IdeaCreate) AddTags(i ...*IdeaTag) *IdeaCreate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return ic.AddTagIDs(ids...)
+}
+
 // Mutation returns the IdeaMutation object of the builder.
 func (ic *IdeaCreate) Mutation() *IdeaMutation {
 	return ic.mutation
@@ -377,6 +423,10 @@ func (ic *IdeaCreate) defaults() {
 	if _, ok := ic.mutation.LikeCount(); !ok {
 		v := idea.DefaultLikeCount
 		ic.mutation.SetLikeCount(v)
+	}
+	if _, ok := ic.mutation.Category(); !ok {
+		v := idea.DefaultCategory
+		ic.mutation.SetCategory(v)
 	}
 	if _, ok := ic.mutation.CreatedAt(); !ok {
 		v := idea.DefaultCreatedAt()
@@ -443,6 +493,11 @@ func (ic *IdeaCreate) check() error {
 	}
 	if _, ok := ic.mutation.LikeCount(); !ok {
 		return &ValidationError{Name: "like_count", err: errors.New(`ent: missing required field "Idea.like_count"`)}
+	}
+	if v, ok := ic.mutation.Category(); ok {
+		if err := idea.CategoryValidator(v); err != nil {
+			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "Idea.category": %w`, err)}
+		}
 	}
 	if _, ok := ic.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Idea.created_at"`)}
@@ -552,6 +607,10 @@ func (ic *IdeaCreate) createSpec() (*Idea, *sqlgraph.CreateSpec) {
 		_spec.SetField(idea.FieldLikeCount, field.TypeInt, value)
 		_node.LikeCount = value
 	}
+	if value, ok := ic.mutation.Category(); ok {
+		_spec.SetField(idea.FieldCategory, field.TypeString, value)
+		_node.Category = value
+	}
 	if value, ok := ic.mutation.CreatedAt(); ok {
 		_spec.SetField(idea.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -602,6 +661,38 @@ func (ic *IdeaCreate) createSpec() (*Idea, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(blogpost.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ic.mutation.CommentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   idea.CommentsTable,
+			Columns: []string{idea.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ic.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   idea.TagsTable,
+			Columns: idea.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideatag.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

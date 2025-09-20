@@ -81,6 +81,11 @@ func CreatedAt(v time.Time) predicate.CommentLike {
 	return predicate.CommentLike(sql.FieldEQ(FieldCreatedAt, v))
 }
 
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
 // CommentIDEQ applies the EQ predicate on the "comment_id" field.
 func CommentIDEQ(v uuid.UUID) predicate.CommentLike {
 	return predicate.CommentLike(sql.FieldEQ(FieldCommentID, v))
@@ -99,6 +104,26 @@ func CommentIDIn(vs ...uuid.UUID) predicate.CommentLike {
 // CommentIDNotIn applies the NotIn predicate on the "comment_id" field.
 func CommentIDNotIn(vs ...uuid.UUID) predicate.CommentLike {
 	return predicate.CommentLike(sql.FieldNotIn(FieldCommentID, vs...))
+}
+
+// CommentIDGT applies the GT predicate on the "comment_id" field.
+func CommentIDGT(v uuid.UUID) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldGT(FieldCommentID, v))
+}
+
+// CommentIDGTE applies the GTE predicate on the "comment_id" field.
+func CommentIDGTE(v uuid.UUID) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldGTE(FieldCommentID, v))
+}
+
+// CommentIDLT applies the LT predicate on the "comment_id" field.
+func CommentIDLT(v uuid.UUID) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldLT(FieldCommentID, v))
+}
+
+// CommentIDLTE applies the LTE predicate on the "comment_id" field.
+func CommentIDLTE(v uuid.UUID) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldLTE(FieldCommentID, v))
 }
 
 // UserIdentityIDEQ applies the EQ predicate on the "user_identity_id" field.
@@ -366,27 +391,44 @@ func CreatedAtLTE(v time.Time) predicate.CommentLike {
 	return predicate.CommentLike(sql.FieldLTE(FieldCreatedAt, v))
 }
 
-// HasComment applies the HasEdge predicate on the "comment" edge.
-func HasComment() predicate.CommentLike {
-	return predicate.CommentLike(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, CommentTable, CommentColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// HasCommentWith applies the HasEdge predicate on the "comment" edge with a given conditions (other predicates).
-func HasCommentWith(preds ...predicate.BlogComment) predicate.CommentLike {
-	return predicate.CommentLike(func(s *sql.Selector) {
-		step := newCommentStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.CommentLike {
+	return predicate.CommentLike(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // HasUserIdentity applies the HasEdge predicate on the "user_identity" edge.

@@ -139,7 +139,7 @@ class StatusLogic(ModernLogger):
                     if psutil.pid_exists(pid):
                         self.info("🚀 Backend Server Status: ✅ Running")
                         self.info(f"  PID: {pid}")
-                        self.info(f"  URL: http://localhost:8888")
+                        self.info(f"  URL: http://localhost:5200")
                     else:
                         self.warning("🚀 Backend Server Status: ❌ Not Running")
                         self.info("   Run 'silan backend start' to start the server")

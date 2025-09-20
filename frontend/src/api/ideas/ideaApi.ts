@@ -1,5 +1,5 @@
 import type { IdeaData } from '../../types';
-import { get, formatLanguage } from '../utils';
+import { get, post, del, formatLanguage } from '../utils';
 import { type PaginationRequest, type SearchRequest, type ListResponse } from '../config';
 
 // Backend API request/response types
@@ -113,4 +113,129 @@ export const getIdeaTags = async (language: 'en' | 'zh' = 'en'): Promise<string[
     lang: formatLanguage(language)
   });
   return response;
+};
+
+/**
+ * Get idea statuses (static list)
+ */
+export const getIdeaStatuses = (language: 'en' | 'zh' = 'en'): string[] => {
+  const statuses = ['draft', 'hypothesis', 'experimenting', 'validating', 'published', 'concluded'];
+
+  if (language === 'zh') {
+    return statuses.map(status => {
+      switch (status) {
+        case 'draft': return '草案';
+        case 'hypothesis': return '假设';
+        case 'experimenting': return '实验中';
+        case 'validating': return '验证中';
+        case 'published': return '已发表';
+        case 'concluded': return '已结论';
+        default: return status;
+      }
+    });
+  }
+
+  return statuses;
+};
+
+// ----- Comments API (mirror blog) -----
+export interface IdeaCommentData {
+  id: string;
+  idea_id: string;
+  parent_id?: string;
+  author_name: string;
+  author_avatar_url?: string;
+  content: string;
+  type: string;
+  created_at: string;
+  user_identity_id?: string;
+  likes_count: number;
+  is_liked_by_user: boolean;
+  replies?: IdeaCommentData[];
+}
+
+interface IdeaCommentListResponse {
+  comments: IdeaCommentData[];
+  total: number;
+}
+
+export const listIdeaComments = async (
+  ideaId: string,
+  type: string = 'general',
+  fingerprint?: string,
+  userIdentityId?: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<IdeaCommentData[]> => {
+  const params: any = {
+    type,
+    lang: formatLanguage(language)
+  };
+  if (fingerprint) params.fingerprint = fingerprint;
+  if (userIdentityId) params.user_identity_id = userIdentityId;
+  const res = await get<IdeaCommentListResponse>(`/api/v1/ideas/${ideaId}/comments`, params);
+  return res?.comments ?? [];
+};
+
+export const createIdeaComment = async (
+  ideaId: string,
+  content: string,
+  fingerprint: string,
+  options?: {
+    type?: string;
+    authorName?: string;
+    authorEmail?: string;
+    userIdentityId?: string;
+    parentId?: string;
+    language?: 'en' | 'zh';
+  }
+): Promise<IdeaCommentData> => {
+  const body: any = {
+    content,
+    type: options?.type || 'general',
+    fingerprint,
+  };
+  if (options?.authorName && options.authorName.trim()) body.author_name = options.authorName.trim();
+  if (options?.authorEmail && options.authorEmail.trim()) body.author_email = options.authorEmail.trim();
+  if (options?.userIdentityId && options.userIdentityId.trim()) body.user_identity_id = options.userIdentityId.trim();
+  if (options?.parentId && options.parentId.trim()) body.parent_id = options.parentId.trim();
+
+  // Align with backend model: if no user_identity_id provided, backend requires author_name and author_email
+  if (!body.user_identity_id) {
+    if (!body.author_name || typeof body.author_name !== 'string' || !body.author_name.trim()) {
+      body.author_name = 'Anonymous';
+    }
+    if (!body.author_email || typeof body.author_email !== 'string' || body.author_email.trim().length < 5 || !body.author_email.includes('@')) {
+      body.author_email = 'anonymous@example.com';
+    }
+  }
+
+  // Add language as query parameter
+  const url = `/api/v1/ideas/${ideaId}/comments?lang=${formatLanguage(options?.language || 'en')}`;
+  const res = await post<IdeaCommentData>(url, body);
+  return res;
+};
+
+export interface LikeCommentResponse { likes_count: number; is_liked_by_user: boolean }
+
+export const likeIdeaComment = async (
+  commentId: string,
+  fingerprint?: string,
+  userIdentityId?: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<LikeCommentResponse> => {
+  const data: any = { lang: formatLanguage(language) };
+  if (fingerprint) data.fingerprint = fingerprint;
+  if (userIdentityId) data.user_identity_id = userIdentityId;
+  const res = await post<LikeCommentResponse>(`/api/v1/ideas/comments/${commentId}/like`, data);
+  return res;
+};
+
+export const deleteIdeaComment = async (
+  commentId: string,
+  payload: { fingerprint: string; userIdentityId?: string; language?: 'en' | 'zh' }
+): Promise<void> => {
+  await del(`/api/v1/ideas/comments/${commentId}?lang=${formatLanguage(payload.language || 'en')}`, {
+    fingerprint: payload.fingerprint,
+    user_identity_id: payload.userIdentityId || '',
+  });
 };

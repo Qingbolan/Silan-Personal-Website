@@ -115,49 +115,6 @@ var (
 			},
 		},
 	}
-	// BlogCommentsColumns holds the columns for the "blog_comments" table.
-	BlogCommentsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "author_name", Type: field.TypeString, Size: 100},
-		{Name: "author_email", Type: field.TypeString, Size: 255},
-		{Name: "author_website", Type: field.TypeString, Nullable: true, Size: 500},
-		{Name: "content", Type: field.TypeString, Size: 2147483647},
-		{Name: "is_approved", Type: field.TypeBool, Default: false},
-		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
-		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 500},
-		{Name: "likes_count", Type: field.TypeInt, Default: 0},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "user_identity_id", Type: field.TypeString, Nullable: true},
-		{Name: "blog_post_id", Type: field.TypeUUID},
-	}
-	// BlogCommentsTable holds the schema information for the "blog_comments" table.
-	BlogCommentsTable = &schema.Table{
-		Name:       "blog_comments",
-		Columns:    BlogCommentsColumns,
-		PrimaryKey: []*schema.Column{BlogCommentsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "blog_comments_blog_comments_parent",
-				Columns:    []*schema.Column{BlogCommentsColumns[11]},
-				RefColumns: []*schema.Column{BlogCommentsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "blog_comments_user_identities_user_identity",
-				Columns:    []*schema.Column{BlogCommentsColumns[12]},
-				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "blog_comments_blog_posts_comments",
-				Columns:    []*schema.Column{BlogCommentsColumns[13]},
-				RefColumns: []*schema.Column{BlogPostsColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
-	}
 	// BlogPostsColumns holds the columns for the "blog_posts" table.
 	BlogPostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -331,13 +288,67 @@ var (
 		Columns:    BlogTagsColumns,
 		PrimaryKey: []*schema.Column{BlogTagsColumns[0]},
 	}
+	// CommentsColumns holds the columns for the "comments" table.
+	CommentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "entity_type", Type: field.TypeString},
+		{Name: "entity_id", Type: field.TypeUUID},
+		{Name: "author_name", Type: field.TypeString, Size: 100},
+		{Name: "author_email", Type: field.TypeString, Size: 255},
+		{Name: "author_website", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "content", Type: field.TypeString, Size: 2147483647},
+		{Name: "type", Type: field.TypeString, Default: "general"},
+		{Name: "is_approved", Type: field.TypeBool, Default: false},
+		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
+		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "likes_count", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "blog_post_comments", Type: field.TypeUUID, Nullable: true},
+		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "user_identity_id", Type: field.TypeString, Nullable: true},
+		{Name: "idea_comments", Type: field.TypeUUID, Nullable: true},
+	}
+	// CommentsTable holds the schema information for the "comments" table.
+	CommentsTable = &schema.Table{
+		Name:       "comments",
+		Columns:    CommentsColumns,
+		PrimaryKey: []*schema.Column{CommentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "comments_blog_posts_comments",
+				Columns:    []*schema.Column{CommentsColumns[14]},
+				RefColumns: []*schema.Column{BlogPostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "comments_comments_parent",
+				Columns:    []*schema.Column{CommentsColumns[15]},
+				RefColumns: []*schema.Column{CommentsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "comments_user_identities_user_identity",
+				Columns:    []*schema.Column{CommentsColumns[16]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "comments_ideas_comments",
+				Columns:    []*schema.Column{CommentsColumns[17]},
+				RefColumns: []*schema.Column{IdeasColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// CommentLikesColumns holds the columns for the "comment_likes" table.
 	CommentLikesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "comment_id", Type: field.TypeUUID},
 		{Name: "fingerprint", Type: field.TypeString, Nullable: true},
 		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "comment_id", Type: field.TypeUUID},
+		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "user_identity_id", Type: field.TypeString, Nullable: true},
 	}
 	// CommentLikesTable holds the schema information for the "comment_likes" table.
@@ -347,14 +358,8 @@ var (
 		PrimaryKey: []*schema.Column{CommentLikesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "comment_likes_blog_comments_likes",
-				Columns:    []*schema.Column{CommentLikesColumns[4]},
-				RefColumns: []*schema.Column{BlogCommentsColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-			{
 				Symbol:     "comment_likes_user_identities_user_identity",
-				Columns:    []*schema.Column{CommentLikesColumns[5]},
+				Columns:    []*schema.Column{CommentLikesColumns[6]},
 				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -363,22 +368,22 @@ var (
 			{
 				Name:    "commentlike_comment_id_user_identity_id",
 				Unique:  true,
-				Columns: []*schema.Column{CommentLikesColumns[4], CommentLikesColumns[5]},
+				Columns: []*schema.Column{CommentLikesColumns[1], CommentLikesColumns[6]},
 			},
 			{
 				Name:    "commentlike_comment_id_fingerprint",
 				Unique:  true,
-				Columns: []*schema.Column{CommentLikesColumns[4], CommentLikesColumns[1]},
+				Columns: []*schema.Column{CommentLikesColumns[1], CommentLikesColumns[2]},
 			},
 			{
 				Name:    "commentlike_comment_id",
 				Unique:  false,
-				Columns: []*schema.Column{CommentLikesColumns[4]},
+				Columns: []*schema.Column{CommentLikesColumns[1]},
 			},
 			{
 				Name:    "commentlike_user_identity_id",
 				Unique:  false,
-				Columns: []*schema.Column{CommentLikesColumns[5]},
+				Columns: []*schema.Column{CommentLikesColumns[6]},
 			},
 		},
 	}
@@ -515,6 +520,7 @@ var (
 		{Name: "is_public", Type: field.TypeBool, Default: false},
 		{Name: "view_count", Type: field.TypeInt, Default: 0},
 		{Name: "like_count", Type: field.TypeInt, Default: 0},
+		{Name: "category", Type: field.TypeString, Nullable: true, Size: 100, Default: ""},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "user_id", Type: field.TypeUUID},
@@ -527,11 +533,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "ideas_users_ideas",
-				Columns:    []*schema.Column{IdeasColumns[19]},
+				Columns:    []*schema.Column{IdeasColumns[20]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
+	}
+	// IdeaTagsColumns holds the columns for the "idea_tags" table.
+	IdeaTagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "slug", Type: field.TypeString, Unique: true, Size: 200},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// IdeaTagsTable holds the schema information for the "idea_tags" table.
+	IdeaTagsTable = &schema.Table{
+		Name:       "idea_tags",
+		Columns:    IdeaTagsColumns,
+		PrimaryKey: []*schema.Column{IdeaTagsColumns[0]},
 	}
 	// IdeaTranslationsColumns holds the columns for the "idea_translations" table.
 	IdeaTranslationsColumns = []*schema.Column{
@@ -1337,25 +1357,51 @@ var (
 			},
 		},
 	}
+	// IdeaTagsJoinColumns holds the columns for the "idea_tags_join" table.
+	IdeaTagsJoinColumns = []*schema.Column{
+		{Name: "idea_id", Type: field.TypeUUID},
+		{Name: "idea_tag_id", Type: field.TypeUUID},
+	}
+	// IdeaTagsJoinTable holds the schema information for the "idea_tags_join" table.
+	IdeaTagsJoinTable = &schema.Table{
+		Name:       "idea_tags_join",
+		Columns:    IdeaTagsJoinColumns,
+		PrimaryKey: []*schema.Column{IdeaTagsJoinColumns[0], IdeaTagsJoinColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "idea_tags_join_idea_id",
+				Columns:    []*schema.Column{IdeaTagsJoinColumns[0]},
+				RefColumns: []*schema.Column{IdeasColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "idea_tags_join_idea_tag_id",
+				Columns:    []*schema.Column{IdeaTagsJoinColumns[1]},
+				RefColumns: []*schema.Column{IdeaTagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AwardsTable,
 		AwardTranslationsTable,
 		BlogCategoriesTable,
 		BlogCategoryTranslationsTable,
-		BlogCommentsTable,
 		BlogPostsTable,
 		BlogPostTagsTable,
 		BlogPostTranslationsTable,
 		BlogSeriesTable,
 		BlogSeriesTranslationsTable,
 		BlogTagsTable,
+		CommentsTable,
 		CommentLikesTable,
 		EducationTable,
 		EducationDetailsTable,
 		EducationDetailTranslationsTable,
 		EducationTranslationsTable,
 		IdeasTable,
+		IdeaTagsTable,
 		IdeaTranslationsTable,
 		LanguagesTable,
 		PersonalInfoTable,
@@ -1384,6 +1430,7 @@ var (
 		WorkExperienceDetailsTable,
 		WorkExperienceDetailTranslationsTable,
 		WorkExperienceTranslationsTable,
+		IdeaTagsJoinTable,
 	}
 )
 
@@ -1404,12 +1451,6 @@ func init() {
 	BlogCategoryTranslationsTable.ForeignKeys[1].RefTable = LanguagesTable
 	BlogCategoryTranslationsTable.Annotation = &entsql.Annotation{
 		Table: "blog_category_translations",
-	}
-	BlogCommentsTable.ForeignKeys[0].RefTable = BlogCommentsTable
-	BlogCommentsTable.ForeignKeys[1].RefTable = UserIdentitiesTable
-	BlogCommentsTable.ForeignKeys[2].RefTable = BlogPostsTable
-	BlogCommentsTable.Annotation = &entsql.Annotation{
-		Table: "blog_comments",
 	}
 	BlogPostsTable.ForeignKeys[0].RefTable = BlogCategoriesTable
 	BlogPostsTable.ForeignKeys[1].RefTable = BlogSeriesTable
@@ -1439,8 +1480,14 @@ func init() {
 	BlogTagsTable.Annotation = &entsql.Annotation{
 		Table: "blog_tags",
 	}
-	CommentLikesTable.ForeignKeys[0].RefTable = BlogCommentsTable
-	CommentLikesTable.ForeignKeys[1].RefTable = UserIdentitiesTable
+	CommentsTable.ForeignKeys[0].RefTable = BlogPostsTable
+	CommentsTable.ForeignKeys[1].RefTable = CommentsTable
+	CommentsTable.ForeignKeys[2].RefTable = UserIdentitiesTable
+	CommentsTable.ForeignKeys[3].RefTable = IdeasTable
+	CommentsTable.Annotation = &entsql.Annotation{
+		Table: "comments",
+	}
+	CommentLikesTable.ForeignKeys[0].RefTable = UserIdentitiesTable
 	CommentLikesTable.Annotation = &entsql.Annotation{
 		Table: "comment_likes",
 	}
@@ -1465,6 +1512,9 @@ func init() {
 	IdeasTable.ForeignKeys[0].RefTable = UsersTable
 	IdeasTable.Annotation = &entsql.Annotation{
 		Table: "ideas",
+	}
+	IdeaTagsTable.Annotation = &entsql.Annotation{
+		Table: "idea_tags",
 	}
 	IdeaTranslationsTable.ForeignKeys[0].RefTable = IdeasTable
 	IdeaTranslationsTable.ForeignKeys[1].RefTable = LanguagesTable
@@ -1581,4 +1631,6 @@ func init() {
 	WorkExperienceTranslationsTable.Annotation = &entsql.Annotation{
 		Table: "work_experience_translations",
 	}
+	IdeaTagsJoinTable.ForeignKeys[0].RefTable = IdeasTable
+	IdeaTagsJoinTable.ForeignKeys[1].RefTable = IdeaTagsTable
 }

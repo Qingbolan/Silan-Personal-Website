@@ -20,8 +20,6 @@ type Tx struct {
 	BlogCategory *BlogCategoryClient
 	// BlogCategoryTranslation is the client for interacting with the BlogCategoryTranslation builders.
 	BlogCategoryTranslation *BlogCategoryTranslationClient
-	// BlogComment is the client for interacting with the BlogComment builders.
-	BlogComment *BlogCommentClient
 	// BlogPost is the client for interacting with the BlogPost builders.
 	BlogPost *BlogPostClient
 	// BlogPostTag is the client for interacting with the BlogPostTag builders.
@@ -34,6 +32,8 @@ type Tx struct {
 	BlogSeriesTranslation *BlogSeriesTranslationClient
 	// BlogTag is the client for interacting with the BlogTag builders.
 	BlogTag *BlogTagClient
+	// Comment is the client for interacting with the Comment builders.
+	Comment *CommentClient
 	// CommentLike is the client for interacting with the CommentLike builders.
 	CommentLike *CommentLikeClient
 	// Education is the client for interacting with the Education builders.
@@ -46,6 +46,8 @@ type Tx struct {
 	EducationTranslation *EducationTranslationClient
 	// Idea is the client for interacting with the Idea builders.
 	Idea *IdeaClient
+	// IdeaTag is the client for interacting with the IdeaTag builders.
+	IdeaTag *IdeaTagClient
 	// IdeaTranslation is the client for interacting with the IdeaTranslation builders.
 	IdeaTranslation *IdeaTranslationClient
 	// Language is the client for interacting with the Language builders.
@@ -237,19 +239,20 @@ func (tx *Tx) init() {
 	tx.AwardTranslation = NewAwardTranslationClient(tx.config)
 	tx.BlogCategory = NewBlogCategoryClient(tx.config)
 	tx.BlogCategoryTranslation = NewBlogCategoryTranslationClient(tx.config)
-	tx.BlogComment = NewBlogCommentClient(tx.config)
 	tx.BlogPost = NewBlogPostClient(tx.config)
 	tx.BlogPostTag = NewBlogPostTagClient(tx.config)
 	tx.BlogPostTranslation = NewBlogPostTranslationClient(tx.config)
 	tx.BlogSeries = NewBlogSeriesClient(tx.config)
 	tx.BlogSeriesTranslation = NewBlogSeriesTranslationClient(tx.config)
 	tx.BlogTag = NewBlogTagClient(tx.config)
+	tx.Comment = NewCommentClient(tx.config)
 	tx.CommentLike = NewCommentLikeClient(tx.config)
 	tx.Education = NewEducationClient(tx.config)
 	tx.EducationDetail = NewEducationDetailClient(tx.config)
 	tx.EducationDetailTranslation = NewEducationDetailTranslationClient(tx.config)
 	tx.EducationTranslation = NewEducationTranslationClient(tx.config)
 	tx.Idea = NewIdeaClient(tx.config)
+	tx.IdeaTag = NewIdeaTagClient(tx.config)
 	tx.IdeaTranslation = NewIdeaTranslationClient(tx.config)
 	tx.Language = NewLanguageClient(tx.config)
 	tx.PersonalInfo = NewPersonalInfoClient(tx.config)

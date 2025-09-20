@@ -1,4 +1,3 @@
-import axios, { AxiosResponse, AxiosError, AxiosRequestConfig } from 'axios';
 import { API_CONFIG, type Language } from './config';
 
 // Error types
@@ -13,162 +12,146 @@ export class ApiError extends Error {
   }
 }
 
-// Create axios instance with default configuration
-const axiosInstance = axios.create({
-  baseURL: API_CONFIG.BASE_URL,
-  timeout: API_CONFIG.TIMEOUT,
-  headers: API_CONFIG.DEFAULT_HEADERS,
-  // Enable CORS
-  withCredentials: false,
-});
-
-// Request interceptor for logging
-axiosInstance.interceptors.request.use(
-  (config) => {
-    console.log(`📡 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-    return config;
-  },
-  (error) => {
-    console.error('❌ Request error:', error.message);
-    return Promise.reject(error);
+// Build URL that prefers same-origin for '/api' endpoints to leverage dev proxy and avoid CORS
+const buildUrl = (endpoint: string, params?: Record<string, any>): string => {
+  let url: URL;
+  if (/^https?:\/\//i.test(endpoint)) {
+    url = new URL(endpoint);
+  } else if (endpoint.startsWith('/')) {
+    // Same-origin for dev proxy and production
+    const base = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : API_CONFIG.BASE_URL;
+    url = new URL(endpoint, base);
+  } else {
+    // Fallback to configured base
+    url = new URL(endpoint, API_CONFIG.BASE_URL);
   }
-);
-
-// Response interceptor for logging and error handling
-axiosInstance.interceptors.response.use(
-  (response: AxiosResponse) => {
-    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
-    return response;
-  },
-  (error: AxiosError) => {
-    console.error(`❌ API Error: ${error.code} ${error.config?.url}`);
-    return Promise.reject(error);
-  }
-);
-
-// API request helper with error handling
-export const apiRequest = async <T = any>(
-  endpoint: string,
-  options: AxiosRequestConfig = {}
-): Promise<T> => {
-  try {
-    const response = await axiosInstance.request<T>({
-      url: endpoint,
-      ...options,
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.append(key, String(value));
+      }
     });
-    
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError;
-      const status = axiosError.response?.status;
-      const responseData = axiosError.response?.data;
-      
-      if (axiosError.code === 'ECONNABORTED') {
-        throw new ApiError('Request timeout');
-      }
-      
-      if (axiosError.code === 'ERR_NETWORK') {
-        throw new ApiError('Network error - please check if the server is running');
-      }
-      
-      throw new ApiError(
-        (responseData as any)?.message || axiosError.message || `API request failed: ${status}`,
-        status,
-        responseData
-      );
-    }
-    
-    if (error instanceof Error) {
-      throw new ApiError(
-        error.message || 'Network error occurred',
-        undefined,
-        error
-      );
-    }
-    
-    throw new ApiError('Unknown error occurred');
   }
+  return url.toString();
 };
 
-// GET request helper
+// GET request helper using native fetch to avoid CORS preflight
 export const get = <T = any>(endpoint: string, params?: Record<string, any>): Promise<T> => {
-  return apiRequest<T>(endpoint, {
+  const urlStr = buildUrl(endpoint, params);
+  const urlObj = new URL(urlStr);
+  console.log(`📡 GET Request: ${urlStr}`);
+
+  return fetch(urlStr, {
     method: 'GET',
-    params,
+  }).then(async (response) => {
+    console.log(`✅ GET Response: ${response.status} ${urlObj.pathname}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ GET Error: ${response.status} ${urlObj.pathname} - ${errorText}`);
+      throw new ApiError(`API request failed: ${response.status}`, response.status);
+    }
+
+    return response.json();
   });
 };
 
-// POST request helper
+// POST request helper using native fetch to avoid CORS preflight
 export const post = <T = any>(endpoint: string, data?: any): Promise<T> => {
-  return apiRequest<T>(endpoint, {
+  const urlStr = buildUrl(endpoint);
+  const urlObj = new URL(urlStr);
+  console.log(`📡 POST Request: ${urlStr}`);
+
+  return fetch(urlStr, {
     method: 'POST',
-    data,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  }).then(async (response) => {
+    console.log(`✅ POST Response: ${response.status} ${urlObj.pathname}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ POST Error: ${response.status} ${urlObj.pathname} - ${errorText}`);
+      throw new ApiError(`API request failed: ${response.status}`, response.status);
+    }
+
+    return response.json();
   });
 };
 
-// PUT request helper
-export const put = <T = any>(endpoint: string, data?: any): Promise<T> => {
-  return apiRequest<T>(endpoint, {
-    method: 'PUT',
-    data,
-  });
-};
+// DELETE request helper using native fetch to avoid CORS preflight
+export const del = <T = any>(endpoint: string, data?: any): Promise<T> => {
+  const urlStr = buildUrl(endpoint);
+  const urlObj = new URL(urlStr);
+  console.log(`📡 DELETE Request: ${urlStr}`);
 
-// DELETE request helper
-export const del = <T = any>(endpoint: string): Promise<T> => {
-  return apiRequest<T>(endpoint, {
+  return fetch(urlStr, {
     method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  }).then(async (response) => {
+    console.log(`✅ DELETE Response: ${response.status} ${urlObj.pathname}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ DELETE Error: ${response.status} ${urlObj.pathname} - ${errorText}`);
+      throw new ApiError(`API request failed: ${response.status}`, response.status);
+    }
+
+    // DELETE might return empty response
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
   });
 };
 
-// Helper function to build query parameters
-export const buildQueryParams = (params: Record<string, any>): string => {
-  const searchParams = new URLSearchParams();
-  
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        value.forEach(item => searchParams.append(key, String(item)));
-      } else {
-        searchParams.append(key, String(value));
-      }
+// PUT request helper using native fetch to avoid CORS preflight
+export const put = <T = any>(endpoint: string, data?: any): Promise<T> => {
+  const urlStr = buildUrl(endpoint);
+  const urlObj = new URL(urlStr);
+  console.log(`📡 PUT Request: ${urlStr}`);
+
+  return fetch(urlStr, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  }).then(async (response) => {
+    console.log(`✅ PUT Response: ${response.status} ${urlObj.pathname}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ PUT Error: ${response.status} ${urlObj.pathname} - ${errorText}`);
+      throw new ApiError(`API request failed: ${response.status}`, response.status);
     }
+
+    return response.json();
   });
-  
-  return searchParams.toString();
 };
 
-// Helper function to format language parameter
-export const formatLanguage = (language: Language): string => {
-  return language === 'zh' ? 'zh' : 'en';
+// Language formatting helper
+export const formatLanguage = (lang: Language): string => {
+  return lang === 'zh' ? 'zh' : 'en';
 };
 
-// Helper function to simulate delay (for development/testing)
-export const delay = (ms: number): Promise<void> => 
-  new Promise(resolve => setTimeout(resolve, ms));
+// Legacy compatibility - these were the old axios-based functions
+export const apiRequest = async <T = any>(endpoint: string, options: any = {}): Promise<T> => {
+  const method = options.method?.toUpperCase() || 'GET';
 
-// Helper function to retry API calls
-export const retryRequest = async <T>(
-  requestFn: () => Promise<T>,
-  maxRetries: number = 3,
-  delayMs: number = 1000
-): Promise<T> => {
-  let lastError: Error = new Error('All retry attempts failed');
-  
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await requestFn();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Unknown error occurred');
-      if (i < maxRetries - 1) {
-        await delay(delayMs * (i + 1)); // Exponential backoff
-      }
-    }
+  switch (method) {
+    case 'GET':
+      return get<T>(endpoint, options.params);
+    case 'POST':
+      return post<T>(endpoint, options.data);
+    case 'PUT':
+      return put<T>(endpoint, options.data);
+    case 'DELETE':
+      return del<T>(endpoint, options.data);
+    default:
+      throw new ApiError(`Unsupported method: ${method}`);
   }
-  
-  throw lastError;
 };
-
-// Export axios instance for direct use if needed
-export { axiosInstance };

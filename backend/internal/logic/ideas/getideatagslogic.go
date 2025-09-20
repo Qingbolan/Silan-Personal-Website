@@ -3,6 +3,7 @@ package ideas
 import (
 	"context"
 
+	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -25,60 +26,18 @@ func NewGetIdeaTagsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetId
 }
 
 func (l *GetIdeaTagsLogic) GetIdeaTags(req *types.IdeaTagsRequest) (resp []string, err error) {
-	// Note: The current idea schema doesn't have tags as a separate entity
-	// This would need to be implemented when the schema is updated to include
-	// a proper tag relationship or field
-
-	// For now, return some default tags based on common technology and research areas
-	tags := []string{
-		"Machine Learning",
-		"Deep Learning",
-		"Neural Networks",
-		"Computer Vision",
-		"Natural Language Processing",
-		"Data Science",
-		"Big Data",
-		"Cloud Computing",
-		"Microservices",
-		"API Development",
-		"Frontend",
-		"Backend",
-		"Full Stack",
-		"Mobile Development",
-		"Web Development",
-		"Database Design",
-		"DevOps",
-		"Cybersecurity",
-		"Blockchain",
-		"IoT",
-		"Robotics",
-		"Automation",
-		"Performance Optimization",
-		"Scalability",
-		"Research",
-		"Innovation",
-		"Prototype",
-		"MVP",
-		"Open Source",
-		"Collaboration",
-		"Startup",
-		"Enterprise",
-		"Algorithm",
-		"Data Structure",
-		"Software Architecture",
-		"System Design",
-		"Testing",
-		"CI/CD",
-		"Monitoring",
-		"Analytics",
+	// Query distinct tag names ordered by name from idea_tags
+	tags, err := l.svcCtx.DB.IdeaTag.Query().
+		Order(ideatag.ByName()).
+		All(l.ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	// In a real implementation, you would query the database for unique tags
-	// For example:
-	// tags, err := l.svcCtx.DB.IdeaTag.Query().
-	//     Select(ideatag.FieldName).
-	//     Distinct().
-	//     All(l.ctx)
-
-	return tags, nil
+	names := make([]string, 0, len(tags))
+	for _, t := range tags {
+		if t.Name != "" {
+			names = append(names, t.Name)
+		}
+	}
+	return names, nil
 }

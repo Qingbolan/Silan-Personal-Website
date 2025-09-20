@@ -138,42 +138,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		}
 	}
 
-	// Ensure blog_comments has user_identity_id column to match current Ent schema
-	switch c.Database.Driver {
-	case "sqlite3":
-		// Check column existence via PRAGMA and add if missing
-		rows, err := rawDB.Query("PRAGMA table_info(blog_comments)")
-		if err == nil {
-			defer rows.Close()
-			found := false
-			for rows.Next() {
-				var cid int
-				var name, ctype string
-				var notnull, pk int
-				var dflt sql.NullString
-				_ = rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk)
-				if name == "user_identity_id" {
-					found = true
-					break
-				}
-			}
-			if !found {
-				if _, err := rawDB.Exec("ALTER TABLE blog_comments ADD COLUMN user_identity_id TEXT"); err != nil {
-					log.Printf("warning: failed adding user_identity_id to blog_comments: %v", err)
-				}
-			}
-		} else {
-			log.Printf("warning: failed to inspect blog_comments schema: %v", err)
-		}
-	case "mysql":
-		if _, err := rawDB.Exec("ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS user_identity_id VARCHAR(36) NULL"); err != nil {
-			log.Printf("warning: failed ensuring user_identity_id column (mysql): %v", err)
-		}
-	case "postgres", "postgresql":
-		if _, err := rawDB.Exec("ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS user_identity_id TEXT NULL"); err != nil {
-			log.Printf("warning: failed ensuring user_identity_id column (postgres): %v", err)
-		}
-	}
 
 	noop := func(next http.HandlerFunc) http.HandlerFunc { return next }
 

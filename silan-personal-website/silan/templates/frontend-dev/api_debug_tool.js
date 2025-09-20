@@ -5,7 +5,7 @@
  * 诊断为什么前端没有向后端发送请求
  */
 
-const API_BASE_URL = 'http://localhost:8888';
+const API_BASE_URL = 'http://localhost:5200';
 
 /**
  * 检查后端服务是否运行
@@ -38,7 +38,7 @@ async function checkBackendStatus() {
     if (error.message.includes('ECONNREFUSED')) {
       console.log('\n💡 建议: 后端服务可能没有启动，请检查:');
       console.log('   1. 后端服务是否在运行');
-      console.log('   2. 服务是否监听在 8888 端口');
+      console.log('   2. 服务是否监听在 5200 端口');
       console.log('   3. 防火墙是否阻止了连接');
     }
     
@@ -100,7 +100,7 @@ function analyzeApiLogic() {
   console.log('\n📋 分析前端API调用逻辑...\n');
   
   console.log('🔧 当前API配置:');
-  console.log(`   BASE_URL: http://localhost:8888`);
+  console.log(`   BASE_URL: http://localhost:5200`);
   console.log(`   超时时间: 10000ms`);
   console.log(`   默认头部: application/json`);
   
@@ -150,7 +150,7 @@ function provideSolutions() {
   console.log('\n4. 🧪 手动测试API:');
   console.log('```bash');
   console.log('# 测试后端是否运行');
-  console.log('curl http://localhost:8888/api/v1/resume?lang=en');
+  console.log('curl http://localhost:5200/api/v1/resume?lang=en');
   console.log('');
   console.log('# 或使用本脚本');
   console.log('node api_debug_tool.js');
@@ -205,7 +205,7 @@ API调试工具使用说明:
 前提条件:
   - Node.js环境
   - 网络连接
-  - 后端服务运行在 localhost:8888 (可选)
+  - 后端服务运行在 localhost:5200 (可选)
 `);
   } else {
     runDiagnostics().catch(error => {

@@ -31,7 +31,8 @@ func (CommentLike) Fields() []ent.Field {
 			Default(uuid.New).
 			StorageKey("id"),
 		field.UUID("comment_id", uuid.UUID{}).
-			StorageKey("comment_id"),
+			StorageKey("comment_id").
+			Comment("Generic comment ID - can reference any Comment"),
 		field.String("user_identity_id").
 			Optional().
 			Comment("ID of the authenticated user who liked"),
@@ -45,17 +46,17 @@ func (CommentLike) Fields() []ent.Field {
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
+		field.Time("updated_at").
+			Default(time.Now).
+			UpdateDefault(time.Now),
 	}
 }
 
 // Edges of the CommentLike.
 func (CommentLike) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("comment", BlogComment.Type).
-			Ref("likes").
-			Field("comment_id").
-			Required().
-			Unique(),
+		// Note: comment_id is a generic field that can reference either BlogComment or IdeaComment
+		// The relationships to comments are handled through reverse edges in those entities
 		edge.To("user_identity", UserIdentity.Type).
 			Field("user_identity_id").
 			Unique(),

@@ -25,19 +25,12 @@ const (
 	FieldIPAddress = "ip_address"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-	// EdgeComment holds the string denoting the comment edge name in mutations.
-	EdgeComment = "comment"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
 	// EdgeUserIdentity holds the string denoting the user_identity edge name in mutations.
 	EdgeUserIdentity = "user_identity"
 	// Table holds the table name of the commentlike in the database.
 	Table = "comment_likes"
-	// CommentTable is the table that holds the comment relation/edge.
-	CommentTable = "comment_likes"
-	// CommentInverseTable is the table name for the BlogComment entity.
-	// It exists in this package in order to avoid circular dependency with the "blogcomment" package.
-	CommentInverseTable = "blog_comments"
-	// CommentColumn is the table column denoting the comment relation/edge.
-	CommentColumn = "comment_id"
 	// UserIdentityTable is the table that holds the user_identity relation/edge.
 	UserIdentityTable = "comment_likes"
 	// UserIdentityInverseTable is the table name for the UserIdentity entity.
@@ -55,6 +48,7 @@ var Columns = []string{
 	FieldFingerprint,
 	FieldIPAddress,
 	FieldCreatedAt,
+	FieldUpdatedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -72,6 +66,10 @@ var (
 	IPAddressValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
+	DefaultUpdatedAt func() time.Time
+	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
+	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -109,11 +107,9 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
 }
 
-// ByCommentField orders the results by comment field.
-func ByCommentField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newCommentStep(), sql.OrderByField(field, opts...))
-	}
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
 // ByUserIdentityField orders the results by user_identity field.
@@ -121,13 +117,6 @@ func ByUserIdentityField(field string, opts ...sql.OrderTermOption) OrderOption 
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newUserIdentityStep(), sql.OrderByField(field, opts...))
 	}
-}
-func newCommentStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(CommentInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, CommentTable, CommentColumn),
-	)
 }
 func newUserIdentityStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

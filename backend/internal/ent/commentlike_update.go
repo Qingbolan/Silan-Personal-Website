@@ -6,10 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"silan-backend/internal/ent/blogcomment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/predicate"
 	"silan-backend/internal/ent/useridentity"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -104,9 +104,10 @@ func (clu *CommentLikeUpdate) ClearIPAddress() *CommentLikeUpdate {
 	return clu
 }
 
-// SetComment sets the "comment" edge to the BlogComment entity.
-func (clu *CommentLikeUpdate) SetComment(b *BlogComment) *CommentLikeUpdate {
-	return clu.SetCommentID(b.ID)
+// SetUpdatedAt sets the "updated_at" field.
+func (clu *CommentLikeUpdate) SetUpdatedAt(t time.Time) *CommentLikeUpdate {
+	clu.mutation.SetUpdatedAt(t)
+	return clu
 }
 
 // SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
@@ -119,12 +120,6 @@ func (clu *CommentLikeUpdate) Mutation() *CommentLikeMutation {
 	return clu.mutation
 }
 
-// ClearComment clears the "comment" edge to the BlogComment entity.
-func (clu *CommentLikeUpdate) ClearComment() *CommentLikeUpdate {
-	clu.mutation.ClearComment()
-	return clu
-}
-
 // ClearUserIdentity clears the "user_identity" edge to the UserIdentity entity.
 func (clu *CommentLikeUpdate) ClearUserIdentity() *CommentLikeUpdate {
 	clu.mutation.ClearUserIdentity()
@@ -133,6 +128,7 @@ func (clu *CommentLikeUpdate) ClearUserIdentity() *CommentLikeUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (clu *CommentLikeUpdate) Save(ctx context.Context) (int, error) {
+	clu.defaults()
 	return withHooks(ctx, clu.sqlSave, clu.mutation, clu.hooks)
 }
 
@@ -158,15 +154,20 @@ func (clu *CommentLikeUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (clu *CommentLikeUpdate) defaults() {
+	if _, ok := clu.mutation.UpdatedAt(); !ok {
+		v := commentlike.UpdateDefaultUpdatedAt()
+		clu.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (clu *CommentLikeUpdate) check() error {
 	if v, ok := clu.mutation.IPAddress(); ok {
 		if err := commentlike.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "CommentLike.ip_address": %w`, err)}
 		}
-	}
-	if clu.mutation.CommentCleared() && len(clu.mutation.CommentIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "CommentLike.comment"`)
 	}
 	return nil
 }
@@ -183,6 +184,9 @@ func (clu *CommentLikeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := clu.mutation.CommentID(); ok {
+		_spec.SetField(commentlike.FieldCommentID, field.TypeUUID, value)
+	}
 	if value, ok := clu.mutation.Fingerprint(); ok {
 		_spec.SetField(commentlike.FieldFingerprint, field.TypeString, value)
 	}
@@ -195,34 +199,8 @@ func (clu *CommentLikeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if clu.mutation.IPAddressCleared() {
 		_spec.ClearField(commentlike.FieldIPAddress, field.TypeString)
 	}
-	if clu.mutation.CommentCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   commentlike.CommentTable,
-			Columns: []string{commentlike.CommentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := clu.mutation.CommentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   commentlike.CommentTable,
-			Columns: []string{commentlike.CommentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := clu.mutation.UpdatedAt(); ok {
+		_spec.SetField(commentlike.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if clu.mutation.UserIdentityCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -347,9 +325,10 @@ func (cluo *CommentLikeUpdateOne) ClearIPAddress() *CommentLikeUpdateOne {
 	return cluo
 }
 
-// SetComment sets the "comment" edge to the BlogComment entity.
-func (cluo *CommentLikeUpdateOne) SetComment(b *BlogComment) *CommentLikeUpdateOne {
-	return cluo.SetCommentID(b.ID)
+// SetUpdatedAt sets the "updated_at" field.
+func (cluo *CommentLikeUpdateOne) SetUpdatedAt(t time.Time) *CommentLikeUpdateOne {
+	cluo.mutation.SetUpdatedAt(t)
+	return cluo
 }
 
 // SetUserIdentity sets the "user_identity" edge to the UserIdentity entity.
@@ -360,12 +339,6 @@ func (cluo *CommentLikeUpdateOne) SetUserIdentity(u *UserIdentity) *CommentLikeU
 // Mutation returns the CommentLikeMutation object of the builder.
 func (cluo *CommentLikeUpdateOne) Mutation() *CommentLikeMutation {
 	return cluo.mutation
-}
-
-// ClearComment clears the "comment" edge to the BlogComment entity.
-func (cluo *CommentLikeUpdateOne) ClearComment() *CommentLikeUpdateOne {
-	cluo.mutation.ClearComment()
-	return cluo
 }
 
 // ClearUserIdentity clears the "user_identity" edge to the UserIdentity entity.
@@ -389,6 +362,7 @@ func (cluo *CommentLikeUpdateOne) Select(field string, fields ...string) *Commen
 
 // Save executes the query and returns the updated CommentLike entity.
 func (cluo *CommentLikeUpdateOne) Save(ctx context.Context) (*CommentLike, error) {
+	cluo.defaults()
 	return withHooks(ctx, cluo.sqlSave, cluo.mutation, cluo.hooks)
 }
 
@@ -414,15 +388,20 @@ func (cluo *CommentLikeUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (cluo *CommentLikeUpdateOne) defaults() {
+	if _, ok := cluo.mutation.UpdatedAt(); !ok {
+		v := commentlike.UpdateDefaultUpdatedAt()
+		cluo.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (cluo *CommentLikeUpdateOne) check() error {
 	if v, ok := cluo.mutation.IPAddress(); ok {
 		if err := commentlike.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "CommentLike.ip_address": %w`, err)}
 		}
-	}
-	if cluo.mutation.CommentCleared() && len(cluo.mutation.CommentIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "CommentLike.comment"`)
 	}
 	return nil
 }
@@ -456,6 +435,9 @@ func (cluo *CommentLikeUpdateOne) sqlSave(ctx context.Context) (_node *CommentLi
 			}
 		}
 	}
+	if value, ok := cluo.mutation.CommentID(); ok {
+		_spec.SetField(commentlike.FieldCommentID, field.TypeUUID, value)
+	}
 	if value, ok := cluo.mutation.Fingerprint(); ok {
 		_spec.SetField(commentlike.FieldFingerprint, field.TypeString, value)
 	}
@@ -468,34 +450,8 @@ func (cluo *CommentLikeUpdateOne) sqlSave(ctx context.Context) (_node *CommentLi
 	if cluo.mutation.IPAddressCleared() {
 		_spec.ClearField(commentlike.FieldIPAddress, field.TypeString)
 	}
-	if cluo.mutation.CommentCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   commentlike.CommentTable,
-			Columns: []string{commentlike.CommentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cluo.mutation.CommentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   commentlike.CommentTable,
-			Columns: []string{commentlike.CommentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(blogcomment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := cluo.mutation.UpdatedAt(); ok {
+		_spec.SetField(commentlike.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if cluo.mutation.UserIdentityCleared() {
 		edge := &sqlgraph.EdgeSpec{

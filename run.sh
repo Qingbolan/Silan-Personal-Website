@@ -27,21 +27,21 @@ if [ -f .silan/backend.pid ]; then
   fi
 fi
 
-# Free port 8888 if occupied
-if lsof -ti:8888 >/dev/null 2>&1; then
-  kill -9 $(lsof -ti:8888) || true
+# Free port 5200 if occupied
+if lsof -ti:5200 >/dev/null 2>&1; then
+  kill -9 $(lsof -ti:5200) || true
 fi
 
-# Wait until port 8888 is fully released (max ~5s)
+# Wait until port 5200 is fully released (max ~5s)
 for i in {1..10}; do
-  if ! lsof -ti:8888 >/dev/null 2>&1; then break; fi
+  if ! lsof -ti:5200 >/dev/null 2>&1; then break; fi
   sleep 0.5
 done
 
 # Start backend as daemon via repo CLI and wait until it binds
 python3 ../silan-personal-website/silan/silan.py backend start --daemon || true
 for i in {1..30}; do
-  if lsof -ti:8888 >/dev/null 2>&1; then break; fi
+  if lsof -ti:5200 >/dev/null 2>&1; then break; fi
   sleep 0.5
 done
 

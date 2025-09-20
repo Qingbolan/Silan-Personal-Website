@@ -1,5 +1,5 @@
 Starting Silan Backend Server...
-Server: 0.0.0.0:8888
+Server: 0.0.0.0:5200
 Database: sqlite3 (../../api-***olio.db)
 {"@timestamp":"2025-07-11T15:56:37.524+08:00","caller":"handler/loghandler.go:147","content":"[HTTP] 200 - OPTIONS /api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views - [::1]:51980 - curl/8.7.1","duration":"0.2ms","level":"info","span":"010265bde8f36611","trace":"535a8d653c95bf486442110477d832c5"}
 {"@timestamp":"2025-07-11T15:56:52.759+08:00","caller":"handler/loghandler.go:147","content":"[HTTP] 200 - POST /api/v1/blog/posts/5f92be68-ed58-4c52-8410-229c410b7b35/views?lang=en - [::1]:51993 - curl/8.7.1","duration":"5.8ms","level":"info","span":"c675427c1a898889","trace":"2ed9598c87ee8e927de2ff831a7de1e3"}

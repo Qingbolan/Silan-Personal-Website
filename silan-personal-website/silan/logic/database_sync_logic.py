@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from ..core.exceptions import DatabaseError, ValidationError
 from ..models import (
     Base, User, BlogPost, BlogTag, BlogPostTag, BlogPostTranslation,
-    BlogCategory, BlogSeries, BlogSeriesTranslation, BlogComment, CommentLike, Project, ProjectTechnology,
+    BlogCategory, BlogSeries, BlogSeriesTranslation, Comment, CommentLike, Project, ProjectTechnology,
     ProjectDetail, Idea, RecentUpdate, UpdateType, UpdateStatus, UpdatePriority, PersonalInfo,
     Education, EducationDetail, WorkExperience, WorkExperienceDetail, Award, Publication, PublicationAuthor,
     ResearchProject, ResearchProjectDetail, SocialLink, UserIdentity

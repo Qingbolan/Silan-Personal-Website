@@ -51,11 +51,11 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 		}
 
 		// Check if parent comment exists and belongs to the same post
-		parentComment, err := l.svcCtx.DB.BlogComment.Get(l.ctx, pid)
+		parentComment, err := l.svcCtx.DB.Comment.Get(l.ctx, pid)
 		if err != nil {
 			return nil, fmt.Errorf("parent comment not found")
 		}
-		if parentComment.BlogPostID != postID {
+		if parentComment.EntityID != postID {
 			return nil, fmt.Errorf("parent comment belongs to different post")
 		}
 
@@ -75,7 +75,7 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 		authorName = userIdentity.DisplayName
 		authorEmail = userIdentity.Email
 		avatarURL = userIdentity.AvatarURL
-	} else if req.UserIdentityId != "" {
+	} else if req.UserIdentityId != "" && strings.TrimSpace(req.UserIdentityId) != "" {
 		// If user provides identity ID, validate it exists
 		userIdentity, err = l.svcCtx.DB.UserIdentity.Get(l.ctx, req.UserIdentityId)
 		if err != nil {
@@ -108,8 +108,9 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 	}
 
 	// Create comment
-	createBuilder := l.svcCtx.DB.BlogComment.Create().
-		SetBlogPostID(postID).
+	createBuilder := l.svcCtx.DB.Comment.Create().
+		SetEntityType("blog").
+		SetEntityID(postID).
 		SetAuthorName(authorName).
 		SetAuthorEmail(authorEmail).
 		SetContent(req.Content).
@@ -159,7 +160,7 @@ func (l *CreateBlogCommentLogic) CreateBlogComment(req *types.CreateBlogCommentR
 
 	return &types.BlogCommentData{
 		ID:             c.ID.String(),
-		BlogPostID:     c.BlogPostID.String(),
+		BlogPostID:     c.EntityID.String(),
 		ParentID:       parentIDStr,
 		AuthorName:     c.AuthorName,
 		AuthorAvatarURL: avatarURL,

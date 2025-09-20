@@ -137,10 +137,34 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Handler: ideas.GetIdeaHandler(serverCtx),
 				},
 				{
+					// List comments for an idea
+					Method:  http.MethodGet,
+					Path:    "/:id/comments",
+					Handler: ideas.ListIdeaCommentsHandler(serverCtx),
+				},
+				{
+					// Create a comment for an idea
+					Method:  http.MethodPost,
+					Path:    "/:id/comments",
+					Handler: ideas.CreateIdeaCommentHandler(serverCtx),
+				},
+				{
 					// Get idea categories
 					Method:  http.MethodGet,
 					Path:    "/categories",
 					Handler: ideas.GetIdeaCategoriesHandler(serverCtx),
+				},
+				{
+					// Delete a comment on idea
+					Method:  http.MethodDelete,
+					Path:    "/comments/:comment_id",
+					Handler: ideas.DeleteIdeaCommentHandler(serverCtx),
+				},
+				{
+					// Like/Unlike a comment on idea
+					Method:  http.MethodPost,
+					Path:    "/comments/:comment_id/like",
+					Handler: ideas.LikeIdeaCommentHandler(serverCtx),
 				},
 				{
 					// Search ideas with filters

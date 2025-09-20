@@ -53,6 +53,8 @@ type Idea struct {
 	ViewCount int `json:"view_count,omitempty"`
 	// LikeCount holds the value of the "like_count" field.
 	LikeCount int `json:"like_count,omitempty"`
+	// Category holds the value of the "category" field.
+	Category string `json:"category,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -71,9 +73,13 @@ type IdeaEdges struct {
 	Translations []*IdeaTranslation `json:"translations,omitempty"`
 	// BlogPosts holds the value of the blog_posts edge.
 	BlogPosts []*BlogPost `json:"blog_posts,omitempty"`
+	// Comments holds the value of the comments edge.
+	Comments []*Comment `json:"comments,omitempty"`
+	// Tags holds the value of the tags edge.
+	Tags []*IdeaTag `json:"tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -105,6 +111,24 @@ func (e IdeaEdges) BlogPostsOrErr() ([]*BlogPost, error) {
 	return nil, &NotLoadedError{edge: "blog_posts"}
 }
 
+// CommentsOrErr returns the Comments value or an error if the edge
+// was not loaded in eager-loading.
+func (e IdeaEdges) CommentsOrErr() ([]*Comment, error) {
+	if e.loadedTypes[3] {
+		return e.Comments, nil
+	}
+	return nil, &NotLoadedError{edge: "comments"}
+}
+
+// TagsOrErr returns the Tags value or an error if the edge
+// was not loaded in eager-loading.
+func (e IdeaEdges) TagsOrErr() ([]*IdeaTag, error) {
+	if e.loadedTypes[4] {
+		return e.Tags, nil
+	}
+	return nil, &NotLoadedError{edge: "tags"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Idea) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -116,7 +140,7 @@ func (*Idea) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case idea.FieldEstimatedDurationMonths, idea.FieldViewCount, idea.FieldLikeCount:
 			values[i] = new(sql.NullInt64)
-		case idea.FieldTitle, idea.FieldSlug, idea.FieldAbstract, idea.FieldMotivation, idea.FieldMethodology, idea.FieldExpectedOutcome, idea.FieldStatus, idea.FieldPriority, idea.FieldRequiredResources:
+		case idea.FieldTitle, idea.FieldSlug, idea.FieldAbstract, idea.FieldMotivation, idea.FieldMethodology, idea.FieldExpectedOutcome, idea.FieldStatus, idea.FieldPriority, idea.FieldRequiredResources, idea.FieldCategory:
 			values[i] = new(sql.NullString)
 		case idea.FieldCreatedAt, idea.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -245,6 +269,12 @@ func (i *Idea) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				i.LikeCount = int(value.Int64)
 			}
+		case idea.FieldCategory:
+			if value, ok := values[j].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field category", values[j])
+			} else if value.Valid {
+				i.Category = value.String
+			}
 		case idea.FieldCreatedAt:
 			if value, ok := values[j].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[j])
@@ -283,6 +313,16 @@ func (i *Idea) QueryTranslations() *IdeaTranslationQuery {
 // QueryBlogPosts queries the "blog_posts" edge of the Idea entity.
 func (i *Idea) QueryBlogPosts() *BlogPostQuery {
 	return NewIdeaClient(i.config).QueryBlogPosts(i)
+}
+
+// QueryComments queries the "comments" edge of the Idea entity.
+func (i *Idea) QueryComments() *CommentQuery {
+	return NewIdeaClient(i.config).QueryComments(i)
+}
+
+// QueryTags queries the "tags" edge of the Idea entity.
+func (i *Idea) QueryTags() *IdeaTagQuery {
+	return NewIdeaClient(i.config).QueryTags(i)
 }
 
 // Update returns a builder for updating this Idea.
@@ -358,6 +398,9 @@ func (i *Idea) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("like_count=")
 	builder.WriteString(fmt.Sprintf("%v", i.LikeCount))
+	builder.WriteString(", ")
+	builder.WriteString("category=")
+	builder.WriteString(i.Category)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(i.CreatedAt.Format(time.ANSIC))
