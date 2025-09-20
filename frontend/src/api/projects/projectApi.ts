@@ -1,5 +1,5 @@
 import type { Project, AnnualPlan, GraphData, Language, ProjectDetail, ProjectBlogReference } from '../../types/api';
-import { get, formatLanguage } from '../utils';
+import { get, post, del, formatLanguage } from '../utils';
 import { type PaginationRequest, type SearchRequest, type ListResponse } from '../config';
 
 // Backend API request/response types
@@ -300,9 +300,122 @@ export const fetchProjectsWithPlans = async (language: Language = 'en'): Promise
 };
 
 export const fetchProjectsByPlan = async (
-  planName: string, 
+  planName: string,
   language: Language = 'en'
 ): Promise<Project[]> => {
   const projects = await fetchProjects({}, language);
   return projects.filter(project => project.annualPlan === planName);
+};
+
+// ====== Project Comment API Functions ======
+
+export interface ProjectCommentData {
+  id: string;
+  project_id: string;
+  parent_id?: string;
+  author_name: string;
+  author_avatar_url?: string;
+  content: string;
+  type: string;
+  created_at: string;
+  user_identity_id?: string;
+  likes_count: number;
+  is_liked_by_user: boolean;
+  replies: ProjectCommentData[];
+}
+
+export interface ProjectCommentListResponse {
+  comments: ProjectCommentData[];
+  total: number;
+}
+
+export interface LikeProjectCommentResponse {
+  likes_count: number;
+  is_liked_by_user: boolean;
+}
+
+/**
+ * List project comments by type
+ */
+export const listProjectComments = async (
+  projectId: string,
+  type: string = 'general',
+  fingerprint?: string,
+  userIdentityId?: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<ProjectCommentData[]> => {
+  const url = `/api/v1/projects/${projectId}/comments?type=${type}&lang=${formatLanguage(language)}`;
+  const response = await get<ProjectCommentListResponse>(url);
+  return response.comments || [];
+};
+
+/**
+ * Create a new project comment
+ */
+export const createProjectComment = async (
+  projectId: string,
+  content: string,
+  fingerprint: string,
+  options?: {
+    type?: string;
+    authorName?: string;
+    authorEmail?: string;
+    userIdentityId?: string;
+    parentId?: string;
+    language?: 'en' | 'zh';
+  }
+): Promise<ProjectCommentData> => {
+  const body: any = {
+    content,
+    type: options?.type || 'general',
+    fingerprint,
+  };
+  if (options?.authorName && options.authorName.trim()) body.author_name = options.authorName.trim();
+  if (options?.authorEmail && options.authorEmail.trim()) body.author_email = options.authorEmail.trim();
+  if (options?.userIdentityId && options.userIdentityId.trim()) body.user_identity_id = options.userIdentityId.trim();
+  if (options?.parentId && options.parentId.trim()) body.parent_id = options.parentId.trim();
+
+  // Align with backend model: if no user_identity_id provided, backend requires author_name and author_email
+  if (!body.user_identity_id) {
+    if (!body.author_name || typeof body.author_name !== 'string' || !body.author_name.trim()) {
+      body.author_name = 'Anonymous';
+    }
+    if (!body.author_email || typeof body.author_email !== 'string' || body.author_email.trim().length < 5 || !body.author_email.includes('@')) {
+      body.author_email = 'anonymous@example.com';
+    }
+  }
+
+  // Add language as query parameter
+  const url = `/api/v1/projects/${projectId}/comments?lang=${formatLanguage(options?.language || 'en')}`;
+  const res = await post<ProjectCommentData>(url, body);
+  return res;
+};
+
+/**
+ * Like/unlike a project comment
+ */
+export const likeProjectComment = async (
+  commentId: string,
+  fingerprint?: string,
+  userIdentityId?: string,
+  language: 'en' | 'zh' = 'en'
+): Promise<LikeProjectCommentResponse> => {
+  const data: any = { lang: formatLanguage(language) };
+  if (fingerprint) data.fingerprint = fingerprint;
+  if (userIdentityId) data.user_identity_id = userIdentityId;
+  const res = await post<LikeProjectCommentResponse>(`/api/v1/projects/comments/${commentId}/like`, data);
+  return res;
+};
+
+/**
+ * Delete a project comment
+ */
+export const deleteProjectComment = async (
+  commentId: string,
+  payload: { fingerprint: string; userIdentityId?: string; language?: 'en' | 'zh' }
+): Promise<void> => {
+  await del(`/api/v1/projects/comments/${commentId}`, {
+    fingerprint: payload.fingerprint,
+    user_identity_id: payload.userIdentityId || '',
+  });
 };

@@ -736,6 +736,50 @@ type (
 		Fingerprint    string `json:"fingerprint"`
 		UserIdentityId string `json:"user_identity_id,optional"`
 	}
+	// ----- Project comments (mirror idea comments) -----
+	ProjectCommentData {
+		ID              string               `json:"id"`
+		ProjectID       string               `json:"project_id"`
+		ParentID        string               `json:"parent_id,optional"`
+		AuthorName      string               `json:"author_name"`
+		AuthorAvatarURL string               `json:"author_avatar_url,optional"`
+		Content         string               `json:"content"`
+		Type            string               `json:"type"`
+		CreatedAt       string               `json:"created_at"`
+		UserIdentityID  string               `json:"user_identity_id,optional"`
+		LikesCount      int                  `json:"likes_count"`
+		IsLikedByUser   bool                 `json:"is_liked_by_user"`
+		Replies         []ProjectCommentData `json:"replies,optional"`
+	}
+	ProjectCommentListResponse {
+		Comments []ProjectCommentData `json:"comments"`
+		Total    int                  `json:"total"`
+	}
+	ProjectCommentListRequest {
+		ID       string `path:"id"`
+		Type     string `form:"type,default=general"`
+		Language string `form:"lang,default=en"`
+	}
+	CreateProjectCommentRequest {
+		ID             string `path:"id"`
+		ParentId       string `json:"parent_id,optional"`
+		AuthorName     string `json:"author_name,optional"`
+		AuthorEmail    string `json:"author_email,optional"`
+		AuthorWebsite  string `json:"author_website,optional"`
+		Content        string `json:"content"`
+		Type           string `json:"type"`
+		IsApproved     bool   `json:"is_approved,optional"`
+		Fingerprint    string `json:"fingerprint"`
+		UserAgentFull  string `json:"user_agent_full,optional"`
+		ClientIP       string `json:"client_ip,optional"`
+		UserIdentityId string `json:"user_identity_id,optional"`
+		Language       string `form:"lang,default=en"`
+	}
+	DeleteProjectCommentRequest {
+		CommentID      string `path:"comment_id"`
+		Fingerprint    string `json:"fingerprint"`
+		UserIdentityId string `json:"user_identity_id,optional"`
+	}
 	// Search request types
 	BlogSearchRequest {
 		Query    string `form:"query,optional"`
@@ -858,6 +902,23 @@ service backend-api {
 	@doc "Search project details with filters"
 	@handler SearchProjectDetails
 	get /search (ProjectSearchRequest) returns ([]ProjectDetail)
+
+	// ----- Comments -----
+	@doc "List comments for a project"
+	@handler ListProjectComments
+	get /:id/comments (ProjectCommentListRequest) returns (ProjectCommentListResponse)
+
+	@doc "Create a comment for a project"
+	@handler CreateProjectComment
+	post /:id/comments (CreateProjectCommentRequest) returns (ProjectCommentData)
+
+	@doc "Like/Unlike a comment on project"
+	@handler LikeProjectComment
+	post /comments/:comment_id/like (LikeCommentRequest) returns (LikeCommentResponse)
+
+	@doc "Delete a comment on project"
+	@handler DeleteProjectComment
+	delete /comments/:comment_id (DeleteProjectCommentRequest)
 }
 
 // ========== ANNUAL PLANS GROUP ==========

@@ -239,6 +239,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Handler: projects.GetProjectRelatedBlogsHandler(serverCtx),
 				},
 				{
+					// List comments for a project
+					Method:  http.MethodGet,
+					Path:    "/:id/comments",
+					Handler: projects.ListProjectCommentsHandler(serverCtx),
+				},
+				{
+					// Create a comment for a project
+					Method:  http.MethodPost,
+					Path:    "/:id/comments",
+					Handler: projects.CreateProjectCommentHandler(serverCtx),
+				},
+				{
 					// Get detailed project information
 					Method:  http.MethodGet,
 					Path:    "/:id/detail",
@@ -255,6 +267,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Method:  http.MethodGet,
 					Path:    "/categories",
 					Handler: projects.GetProjectCategoriesHandler(serverCtx),
+				},
+				{
+					// Delete a comment on project
+					Method:  http.MethodDelete,
+					Path:    "/comments/:comment_id",
+					Handler: projects.DeleteProjectCommentHandler(serverCtx),
+				},
+				{
+					// Like/Unlike a comment on project
+					Method:  http.MethodPost,
+					Path:    "/comments/:comment_id/like",
+					Handler: projects.LikeProjectCommentHandler(serverCtx),
 				},
 				{
 					// Get project graph data for visualization

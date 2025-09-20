@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { useTranslation } from 'react-i18next';
-import CommunityFeedback from '../IdeaPage/CommunityFeedback';
+import ProjectCommunityFeedback from './ProjectCommunityFeedback';
 import { Link } from 'react-router-dom';
 import Markdown from '../ui/Markdown';
 
@@ -188,7 +188,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
   );
 
   const renderCommunity = () => (
-    <CommunityFeedback projectId={projectData.id || 'default-project'} />
+    <ProjectCommunityFeedback projectId={projectData.id || 'default-project'} />
   );
 
   const renderIssues = () => (

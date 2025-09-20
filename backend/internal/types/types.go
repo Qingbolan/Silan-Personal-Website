@@ -243,6 +243,22 @@ type CreateIdeaRequest struct {
 	FundingStatus        string   `json:"funding_status,optional"`
 }
 
+type CreateProjectCommentRequest struct {
+	ID             string `path:"id"`
+	ParentId       string `json:"parent_id,optional"`
+	AuthorName     string `json:"author_name,optional"`
+	AuthorEmail    string `json:"author_email,optional"`
+	AuthorWebsite  string `json:"author_website,optional"`
+	Content        string `json:"content"`
+	Type           string `json:"type"`
+	IsApproved     bool   `json:"is_approved,optional"`
+	Fingerprint    string `json:"fingerprint"`
+	UserAgentFull  string `json:"user_agent_full,optional"`
+	ClientIP       string `json:"client_ip,optional"`
+	UserIdentityId string `json:"user_identity_id,optional"`
+	Language       string `form:"lang,default=en"`
+}
+
 type CreateProjectRequest struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description,optional"`
@@ -268,6 +284,12 @@ type DeleteIdeaCommentRequest struct {
 
 type DeleteIdeaRequest struct {
 	ID string `path:"id"`
+}
+
+type DeleteProjectCommentRequest struct {
+	CommentID      string `path:"comment_id"`
+	Fingerprint    string `json:"fingerprint"`
+	UserIdentityId string `json:"user_identity_id,optional"`
 }
 
 type DeleteProjectRequest struct {
@@ -539,6 +561,32 @@ type ProjectBlogRef struct {
 type ProjectByIdRequest struct {
 	ID       string `path:"id"`
 	Language string `form:"lang,default=en"`
+}
+
+type ProjectCommentData struct {
+	ID              string               `json:"id"`
+	ProjectID       string               `json:"project_id"`
+	ParentID        string               `json:"parent_id,optional"`
+	AuthorName      string               `json:"author_name"`
+	AuthorAvatarURL string               `json:"author_avatar_url,optional"`
+	Content         string               `json:"content"`
+	Type            string               `json:"type"`
+	CreatedAt       string               `json:"created_at"`
+	UserIdentityID  string               `json:"user_identity_id,optional"`
+	LikesCount      int                  `json:"likes_count"`
+	IsLikedByUser   bool                 `json:"is_liked_by_user"`
+	Replies         []ProjectCommentData `json:"replies,optional"`
+}
+
+type ProjectCommentListRequest struct {
+	ID       string `path:"id"`
+	Type     string `form:"type,default=general"`
+	Language string `form:"lang,default=en"`
+}
+
+type ProjectCommentListResponse struct {
+	Comments []ProjectCommentData `json:"comments"`
+	Total    int                  `json:"total"`
 }
 
 type ProjectDetail struct {
