@@ -1,5 +1,0 @@
-# Temporary Files Directory
-
-This directory is used for temporary files generated during workspace operations.
- 
-Files in this directory are automatically cleaned up and should not be committed to version control. 
