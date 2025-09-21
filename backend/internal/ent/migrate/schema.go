@@ -680,7 +680,7 @@ var (
 		{Name: "is_featured", Type: field.TypeBool, Default: false},
 		{Name: "is_public", Type: field.TypeBool, Default: true},
 		{Name: "view_count", Type: field.TypeInt, Default: 0},
-		{Name: "star_count", Type: field.TypeInt, Default: 0},
+		{Name: "like_count", Type: field.TypeInt, Default: 0},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -818,6 +818,64 @@ var (
 			},
 		},
 	}
+	// ProjectLikesColumns holds the columns for the "project_likes" table.
+	ProjectLikesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "fingerprint", Type: field.TypeString, Nullable: true},
+		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
+		{Name: "user_agent", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "project_id", Type: field.TypeUUID},
+		{Name: "user_identity_id", Type: field.TypeString, Nullable: true},
+	}
+	// ProjectLikesTable holds the schema information for the "project_likes" table.
+	ProjectLikesTable = &schema.Table{
+		Name:       "project_likes",
+		Columns:    ProjectLikesColumns,
+		PrimaryKey: []*schema.Column{ProjectLikesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "project_likes_projects_likes",
+				Columns:    []*schema.Column{ProjectLikesColumns[6]},
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "project_likes_user_identities_user_identity",
+				Columns:    []*schema.Column{ProjectLikesColumns[7]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "projectlike_project_id_user_identity_id",
+				Unique:  true,
+				Columns: []*schema.Column{ProjectLikesColumns[6], ProjectLikesColumns[7]},
+			},
+			{
+				Name:    "projectlike_project_id_fingerprint",
+				Unique:  true,
+				Columns: []*schema.Column{ProjectLikesColumns[6], ProjectLikesColumns[1]},
+			},
+			{
+				Name:    "projectlike_project_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectLikesColumns[6]},
+			},
+			{
+				Name:    "projectlike_user_identity_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectLikesColumns[7]},
+			},
+			{
+				Name:    "projectlike_ip_address",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectLikesColumns[2]},
+			},
+		},
+	}
 	// ProjectRelationshipsColumns holds the columns for the "project_relationships" table.
 	ProjectRelationshipsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -896,6 +954,71 @@ var (
 				Columns:    []*schema.Column{ProjectTranslationsColumns[6]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// ProjectViewsColumns holds the columns for the "project_views" table.
+	ProjectViewsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "fingerprint", Type: field.TypeString, Nullable: true},
+		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
+		{Name: "user_agent", Type: field.TypeString, Nullable: true},
+		{Name: "referrer", Type: field.TypeString, Nullable: true},
+		{Name: "session_duration", Type: field.TypeInt, Nullable: true, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "project_id", Type: field.TypeUUID},
+		{Name: "user_identity_id", Type: field.TypeString, Nullable: true},
+	}
+	// ProjectViewsTable holds the schema information for the "project_views" table.
+	ProjectViewsTable = &schema.Table{
+		Name:       "project_views",
+		Columns:    ProjectViewsColumns,
+		PrimaryKey: []*schema.Column{ProjectViewsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "project_views_projects_views",
+				Columns:    []*schema.Column{ProjectViewsColumns[8]},
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "project_views_user_identities_user_identity",
+				Columns:    []*schema.Column{ProjectViewsColumns[9]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "projectview_project_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectViewsColumns[8]},
+			},
+			{
+				Name:    "projectview_user_identity_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectViewsColumns[9]},
+			},
+			{
+				Name:    "projectview_fingerprint",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectViewsColumns[1]},
+			},
+			{
+				Name:    "projectview_ip_address",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectViewsColumns[2]},
+			},
+			{
+				Name:    "projectview_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectViewsColumns[6]},
+			},
+			{
+				Name:    "projectview_project_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectViewsColumns[8], ProjectViewsColumns[6]},
 			},
 		},
 	}
@@ -1413,9 +1536,11 @@ var (
 		ProjectDetailTranslationsTable,
 		ProjectImagesTable,
 		ProjectImageTranslationsTable,
+		ProjectLikesTable,
 		ProjectRelationshipsTable,
 		ProjectTechnologiesTable,
 		ProjectTranslationsTable,
+		ProjectViewsTable,
 		PublicationsTable,
 		PublicationAuthorsTable,
 		PublicationTranslationsTable,
@@ -1557,6 +1682,11 @@ func init() {
 	ProjectImageTranslationsTable.Annotation = &entsql.Annotation{
 		Table: "project_image_translations",
 	}
+	ProjectLikesTable.ForeignKeys[0].RefTable = ProjectsTable
+	ProjectLikesTable.ForeignKeys[1].RefTable = UserIdentitiesTable
+	ProjectLikesTable.Annotation = &entsql.Annotation{
+		Table: "project_likes",
+	}
 	ProjectRelationshipsTable.ForeignKeys[0].RefTable = ProjectsTable
 	ProjectRelationshipsTable.ForeignKeys[1].RefTable = ProjectsTable
 	ProjectRelationshipsTable.Annotation = &entsql.Annotation{
@@ -1570,6 +1700,11 @@ func init() {
 	ProjectTranslationsTable.ForeignKeys[1].RefTable = ProjectsTable
 	ProjectTranslationsTable.Annotation = &entsql.Annotation{
 		Table: "project_translations",
+	}
+	ProjectViewsTable.ForeignKeys[0].RefTable = ProjectsTable
+	ProjectViewsTable.ForeignKeys[1].RefTable = UserIdentitiesTable
+	ProjectViewsTable.Annotation = &entsql.Annotation{
+		Table: "project_views",
 	}
 	PublicationsTable.ForeignKeys[0].RefTable = UsersTable
 	PublicationsTable.Annotation = &entsql.Annotation{

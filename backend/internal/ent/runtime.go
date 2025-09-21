@@ -30,9 +30,11 @@ import (
 	"silan-backend/internal/ent/projectdetailtranslation"
 	"silan-backend/internal/ent/projectimage"
 	"silan-backend/internal/ent/projectimagetranslation"
+	"silan-backend/internal/ent/projectlike"
 	"silan-backend/internal/ent/projectrelationship"
 	"silan-backend/internal/ent/projecttechnology"
 	"silan-backend/internal/ent/projecttranslation"
+	"silan-backend/internal/ent/projectview"
 	"silan-backend/internal/ent/publication"
 	"silan-backend/internal/ent/publicationauthor"
 	"silan-backend/internal/ent/publicationtranslation"
@@ -1209,10 +1211,10 @@ func init() {
 	projectDescViewCount := projectFields[15].Descriptor()
 	// project.DefaultViewCount holds the default value on creation for the view_count field.
 	project.DefaultViewCount = projectDescViewCount.Default.(int)
-	// projectDescStarCount is the schema descriptor for star_count field.
-	projectDescStarCount := projectFields[16].Descriptor()
-	// project.DefaultStarCount holds the default value on creation for the star_count field.
-	project.DefaultStarCount = projectDescStarCount.Default.(int)
+	// projectDescLikeCount is the schema descriptor for like_count field.
+	projectDescLikeCount := projectFields[16].Descriptor()
+	// project.DefaultLikeCount holds the default value on creation for the like_count field.
+	project.DefaultLikeCount = projectDescLikeCount.Default.(int)
 	// projectDescSortOrder is the schema descriptor for sort_order field.
 	projectDescSortOrder := projectFields[17].Descriptor()
 	// project.DefaultSortOrder holds the default value on creation for the sort_order field.
@@ -1333,6 +1335,26 @@ func init() {
 	projectimagetranslationDescID := projectimagetranslationFields[0].Descriptor()
 	// projectimagetranslation.DefaultID holds the default value on creation for the id field.
 	projectimagetranslation.DefaultID = projectimagetranslationDescID.Default.(func() uuid.UUID)
+	projectlikeFields := schema.ProjectLike{}.Fields()
+	_ = projectlikeFields
+	// projectlikeDescIPAddress is the schema descriptor for ip_address field.
+	projectlikeDescIPAddress := projectlikeFields[4].Descriptor()
+	// projectlike.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
+	projectlike.IPAddressValidator = projectlikeDescIPAddress.Validators[0].(func(string) error)
+	// projectlikeDescCreatedAt is the schema descriptor for created_at field.
+	projectlikeDescCreatedAt := projectlikeFields[6].Descriptor()
+	// projectlike.DefaultCreatedAt holds the default value on creation for the created_at field.
+	projectlike.DefaultCreatedAt = projectlikeDescCreatedAt.Default.(func() time.Time)
+	// projectlikeDescUpdatedAt is the schema descriptor for updated_at field.
+	projectlikeDescUpdatedAt := projectlikeFields[7].Descriptor()
+	// projectlike.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	projectlike.DefaultUpdatedAt = projectlikeDescUpdatedAt.Default.(func() time.Time)
+	// projectlike.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	projectlike.UpdateDefaultUpdatedAt = projectlikeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// projectlikeDescID is the schema descriptor for id field.
+	projectlikeDescID := projectlikeFields[0].Descriptor()
+	// projectlike.DefaultID holds the default value on creation for the id field.
+	projectlike.DefaultID = projectlikeDescID.Default.(func() uuid.UUID)
 	projectrelationshipFields := schema.ProjectRelationship{}.Fields()
 	_ = projectrelationshipFields
 	// projectrelationshipDescRelationshipType is the schema descriptor for relationship_type field.
@@ -1433,6 +1455,30 @@ func init() {
 	projecttranslationDescID := projecttranslationFields[0].Descriptor()
 	// projecttranslation.DefaultID holds the default value on creation for the id field.
 	projecttranslation.DefaultID = projecttranslationDescID.Default.(func() uuid.UUID)
+	projectviewFields := schema.ProjectView{}.Fields()
+	_ = projectviewFields
+	// projectviewDescIPAddress is the schema descriptor for ip_address field.
+	projectviewDescIPAddress := projectviewFields[4].Descriptor()
+	// projectview.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
+	projectview.IPAddressValidator = projectviewDescIPAddress.Validators[0].(func(string) error)
+	// projectviewDescSessionDuration is the schema descriptor for session_duration field.
+	projectviewDescSessionDuration := projectviewFields[7].Descriptor()
+	// projectview.DefaultSessionDuration holds the default value on creation for the session_duration field.
+	projectview.DefaultSessionDuration = projectviewDescSessionDuration.Default.(int)
+	// projectviewDescCreatedAt is the schema descriptor for created_at field.
+	projectviewDescCreatedAt := projectviewFields[8].Descriptor()
+	// projectview.DefaultCreatedAt holds the default value on creation for the created_at field.
+	projectview.DefaultCreatedAt = projectviewDescCreatedAt.Default.(func() time.Time)
+	// projectviewDescUpdatedAt is the schema descriptor for updated_at field.
+	projectviewDescUpdatedAt := projectviewFields[9].Descriptor()
+	// projectview.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	projectview.DefaultUpdatedAt = projectviewDescUpdatedAt.Default.(func() time.Time)
+	// projectview.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	projectview.UpdateDefaultUpdatedAt = projectviewDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// projectviewDescID is the schema descriptor for id field.
+	projectviewDescID := projectviewFields[0].Descriptor()
+	// projectview.DefaultID holds the default value on creation for the id field.
+	projectview.DefaultID = projectviewDescID.Default.(func() uuid.UUID)
 	publicationFields := schema.Publication{}.Fields()
 	_ = publicationFields
 	// publicationDescTitle is the schema descriptor for title field.

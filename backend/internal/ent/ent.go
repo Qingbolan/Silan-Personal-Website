@@ -34,9 +34,11 @@ import (
 	"silan-backend/internal/ent/projectdetailtranslation"
 	"silan-backend/internal/ent/projectimage"
 	"silan-backend/internal/ent/projectimagetranslation"
+	"silan-backend/internal/ent/projectlike"
 	"silan-backend/internal/ent/projectrelationship"
 	"silan-backend/internal/ent/projecttechnology"
 	"silan-backend/internal/ent/projecttranslation"
+	"silan-backend/internal/ent/projectview"
 	"silan-backend/internal/ent/publication"
 	"silan-backend/internal/ent/publicationauthor"
 	"silan-backend/internal/ent/publicationtranslation"
@@ -145,9 +147,11 @@ func checkColumn(table, column string) error {
 			projectdetailtranslation.Table:         projectdetailtranslation.ValidColumn,
 			projectimage.Table:                     projectimage.ValidColumn,
 			projectimagetranslation.Table:          projectimagetranslation.ValidColumn,
+			projectlike.Table:                      projectlike.ValidColumn,
 			projectrelationship.Table:              projectrelationship.ValidColumn,
 			projecttechnology.Table:                projecttechnology.ValidColumn,
 			projecttranslation.Table:               projecttranslation.ValidColumn,
+			projectview.Table:                      projectview.ValidColumn,
 			publication.Table:                      publication.ValidColumn,
 			publicationauthor.Table:                publicationauthor.ValidColumn,
 			publicationtranslation.Table:           publicationtranslation.ValidColumn,

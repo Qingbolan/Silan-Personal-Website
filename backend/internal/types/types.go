@@ -508,6 +508,20 @@ type LikeCommentResponse struct {
 	IsLikedByUser bool `json:"is_liked_by_user"`
 }
 
+type LikeProjectRequest struct {
+	ProjectID      string `path:"id"`
+	Fingerprint    string `json:"fingerprint"`
+	UserIdentityId string `json:"user_identity_id,optional"`
+	ClientIP       string `json:"client_ip,optional"`
+	UserAgentFull  string `json:"user_agent_full,optional"`
+	Language       string `form:"lang,default=en"`
+}
+
+type LikeProjectResponse struct {
+	LikesCount    int  `json:"likes_count"`
+	IsLikedByUser bool `json:"is_liked_by_user"`
+}
+
 type PersonalInfo struct {
 	ID            string       `json:"id"`
 	UserID        string       `json:"user_id"`
@@ -632,7 +646,7 @@ type ProjectExtended struct {
 	IsFeatured       bool     `json:"is_featured"`
 	IsPublic         bool     `json:"is_public"`
 	ViewCount        int64    `json:"view_count"`
-	StarCount        int64    `json:"star_count"`
+	LikeCount        int64    `json:"like_count"`
 	SortOrder        int      `json:"sort_order"`
 	Year             int      `json:"year"`
 	AnnualPlan       string   `json:"annual_plan,omitempty"`
@@ -672,6 +686,19 @@ type ProjectMetrics struct {
 	Commits     int `json:"commits"`
 	Stars       int `json:"stars"`
 	Downloads   int `json:"downloads"`
+}
+
+type ProjectMetricsRequest struct {
+	ProjectID      string `path:"id"`
+	Fingerprint    string `form:"fingerprint,optional"`
+	UserIdentityId string `form:"user_identity_id,optional"`
+	Language       string `form:"lang,default=en"`
+}
+
+type ProjectMetricsResponse struct {
+	LikesCount    int  `json:"likes_count"`
+	ViewsCount    int  `json:"views_count"`
+	IsLikedByUser bool `json:"is_liked_by_user"`
 }
 
 type ProjectRequest struct {
@@ -730,6 +757,20 @@ type RecentUpdate struct {
 	Priority    string   `json:"priority"`
 	CreatedAt   string   `json:"created_at"`
 	UpdatedAt   string   `json:"updated_at"`
+}
+
+type RecordProjectViewRequest struct {
+	ProjectID      string `path:"id"`
+	Fingerprint    string `json:"fingerprint"`
+	UserIdentityId string `json:"user_identity_id,optional"`
+	ClientIP       string `json:"client_ip,optional"`
+	UserAgentFull  string `json:"user_agent_full,optional"`
+	Language       string `form:"lang,default=en"`
+}
+
+type RecordProjectViewResponse struct {
+	ViewsCount   int  `json:"views_count"`
+	ViewRecorded bool `json:"view_recorded"`
 }
 
 type Reference struct {

@@ -107,7 +107,7 @@ func (l *SearchProjectDetailsLogic) SearchProjectDetails(req *types.ProjectSearc
 			if !proj.EndDate.IsZero() {
 				timeline.End = proj.EndDate.Format("2006-01-02")
 			}
-			metrics.Stars = proj.StarCount
+			metrics.Stars = proj.LikeCount
 		}
 		
 		result = append(result, types.ProjectDetail{

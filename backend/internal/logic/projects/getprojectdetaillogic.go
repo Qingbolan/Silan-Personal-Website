@@ -105,7 +105,7 @@ func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest
 	var metrics types.ProjectMetrics
 	metrics.LinesOfCode = 0 // These could be calculated from git repos
 	metrics.Commits = 0
-	metrics.Stars = proj.StarCount
+	metrics.Stars = proj.LikeCount
 	metrics.Downloads = 0
 
 	// Create detail information

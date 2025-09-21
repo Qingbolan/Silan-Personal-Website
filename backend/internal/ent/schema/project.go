@@ -75,7 +75,7 @@ func (Project) Fields() []ent.Field {
 			Default(true),
 		field.Int("view_count").
 			Default(0),
-		field.Int("star_count").
+		field.Int("like_count").
 			Default(0),
 		field.Int("sort_order").
 			Default(0),
@@ -103,5 +103,7 @@ func (Project) Edges() []ent.Edge {
 		edge.To("images", ProjectImage.Type),
 		edge.To("source_relationships", ProjectRelationship.Type),
 		edge.To("target_relationships", ProjectRelationship.Type),
+		edge.To("likes", ProjectLike.Type),
+		edge.To("views", ProjectView.Type),
 	}
 }

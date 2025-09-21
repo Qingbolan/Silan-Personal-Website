@@ -46,8 +46,8 @@ const (
 	FieldIsPublic = "is_public"
 	// FieldViewCount holds the string denoting the view_count field in the database.
 	FieldViewCount = "view_count"
-	// FieldStarCount holds the string denoting the star_count field in the database.
-	FieldStarCount = "star_count"
+	// FieldLikeCount holds the string denoting the like_count field in the database.
+	FieldLikeCount = "like_count"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -68,6 +68,10 @@ const (
 	EdgeSourceRelationships = "source_relationships"
 	// EdgeTargetRelationships holds the string denoting the target_relationships edge name in mutations.
 	EdgeTargetRelationships = "target_relationships"
+	// EdgeLikes holds the string denoting the likes edge name in mutations.
+	EdgeLikes = "likes"
+	// EdgeViews holds the string denoting the views edge name in mutations.
+	EdgeViews = "views"
 	// Table holds the table name of the project in the database.
 	Table = "projects"
 	// UserTable is the table that holds the user relation/edge.
@@ -119,6 +123,20 @@ const (
 	TargetRelationshipsInverseTable = "project_relationships"
 	// TargetRelationshipsColumn is the table column denoting the target_relationships relation/edge.
 	TargetRelationshipsColumn = "target_project_id"
+	// LikesTable is the table that holds the likes relation/edge.
+	LikesTable = "project_likes"
+	// LikesInverseTable is the table name for the ProjectLike entity.
+	// It exists in this package in order to avoid circular dependency with the "projectlike" package.
+	LikesInverseTable = "project_likes"
+	// LikesColumn is the table column denoting the likes relation/edge.
+	LikesColumn = "project_id"
+	// ViewsTable is the table that holds the views relation/edge.
+	ViewsTable = "project_views"
+	// ViewsInverseTable is the table name for the ProjectView entity.
+	// It exists in this package in order to avoid circular dependency with the "projectview" package.
+	ViewsInverseTable = "project_views"
+	// ViewsColumn is the table column denoting the views relation/edge.
+	ViewsColumn = "project_id"
 )
 
 // Columns holds all SQL columns for project fields.
@@ -139,7 +157,7 @@ var Columns = []string{
 	FieldIsFeatured,
 	FieldIsPublic,
 	FieldViewCount,
-	FieldStarCount,
+	FieldLikeCount,
 	FieldSortOrder,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -178,8 +196,8 @@ var (
 	DefaultIsPublic bool
 	// DefaultViewCount holds the default value on creation for the "view_count" field.
 	DefaultViewCount int
-	// DefaultStarCount holds the default value on creation for the "star_count" field.
-	DefaultStarCount int
+	// DefaultLikeCount holds the default value on creation for the "like_count" field.
+	DefaultLikeCount int
 	// DefaultSortOrder holds the default value on creation for the "sort_order" field.
 	DefaultSortOrder int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -303,9 +321,9 @@ func ByViewCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldViewCount, opts...).ToFunc()
 }
 
-// ByStarCount orders the results by the star_count field.
-func ByStarCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldStarCount, opts...).ToFunc()
+// ByLikeCount orders the results by the like_count field.
+func ByLikeCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLikeCount, opts...).ToFunc()
 }
 
 // BySortOrder orders the results by the sort_order field.
@@ -406,6 +424,34 @@ func ByTargetRelationships(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpti
 		sqlgraph.OrderByNeighborTerms(s, newTargetRelationshipsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByLikesCount orders the results by likes count.
+func ByLikesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newLikesStep(), opts...)
+	}
+}
+
+// ByLikes orders the results by likes terms.
+func ByLikes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLikesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByViewsCount orders the results by views count.
+func ByViewsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newViewsStep(), opts...)
+	}
+}
+
+// ByViews orders the results by views terms.
+func ByViews(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newViewsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -453,5 +499,19 @@ func newTargetRelationshipsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TargetRelationshipsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TargetRelationshipsTable, TargetRelationshipsColumn),
+	)
+}
+func newLikesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LikesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, LikesTable, LikesColumn),
+	)
+}
+func newViewsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ViewsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ViewsTable, ViewsColumn),
 	)
 }

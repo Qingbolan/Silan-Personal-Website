@@ -99,7 +99,7 @@ func (l *GetProjectLogic) GetProject(req *types.ProjectRequest) (resp *types.Pro
 		IsFeatured:       proj.IsFeatured,
 		IsPublic:         proj.IsPublic,
 		ViewCount:        int64(proj.ViewCount),
-		StarCount:        int64(proj.StarCount),
+		LikeCount:        int64(proj.LikeCount),
 		SortOrder:        proj.SortOrder,
 		Year:             year,
 		AnnualPlan:       annualPlan,

@@ -10,9 +10,11 @@ import (
 	"silan-backend/internal/ent/project"
 	"silan-backend/internal/ent/projectdetail"
 	"silan-backend/internal/ent/projectimage"
+	"silan-backend/internal/ent/projectlike"
 	"silan-backend/internal/ent/projectrelationship"
 	"silan-backend/internal/ent/projecttechnology"
 	"silan-backend/internal/ent/projecttranslation"
+	"silan-backend/internal/ent/projectview"
 	"silan-backend/internal/ent/user"
 	"time"
 
@@ -294,24 +296,24 @@ func (pu *ProjectUpdate) AddViewCount(i int) *ProjectUpdate {
 	return pu
 }
 
-// SetStarCount sets the "star_count" field.
-func (pu *ProjectUpdate) SetStarCount(i int) *ProjectUpdate {
-	pu.mutation.ResetStarCount()
-	pu.mutation.SetStarCount(i)
+// SetLikeCount sets the "like_count" field.
+func (pu *ProjectUpdate) SetLikeCount(i int) *ProjectUpdate {
+	pu.mutation.ResetLikeCount()
+	pu.mutation.SetLikeCount(i)
 	return pu
 }
 
-// SetNillableStarCount sets the "star_count" field if the given value is not nil.
-func (pu *ProjectUpdate) SetNillableStarCount(i *int) *ProjectUpdate {
+// SetNillableLikeCount sets the "like_count" field if the given value is not nil.
+func (pu *ProjectUpdate) SetNillableLikeCount(i *int) *ProjectUpdate {
 	if i != nil {
-		pu.SetStarCount(*i)
+		pu.SetLikeCount(*i)
 	}
 	return pu
 }
 
-// AddStarCount adds i to the "star_count" field.
-func (pu *ProjectUpdate) AddStarCount(i int) *ProjectUpdate {
-	pu.mutation.AddStarCount(i)
+// AddLikeCount adds i to the "like_count" field.
+func (pu *ProjectUpdate) AddLikeCount(i int) *ProjectUpdate {
+	pu.mutation.AddLikeCount(i)
 	return pu
 }
 
@@ -441,6 +443,36 @@ func (pu *ProjectUpdate) AddTargetRelationships(p ...*ProjectRelationship) *Proj
 	return pu.AddTargetRelationshipIDs(ids...)
 }
 
+// AddLikeIDs adds the "likes" edge to the ProjectLike entity by IDs.
+func (pu *ProjectUpdate) AddLikeIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.AddLikeIDs(ids...)
+	return pu
+}
+
+// AddLikes adds the "likes" edges to the ProjectLike entity.
+func (pu *ProjectUpdate) AddLikes(p ...*ProjectLike) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.AddLikeIDs(ids...)
+}
+
+// AddViewIDs adds the "views" edge to the ProjectView entity by IDs.
+func (pu *ProjectUpdate) AddViewIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.AddViewIDs(ids...)
+	return pu
+}
+
+// AddViews adds the "views" edges to the ProjectView entity.
+func (pu *ProjectUpdate) AddViews(p ...*ProjectView) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.AddViewIDs(ids...)
+}
+
 // Mutation returns the ProjectMutation object of the builder.
 func (pu *ProjectUpdate) Mutation() *ProjectMutation {
 	return pu.mutation
@@ -561,6 +593,48 @@ func (pu *ProjectUpdate) RemoveTargetRelationships(p ...*ProjectRelationship) *P
 		ids[i] = p[i].ID
 	}
 	return pu.RemoveTargetRelationshipIDs(ids...)
+}
+
+// ClearLikes clears all "likes" edges to the ProjectLike entity.
+func (pu *ProjectUpdate) ClearLikes() *ProjectUpdate {
+	pu.mutation.ClearLikes()
+	return pu
+}
+
+// RemoveLikeIDs removes the "likes" edge to ProjectLike entities by IDs.
+func (pu *ProjectUpdate) RemoveLikeIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.RemoveLikeIDs(ids...)
+	return pu
+}
+
+// RemoveLikes removes "likes" edges to ProjectLike entities.
+func (pu *ProjectUpdate) RemoveLikes(p ...*ProjectLike) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.RemoveLikeIDs(ids...)
+}
+
+// ClearViews clears all "views" edges to the ProjectView entity.
+func (pu *ProjectUpdate) ClearViews() *ProjectUpdate {
+	pu.mutation.ClearViews()
+	return pu
+}
+
+// RemoveViewIDs removes the "views" edge to ProjectView entities by IDs.
+func (pu *ProjectUpdate) RemoveViewIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.RemoveViewIDs(ids...)
+	return pu
+}
+
+// RemoveViews removes "views" edges to ProjectView entities.
+func (pu *ProjectUpdate) RemoveViews(p ...*ProjectView) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.RemoveViewIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -725,11 +799,11 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.AddedViewCount(); ok {
 		_spec.AddField(project.FieldViewCount, field.TypeInt, value)
 	}
-	if value, ok := pu.mutation.StarCount(); ok {
-		_spec.SetField(project.FieldStarCount, field.TypeInt, value)
+	if value, ok := pu.mutation.LikeCount(); ok {
+		_spec.SetField(project.FieldLikeCount, field.TypeInt, value)
 	}
-	if value, ok := pu.mutation.AddedStarCount(); ok {
-		_spec.AddField(project.FieldStarCount, field.TypeInt, value)
+	if value, ok := pu.mutation.AddedLikeCount(); ok {
+		_spec.AddField(project.FieldLikeCount, field.TypeInt, value)
 	}
 	if value, ok := pu.mutation.SortOrder(); ok {
 		_spec.SetField(project.FieldSortOrder, field.TypeInt, value)
@@ -1023,6 +1097,96 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.LikesTable,
+			Columns: []string{project.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectlike.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedLikesIDs(); len(nodes) > 0 && !pu.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.LikesTable,
+			Columns: []string{project.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.LikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.LikesTable,
+			Columns: []string{project.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.ViewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ViewsTable,
+			Columns: []string{project.ViewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectview.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedViewsIDs(); len(nodes) > 0 && !pu.mutation.ViewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ViewsTable,
+			Columns: []string{project.ViewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectview.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.ViewsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ViewsTable,
+			Columns: []string{project.ViewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectview.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{project.Label}
@@ -1302,24 +1466,24 @@ func (puo *ProjectUpdateOne) AddViewCount(i int) *ProjectUpdateOne {
 	return puo
 }
 
-// SetStarCount sets the "star_count" field.
-func (puo *ProjectUpdateOne) SetStarCount(i int) *ProjectUpdateOne {
-	puo.mutation.ResetStarCount()
-	puo.mutation.SetStarCount(i)
+// SetLikeCount sets the "like_count" field.
+func (puo *ProjectUpdateOne) SetLikeCount(i int) *ProjectUpdateOne {
+	puo.mutation.ResetLikeCount()
+	puo.mutation.SetLikeCount(i)
 	return puo
 }
 
-// SetNillableStarCount sets the "star_count" field if the given value is not nil.
-func (puo *ProjectUpdateOne) SetNillableStarCount(i *int) *ProjectUpdateOne {
+// SetNillableLikeCount sets the "like_count" field if the given value is not nil.
+func (puo *ProjectUpdateOne) SetNillableLikeCount(i *int) *ProjectUpdateOne {
 	if i != nil {
-		puo.SetStarCount(*i)
+		puo.SetLikeCount(*i)
 	}
 	return puo
 }
 
-// AddStarCount adds i to the "star_count" field.
-func (puo *ProjectUpdateOne) AddStarCount(i int) *ProjectUpdateOne {
-	puo.mutation.AddStarCount(i)
+// AddLikeCount adds i to the "like_count" field.
+func (puo *ProjectUpdateOne) AddLikeCount(i int) *ProjectUpdateOne {
+	puo.mutation.AddLikeCount(i)
 	return puo
 }
 
@@ -1449,6 +1613,36 @@ func (puo *ProjectUpdateOne) AddTargetRelationships(p ...*ProjectRelationship) *
 	return puo.AddTargetRelationshipIDs(ids...)
 }
 
+// AddLikeIDs adds the "likes" edge to the ProjectLike entity by IDs.
+func (puo *ProjectUpdateOne) AddLikeIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.AddLikeIDs(ids...)
+	return puo
+}
+
+// AddLikes adds the "likes" edges to the ProjectLike entity.
+func (puo *ProjectUpdateOne) AddLikes(p ...*ProjectLike) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.AddLikeIDs(ids...)
+}
+
+// AddViewIDs adds the "views" edge to the ProjectView entity by IDs.
+func (puo *ProjectUpdateOne) AddViewIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.AddViewIDs(ids...)
+	return puo
+}
+
+// AddViews adds the "views" edges to the ProjectView entity.
+func (puo *ProjectUpdateOne) AddViews(p ...*ProjectView) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.AddViewIDs(ids...)
+}
+
 // Mutation returns the ProjectMutation object of the builder.
 func (puo *ProjectUpdateOne) Mutation() *ProjectMutation {
 	return puo.mutation
@@ -1569,6 +1763,48 @@ func (puo *ProjectUpdateOne) RemoveTargetRelationships(p ...*ProjectRelationship
 		ids[i] = p[i].ID
 	}
 	return puo.RemoveTargetRelationshipIDs(ids...)
+}
+
+// ClearLikes clears all "likes" edges to the ProjectLike entity.
+func (puo *ProjectUpdateOne) ClearLikes() *ProjectUpdateOne {
+	puo.mutation.ClearLikes()
+	return puo
+}
+
+// RemoveLikeIDs removes the "likes" edge to ProjectLike entities by IDs.
+func (puo *ProjectUpdateOne) RemoveLikeIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.RemoveLikeIDs(ids...)
+	return puo
+}
+
+// RemoveLikes removes "likes" edges to ProjectLike entities.
+func (puo *ProjectUpdateOne) RemoveLikes(p ...*ProjectLike) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.RemoveLikeIDs(ids...)
+}
+
+// ClearViews clears all "views" edges to the ProjectView entity.
+func (puo *ProjectUpdateOne) ClearViews() *ProjectUpdateOne {
+	puo.mutation.ClearViews()
+	return puo
+}
+
+// RemoveViewIDs removes the "views" edge to ProjectView entities by IDs.
+func (puo *ProjectUpdateOne) RemoveViewIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.RemoveViewIDs(ids...)
+	return puo
+}
+
+// RemoveViews removes "views" edges to ProjectView entities.
+func (puo *ProjectUpdateOne) RemoveViews(p ...*ProjectView) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.RemoveViewIDs(ids...)
 }
 
 // Where appends a list predicates to the ProjectUpdate builder.
@@ -1763,11 +1999,11 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (_node *Project, err e
 	if value, ok := puo.mutation.AddedViewCount(); ok {
 		_spec.AddField(project.FieldViewCount, field.TypeInt, value)
 	}
-	if value, ok := puo.mutation.StarCount(); ok {
-		_spec.SetField(project.FieldStarCount, field.TypeInt, value)
+	if value, ok := puo.mutation.LikeCount(); ok {
+		_spec.SetField(project.FieldLikeCount, field.TypeInt, value)
 	}
-	if value, ok := puo.mutation.AddedStarCount(); ok {
-		_spec.AddField(project.FieldStarCount, field.TypeInt, value)
+	if value, ok := puo.mutation.AddedLikeCount(); ok {
+		_spec.AddField(project.FieldLikeCount, field.TypeInt, value)
 	}
 	if value, ok := puo.mutation.SortOrder(); ok {
 		_spec.SetField(project.FieldSortOrder, field.TypeInt, value)
@@ -2054,6 +2290,96 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (_node *Project, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(projectrelationship.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.LikesTable,
+			Columns: []string{project.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectlike.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedLikesIDs(); len(nodes) > 0 && !puo.mutation.LikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.LikesTable,
+			Columns: []string{project.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.LikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.LikesTable,
+			Columns: []string{project.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ViewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ViewsTable,
+			Columns: []string{project.ViewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectview.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedViewsIDs(); len(nodes) > 0 && !puo.mutation.ViewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ViewsTable,
+			Columns: []string{project.ViewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectview.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.ViewsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ViewsTable,
+			Columns: []string{project.ViewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectview.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

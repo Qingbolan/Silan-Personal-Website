@@ -257,6 +257,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Handler: projects.GetProjectDetailHandler(serverCtx),
 				},
 				{
+					// Like/Unlike a project
+					Method:  http.MethodPost,
+					Path:    "/:id/like",
+					Handler: projects.LikeProjectHandler(serverCtx),
+				},
+				{
+					// Get project metrics (likes, views)
+					Method:  http.MethodGet,
+					Path:    "/:id/metrics",
+					Handler: projects.GetProjectMetricsHandler(serverCtx),
+				},
+				{
+					// Record project view
+					Method:  http.MethodPost,
+					Path:    "/:id/view",
+					Handler: projects.RecordProjectViewHandler(serverCtx),
+				},
+				{
 					// Get single project by slug
 					Method:  http.MethodGet,
 					Path:    "/:slug",

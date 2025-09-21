@@ -9,9 +9,11 @@ import (
 	"silan-backend/internal/ent/project"
 	"silan-backend/internal/ent/projectdetail"
 	"silan-backend/internal/ent/projectimage"
+	"silan-backend/internal/ent/projectlike"
 	"silan-backend/internal/ent/projectrelationship"
 	"silan-backend/internal/ent/projecttechnology"
 	"silan-backend/internal/ent/projecttranslation"
+	"silan-backend/internal/ent/projectview"
 	"silan-backend/internal/ent/user"
 	"time"
 
@@ -213,16 +215,16 @@ func (pc *ProjectCreate) SetNillableViewCount(i *int) *ProjectCreate {
 	return pc
 }
 
-// SetStarCount sets the "star_count" field.
-func (pc *ProjectCreate) SetStarCount(i int) *ProjectCreate {
-	pc.mutation.SetStarCount(i)
+// SetLikeCount sets the "like_count" field.
+func (pc *ProjectCreate) SetLikeCount(i int) *ProjectCreate {
+	pc.mutation.SetLikeCount(i)
 	return pc
 }
 
-// SetNillableStarCount sets the "star_count" field if the given value is not nil.
-func (pc *ProjectCreate) SetNillableStarCount(i *int) *ProjectCreate {
+// SetNillableLikeCount sets the "like_count" field if the given value is not nil.
+func (pc *ProjectCreate) SetNillableLikeCount(i *int) *ProjectCreate {
 	if i != nil {
-		pc.SetStarCount(*i)
+		pc.SetLikeCount(*i)
 	}
 	return pc
 }
@@ -382,6 +384,36 @@ func (pc *ProjectCreate) AddTargetRelationships(p ...*ProjectRelationship) *Proj
 	return pc.AddTargetRelationshipIDs(ids...)
 }
 
+// AddLikeIDs adds the "likes" edge to the ProjectLike entity by IDs.
+func (pc *ProjectCreate) AddLikeIDs(ids ...uuid.UUID) *ProjectCreate {
+	pc.mutation.AddLikeIDs(ids...)
+	return pc
+}
+
+// AddLikes adds the "likes" edges to the ProjectLike entity.
+func (pc *ProjectCreate) AddLikes(p ...*ProjectLike) *ProjectCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddLikeIDs(ids...)
+}
+
+// AddViewIDs adds the "views" edge to the ProjectView entity by IDs.
+func (pc *ProjectCreate) AddViewIDs(ids ...uuid.UUID) *ProjectCreate {
+	pc.mutation.AddViewIDs(ids...)
+	return pc
+}
+
+// AddViews adds the "views" edges to the ProjectView entity.
+func (pc *ProjectCreate) AddViews(p ...*ProjectView) *ProjectCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddViewIDs(ids...)
+}
+
 // Mutation returns the ProjectMutation object of the builder.
 func (pc *ProjectCreate) Mutation() *ProjectMutation {
 	return pc.mutation
@@ -437,9 +469,9 @@ func (pc *ProjectCreate) defaults() {
 		v := project.DefaultViewCount
 		pc.mutation.SetViewCount(v)
 	}
-	if _, ok := pc.mutation.StarCount(); !ok {
-		v := project.DefaultStarCount
-		pc.mutation.SetStarCount(v)
+	if _, ok := pc.mutation.LikeCount(); !ok {
+		v := project.DefaultLikeCount
+		pc.mutation.SetLikeCount(v)
 	}
 	if _, ok := pc.mutation.SortOrder(); !ok {
 		v := project.DefaultSortOrder
@@ -525,8 +557,8 @@ func (pc *ProjectCreate) check() error {
 	if _, ok := pc.mutation.ViewCount(); !ok {
 		return &ValidationError{Name: "view_count", err: errors.New(`ent: missing required field "Project.view_count"`)}
 	}
-	if _, ok := pc.mutation.StarCount(); !ok {
-		return &ValidationError{Name: "star_count", err: errors.New(`ent: missing required field "Project.star_count"`)}
+	if _, ok := pc.mutation.LikeCount(); !ok {
+		return &ValidationError{Name: "like_count", err: errors.New(`ent: missing required field "Project.like_count"`)}
 	}
 	if _, ok := pc.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "Project.sort_order"`)}
@@ -631,9 +663,9 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 		_spec.SetField(project.FieldViewCount, field.TypeInt, value)
 		_node.ViewCount = value
 	}
-	if value, ok := pc.mutation.StarCount(); ok {
-		_spec.SetField(project.FieldStarCount, field.TypeInt, value)
-		_node.StarCount = value
+	if value, ok := pc.mutation.LikeCount(); ok {
+		_spec.SetField(project.FieldLikeCount, field.TypeInt, value)
+		_node.LikeCount = value
 	}
 	if value, ok := pc.mutation.SortOrder(); ok {
 		_spec.SetField(project.FieldSortOrder, field.TypeInt, value)
@@ -753,6 +785,38 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(projectrelationship.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.LikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.LikesTable,
+			Columns: []string{project.LikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectlike.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ViewsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ViewsTable,
+			Columns: []string{project.ViewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(projectview.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -663,3 +663,105 @@ export const fetchProjectIssueThread = async (
 export const projectIssueFromComment = (comment: ProjectCommentData): ProjectIssueRecord => {
   return buildIssueFromComment(comment, 0);
 };
+
+/**
+ * Delete a project issue (uses deleteProjectComment internally)
+ */
+export const deleteProjectIssue = async (
+  issueId: string,
+  payload: { fingerprint: string; userIdentityId?: string; language?: 'en' | 'zh' }
+): Promise<void> => {
+  return deleteProjectComment(issueId, payload);
+};
+
+// ====== Project Likes & Views API Functions ======
+
+export interface LikeProjectResponse {
+  likes_count: number;
+  is_liked_by_user: boolean;
+}
+
+export interface RecordProjectViewResponse {
+  views_count: number;
+  view_recorded: boolean;
+}
+
+export interface ProjectMetricsResponse {
+  likes_count: number;
+  views_count: number;
+  is_liked_by_user: boolean;
+}
+
+/**
+ * Like/unlike a project
+ */
+export const likeProject = async (
+  projectId: string,
+  fingerprint: string,
+  options: {
+    userIdentityId?: string;
+    clientIP?: string;
+    userAgent?: string;
+    language?: 'en' | 'zh';
+  } = {}
+): Promise<LikeProjectResponse> => {
+  const body: any = {
+    fingerprint,
+  };
+
+  if (options.userIdentityId) body.user_identity_id = options.userIdentityId;
+  if (options.clientIP) body.client_ip = options.clientIP;
+  if (options.userAgent) body.user_agent_full = options.userAgent;
+
+  const url = `/api/v1/projects/${projectId}/like?lang=${formatLanguage(options.language || 'en')}`;
+  const response = await post<LikeProjectResponse>(url, body);
+  return response;
+};
+
+/**
+ * Record a project view
+ */
+export const recordProjectView = async (
+  projectId: string,
+  fingerprint: string,
+  options: {
+    userIdentityId?: string;
+    clientIP?: string;
+    userAgent?: string;
+    language?: 'en' | 'zh';
+  } = {}
+): Promise<RecordProjectViewResponse> => {
+  const body: any = {
+    fingerprint,
+  };
+
+  if (options.userIdentityId) body.user_identity_id = options.userIdentityId;
+  if (options.clientIP) body.client_ip = options.clientIP;
+  if (options.userAgent) body.user_agent_full = options.userAgent;
+
+  const url = `/api/v1/projects/${projectId}/view?lang=${formatLanguage(options.language || 'en')}`;
+  const response = await post<RecordProjectViewResponse>(url, body);
+  return response;
+};
+
+/**
+ * Get project metrics (likes, views, user like status)
+ */
+export const getProjectMetrics = async (
+  projectId: string,
+  options: {
+    fingerprint?: string;
+    userIdentityId?: string;
+    language?: 'en' | 'zh';
+  } = {}
+): Promise<ProjectMetricsResponse> => {
+  const params: any = {
+    lang: formatLanguage(options.language || 'en'),
+  };
+
+  if (options.fingerprint) params.fingerprint = options.fingerprint;
+  if (options.userIdentityId) params.user_identity_id = options.userIdentityId;
+
+  const response = await get<ProjectMetricsResponse>(`/api/v1/projects/${projectId}/metrics`, params);
+  return response;
+};

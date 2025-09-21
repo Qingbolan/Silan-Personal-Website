@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Github,
   Heart,
+  Eye,
   Download,
   Shield,
   Calendar,
@@ -15,6 +16,13 @@ import { useLanguage } from '../LanguageContext';
 import { getPlanDisplay } from '../../utils/iconMap';
 import { fetchAnnualPlanByName } from '../../api/plans/planApi';
 import { fetchProjectDetailById } from '../../api';
+import {
+  likeProject,
+  recordProjectView,
+  getProjectMetrics,
+  type ProjectMetricsResponse
+} from '../../api/projects/projectApi';
+import { getClientFingerprint } from '../../utils/fingerprint';
 import ProjectTabs from './ProjectTabs';
 import type { ProjectDetail as ProjectDetailType } from '../../types/api';
 
@@ -26,7 +34,19 @@ const ProjectDetail: React.FC = () => {
   const [project, setProject] = useState<ProjectDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<ProjectMetricsResponse | null>(null);
+  const [fingerprint, setFingerprint] = useState<string>('');
+  const [liking, setLiking] = useState(false);
   
+  // Initialize fingerprint
+  useEffect(() => {
+    const initFingerprint = async () => {
+      const fp = await getClientFingerprint();
+      setFingerprint(fp);
+    };
+    initFingerprint();
+  }, []);
+
   // Fetch project data
   useEffect(() => {
     const loadProject = async () => {
@@ -38,10 +58,10 @@ const ProjectDetail: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Fetch project details with language support
         const projectData = await fetchProjectDetailById(id, language as 'en' | 'zh');
-        
+
         if (projectData) {
           setProject(projectData);
         } else {
@@ -57,6 +77,53 @@ const ProjectDetail: React.FC = () => {
 
     loadProject();
   }, [id, language]);
+
+  // Record view and load metrics when project and fingerprint are ready
+  useEffect(() => {
+    const recordViewAndLoadMetrics = async () => {
+      if (!id || !fingerprint || !project) return;
+
+      try {
+        // Get user identity if available
+        const getCurrentUser = () => {
+          try {
+            const raw = localStorage.getItem('auth_user');
+            if (!raw) return null;
+            const rawUser = JSON.parse(raw);
+            if (rawUser && (rawUser.id || rawUser.email || rawUser.name)) {
+              return {
+                id: rawUser.id || rawUser.sub || rawUser.user_id,
+                name: rawUser.name || rawUser.given_name || 'User',
+                email: rawUser.email,
+              };
+            }
+          } catch {}
+          return null;
+        };
+
+        const user = getCurrentUser();
+
+        // Record view
+        await recordProjectView(id, fingerprint, {
+          userIdentityId: user?.id,
+          language: language as 'en' | 'zh'
+        });
+
+        // Load metrics
+        const metricsData = await getProjectMetrics(id, {
+          fingerprint,
+          userIdentityId: user?.id,
+          language: language as 'en' | 'zh'
+        });
+
+        setMetrics(metricsData);
+      } catch (err) {
+        console.error('Error recording view or loading metrics:', err);
+      }
+    };
+
+    recordViewAndLoadMetrics();
+  }, [id, fingerprint, project, language]);
   
   // Fetch plan data
   useEffect(() => {
@@ -73,6 +140,54 @@ const ProjectDetail: React.FC = () => {
     
     loadPlan();
   }, [project?.planId, language]);
+
+  // Handle like/unlike project
+  const handleLikeProject = async () => {
+    if (!id || !fingerprint || liking) return;
+
+    setLiking(true);
+    try {
+      // Get user identity if available
+      const getCurrentUser = () => {
+        try {
+          const raw = localStorage.getItem('auth_user');
+          if (!raw) return null;
+          const rawUser = JSON.parse(raw);
+          if (rawUser && (rawUser.id || rawUser.email || rawUser.name)) {
+            return {
+              id: rawUser.id || rawUser.sub || rawUser.user_id,
+              name: rawUser.name || rawUser.given_name || 'User',
+              email: rawUser.email,
+            };
+          }
+        } catch {}
+        return null;
+      };
+
+      const user = getCurrentUser();
+
+      // Toggle like
+      const response = await likeProject(id, fingerprint, {
+        userIdentityId: user?.id,
+        language: language as 'en' | 'zh'
+      });
+
+      // Update metrics with new data
+      setMetrics(prev => prev ? {
+        ...prev,
+        likes_count: response.likes_count,
+        is_liked_by_user: response.is_liked_by_user
+      } : {
+        likes_count: response.likes_count,
+        views_count: 0,
+        is_liked_by_user: response.is_liked_by_user
+      });
+    } catch (err) {
+      console.error('Error liking project:', err);
+    } finally {
+      setLiking(false);
+    }
+  };
   
   if (loading) {
     return (
@@ -166,9 +281,22 @@ const ProjectDetail: React.FC = () => {
 
                 {/* Quick Stats */}
                 <div className="flex flex-wrap items-center gap-6 text-sm text-theme-secondary">
+                  <button
+                    onClick={handleLikeProject}
+                    disabled={liking}
+                    className={`flex items-center gap-1 transition-colors hover:text-red-500 ${
+                      metrics?.is_liked_by_user ? 'text-red-500' : 'text-theme-secondary'
+                    } ${liking ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <Heart
+                      size={16}
+                      className={metrics?.is_liked_by_user ? 'fill-current' : ''}
+                    />
+                    <span>{metrics?.likes_count || 0} {t('projects.likes')}</span>
+                  </button>
                   <div className="flex items-center gap-1">
-                    <Heart size={16} />
-                    <span>{project.community?.likes || 0} {t('projects.likes')}</span>
+                    <Eye size={16} />
+                    <span>{metrics?.views_count || 0} views</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Download size={16} />

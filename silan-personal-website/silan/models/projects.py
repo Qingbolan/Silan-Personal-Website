@@ -39,7 +39,7 @@ class Project(Base, TimestampMixin):
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
     view_count: Mapped[int] = mapped_column(Integer, default=0)
-    star_count: Mapped[int] = mapped_column(Integer, default=0)
+    like_count: Mapped[int] = mapped_column(Integer, default=0)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     
     # Relationships - matching Go schema edges
@@ -50,6 +50,8 @@ class Project(Base, TimestampMixin):
     images: Mapped[List["ProjectImage"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     source_relationships: Mapped[List["ProjectRelationship"]] = relationship(foreign_keys="ProjectRelationship.source_project_id", back_populates="source_project", cascade="all, delete-orphan")
     target_relationships: Mapped[List["ProjectRelationship"]] = relationship(foreign_keys="ProjectRelationship.target_project_id", back_populates="target_project", cascade="all, delete-orphan")
+    likes: Mapped[List["ProjectLike"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    views: Mapped[List["ProjectView"]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class ProjectTranslation(Base):
@@ -165,3 +167,35 @@ class ProjectRelationship(Base):
     # Relationships - matching Go schema edges
     source_project: Mapped["Project"] = relationship(foreign_keys=[source_project_id], back_populates="source_relationships")
     target_project: Mapped["Project"] = relationship(foreign_keys=[target_project_id], back_populates="target_relationships")
+
+
+class ProjectLike(Base, TimestampMixin):
+    """Project likes table for tracking user likes with IP and fingerprint"""
+    __tablename__ = "project_likes"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    project_id: Mapped[str] = mapped_column(UUID, ForeignKey("projects.id"), nullable=False)
+    user_identity_id: Mapped[Optional[str]] = mapped_column(String(255))
+    fingerprint: Mapped[Optional[str]] = mapped_column(String(255))
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
+    user_agent: Mapped[Optional[str]] = mapped_column(Text)
+
+    # Relationships
+    project: Mapped["Project"] = relationship(back_populates="likes")
+
+
+class ProjectView(Base, TimestampMixin):
+    """Project views table for tracking page views with analytics data"""
+    __tablename__ = "project_views"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    project_id: Mapped[str] = mapped_column(UUID, ForeignKey("projects.id"), nullable=False)
+    user_identity_id: Mapped[Optional[str]] = mapped_column(String(255))
+    fingerprint: Mapped[Optional[str]] = mapped_column(String(255))
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
+    user_agent: Mapped[Optional[str]] = mapped_column(Text)
+    referrer: Mapped[Optional[str]] = mapped_column(String(500))
+    session_duration: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Relationships
+    project: Mapped["Project"] = relationship(back_populates="views")

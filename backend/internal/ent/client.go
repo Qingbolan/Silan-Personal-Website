@@ -38,9 +38,11 @@ import (
 	"silan-backend/internal/ent/projectdetailtranslation"
 	"silan-backend/internal/ent/projectimage"
 	"silan-backend/internal/ent/projectimagetranslation"
+	"silan-backend/internal/ent/projectlike"
 	"silan-backend/internal/ent/projectrelationship"
 	"silan-backend/internal/ent/projecttechnology"
 	"silan-backend/internal/ent/projecttranslation"
+	"silan-backend/internal/ent/projectview"
 	"silan-backend/internal/ent/publication"
 	"silan-backend/internal/ent/publicationauthor"
 	"silan-backend/internal/ent/publicationtranslation"
@@ -124,12 +126,16 @@ type Client struct {
 	ProjectImage *ProjectImageClient
 	// ProjectImageTranslation is the client for interacting with the ProjectImageTranslation builders.
 	ProjectImageTranslation *ProjectImageTranslationClient
+	// ProjectLike is the client for interacting with the ProjectLike builders.
+	ProjectLike *ProjectLikeClient
 	// ProjectRelationship is the client for interacting with the ProjectRelationship builders.
 	ProjectRelationship *ProjectRelationshipClient
 	// ProjectTechnology is the client for interacting with the ProjectTechnology builders.
 	ProjectTechnology *ProjectTechnologyClient
 	// ProjectTranslation is the client for interacting with the ProjectTranslation builders.
 	ProjectTranslation *ProjectTranslationClient
+	// ProjectView is the client for interacting with the ProjectView builders.
+	ProjectView *ProjectViewClient
 	// Publication is the client for interacting with the Publication builders.
 	Publication *PublicationClient
 	// PublicationAuthor is the client for interacting with the PublicationAuthor builders.
@@ -200,9 +206,11 @@ func (c *Client) init() {
 	c.ProjectDetailTranslation = NewProjectDetailTranslationClient(c.config)
 	c.ProjectImage = NewProjectImageClient(c.config)
 	c.ProjectImageTranslation = NewProjectImageTranslationClient(c.config)
+	c.ProjectLike = NewProjectLikeClient(c.config)
 	c.ProjectRelationship = NewProjectRelationshipClient(c.config)
 	c.ProjectTechnology = NewProjectTechnologyClient(c.config)
 	c.ProjectTranslation = NewProjectTranslationClient(c.config)
+	c.ProjectView = NewProjectViewClient(c.config)
 	c.Publication = NewPublicationClient(c.config)
 	c.PublicationAuthor = NewPublicationAuthorClient(c.config)
 	c.PublicationTranslation = NewPublicationTranslationClient(c.config)
@@ -338,9 +346,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ProjectDetailTranslation:         NewProjectDetailTranslationClient(cfg),
 		ProjectImage:                     NewProjectImageClient(cfg),
 		ProjectImageTranslation:          NewProjectImageTranslationClient(cfg),
+		ProjectLike:                      NewProjectLikeClient(cfg),
 		ProjectRelationship:              NewProjectRelationshipClient(cfg),
 		ProjectTechnology:                NewProjectTechnologyClient(cfg),
 		ProjectTranslation:               NewProjectTranslationClient(cfg),
+		ProjectView:                      NewProjectViewClient(cfg),
 		Publication:                      NewPublicationClient(cfg),
 		PublicationAuthor:                NewPublicationAuthorClient(cfg),
 		PublicationTranslation:           NewPublicationTranslationClient(cfg),
@@ -403,9 +413,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ProjectDetailTranslation:         NewProjectDetailTranslationClient(cfg),
 		ProjectImage:                     NewProjectImageClient(cfg),
 		ProjectImageTranslation:          NewProjectImageTranslationClient(cfg),
+		ProjectLike:                      NewProjectLikeClient(cfg),
 		ProjectRelationship:              NewProjectRelationshipClient(cfg),
 		ProjectTechnology:                NewProjectTechnologyClient(cfg),
 		ProjectTranslation:               NewProjectTranslationClient(cfg),
+		ProjectView:                      NewProjectViewClient(cfg),
 		Publication:                      NewPublicationClient(cfg),
 		PublicationAuthor:                NewPublicationAuthorClient(cfg),
 		PublicationTranslation:           NewPublicationTranslationClient(cfg),
@@ -458,12 +470,13 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Idea, c.IdeaTag, c.IdeaTranslation, c.Language, c.PersonalInfo,
 		c.PersonalInfoTranslation, c.Project, c.ProjectDetail,
 		c.ProjectDetailTranslation, c.ProjectImage, c.ProjectImageTranslation,
-		c.ProjectRelationship, c.ProjectTechnology, c.ProjectTranslation,
-		c.Publication, c.PublicationAuthor, c.PublicationTranslation, c.RecentUpdate,
-		c.RecentUpdateTranslation, c.ResearchProject, c.ResearchProjectDetail,
-		c.ResearchProjectDetailTranslation, c.ResearchProjectTranslation, c.SocialLink,
-		c.User, c.UserIdentity, c.WorkExperience, c.WorkExperienceDetail,
-		c.WorkExperienceDetailTranslation, c.WorkExperienceTranslation,
+		c.ProjectLike, c.ProjectRelationship, c.ProjectTechnology,
+		c.ProjectTranslation, c.ProjectView, c.Publication, c.PublicationAuthor,
+		c.PublicationTranslation, c.RecentUpdate, c.RecentUpdateTranslation,
+		c.ResearchProject, c.ResearchProjectDetail, c.ResearchProjectDetailTranslation,
+		c.ResearchProjectTranslation, c.SocialLink, c.User, c.UserIdentity,
+		c.WorkExperience, c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
+		c.WorkExperienceTranslation,
 	} {
 		n.Use(hooks...)
 	}
@@ -480,12 +493,13 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Idea, c.IdeaTag, c.IdeaTranslation, c.Language, c.PersonalInfo,
 		c.PersonalInfoTranslation, c.Project, c.ProjectDetail,
 		c.ProjectDetailTranslation, c.ProjectImage, c.ProjectImageTranslation,
-		c.ProjectRelationship, c.ProjectTechnology, c.ProjectTranslation,
-		c.Publication, c.PublicationAuthor, c.PublicationTranslation, c.RecentUpdate,
-		c.RecentUpdateTranslation, c.ResearchProject, c.ResearchProjectDetail,
-		c.ResearchProjectDetailTranslation, c.ResearchProjectTranslation, c.SocialLink,
-		c.User, c.UserIdentity, c.WorkExperience, c.WorkExperienceDetail,
-		c.WorkExperienceDetailTranslation, c.WorkExperienceTranslation,
+		c.ProjectLike, c.ProjectRelationship, c.ProjectTechnology,
+		c.ProjectTranslation, c.ProjectView, c.Publication, c.PublicationAuthor,
+		c.PublicationTranslation, c.RecentUpdate, c.RecentUpdateTranslation,
+		c.ResearchProject, c.ResearchProjectDetail, c.ResearchProjectDetailTranslation,
+		c.ResearchProjectTranslation, c.SocialLink, c.User, c.UserIdentity,
+		c.WorkExperience, c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
+		c.WorkExperienceTranslation,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -548,12 +562,16 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProjectImage.mutate(ctx, m)
 	case *ProjectImageTranslationMutation:
 		return c.ProjectImageTranslation.mutate(ctx, m)
+	case *ProjectLikeMutation:
+		return c.ProjectLike.mutate(ctx, m)
 	case *ProjectRelationshipMutation:
 		return c.ProjectRelationship.mutate(ctx, m)
 	case *ProjectTechnologyMutation:
 		return c.ProjectTechnology.mutate(ctx, m)
 	case *ProjectTranslationMutation:
 		return c.ProjectTranslation.mutate(ctx, m)
+	case *ProjectViewMutation:
+		return c.ProjectView.mutate(ctx, m)
 	case *PublicationMutation:
 		return c.Publication.mutate(ctx, m)
 	case *PublicationAuthorMutation:
@@ -4792,6 +4810,38 @@ func (c *ProjectClient) QueryTargetRelationships(pr *Project) *ProjectRelationsh
 	return query
 }
 
+// QueryLikes queries the likes edge of a Project.
+func (c *ProjectClient) QueryLikes(pr *Project) *ProjectLikeQuery {
+	query := (&ProjectLikeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, id),
+			sqlgraph.To(projectlike.Table, projectlike.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.LikesTable, project.LikesColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryViews queries the views edge of a Project.
+func (c *ProjectClient) QueryViews(pr *Project) *ProjectViewQuery {
+	query := (&ProjectViewClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, id),
+			sqlgraph.To(projectview.Table, projectview.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.ViewsTable, project.ViewsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ProjectClient) Hooks() []Hook {
 	return c.hooks.Project
@@ -5477,6 +5527,171 @@ func (c *ProjectImageTranslationClient) mutate(ctx context.Context, m *ProjectIm
 	}
 }
 
+// ProjectLikeClient is a client for the ProjectLike schema.
+type ProjectLikeClient struct {
+	config
+}
+
+// NewProjectLikeClient returns a client for the ProjectLike from the given config.
+func NewProjectLikeClient(c config) *ProjectLikeClient {
+	return &ProjectLikeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `projectlike.Hooks(f(g(h())))`.
+func (c *ProjectLikeClient) Use(hooks ...Hook) {
+	c.hooks.ProjectLike = append(c.hooks.ProjectLike, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `projectlike.Intercept(f(g(h())))`.
+func (c *ProjectLikeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProjectLike = append(c.inters.ProjectLike, interceptors...)
+}
+
+// Create returns a builder for creating a ProjectLike entity.
+func (c *ProjectLikeClient) Create() *ProjectLikeCreate {
+	mutation := newProjectLikeMutation(c.config, OpCreate)
+	return &ProjectLikeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProjectLike entities.
+func (c *ProjectLikeClient) CreateBulk(builders ...*ProjectLikeCreate) *ProjectLikeCreateBulk {
+	return &ProjectLikeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProjectLikeClient) MapCreateBulk(slice any, setFunc func(*ProjectLikeCreate, int)) *ProjectLikeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProjectLikeCreateBulk{err: fmt.Errorf("calling to ProjectLikeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProjectLikeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProjectLikeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProjectLike.
+func (c *ProjectLikeClient) Update() *ProjectLikeUpdate {
+	mutation := newProjectLikeMutation(c.config, OpUpdate)
+	return &ProjectLikeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProjectLikeClient) UpdateOne(pl *ProjectLike) *ProjectLikeUpdateOne {
+	mutation := newProjectLikeMutation(c.config, OpUpdateOne, withProjectLike(pl))
+	return &ProjectLikeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProjectLikeClient) UpdateOneID(id uuid.UUID) *ProjectLikeUpdateOne {
+	mutation := newProjectLikeMutation(c.config, OpUpdateOne, withProjectLikeID(id))
+	return &ProjectLikeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProjectLike.
+func (c *ProjectLikeClient) Delete() *ProjectLikeDelete {
+	mutation := newProjectLikeMutation(c.config, OpDelete)
+	return &ProjectLikeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProjectLikeClient) DeleteOne(pl *ProjectLike) *ProjectLikeDeleteOne {
+	return c.DeleteOneID(pl.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProjectLikeClient) DeleteOneID(id uuid.UUID) *ProjectLikeDeleteOne {
+	builder := c.Delete().Where(projectlike.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProjectLikeDeleteOne{builder}
+}
+
+// Query returns a query builder for ProjectLike.
+func (c *ProjectLikeClient) Query() *ProjectLikeQuery {
+	return &ProjectLikeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProjectLike},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProjectLike entity by its id.
+func (c *ProjectLikeClient) Get(ctx context.Context, id uuid.UUID) (*ProjectLike, error) {
+	return c.Query().Where(projectlike.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProjectLikeClient) GetX(ctx context.Context, id uuid.UUID) *ProjectLike {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProject queries the project edge of a ProjectLike.
+func (c *ProjectLikeClient) QueryProject(pl *ProjectLike) *ProjectQuery {
+	query := (&ProjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pl.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(projectlike.Table, projectlike.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, projectlike.ProjectTable, projectlike.ProjectColumn),
+		)
+		fromV = sqlgraph.Neighbors(pl.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserIdentity queries the user_identity edge of a ProjectLike.
+func (c *ProjectLikeClient) QueryUserIdentity(pl *ProjectLike) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pl.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(projectlike.Table, projectlike.FieldID, id),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, projectlike.UserIdentityTable, projectlike.UserIdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(pl.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProjectLikeClient) Hooks() []Hook {
+	return c.hooks.ProjectLike
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProjectLikeClient) Interceptors() []Interceptor {
+	return c.inters.ProjectLike
+}
+
+func (c *ProjectLikeClient) mutate(ctx context.Context, m *ProjectLikeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProjectLikeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProjectLikeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProjectLikeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProjectLikeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProjectLike mutation op: %q", m.Op())
+	}
+}
+
 // ProjectRelationshipClient is a client for the ProjectRelationship schema.
 type ProjectRelationshipClient struct {
 	config
@@ -5953,6 +6168,171 @@ func (c *ProjectTranslationClient) mutate(ctx context.Context, m *ProjectTransla
 		return (&ProjectTranslationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ProjectTranslation mutation op: %q", m.Op())
+	}
+}
+
+// ProjectViewClient is a client for the ProjectView schema.
+type ProjectViewClient struct {
+	config
+}
+
+// NewProjectViewClient returns a client for the ProjectView from the given config.
+func NewProjectViewClient(c config) *ProjectViewClient {
+	return &ProjectViewClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `projectview.Hooks(f(g(h())))`.
+func (c *ProjectViewClient) Use(hooks ...Hook) {
+	c.hooks.ProjectView = append(c.hooks.ProjectView, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `projectview.Intercept(f(g(h())))`.
+func (c *ProjectViewClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProjectView = append(c.inters.ProjectView, interceptors...)
+}
+
+// Create returns a builder for creating a ProjectView entity.
+func (c *ProjectViewClient) Create() *ProjectViewCreate {
+	mutation := newProjectViewMutation(c.config, OpCreate)
+	return &ProjectViewCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProjectView entities.
+func (c *ProjectViewClient) CreateBulk(builders ...*ProjectViewCreate) *ProjectViewCreateBulk {
+	return &ProjectViewCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProjectViewClient) MapCreateBulk(slice any, setFunc func(*ProjectViewCreate, int)) *ProjectViewCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProjectViewCreateBulk{err: fmt.Errorf("calling to ProjectViewClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProjectViewCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProjectViewCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProjectView.
+func (c *ProjectViewClient) Update() *ProjectViewUpdate {
+	mutation := newProjectViewMutation(c.config, OpUpdate)
+	return &ProjectViewUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProjectViewClient) UpdateOne(pv *ProjectView) *ProjectViewUpdateOne {
+	mutation := newProjectViewMutation(c.config, OpUpdateOne, withProjectView(pv))
+	return &ProjectViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProjectViewClient) UpdateOneID(id uuid.UUID) *ProjectViewUpdateOne {
+	mutation := newProjectViewMutation(c.config, OpUpdateOne, withProjectViewID(id))
+	return &ProjectViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProjectView.
+func (c *ProjectViewClient) Delete() *ProjectViewDelete {
+	mutation := newProjectViewMutation(c.config, OpDelete)
+	return &ProjectViewDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProjectViewClient) DeleteOne(pv *ProjectView) *ProjectViewDeleteOne {
+	return c.DeleteOneID(pv.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProjectViewClient) DeleteOneID(id uuid.UUID) *ProjectViewDeleteOne {
+	builder := c.Delete().Where(projectview.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProjectViewDeleteOne{builder}
+}
+
+// Query returns a query builder for ProjectView.
+func (c *ProjectViewClient) Query() *ProjectViewQuery {
+	return &ProjectViewQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProjectView},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProjectView entity by its id.
+func (c *ProjectViewClient) Get(ctx context.Context, id uuid.UUID) (*ProjectView, error) {
+	return c.Query().Where(projectview.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProjectViewClient) GetX(ctx context.Context, id uuid.UUID) *ProjectView {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProject queries the project edge of a ProjectView.
+func (c *ProjectViewClient) QueryProject(pv *ProjectView) *ProjectQuery {
+	query := (&ProjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pv.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(projectview.Table, projectview.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, projectview.ProjectTable, projectview.ProjectColumn),
+		)
+		fromV = sqlgraph.Neighbors(pv.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserIdentity queries the user_identity edge of a ProjectView.
+func (c *ProjectViewClient) QueryUserIdentity(pv *ProjectView) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pv.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(projectview.Table, projectview.FieldID, id),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, projectview.UserIdentityTable, projectview.UserIdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(pv.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProjectViewClient) Hooks() []Hook {
+	return c.hooks.ProjectView
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProjectViewClient) Interceptors() []Interceptor {
+	return c.inters.ProjectView
+}
+
+func (c *ProjectViewClient) mutate(ctx context.Context, m *ProjectViewMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProjectViewCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProjectViewUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProjectViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProjectViewDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProjectView mutation op: %q", m.Op())
 	}
 }
 
@@ -8716,9 +9096,10 @@ type (
 		Comment, CommentLike, Education, EducationDetail, EducationDetailTranslation,
 		EducationTranslation, Idea, IdeaTag, IdeaTranslation, Language, PersonalInfo,
 		PersonalInfoTranslation, Project, ProjectDetail, ProjectDetailTranslation,
-		ProjectImage, ProjectImageTranslation, ProjectRelationship, ProjectTechnology,
-		ProjectTranslation, Publication, PublicationAuthor, PublicationTranslation,
-		RecentUpdate, RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
+		ProjectImage, ProjectImageTranslation, ProjectLike, ProjectRelationship,
+		ProjectTechnology, ProjectTranslation, ProjectView, Publication,
+		PublicationAuthor, PublicationTranslation, RecentUpdate,
+		RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
 		ResearchProjectDetailTranslation, ResearchProjectTranslation, SocialLink, User,
 		UserIdentity, WorkExperience, WorkExperienceDetail,
 		WorkExperienceDetailTranslation, WorkExperienceTranslation []ent.Hook
@@ -8729,9 +9110,10 @@ type (
 		Comment, CommentLike, Education, EducationDetail, EducationDetailTranslation,
 		EducationTranslation, Idea, IdeaTag, IdeaTranslation, Language, PersonalInfo,
 		PersonalInfoTranslation, Project, ProjectDetail, ProjectDetailTranslation,
-		ProjectImage, ProjectImageTranslation, ProjectRelationship, ProjectTechnology,
-		ProjectTranslation, Publication, PublicationAuthor, PublicationTranslation,
-		RecentUpdate, RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
+		ProjectImage, ProjectImageTranslation, ProjectLike, ProjectRelationship,
+		ProjectTechnology, ProjectTranslation, ProjectView, Publication,
+		PublicationAuthor, PublicationTranslation, RecentUpdate,
+		RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
 		ResearchProjectDetailTranslation, ResearchProjectTranslation, SocialLink, User,
 		UserIdentity, WorkExperience, WorkExperienceDetail,
 		WorkExperienceDetailTranslation, WorkExperienceTranslation []ent.Interceptor

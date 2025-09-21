@@ -11,16 +11,20 @@ import {
   Calendar,
   User,
   Eye,
-  FileText
+  FileText,
+  MoreHorizontal,
+  Trash2
 } from 'lucide-react';
-import { Button, Input, Select, Tag, Modal, message, Avatar } from 'antd';
+import { Button, Input, Select, Tag, Modal, message, Avatar, Dropdown, Popconfirm } from 'antd';
 import { useLanguage } from '../LanguageContext';
 import ProjectIssueDiscussion from './ProjectIssueDiscussion';
 import NewIssueForm from './NewIssueForm';
 import {
   fetchProjectIssues,
+  deleteProjectIssue,
   type ProjectIssueRecord
 } from '../../api/projects/projectApi';
+import { getClientFingerprint } from '../../utils/fingerprint';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -40,6 +44,49 @@ const ProjectIssuesList: React.FC<ProjectIssuesListProps> = ({ projectId }) => {
   const [showNewIssueForm, setShowNewIssueForm] = useState(false);
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id?: string; name?: string; email?: string } | null>(null);
+  const [deletingIssueId, setDeletingIssueId] = useState<string | null>(null);
+
+  // Get current user from localStorage
+  const getCurrentUser = (): { id?: string; name?: string; email?: string } | null => {
+    try {
+      const raw = localStorage.getItem('auth_user');
+      if (!raw) return null;
+      const u = JSON.parse(raw);
+      if (u && (u.id || u.email || u.name)) return u;
+    } catch {}
+    return null;
+  };
+
+  // Check if current user can delete an issue
+  const canDeleteIssue = (issue: ProjectIssueRecord): boolean => {
+    const user = currentUser || getCurrentUser();
+    if (!user || !user.id) return false;
+    return issue.author === user.name || issue.author === user.email;
+  };
+
+  // Handle delete issue
+  const handleDeleteIssue = async (issue: ProjectIssueRecord) => {
+    try {
+      setDeletingIssueId(issue.id);
+      const fingerprint = getClientFingerprint();
+      const user = getCurrentUser();
+
+      await deleteProjectIssue(issue.id, {
+        fingerprint,
+        userIdentityId: user?.id,
+        language: language as 'en' | 'zh'
+      });
+
+      message.success(t('issues.deleteSuccess') || 'Issue deleted successfully');
+      await loadIssues(); // Reload issues
+    } catch (error) {
+      console.error('Failed to delete issue:', error);
+      message.error(t('issues.deleteFailed') || 'Failed to delete issue');
+    } finally {
+      setDeletingIssueId(null);
+    }
+  };
 
   // Load issues from API
   const loadIssues = async () => {
@@ -61,6 +108,10 @@ const ProjectIssuesList: React.FC<ProjectIssuesListProps> = ({ projectId }) => {
       loadIssues();
     }
   }, [projectId, language]);
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+  }, []);
 
   useEffect(() => {
     let filtered = issues;
@@ -302,6 +353,48 @@ const ProjectIssuesList: React.FC<ProjectIssuesListProps> = ({ projectId }) => {
                           <Eye className="w-3 h-3" />
                           {issue.likes}
                         </span>
+                        {canDeleteIssue(issue) && (
+                          <Dropdown
+                            menu={{
+                              items: [
+                                {
+                                  key: 'delete',
+                                  icon: <Trash2 className="w-3 h-3" />,
+                                  label: (
+                                    <Popconfirm
+                                      title={language === 'zh' ? '确认删除' : 'Confirm Delete'}
+                                      description={language === 'zh' ? '确定要删除这个问题吗？' : 'Are you sure you want to delete this issue?'}
+                                      onConfirm={(e) => {
+                                        e?.stopPropagation();
+                                        handleDeleteIssue(issue);
+                                      }}
+                                      onCancel={(e) => e?.stopPropagation()}
+                                      okText={language === 'zh' ? '删除' : 'Delete'}
+                                      cancelText={language === 'zh' ? '取消' : 'Cancel'}
+                                      okButtonProps={{ danger: true }}
+                                    >
+                                      <span onClick={(e) => e.stopPropagation()}>
+                                        {language === 'zh' ? '删除' : 'Delete'}
+                                      </span>
+                                    </Popconfirm>
+                                  ),
+                                  danger: true,
+                                }
+                              ]
+                            }}
+                            trigger={['click']}
+                            placement="bottomRight"
+                          >
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<MoreHorizontal className="w-3 h-3" />}
+                              onClick={(e) => e.stopPropagation()}
+                              loading={deletingIssueId === issue.id}
+                              className="hover:bg-theme-hover"
+                            />
+                          </Dropdown>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -325,7 +418,7 @@ const ProjectIssuesList: React.FC<ProjectIssuesListProps> = ({ projectId }) => {
         footer={null}
         width="90%"
         style={{ maxWidth: '1000px' }}
-        destroyOnClose
+        destroyOnHidden
       >
         <NewIssueForm
           projectId={projectId}
@@ -343,7 +436,7 @@ const ProjectIssuesList: React.FC<ProjectIssuesListProps> = ({ projectId }) => {
         width="90%"
         style={{ maxWidth: '1200px' }}
         className="issue-detail-modal"
-        destroyOnClose
+        destroyOnHidden
       >
         {selectedIssue && (
           <ProjectIssueDiscussion

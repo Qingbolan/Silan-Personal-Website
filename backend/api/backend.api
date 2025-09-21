@@ -780,6 +780,42 @@ type (
 		Fingerprint    string `json:"fingerprint"`
 		UserIdentityId string `json:"user_identity_id,optional"`
 	}
+	// Project interaction request types
+	LikeProjectRequest {
+		ProjectID      string `path:"id"`
+		Fingerprint    string `json:"fingerprint"`
+		UserIdentityId string `json:"user_identity_id,optional"`
+		ClientIP       string `json:"client_ip,optional"`
+		UserAgentFull  string `json:"user_agent_full,optional"`
+		Language       string `form:"lang,default=en"`
+	}
+	LikeProjectResponse {
+		LikesCount    int  `json:"likes_count"`
+		IsLikedByUser bool `json:"is_liked_by_user"`
+	}
+	RecordProjectViewRequest {
+		ProjectID      string `path:"id"`
+		Fingerprint    string `json:"fingerprint"`
+		UserIdentityId string `json:"user_identity_id,optional"`
+		ClientIP       string `json:"client_ip,optional"`
+		UserAgentFull  string `json:"user_agent_full,optional"`
+		Language       string `form:"lang,default=en"`
+	}
+	RecordProjectViewResponse {
+		ViewsCount   int  `json:"views_count"`
+		ViewRecorded bool `json:"view_recorded"`
+	}
+	ProjectMetricsRequest {
+		ProjectID      string `path:"id"`
+		Fingerprint    string `form:"fingerprint,optional"`
+		UserIdentityId string `form:"user_identity_id,optional"`
+		Language       string `form:"lang,default=en"`
+	}
+	ProjectMetricsResponse {
+		LikesCount    int  `json:"likes_count"`
+		ViewsCount    int  `json:"views_count"`
+		IsLikedByUser bool `json:"is_liked_by_user"`
+	}
 	// Search request types
 	BlogSearchRequest {
 		Query    string `form:"query,optional"`

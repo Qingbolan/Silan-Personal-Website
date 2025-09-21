@@ -298,7 +298,9 @@
     "agreeToTerms": "登录即表示您同意我们的服务条款和隐私政策。"
   },
   "issues": {
-    "loadFailed": "加载问题失败"
+    "loadFailed": "加载问题失败",
+    "deleteSuccess": "问题删除成功",
+    "deleteFailed": "问题删除失败"
   },
   "comments": {
     "noComments": "暂无评论",

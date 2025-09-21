@@ -11,7 +11,8 @@ from .education import Education, EducationTranslation, EducationDetail, Educati
 from .experience import WorkExperience, WorkExperienceTranslation, WorkExperienceDetail, WorkExperienceDetailTranslation
 from .projects import (
     Project, ProjectStatus, ProjectTranslation, ProjectDetail, ProjectDetailTranslation,
-    ProjectTechnology, ProjectImage, ProjectImageTranslation, ProjectRelationship
+    ProjectTechnology, ProjectImage, ProjectImageTranslation, ProjectRelationship,
+    ProjectLike, ProjectView
 )
 from .blog import (
     BlogPost, BlogPostTranslation, BlogCategory, BlogCategoryTranslation,
@@ -42,6 +43,7 @@ __all__ = [
     # Projects
     'Project', 'ProjectStatus', 'ProjectTranslation', 'ProjectDetail', 'ProjectDetailTranslation',
     'ProjectTechnology', 'ProjectImage', 'ProjectImageTranslation', 'ProjectRelationship',
+    'ProjectLike', 'ProjectView',
     
     # Blog
     'BlogPost', 'BlogPostTranslation', 'BlogCategory', 'BlogCategoryTranslation',

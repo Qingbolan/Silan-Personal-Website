@@ -66,12 +66,16 @@ type Tx struct {
 	ProjectImage *ProjectImageClient
 	// ProjectImageTranslation is the client for interacting with the ProjectImageTranslation builders.
 	ProjectImageTranslation *ProjectImageTranslationClient
+	// ProjectLike is the client for interacting with the ProjectLike builders.
+	ProjectLike *ProjectLikeClient
 	// ProjectRelationship is the client for interacting with the ProjectRelationship builders.
 	ProjectRelationship *ProjectRelationshipClient
 	// ProjectTechnology is the client for interacting with the ProjectTechnology builders.
 	ProjectTechnology *ProjectTechnologyClient
 	// ProjectTranslation is the client for interacting with the ProjectTranslation builders.
 	ProjectTranslation *ProjectTranslationClient
+	// ProjectView is the client for interacting with the ProjectView builders.
+	ProjectView *ProjectViewClient
 	// Publication is the client for interacting with the Publication builders.
 	Publication *PublicationClient
 	// PublicationAuthor is the client for interacting with the PublicationAuthor builders.
@@ -262,9 +266,11 @@ func (tx *Tx) init() {
 	tx.ProjectDetailTranslation = NewProjectDetailTranslationClient(tx.config)
 	tx.ProjectImage = NewProjectImageClient(tx.config)
 	tx.ProjectImageTranslation = NewProjectImageTranslationClient(tx.config)
+	tx.ProjectLike = NewProjectLikeClient(tx.config)
 	tx.ProjectRelationship = NewProjectRelationshipClient(tx.config)
 	tx.ProjectTechnology = NewProjectTechnologyClient(tx.config)
 	tx.ProjectTranslation = NewProjectTranslationClient(tx.config)
+	tx.ProjectView = NewProjectViewClient(tx.config)
 	tx.Publication = NewPublicationClient(tx.config)
 	tx.PublicationAuthor = NewPublicationAuthorClient(tx.config)
 	tx.PublicationTranslation = NewPublicationTranslationClient(tx.config)

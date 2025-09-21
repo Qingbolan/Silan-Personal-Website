@@ -332,6 +332,18 @@ func (f ProjectImageTranslationFunc) Mutate(ctx context.Context, m ent.Mutation)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectImageTranslationMutation", m)
 }
 
+// The ProjectLikeFunc type is an adapter to allow the use of ordinary
+// function as ProjectLike mutator.
+type ProjectLikeFunc func(context.Context, *ent.ProjectLikeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProjectLikeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProjectLikeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectLikeMutation", m)
+}
+
 // The ProjectRelationshipFunc type is an adapter to allow the use of ordinary
 // function as ProjectRelationship mutator.
 type ProjectRelationshipFunc func(context.Context, *ent.ProjectRelationshipMutation) (ent.Value, error)
@@ -366,6 +378,18 @@ func (f ProjectTranslationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectTranslationMutation", m)
+}
+
+// The ProjectViewFunc type is an adapter to allow the use of ordinary
+// function as ProjectView mutator.
+type ProjectViewFunc func(context.Context, *ent.ProjectViewMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProjectViewFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProjectViewMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectViewMutation", m)
 }
 
 // The PublicationFunc type is an adapter to allow the use of ordinary

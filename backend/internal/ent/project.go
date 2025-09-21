@@ -50,8 +50,8 @@ type Project struct {
 	IsPublic bool `json:"is_public,omitempty"`
 	// ViewCount holds the value of the "view_count" field.
 	ViewCount int `json:"view_count,omitempty"`
-	// StarCount holds the value of the "star_count" field.
-	StarCount int `json:"star_count,omitempty"`
+	// LikeCount holds the value of the "like_count" field.
+	LikeCount int `json:"like_count,omitempty"`
 	// SortOrder holds the value of the "sort_order" field.
 	SortOrder int `json:"sort_order,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -80,9 +80,13 @@ type ProjectEdges struct {
 	SourceRelationships []*ProjectRelationship `json:"source_relationships,omitempty"`
 	// TargetRelationships holds the value of the target_relationships edge.
 	TargetRelationships []*ProjectRelationship `json:"target_relationships,omitempty"`
+	// Likes holds the value of the likes edge.
+	Likes []*ProjectLike `json:"likes,omitempty"`
+	// Views holds the value of the views edge.
+	Views []*ProjectView `json:"views,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [9]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -152,6 +156,24 @@ func (e ProjectEdges) TargetRelationshipsOrErr() ([]*ProjectRelationship, error)
 	return nil, &NotLoadedError{edge: "target_relationships"}
 }
 
+// LikesOrErr returns the Likes value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProjectEdges) LikesOrErr() ([]*ProjectLike, error) {
+	if e.loadedTypes[7] {
+		return e.Likes, nil
+	}
+	return nil, &NotLoadedError{edge: "likes"}
+}
+
+// ViewsOrErr returns the Views value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProjectEdges) ViewsOrErr() ([]*ProjectView, error) {
+	if e.loadedTypes[8] {
+		return e.Views, nil
+	}
+	return nil, &NotLoadedError{edge: "views"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Project) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -159,7 +181,7 @@ func (*Project) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case project.FieldIsFeatured, project.FieldIsPublic:
 			values[i] = new(sql.NullBool)
-		case project.FieldViewCount, project.FieldStarCount, project.FieldSortOrder:
+		case project.FieldViewCount, project.FieldLikeCount, project.FieldSortOrder:
 			values[i] = new(sql.NullInt64)
 		case project.FieldTitle, project.FieldSlug, project.FieldDescription, project.FieldProjectType, project.FieldStatus, project.FieldGithubURL, project.FieldDemoURL, project.FieldDocumentationURL, project.FieldThumbnailURL:
 			values[i] = new(sql.NullString)
@@ -278,11 +300,11 @@ func (pr *Project) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				pr.ViewCount = int(value.Int64)
 			}
-		case project.FieldStarCount:
+		case project.FieldLikeCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field star_count", values[i])
+				return fmt.Errorf("unexpected type %T for field like_count", values[i])
 			} else if value.Valid {
-				pr.StarCount = int(value.Int64)
+				pr.LikeCount = int(value.Int64)
 			}
 		case project.FieldSortOrder:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -348,6 +370,16 @@ func (pr *Project) QuerySourceRelationships() *ProjectRelationshipQuery {
 // QueryTargetRelationships queries the "target_relationships" edge of the Project entity.
 func (pr *Project) QueryTargetRelationships() *ProjectRelationshipQuery {
 	return NewProjectClient(pr.config).QueryTargetRelationships(pr)
+}
+
+// QueryLikes queries the "likes" edge of the Project entity.
+func (pr *Project) QueryLikes() *ProjectLikeQuery {
+	return NewProjectClient(pr.config).QueryLikes(pr)
+}
+
+// QueryViews queries the "views" edge of the Project entity.
+func (pr *Project) QueryViews() *ProjectViewQuery {
+	return NewProjectClient(pr.config).QueryViews(pr)
 }
 
 // Update returns a builder for updating this Project.
@@ -418,8 +450,8 @@ func (pr *Project) String() string {
 	builder.WriteString("view_count=")
 	builder.WriteString(fmt.Sprintf("%v", pr.ViewCount))
 	builder.WriteString(", ")
-	builder.WriteString("star_count=")
-	builder.WriteString(fmt.Sprintf("%v", pr.StarCount))
+	builder.WriteString("like_count=")
+	builder.WriteString(fmt.Sprintf("%v", pr.LikeCount))
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", pr.SortOrder))

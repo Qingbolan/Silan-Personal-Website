@@ -126,9 +126,9 @@ func ViewCount(v int) predicate.Project {
 	return predicate.Project(sql.FieldEQ(FieldViewCount, v))
 }
 
-// StarCount applies equality check predicate on the "star_count" field. It's identical to StarCountEQ.
-func StarCount(v int) predicate.Project {
-	return predicate.Project(sql.FieldEQ(FieldStarCount, v))
+// LikeCount applies equality check predicate on the "like_count" field. It's identical to LikeCountEQ.
+func LikeCount(v int) predicate.Project {
+	return predicate.Project(sql.FieldEQ(FieldLikeCount, v))
 }
 
 // SortOrder applies equality check predicate on the "sort_order" field. It's identical to SortOrderEQ.
@@ -916,44 +916,44 @@ func ViewCountLTE(v int) predicate.Project {
 	return predicate.Project(sql.FieldLTE(FieldViewCount, v))
 }
 
-// StarCountEQ applies the EQ predicate on the "star_count" field.
-func StarCountEQ(v int) predicate.Project {
-	return predicate.Project(sql.FieldEQ(FieldStarCount, v))
+// LikeCountEQ applies the EQ predicate on the "like_count" field.
+func LikeCountEQ(v int) predicate.Project {
+	return predicate.Project(sql.FieldEQ(FieldLikeCount, v))
 }
 
-// StarCountNEQ applies the NEQ predicate on the "star_count" field.
-func StarCountNEQ(v int) predicate.Project {
-	return predicate.Project(sql.FieldNEQ(FieldStarCount, v))
+// LikeCountNEQ applies the NEQ predicate on the "like_count" field.
+func LikeCountNEQ(v int) predicate.Project {
+	return predicate.Project(sql.FieldNEQ(FieldLikeCount, v))
 }
 
-// StarCountIn applies the In predicate on the "star_count" field.
-func StarCountIn(vs ...int) predicate.Project {
-	return predicate.Project(sql.FieldIn(FieldStarCount, vs...))
+// LikeCountIn applies the In predicate on the "like_count" field.
+func LikeCountIn(vs ...int) predicate.Project {
+	return predicate.Project(sql.FieldIn(FieldLikeCount, vs...))
 }
 
-// StarCountNotIn applies the NotIn predicate on the "star_count" field.
-func StarCountNotIn(vs ...int) predicate.Project {
-	return predicate.Project(sql.FieldNotIn(FieldStarCount, vs...))
+// LikeCountNotIn applies the NotIn predicate on the "like_count" field.
+func LikeCountNotIn(vs ...int) predicate.Project {
+	return predicate.Project(sql.FieldNotIn(FieldLikeCount, vs...))
 }
 
-// StarCountGT applies the GT predicate on the "star_count" field.
-func StarCountGT(v int) predicate.Project {
-	return predicate.Project(sql.FieldGT(FieldStarCount, v))
+// LikeCountGT applies the GT predicate on the "like_count" field.
+func LikeCountGT(v int) predicate.Project {
+	return predicate.Project(sql.FieldGT(FieldLikeCount, v))
 }
 
-// StarCountGTE applies the GTE predicate on the "star_count" field.
-func StarCountGTE(v int) predicate.Project {
-	return predicate.Project(sql.FieldGTE(FieldStarCount, v))
+// LikeCountGTE applies the GTE predicate on the "like_count" field.
+func LikeCountGTE(v int) predicate.Project {
+	return predicate.Project(sql.FieldGTE(FieldLikeCount, v))
 }
 
-// StarCountLT applies the LT predicate on the "star_count" field.
-func StarCountLT(v int) predicate.Project {
-	return predicate.Project(sql.FieldLT(FieldStarCount, v))
+// LikeCountLT applies the LT predicate on the "like_count" field.
+func LikeCountLT(v int) predicate.Project {
+	return predicate.Project(sql.FieldLT(FieldLikeCount, v))
 }
 
-// StarCountLTE applies the LTE predicate on the "star_count" field.
-func StarCountLTE(v int) predicate.Project {
-	return predicate.Project(sql.FieldLTE(FieldStarCount, v))
+// LikeCountLTE applies the LTE predicate on the "like_count" field.
+func LikeCountLTE(v int) predicate.Project {
+	return predicate.Project(sql.FieldLTE(FieldLikeCount, v))
 }
 
 // SortOrderEQ applies the EQ predicate on the "sort_order" field.
@@ -1229,6 +1229,52 @@ func HasTargetRelationships() predicate.Project {
 func HasTargetRelationshipsWith(preds ...predicate.ProjectRelationship) predicate.Project {
 	return predicate.Project(func(s *sql.Selector) {
 		step := newTargetRelationshipsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasLikes applies the HasEdge predicate on the "likes" edge.
+func HasLikes() predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, LikesTable, LikesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLikesWith applies the HasEdge predicate on the "likes" edge with a given conditions (other predicates).
+func HasLikesWith(preds ...predicate.ProjectLike) predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := newLikesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasViews applies the HasEdge predicate on the "views" edge.
+func HasViews() predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ViewsTable, ViewsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasViewsWith applies the HasEdge predicate on the "views" edge with a given conditions (other predicates).
+func HasViewsWith(preds ...predicate.ProjectView) predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := newViewsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -302,7 +302,9 @@
     "agreeToTerms": "By signing in, you agree to our terms of service and privacy policy."
   },
   "issues": {
-    "loadFailed": "Failed to load issues"
+    "loadFailed": "Failed to load issues",
+    "deleteSuccess": "Issue deleted successfully",
+    "deleteFailed": "Failed to delete issue"
   },
   "comments": {
     "noComments": "No comments yet",

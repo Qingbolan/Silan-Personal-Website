@@ -87,6 +87,9 @@ type ProjectImage func(*sql.Selector)
 // ProjectImageTranslation is the predicate function for projectimagetranslation builders.
 type ProjectImageTranslation func(*sql.Selector)
 
+// ProjectLike is the predicate function for projectlike builders.
+type ProjectLike func(*sql.Selector)
+
 // ProjectRelationship is the predicate function for projectrelationship builders.
 type ProjectRelationship func(*sql.Selector)
 
@@ -95,6 +98,9 @@ type ProjectTechnology func(*sql.Selector)
 
 // ProjectTranslation is the predicate function for projecttranslation builders.
 type ProjectTranslation func(*sql.Selector)
+
+// ProjectView is the predicate function for projectview builders.
+type ProjectView func(*sql.Selector)
 
 // Publication is the predicate function for publication builders.
 type Publication func(*sql.Selector)
