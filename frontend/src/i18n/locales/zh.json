@@ -218,8 +218,7 @@
     "projectNotFound": "项目未找到",
     "loadingProject": "加载项目中...",
     "failedToLoadProject": "加载项目失败",
-    "stars": "星标",
-    "forks": "分叉",
+    "likes": "点赞",
     "downloads": "下载",
     "updated": "更新于",
     "viewProjectDemo": "查看{{title}}演示",
@@ -270,6 +269,47 @@
     "viewProject": "查看项目：{{title}}",
     "viewProjectDemo": "查看{{title}}演示",
     "viewProjectSourceCode": "查看{{title}}源代码",
-    "projectFilters": "项目筛选器"
+    "projectFilters": "项目筛选器",
+    "discussion": "讨论"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前"
+  },
+  "common": {
+    "back": "返回",
+    "loading": "加载中",
+    "yes": "是",
+    "no": "否",
+    "delete": "删除"
+  },
+  "auth": {
+    "loginSuccess": "登录成功！",
+    "loginFailed": "登录失败",
+    "loggedInAs": "已登录：",
+    "signedInAs": "已登录：",
+    "logout": "退出",
+    "signInWithGoogle": "使用Google登录",
+    "authenticationRequired": "需要身份验证",
+    "signInToCreateIssue": "登录以创建问题",
+    "pleaseSignInToCreateIssue": "您需要使用Google登录来创建和跟踪问题。这有助于我们维护质量并防止垃圾信息。",
+    "signInToParticipate": "请使用您的Google账户登录以继续。您的信息仅用于身份识别，不会被共享。",
+    "agreeToTerms": "登录即表示您同意我们的服务条款和隐私政策。"
+  },
+  "issues": {
+    "loadFailed": "加载问题失败"
+  },
+  "comments": {
+    "noComments": "暂无评论",
+    "placeholder": "写下您的评论...",
+    "submit": "提交",
+    "submitted": "评论提交成功",
+    "submitFailed": "评论提交失败",
+    "loadFailed": "加载评论失败",
+    "likeFailed": "点赞失败",
+    "confirmDelete": "确定要删除这条评论吗？",
+    "deleted": "评论删除成功",
+    "deleteFailed": "评论删除失败"
   }
 } 

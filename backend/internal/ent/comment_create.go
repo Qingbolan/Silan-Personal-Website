@@ -94,6 +94,34 @@ func (cc *CommentCreate) SetNillableType(s *string) *CommentCreate {
 	return cc
 }
 
+// SetReferrenceID sets the "referrence_id" field.
+func (cc *CommentCreate) SetReferrenceID(s string) *CommentCreate {
+	cc.mutation.SetReferrenceID(s)
+	return cc
+}
+
+// SetNillableReferrenceID sets the "referrence_id" field if the given value is not nil.
+func (cc *CommentCreate) SetNillableReferrenceID(s *string) *CommentCreate {
+	if s != nil {
+		cc.SetReferrenceID(*s)
+	}
+	return cc
+}
+
+// SetAttachmentID sets the "attachment_id" field.
+func (cc *CommentCreate) SetAttachmentID(s string) *CommentCreate {
+	cc.mutation.SetAttachmentID(s)
+	return cc
+}
+
+// SetNillableAttachmentID sets the "attachment_id" field if the given value is not nil.
+func (cc *CommentCreate) SetNillableAttachmentID(s *string) *CommentCreate {
+	if s != nil {
+		cc.SetAttachmentID(*s)
+	}
+	return cc
+}
+
 // SetIsApproved sets the "is_approved" field.
 func (cc *CommentCreate) SetIsApproved(b bool) *CommentCreate {
 	cc.mutation.SetIsApproved(b)
@@ -332,6 +360,16 @@ func (cc *CommentCreate) check() error {
 	if _, ok := cc.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Comment.type"`)}
 	}
+	if v, ok := cc.mutation.ReferrenceID(); ok {
+		if err := comment.ReferrenceIDValidator(v); err != nil {
+			return &ValidationError{Name: "referrence_id", err: fmt.Errorf(`ent: validator failed for field "Comment.referrence_id": %w`, err)}
+		}
+	}
+	if v, ok := cc.mutation.AttachmentID(); ok {
+		if err := comment.AttachmentIDValidator(v); err != nil {
+			return &ValidationError{Name: "attachment_id", err: fmt.Errorf(`ent: validator failed for field "Comment.attachment_id": %w`, err)}
+		}
+	}
 	if _, ok := cc.mutation.IsApproved(); !ok {
 		return &ValidationError{Name: "is_approved", err: errors.New(`ent: missing required field "Comment.is_approved"`)}
 	}
@@ -416,6 +454,14 @@ func (cc *CommentCreate) createSpec() (*Comment, *sqlgraph.CreateSpec) {
 	if value, ok := cc.mutation.GetType(); ok {
 		_spec.SetField(comment.FieldType, field.TypeString, value)
 		_node.Type = value
+	}
+	if value, ok := cc.mutation.ReferrenceID(); ok {
+		_spec.SetField(comment.FieldReferrenceID, field.TypeString, value)
+		_node.ReferrenceID = value
+	}
+	if value, ok := cc.mutation.AttachmentID(); ok {
+		_spec.SetField(comment.FieldAttachmentID, field.TypeString, value)
+		_node.AttachmentID = value
 	}
 	if value, ok := cc.mutation.IsApproved(); ok {
 		_spec.SetField(comment.FieldIsApproved, field.TypeBool, value)

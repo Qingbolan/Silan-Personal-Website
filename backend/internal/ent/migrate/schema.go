@@ -298,6 +298,8 @@ var (
 		{Name: "author_website", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "content", Type: field.TypeString, Size: 2147483647},
 		{Name: "type", Type: field.TypeString, Default: "general"},
+		{Name: "referrence_id", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "attachment_id", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "is_approved", Type: field.TypeBool, Default: false},
 		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
 		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 500},
@@ -317,25 +319,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "comments_blog_posts_comments",
-				Columns:    []*schema.Column{CommentsColumns[14]},
+				Columns:    []*schema.Column{CommentsColumns[16]},
 				RefColumns: []*schema.Column{BlogPostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "comments_comments_parent",
-				Columns:    []*schema.Column{CommentsColumns[15]},
+				Columns:    []*schema.Column{CommentsColumns[17]},
 				RefColumns: []*schema.Column{CommentsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "comments_user_identities_user_identity",
-				Columns:    []*schema.Column{CommentsColumns[16]},
+				Columns:    []*schema.Column{CommentsColumns[18]},
 				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "comments_ideas_comments",
-				Columns:    []*schema.Column{CommentsColumns[17]},
+				Columns:    []*schema.Column{CommentsColumns[19]},
 				RefColumns: []*schema.Column{IdeasColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

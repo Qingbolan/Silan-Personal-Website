@@ -9258,6 +9258,8 @@ type CommentMutation struct {
 	author_website       *string
 	content              *string
 	_type                *string
+	referrence_id        *string
+	attachment_id        *string
 	is_approved          *bool
 	ip_address           *string
 	user_agent           *string
@@ -9694,6 +9696,104 @@ func (m *CommentMutation) OldType(ctx context.Context) (v string, err error) {
 // ResetType resets all changes to the "type" field.
 func (m *CommentMutation) ResetType() {
 	m._type = nil
+}
+
+// SetReferrenceID sets the "referrence_id" field.
+func (m *CommentMutation) SetReferrenceID(s string) {
+	m.referrence_id = &s
+}
+
+// ReferrenceID returns the value of the "referrence_id" field in the mutation.
+func (m *CommentMutation) ReferrenceID() (r string, exists bool) {
+	v := m.referrence_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferrenceID returns the old "referrence_id" field's value of the Comment entity.
+// If the Comment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CommentMutation) OldReferrenceID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferrenceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferrenceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferrenceID: %w", err)
+	}
+	return oldValue.ReferrenceID, nil
+}
+
+// ClearReferrenceID clears the value of the "referrence_id" field.
+func (m *CommentMutation) ClearReferrenceID() {
+	m.referrence_id = nil
+	m.clearedFields[comment.FieldReferrenceID] = struct{}{}
+}
+
+// ReferrenceIDCleared returns if the "referrence_id" field was cleared in this mutation.
+func (m *CommentMutation) ReferrenceIDCleared() bool {
+	_, ok := m.clearedFields[comment.FieldReferrenceID]
+	return ok
+}
+
+// ResetReferrenceID resets all changes to the "referrence_id" field.
+func (m *CommentMutation) ResetReferrenceID() {
+	m.referrence_id = nil
+	delete(m.clearedFields, comment.FieldReferrenceID)
+}
+
+// SetAttachmentID sets the "attachment_id" field.
+func (m *CommentMutation) SetAttachmentID(s string) {
+	m.attachment_id = &s
+}
+
+// AttachmentID returns the value of the "attachment_id" field in the mutation.
+func (m *CommentMutation) AttachmentID() (r string, exists bool) {
+	v := m.attachment_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttachmentID returns the old "attachment_id" field's value of the Comment entity.
+// If the Comment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CommentMutation) OldAttachmentID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttachmentID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttachmentID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttachmentID: %w", err)
+	}
+	return oldValue.AttachmentID, nil
+}
+
+// ClearAttachmentID clears the value of the "attachment_id" field.
+func (m *CommentMutation) ClearAttachmentID() {
+	m.attachment_id = nil
+	m.clearedFields[comment.FieldAttachmentID] = struct{}{}
+}
+
+// AttachmentIDCleared returns if the "attachment_id" field was cleared in this mutation.
+func (m *CommentMutation) AttachmentIDCleared() bool {
+	_, ok := m.clearedFields[comment.FieldAttachmentID]
+	return ok
+}
+
+// ResetAttachmentID resets all changes to the "attachment_id" field.
+func (m *CommentMutation) ResetAttachmentID() {
+	m.attachment_id = nil
+	delete(m.clearedFields, comment.FieldAttachmentID)
 }
 
 // SetIsApproved sets the "is_approved" field.
@@ -10149,7 +10249,7 @@ func (m *CommentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CommentMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 17)
 	if m.entity_type != nil {
 		fields = append(fields, comment.FieldEntityType)
 	}
@@ -10173,6 +10273,12 @@ func (m *CommentMutation) Fields() []string {
 	}
 	if m._type != nil {
 		fields = append(fields, comment.FieldType)
+	}
+	if m.referrence_id != nil {
+		fields = append(fields, comment.FieldReferrenceID)
+	}
+	if m.attachment_id != nil {
+		fields = append(fields, comment.FieldAttachmentID)
 	}
 	if m.is_approved != nil {
 		fields = append(fields, comment.FieldIsApproved)
@@ -10219,6 +10325,10 @@ func (m *CommentMutation) Field(name string) (ent.Value, bool) {
 		return m.Content()
 	case comment.FieldType:
 		return m.GetType()
+	case comment.FieldReferrenceID:
+		return m.ReferrenceID()
+	case comment.FieldAttachmentID:
+		return m.AttachmentID()
 	case comment.FieldIsApproved:
 		return m.IsApproved()
 	case comment.FieldIPAddress:
@@ -10258,6 +10368,10 @@ func (m *CommentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldContent(ctx)
 	case comment.FieldType:
 		return m.OldType(ctx)
+	case comment.FieldReferrenceID:
+		return m.OldReferrenceID(ctx)
+	case comment.FieldAttachmentID:
+		return m.OldAttachmentID(ctx)
 	case comment.FieldIsApproved:
 		return m.OldIsApproved(ctx)
 	case comment.FieldIPAddress:
@@ -10336,6 +10450,20 @@ func (m *CommentMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetType(v)
+		return nil
+	case comment.FieldReferrenceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferrenceID(v)
+		return nil
+	case comment.FieldAttachmentID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttachmentID(v)
 		return nil
 	case comment.FieldIsApproved:
 		v, ok := value.(bool)
@@ -10437,6 +10565,12 @@ func (m *CommentMutation) ClearedFields() []string {
 	if m.FieldCleared(comment.FieldAuthorWebsite) {
 		fields = append(fields, comment.FieldAuthorWebsite)
 	}
+	if m.FieldCleared(comment.FieldReferrenceID) {
+		fields = append(fields, comment.FieldReferrenceID)
+	}
+	if m.FieldCleared(comment.FieldAttachmentID) {
+		fields = append(fields, comment.FieldAttachmentID)
+	}
 	if m.FieldCleared(comment.FieldIPAddress) {
 		fields = append(fields, comment.FieldIPAddress)
 	}
@@ -10465,6 +10599,12 @@ func (m *CommentMutation) ClearField(name string) error {
 		return nil
 	case comment.FieldAuthorWebsite:
 		m.ClearAuthorWebsite()
+		return nil
+	case comment.FieldReferrenceID:
+		m.ClearReferrenceID()
+		return nil
+	case comment.FieldAttachmentID:
+		m.ClearAttachmentID()
 		return nil
 	case comment.FieldIPAddress:
 		m.ClearIPAddress()
@@ -10506,6 +10646,12 @@ func (m *CommentMutation) ResetField(name string) error {
 		return nil
 	case comment.FieldType:
 		m.ResetType()
+		return nil
+	case comment.FieldReferrenceID:
+		m.ResetReferrenceID()
+		return nil
+	case comment.FieldAttachmentID:
+		m.ResetAttachmentID()
 		return nil
 	case comment.FieldIsApproved:
 		m.ResetIsApproved()

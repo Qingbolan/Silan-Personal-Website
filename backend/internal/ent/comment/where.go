@@ -96,6 +96,16 @@ func Type(v string) predicate.Comment {
 	return predicate.Comment(sql.FieldEQ(FieldType, v))
 }
 
+// ReferrenceID applies equality check predicate on the "referrence_id" field. It's identical to ReferrenceIDEQ.
+func ReferrenceID(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldEQ(FieldReferrenceID, v))
+}
+
+// AttachmentID applies equality check predicate on the "attachment_id" field. It's identical to AttachmentIDEQ.
+func AttachmentID(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldEQ(FieldAttachmentID, v))
+}
+
 // IsApproved applies equality check predicate on the "is_approved" field. It's identical to IsApprovedEQ.
 func IsApproved(v bool) predicate.Comment {
 	return predicate.Comment(sql.FieldEQ(FieldIsApproved, v))
@@ -599,6 +609,156 @@ func TypeEqualFold(v string) predicate.Comment {
 // TypeContainsFold applies the ContainsFold predicate on the "type" field.
 func TypeContainsFold(v string) predicate.Comment {
 	return predicate.Comment(sql.FieldContainsFold(FieldType, v))
+}
+
+// ReferrenceIDEQ applies the EQ predicate on the "referrence_id" field.
+func ReferrenceIDEQ(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldEQ(FieldReferrenceID, v))
+}
+
+// ReferrenceIDNEQ applies the NEQ predicate on the "referrence_id" field.
+func ReferrenceIDNEQ(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldNEQ(FieldReferrenceID, v))
+}
+
+// ReferrenceIDIn applies the In predicate on the "referrence_id" field.
+func ReferrenceIDIn(vs ...string) predicate.Comment {
+	return predicate.Comment(sql.FieldIn(FieldReferrenceID, vs...))
+}
+
+// ReferrenceIDNotIn applies the NotIn predicate on the "referrence_id" field.
+func ReferrenceIDNotIn(vs ...string) predicate.Comment {
+	return predicate.Comment(sql.FieldNotIn(FieldReferrenceID, vs...))
+}
+
+// ReferrenceIDGT applies the GT predicate on the "referrence_id" field.
+func ReferrenceIDGT(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldGT(FieldReferrenceID, v))
+}
+
+// ReferrenceIDGTE applies the GTE predicate on the "referrence_id" field.
+func ReferrenceIDGTE(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldGTE(FieldReferrenceID, v))
+}
+
+// ReferrenceIDLT applies the LT predicate on the "referrence_id" field.
+func ReferrenceIDLT(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldLT(FieldReferrenceID, v))
+}
+
+// ReferrenceIDLTE applies the LTE predicate on the "referrence_id" field.
+func ReferrenceIDLTE(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldLTE(FieldReferrenceID, v))
+}
+
+// ReferrenceIDContains applies the Contains predicate on the "referrence_id" field.
+func ReferrenceIDContains(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldContains(FieldReferrenceID, v))
+}
+
+// ReferrenceIDHasPrefix applies the HasPrefix predicate on the "referrence_id" field.
+func ReferrenceIDHasPrefix(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldHasPrefix(FieldReferrenceID, v))
+}
+
+// ReferrenceIDHasSuffix applies the HasSuffix predicate on the "referrence_id" field.
+func ReferrenceIDHasSuffix(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldHasSuffix(FieldReferrenceID, v))
+}
+
+// ReferrenceIDIsNil applies the IsNil predicate on the "referrence_id" field.
+func ReferrenceIDIsNil() predicate.Comment {
+	return predicate.Comment(sql.FieldIsNull(FieldReferrenceID))
+}
+
+// ReferrenceIDNotNil applies the NotNil predicate on the "referrence_id" field.
+func ReferrenceIDNotNil() predicate.Comment {
+	return predicate.Comment(sql.FieldNotNull(FieldReferrenceID))
+}
+
+// ReferrenceIDEqualFold applies the EqualFold predicate on the "referrence_id" field.
+func ReferrenceIDEqualFold(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldEqualFold(FieldReferrenceID, v))
+}
+
+// ReferrenceIDContainsFold applies the ContainsFold predicate on the "referrence_id" field.
+func ReferrenceIDContainsFold(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldContainsFold(FieldReferrenceID, v))
+}
+
+// AttachmentIDEQ applies the EQ predicate on the "attachment_id" field.
+func AttachmentIDEQ(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldEQ(FieldAttachmentID, v))
+}
+
+// AttachmentIDNEQ applies the NEQ predicate on the "attachment_id" field.
+func AttachmentIDNEQ(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldNEQ(FieldAttachmentID, v))
+}
+
+// AttachmentIDIn applies the In predicate on the "attachment_id" field.
+func AttachmentIDIn(vs ...string) predicate.Comment {
+	return predicate.Comment(sql.FieldIn(FieldAttachmentID, vs...))
+}
+
+// AttachmentIDNotIn applies the NotIn predicate on the "attachment_id" field.
+func AttachmentIDNotIn(vs ...string) predicate.Comment {
+	return predicate.Comment(sql.FieldNotIn(FieldAttachmentID, vs...))
+}
+
+// AttachmentIDGT applies the GT predicate on the "attachment_id" field.
+func AttachmentIDGT(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldGT(FieldAttachmentID, v))
+}
+
+// AttachmentIDGTE applies the GTE predicate on the "attachment_id" field.
+func AttachmentIDGTE(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldGTE(FieldAttachmentID, v))
+}
+
+// AttachmentIDLT applies the LT predicate on the "attachment_id" field.
+func AttachmentIDLT(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldLT(FieldAttachmentID, v))
+}
+
+// AttachmentIDLTE applies the LTE predicate on the "attachment_id" field.
+func AttachmentIDLTE(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldLTE(FieldAttachmentID, v))
+}
+
+// AttachmentIDContains applies the Contains predicate on the "attachment_id" field.
+func AttachmentIDContains(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldContains(FieldAttachmentID, v))
+}
+
+// AttachmentIDHasPrefix applies the HasPrefix predicate on the "attachment_id" field.
+func AttachmentIDHasPrefix(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldHasPrefix(FieldAttachmentID, v))
+}
+
+// AttachmentIDHasSuffix applies the HasSuffix predicate on the "attachment_id" field.
+func AttachmentIDHasSuffix(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldHasSuffix(FieldAttachmentID, v))
+}
+
+// AttachmentIDIsNil applies the IsNil predicate on the "attachment_id" field.
+func AttachmentIDIsNil() predicate.Comment {
+	return predicate.Comment(sql.FieldIsNull(FieldAttachmentID))
+}
+
+// AttachmentIDNotNil applies the NotNil predicate on the "attachment_id" field.
+func AttachmentIDNotNil() predicate.Comment {
+	return predicate.Comment(sql.FieldNotNull(FieldAttachmentID))
+}
+
+// AttachmentIDEqualFold applies the EqualFold predicate on the "attachment_id" field.
+func AttachmentIDEqualFold(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldEqualFold(FieldAttachmentID, v))
+}
+
+// AttachmentIDContainsFold applies the ContainsFold predicate on the "attachment_id" field.
+func AttachmentIDContainsFold(v string) predicate.Comment {
+	return predicate.Comment(sql.FieldContainsFold(FieldAttachmentID, v))
 }
 
 // IsApprovedEQ applies the EQ predicate on the "is_approved" field.

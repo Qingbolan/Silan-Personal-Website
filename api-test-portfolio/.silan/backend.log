@@ -14,3 +14,17 @@ Database: sqlite3 (***)
 Starting Silan Backend Server...
 Server: 0.0.0.0:5200
 Database: sqlite3 (***)
+{"@timestamp":"2025-09-21T10:36:22.872+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 4e900c57-ec76-438f-afc4-a279493d669c","level":"info"}
+{"@timestamp":"2025-09-21T10:36:22.873+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 4e900c57-ec76-438f-afc4-a279493d669c","level":"info"}
+{"@timestamp":"2025-09-21T10:36:23.025+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 4e900c57-ec76-438f-afc4-a279493d669c from IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T10:36:23.025+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 4e900c57-ec76-438f-afc4-a279493d669c to IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T10:36:23.025+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 4e900c57-ec76-438f-afc4-a279493d669c from IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T10:36:23.026+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 0 comments (0 root, 0 total) for post 4e900c57-ec76-438f-afc4-a279493d669c to IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T10:36:24.705+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 4e900c57-ec76-438f-afc4-a279493d669c","level":"info"}
+{"@timestamp":"2025-09-21T11:05:45.279+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 06726108-e7ea-476d-bd4b-21954b97c808","level":"info"}
+{"@timestamp":"2025-09-21T11:05:45.280+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 06726108-e7ea-476d-bd4b-21954b97c808","level":"info"}
+{"@timestamp":"2025-09-21T11:05:45.342+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 06726108-e7ea-476d-bd4b-21954b97c808 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T11:05:45.343+08:00","caller":"blog/listBlogCommentsHandler.go:28","content":"Comments list request for post 06726108-e7ea-476d-bd4b-21954b97c808 from IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T11:05:45.344+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 2 comments (2 root, 5 total) for post 06726108-e7ea-476d-bd4b-21954b97c808 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T11:05:45.344+08:00","caller":"blog/listblogcommentslogic.go:144","content":"Returned 2 comments (2 root, 5 total) for post 06726108-e7ea-476d-bd4b-21954b97c808 to IP ::1","level":"info"}
+{"@timestamp":"2025-09-21T11:05:58.933+08:00","caller":"blog/updateblogviewslogic.go:46","content":"View recorded for post 06726108-e7ea-476d-bd4b-21954b97c808","level":"info"}

@@ -35,6 +35,10 @@ type Comment struct {
 	Content string `json:"content,omitempty"`
 	// Type of comment: general, question, suggestion, etc.
 	Type string `json:"type,omitempty"`
+	// ReferrenceID holds the value of the "referrence_id" field.
+	ReferrenceID string `json:"referrence_id,omitempty"`
+	// AttachmentID holds the value of the "attachment_id" field.
+	AttachmentID string `json:"attachment_id,omitempty"`
 	// IsApproved holds the value of the "is_approved" field.
 	IsApproved bool `json:"is_approved,omitempty"`
 	// IPAddress holds the value of the "ip_address" field.
@@ -110,7 +114,7 @@ func (*Comment) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case comment.FieldLikesCount:
 			values[i] = new(sql.NullInt64)
-		case comment.FieldEntityType, comment.FieldAuthorName, comment.FieldAuthorEmail, comment.FieldAuthorWebsite, comment.FieldContent, comment.FieldType, comment.FieldIPAddress, comment.FieldUserAgent, comment.FieldUserIdentityID:
+		case comment.FieldEntityType, comment.FieldAuthorName, comment.FieldAuthorEmail, comment.FieldAuthorWebsite, comment.FieldContent, comment.FieldType, comment.FieldReferrenceID, comment.FieldAttachmentID, comment.FieldIPAddress, comment.FieldUserAgent, comment.FieldUserIdentityID:
 			values[i] = new(sql.NullString)
 		case comment.FieldCreatedAt, comment.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -188,6 +192,18 @@ func (c *Comment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
 				c.Type = value.String
+			}
+		case comment.FieldReferrenceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field referrence_id", values[i])
+			} else if value.Valid {
+				c.ReferrenceID = value.String
+			}
+		case comment.FieldAttachmentID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field attachment_id", values[i])
+			} else if value.Valid {
+				c.AttachmentID = value.String
 			}
 		case comment.FieldIsApproved:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -319,6 +335,12 @@ func (c *Comment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("type=")
 	builder.WriteString(c.Type)
+	builder.WriteString(", ")
+	builder.WriteString("referrence_id=")
+	builder.WriteString(c.ReferrenceID)
+	builder.WriteString(", ")
+	builder.WriteString("attachment_id=")
+	builder.WriteString(c.AttachmentID)
 	builder.WriteString(", ")
 	builder.WriteString("is_approved=")
 	builder.WriteString(fmt.Sprintf("%v", c.IsApproved))

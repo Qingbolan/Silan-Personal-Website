@@ -919,6 +919,19 @@ service backend-api {
 	@doc "Delete a comment on project"
 	@handler DeleteProjectComment
 	delete /comments/:comment_id (DeleteProjectCommentRequest)
+
+	// ----- Project Likes & Views -----
+	@doc "Like/Unlike a project"
+	@handler LikeProject
+	post /:id/like (LikeProjectRequest) returns (LikeProjectResponse)
+
+	@doc "Record project view"
+	@handler RecordProjectView
+	post /:id/view (RecordProjectViewRequest) returns (RecordProjectViewResponse)
+
+	@doc "Get project metrics (likes, views)"
+	@handler GetProjectMetrics
+	get /:id/metrics (ProjectMetricsRequest) returns (ProjectMetricsResponse)
 }
 
 // ========== ANNUAL PLANS GROUP ==========

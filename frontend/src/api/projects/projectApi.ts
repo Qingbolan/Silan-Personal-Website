@@ -1,4 +1,12 @@
-import type { Project, AnnualPlan, GraphData, Language, ProjectDetail, ProjectBlogReference } from '../../types/api';
+import type {
+  Project,
+  ProjectWithPlan,
+  AnnualPlan,
+  GraphData,
+  Language,
+  ProjectDetail,
+  ProjectBlogReference
+} from '../../types/api';
 import { get, post, del, formatLanguage } from '../utils';
 import { type PaginationRequest, type SearchRequest, type ListResponse } from '../config';
 
@@ -295,8 +303,66 @@ export const fetchAnnualPlanByName = async (
   return fetchPlanByName(name, language);
 };
 
-export const fetchProjectsWithPlans = async (language: Language = 'en'): Promise<Project[]> => {
-  return fetchProjects({}, language);
+export const fetchProjectsWithPlans = async (
+  language: Language = 'en'
+): Promise<ProjectWithPlan[]> => {
+  const projects = await fetchProjects({}, language);
+
+  return projects.map((project) => {
+    const projectAny = project as Record<string, any>;
+
+    const titleZh =
+      projectAny.titleZh ??
+      projectAny.nameZh ??
+      projectAny.title_zh ??
+      projectAny.name_zh;
+    const descriptionZh =
+      projectAny.descriptionZh ?? projectAny.description_zh;
+    const github =
+      projectAny.github ??
+      projectAny.githubUrl ??
+      projectAny.github_url;
+    const demo =
+      projectAny.demo ??
+      projectAny.demoUrl ??
+      projectAny.demo_url ??
+      projectAny.previewUrl ??
+      projectAny.preview_url;
+    const rawTags = projectAny.tags ?? project.tags;
+    const tags = Array.isArray(rawTags) ? rawTags : [];
+    const rawYear = projectAny.year ?? project.year;
+    const parsedYear =
+      typeof rawYear === 'string'
+        ? Number.parseInt(rawYear, 10)
+        : rawYear;
+    const year = Number.isFinite(parsedYear)
+      ? (parsedYear as number)
+      : new Date().getFullYear();
+    const planId =
+      projectAny.planId ??
+      projectAny.annualPlan ??
+      projectAny.plan_id ??
+      project.annualPlan ??
+      '';
+
+    return {
+      id: String(project.id),
+      title: projectAny.title ?? projectAny.name ?? project.name,
+      titleZh,
+      description: projectAny.description ?? project.description,
+      descriptionZh,
+      image:
+        projectAny.image ??
+        projectAny.coverImage ??
+        projectAny.cover_image ??
+        '/api/placeholder/400/250',
+      tags,
+      github,
+      demo,
+      planId,
+      year,
+    } satisfies ProjectWithPlan;
+  });
 };
 
 export const fetchProjectsByPlan = async (
@@ -304,7 +370,15 @@ export const fetchProjectsByPlan = async (
   language: Language = 'en'
 ): Promise<Project[]> => {
   const projects = await fetchProjects({}, language);
-  return projects.filter(project => project.annualPlan === planName);
+  return projects.filter((project) => {
+    const projectAny = project as Record<string, any>;
+    const projectPlan =
+      project.annualPlan ??
+      projectAny.annual_plan ??
+      projectAny.planId ??
+      projectAny.plan_id;
+    return projectPlan === planName;
+  });
 };
 
 // ====== Project Comment API Functions ======
@@ -344,8 +418,15 @@ export const listProjectComments = async (
   userIdentityId?: string,
   language: 'en' | 'zh' = 'en'
 ): Promise<ProjectCommentData[]> => {
-  const url = `/api/v1/projects/${projectId}/comments?type=${type}&lang=${formatLanguage(language)}`;
-  const response = await get<ProjectCommentListResponse>(url);
+  const response = await get<ProjectCommentListResponse>(
+    `/api/v1/projects/${projectId}/comments`,
+    {
+      type,
+      lang: formatLanguage(language),
+      fingerprint,
+      user_identity_id: userIdentityId,
+    }
+  );
   return response.comments || [];
 };
 
@@ -418,4 +499,167 @@ export const deleteProjectComment = async (
     fingerprint: payload.fingerprint,
     user_identity_id: payload.userIdentityId || '',
   });
+};
+
+// ====== Project Issue Helpers (built on top of comment APIs) ======
+
+export interface ProjectIssueRecord {
+  id: string;
+  number: number;
+  title: string;
+  description: string;
+  status: 'open' | 'closed';
+  type: 'bug' | 'enhancement' | 'question' | 'documentation';
+  priority: 'low' | 'medium' | 'high';
+  labels: string[];
+  author: string;
+  author_avatar?: string;
+  created: string;
+  updated: string;
+  comments: number;
+  likes: number;
+  comment: ProjectCommentData;
+}
+
+export interface CreateProjectIssuePayload {
+  projectId: string;
+  title: string;
+  description: string;
+  issueType: 'bug' | 'enhancement' | 'question' | 'documentation';
+  priority: 'low' | 'medium' | 'high';
+  labels?: string[];
+  fingerprint: string;
+  authorName?: string;
+  authorEmail?: string;
+  userIdentityId?: string;
+  language?: 'en' | 'zh';
+}
+
+const ISSUE_DELIMITER = '\n---\n';
+
+const serializeIssueContent = (payload: CreateProjectIssuePayload): string => {
+  const labelLine = payload.labels && payload.labels.length > 0
+    ? `\n**Labels:** ${payload.labels.join(', ')}`
+    : '';
+
+  const metaBlock = `**Issue Type:** ${payload.issueType}\n**Priority:** ${payload.priority}${labelLine}`;
+
+  return `# ${payload.title}\n\n${payload.description.trim()}${ISSUE_DELIMITER}${metaBlock}`;
+};
+
+const parseIssueContent = (content: string) => {
+  const [headerAndBody, metaRaw = ''] = content.split(ISSUE_DELIMITER);
+  const lines = headerAndBody.split('\n');
+  const titleLine = lines.shift() ?? '';
+  const title = titleLine.replace(/^#+\s*/, '').trim() || 'Untitled Issue';
+  const description = lines.join('\n').trim();
+
+  const meta: Record<string, string> = {};
+  metaRaw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const match = line.match(/\*\*(.+?):\*\*\s*(.+)/);
+      if (match) {
+        meta[match[1].toLowerCase()] = match[2];
+      }
+    });
+
+  const issueType = (meta['issue type'] as CreateProjectIssuePayload['issueType']) || 'bug';
+  const priority = (meta['priority'] as CreateProjectIssuePayload['priority']) || 'medium';
+  const labels = meta['labels'] ? meta['labels'].split(',').map((label) => label.trim()).filter(Boolean) : [];
+
+  return {
+    title,
+    description,
+    issueType,
+    priority,
+    labels,
+  };
+};
+
+const buildIssueFromComment = (
+  comment: ProjectCommentData,
+  number: number
+): ProjectIssueRecord => {
+  const { title, description, issueType, priority, labels } = parseIssueContent(comment.content);
+  const mergedLabels = Array.from(new Set([issueType, `${priority}-priority`, ...labels]));
+
+  return {
+    id: comment.id,
+    number,
+    title,
+    description: description || 'No description provided',
+    status: 'open',
+    type: issueType,
+    priority,
+    labels: mergedLabels,
+    author: comment.author_name,
+    author_avatar: comment.author_avatar_url,
+    created: comment.created_at,
+    updated: comment.created_at,
+    comments: comment.replies?.length || 0,
+    likes: comment.likes_count,
+    comment,
+  };
+};
+
+export const fetchProjectIssues = async (
+  projectId: string,
+  language: Language = 'en'
+): Promise<ProjectIssueRecord[]> => {
+  const comments = await listProjectComments(projectId, 'issue', undefined, undefined, language);
+  const sorted = comments
+    .map((comment) => buildIssueFromComment(comment, 0))
+    .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+  return sorted.map((issue, index) => ({
+    ...issue,
+    number: sorted.length - index,
+  }));
+};
+
+export const createProjectIssue = async (
+  payload: CreateProjectIssuePayload
+): Promise<ProjectIssueRecord> => {
+  const content = serializeIssueContent(payload);
+
+  const comment = await createProjectComment(
+    payload.projectId,
+    content,
+    payload.fingerprint,
+    {
+      type: 'issue',
+      authorName: payload.authorName,
+      authorEmail: payload.authorEmail,
+      userIdentityId: payload.userIdentityId,
+      language: payload.language ?? 'en'
+    }
+  );
+
+  return buildIssueFromComment(comment, 0);
+};
+
+export const fetchProjectIssueThread = async (
+  projectId: string,
+  issueId: string,
+  options: {
+    fingerprint?: string;
+    userIdentityId?: string;
+    language?: 'en' | 'zh';
+  } = {}
+): Promise<ProjectCommentData | null> => {
+  const comments = await listProjectComments(
+    projectId,
+    'issue',
+    options.fingerprint,
+    options.userIdentityId,
+    options.language ?? 'en'
+  );
+  return comments.find((comment) => comment.id === issueId) ?? null;
+};
+
+export const projectIssueFromComment = (comment: ProjectCommentData): ProjectIssueRecord => {
+  return buildIssueFromComment(comment, 0);
 };

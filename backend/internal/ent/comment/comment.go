@@ -31,6 +31,10 @@ const (
 	FieldContent = "content"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// FieldReferrenceID holds the string denoting the referrence_id field in the database.
+	FieldReferrenceID = "referrence_id"
+	// FieldAttachmentID holds the string denoting the attachment_id field in the database.
+	FieldAttachmentID = "attachment_id"
 	// FieldIsApproved holds the string denoting the is_approved field in the database.
 	FieldIsApproved = "is_approved"
 	// FieldIPAddress holds the string denoting the ip_address field in the database.
@@ -81,6 +85,8 @@ var Columns = []string{
 	FieldAuthorWebsite,
 	FieldContent,
 	FieldType,
+	FieldReferrenceID,
+	FieldAttachmentID,
 	FieldIsApproved,
 	FieldIPAddress,
 	FieldUserAgent,
@@ -123,6 +129,10 @@ var (
 	ContentValidator func(string) error
 	// DefaultType holds the default value on creation for the "type" field.
 	DefaultType string
+	// ReferrenceIDValidator is a validator for the "referrence_id" field. It is called by the builders before save.
+	ReferrenceIDValidator func(string) error
+	// AttachmentIDValidator is a validator for the "attachment_id" field. It is called by the builders before save.
+	AttachmentIDValidator func(string) error
 	// DefaultIsApproved holds the default value on creation for the "is_approved" field.
 	DefaultIsApproved bool
 	// IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
@@ -187,6 +197,16 @@ func ByContent(opts ...sql.OrderTermOption) OrderOption {
 // ByType orders the results by the type field.
 func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByReferrenceID orders the results by the referrence_id field.
+func ByReferrenceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferrenceID, opts...).ToFunc()
+}
+
+// ByAttachmentID orders the results by the attachment_id field.
+func ByAttachmentID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAttachmentID, opts...).ToFunc()
 }
 
 // ByIsApproved orders the results by the is_approved field.

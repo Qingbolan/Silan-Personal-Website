@@ -18,7 +18,8 @@ import {
 import { useLanguage } from '../LanguageContext';
 import { useTranslation } from 'react-i18next';
 import ProjectCommunityFeedback from './ProjectCommunityFeedback';
-import { Link } from 'react-router-dom';
+import ProjectIssuesList from './ProjectIssuesList';
+import { Link, useParams } from 'react-router-dom';
 import Markdown from '../ui/Markdown';
 
 interface ProjectTabsProps {
@@ -26,6 +27,7 @@ interface ProjectTabsProps {
 }
 
 const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
+  const { id: projectId } = useParams<{ id: string }>();
   const { language } = useLanguage();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('readme');
@@ -187,46 +189,21 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
     </div>
   );
 
-  const renderCommunity = () => (
-    <ProjectCommunityFeedback projectId={projectData.id || 'default-project'} />
-  );
+  const renderCommunity = () => {
+    // Use project ID from URL params
+    if (!projectId) {
+      return <div className="p-4 text-theme-secondary">Project ID not found</div>;
+    }
+    return <ProjectCommunityFeedback projectId={projectId} />;
+  };
 
-  const renderIssues = () => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4 mb-4">
-        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-          {projectData.community?.issues?.open || 0} {t('projects.open')}
-        </span>
-        <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-          {projectData.community?.issues?.closed || 0} {t('projects.closed')}
-        </span>
-      </div>
-      
-      <div className="space-y-3">
-        {projectData.community?.issues?.recent?.map((issue: any, index: number) => (
-          <div key={index} className="p-4 border border-theme-border rounded-lg hover:bg-theme-surface transition-colors cursor-pointer">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h4 className="font-medium text-theme-primary mb-1">{issue.title}</h4>
-                <div className="flex items-center gap-2 text-sm text-theme-secondary">
-                  <span>#{issue.id}</span>
-                  <span>{t('projects.by')} {issue.author}</span>
-                  <span>{issue.created}</span>
-                </div>
-              </div>
-              <div className="flex gap-1">
-                {issue.labels?.map((label: string, labelIndex: number) => (
-                  <span key={labelIndex} className="px-2 py-1 bg-theme-100 text-theme-800 rounded text-xs">
-                    {label}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const renderIssues = () => {
+    // Use project ID from URL params
+    if (!projectId) {
+      return <div className="p-4 text-theme-secondary">Project ID not found</div>;
+    }
+    return <ProjectIssuesList projectId={projectId} />;
+  };
 
   const renderDependencies = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -154,6 +154,46 @@ func (cu *CommentUpdate) SetNillableType(s *string) *CommentUpdate {
 	return cu
 }
 
+// SetReferrenceID sets the "referrence_id" field.
+func (cu *CommentUpdate) SetReferrenceID(s string) *CommentUpdate {
+	cu.mutation.SetReferrenceID(s)
+	return cu
+}
+
+// SetNillableReferrenceID sets the "referrence_id" field if the given value is not nil.
+func (cu *CommentUpdate) SetNillableReferrenceID(s *string) *CommentUpdate {
+	if s != nil {
+		cu.SetReferrenceID(*s)
+	}
+	return cu
+}
+
+// ClearReferrenceID clears the value of the "referrence_id" field.
+func (cu *CommentUpdate) ClearReferrenceID() *CommentUpdate {
+	cu.mutation.ClearReferrenceID()
+	return cu
+}
+
+// SetAttachmentID sets the "attachment_id" field.
+func (cu *CommentUpdate) SetAttachmentID(s string) *CommentUpdate {
+	cu.mutation.SetAttachmentID(s)
+	return cu
+}
+
+// SetNillableAttachmentID sets the "attachment_id" field if the given value is not nil.
+func (cu *CommentUpdate) SetNillableAttachmentID(s *string) *CommentUpdate {
+	if s != nil {
+		cu.SetAttachmentID(*s)
+	}
+	return cu
+}
+
+// ClearAttachmentID clears the value of the "attachment_id" field.
+func (cu *CommentUpdate) ClearAttachmentID() *CommentUpdate {
+	cu.mutation.ClearAttachmentID()
+	return cu
+}
+
 // SetIsApproved sets the "is_approved" field.
 func (cu *CommentUpdate) SetIsApproved(b bool) *CommentUpdate {
 	cu.mutation.SetIsApproved(b)
@@ -376,6 +416,16 @@ func (cu *CommentUpdate) check() error {
 			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Comment.content": %w`, err)}
 		}
 	}
+	if v, ok := cu.mutation.ReferrenceID(); ok {
+		if err := comment.ReferrenceIDValidator(v); err != nil {
+			return &ValidationError{Name: "referrence_id", err: fmt.Errorf(`ent: validator failed for field "Comment.referrence_id": %w`, err)}
+		}
+	}
+	if v, ok := cu.mutation.AttachmentID(); ok {
+		if err := comment.AttachmentIDValidator(v); err != nil {
+			return &ValidationError{Name: "attachment_id", err: fmt.Errorf(`ent: validator failed for field "Comment.attachment_id": %w`, err)}
+		}
+	}
 	if v, ok := cu.mutation.IPAddress(); ok {
 		if err := comment.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "Comment.ip_address": %w`, err)}
@@ -424,6 +474,18 @@ func (cu *CommentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := cu.mutation.GetType(); ok {
 		_spec.SetField(comment.FieldType, field.TypeString, value)
+	}
+	if value, ok := cu.mutation.ReferrenceID(); ok {
+		_spec.SetField(comment.FieldReferrenceID, field.TypeString, value)
+	}
+	if cu.mutation.ReferrenceIDCleared() {
+		_spec.ClearField(comment.FieldReferrenceID, field.TypeString)
+	}
+	if value, ok := cu.mutation.AttachmentID(); ok {
+		_spec.SetField(comment.FieldAttachmentID, field.TypeString, value)
+	}
+	if cu.mutation.AttachmentIDCleared() {
+		_spec.ClearField(comment.FieldAttachmentID, field.TypeString)
 	}
 	if value, ok := cu.mutation.IsApproved(); ok {
 		_spec.SetField(comment.FieldIsApproved, field.TypeBool, value)
@@ -696,6 +758,46 @@ func (cuo *CommentUpdateOne) SetNillableType(s *string) *CommentUpdateOne {
 	return cuo
 }
 
+// SetReferrenceID sets the "referrence_id" field.
+func (cuo *CommentUpdateOne) SetReferrenceID(s string) *CommentUpdateOne {
+	cuo.mutation.SetReferrenceID(s)
+	return cuo
+}
+
+// SetNillableReferrenceID sets the "referrence_id" field if the given value is not nil.
+func (cuo *CommentUpdateOne) SetNillableReferrenceID(s *string) *CommentUpdateOne {
+	if s != nil {
+		cuo.SetReferrenceID(*s)
+	}
+	return cuo
+}
+
+// ClearReferrenceID clears the value of the "referrence_id" field.
+func (cuo *CommentUpdateOne) ClearReferrenceID() *CommentUpdateOne {
+	cuo.mutation.ClearReferrenceID()
+	return cuo
+}
+
+// SetAttachmentID sets the "attachment_id" field.
+func (cuo *CommentUpdateOne) SetAttachmentID(s string) *CommentUpdateOne {
+	cuo.mutation.SetAttachmentID(s)
+	return cuo
+}
+
+// SetNillableAttachmentID sets the "attachment_id" field if the given value is not nil.
+func (cuo *CommentUpdateOne) SetNillableAttachmentID(s *string) *CommentUpdateOne {
+	if s != nil {
+		cuo.SetAttachmentID(*s)
+	}
+	return cuo
+}
+
+// ClearAttachmentID clears the value of the "attachment_id" field.
+func (cuo *CommentUpdateOne) ClearAttachmentID() *CommentUpdateOne {
+	cuo.mutation.ClearAttachmentID()
+	return cuo
+}
+
 // SetIsApproved sets the "is_approved" field.
 func (cuo *CommentUpdateOne) SetIsApproved(b bool) *CommentUpdateOne {
 	cuo.mutation.SetIsApproved(b)
@@ -931,6 +1033,16 @@ func (cuo *CommentUpdateOne) check() error {
 			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Comment.content": %w`, err)}
 		}
 	}
+	if v, ok := cuo.mutation.ReferrenceID(); ok {
+		if err := comment.ReferrenceIDValidator(v); err != nil {
+			return &ValidationError{Name: "referrence_id", err: fmt.Errorf(`ent: validator failed for field "Comment.referrence_id": %w`, err)}
+		}
+	}
+	if v, ok := cuo.mutation.AttachmentID(); ok {
+		if err := comment.AttachmentIDValidator(v); err != nil {
+			return &ValidationError{Name: "attachment_id", err: fmt.Errorf(`ent: validator failed for field "Comment.attachment_id": %w`, err)}
+		}
+	}
 	if v, ok := cuo.mutation.IPAddress(); ok {
 		if err := comment.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "Comment.ip_address": %w`, err)}
@@ -996,6 +1108,18 @@ func (cuo *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err e
 	}
 	if value, ok := cuo.mutation.GetType(); ok {
 		_spec.SetField(comment.FieldType, field.TypeString, value)
+	}
+	if value, ok := cuo.mutation.ReferrenceID(); ok {
+		_spec.SetField(comment.FieldReferrenceID, field.TypeString, value)
+	}
+	if cuo.mutation.ReferrenceIDCleared() {
+		_spec.ClearField(comment.FieldReferrenceID, field.TypeString)
+	}
+	if value, ok := cuo.mutation.AttachmentID(); ok {
+		_spec.SetField(comment.FieldAttachmentID, field.TypeString, value)
+	}
+	if cuo.mutation.AttachmentIDCleared() {
+		_spec.ClearField(comment.FieldAttachmentID, field.TypeString)
 	}
 	if value, ok := cuo.mutation.IsApproved(); ok {
 		_spec.SetField(comment.FieldIsApproved, field.TypeBool, value)

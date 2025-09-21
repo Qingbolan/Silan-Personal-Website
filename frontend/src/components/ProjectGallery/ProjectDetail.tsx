@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  Github, 
-  Star, 
-  GitFork, 
+import {
+  ArrowLeft,
+  ExternalLink,
+  Github,
+  Heart,
   Download,
   Shield,
   Calendar,
@@ -168,12 +167,8 @@ const ProjectDetail: React.FC = () => {
                 {/* Quick Stats */}
                 <div className="flex flex-wrap items-center gap-6 text-sm text-theme-secondary">
                   <div className="flex items-center gap-1">
-                    <Star size={16} />
-                    <span>{project.metrics?.stars || 0} {t('projects.stars')}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <GitFork size={16} />
-                    <span>{project.community?.forks || 0} {t('projects.forks')}</span>
+                    <Heart size={16} />
+                    <span>{project.community?.likes || 0} {t('projects.likes')}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Download size={16} />

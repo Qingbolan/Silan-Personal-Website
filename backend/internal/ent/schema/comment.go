@@ -51,6 +51,12 @@ func (Comment) Fields() []ent.Field {
 		field.String("type").
 			Default("general").
 			Comment("Type of comment: general, question, suggestion, etc."),
+		field.String("referrence_id").
+			Optional().
+			MaxLen(500),
+		field.String("attachment_id").
+			Optional().
+			MaxLen(500),
 		field.Bool("is_approved").
 			Default(false),
 		field.String("ip_address").

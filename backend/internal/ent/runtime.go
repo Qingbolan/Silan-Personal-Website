@@ -585,28 +585,36 @@ func init() {
 	commentDescType := commentFields[8].Descriptor()
 	// comment.DefaultType holds the default value on creation for the type field.
 	comment.DefaultType = commentDescType.Default.(string)
+	// commentDescReferrenceID is the schema descriptor for referrence_id field.
+	commentDescReferrenceID := commentFields[9].Descriptor()
+	// comment.ReferrenceIDValidator is a validator for the "referrence_id" field. It is called by the builders before save.
+	comment.ReferrenceIDValidator = commentDescReferrenceID.Validators[0].(func(string) error)
+	// commentDescAttachmentID is the schema descriptor for attachment_id field.
+	commentDescAttachmentID := commentFields[10].Descriptor()
+	// comment.AttachmentIDValidator is a validator for the "attachment_id" field. It is called by the builders before save.
+	comment.AttachmentIDValidator = commentDescAttachmentID.Validators[0].(func(string) error)
 	// commentDescIsApproved is the schema descriptor for is_approved field.
-	commentDescIsApproved := commentFields[9].Descriptor()
+	commentDescIsApproved := commentFields[11].Descriptor()
 	// comment.DefaultIsApproved holds the default value on creation for the is_approved field.
 	comment.DefaultIsApproved = commentDescIsApproved.Default.(bool)
 	// commentDescIPAddress is the schema descriptor for ip_address field.
-	commentDescIPAddress := commentFields[10].Descriptor()
+	commentDescIPAddress := commentFields[12].Descriptor()
 	// comment.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
 	comment.IPAddressValidator = commentDescIPAddress.Validators[0].(func(string) error)
 	// commentDescUserAgent is the schema descriptor for user_agent field.
-	commentDescUserAgent := commentFields[11].Descriptor()
+	commentDescUserAgent := commentFields[13].Descriptor()
 	// comment.UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	comment.UserAgentValidator = commentDescUserAgent.Validators[0].(func(string) error)
 	// commentDescLikesCount is the schema descriptor for likes_count field.
-	commentDescLikesCount := commentFields[13].Descriptor()
+	commentDescLikesCount := commentFields[15].Descriptor()
 	// comment.DefaultLikesCount holds the default value on creation for the likes_count field.
 	comment.DefaultLikesCount = commentDescLikesCount.Default.(int)
 	// commentDescCreatedAt is the schema descriptor for created_at field.
-	commentDescCreatedAt := commentFields[14].Descriptor()
+	commentDescCreatedAt := commentFields[16].Descriptor()
 	// comment.DefaultCreatedAt holds the default value on creation for the created_at field.
 	comment.DefaultCreatedAt = commentDescCreatedAt.Default.(func() time.Time)
 	// commentDescUpdatedAt is the schema descriptor for updated_at field.
-	commentDescUpdatedAt := commentFields[15].Descriptor()
+	commentDescUpdatedAt := commentFields[17].Descriptor()
 	// comment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	comment.DefaultUpdatedAt = commentDescUpdatedAt.Default.(func() time.Time)
 	// comment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
