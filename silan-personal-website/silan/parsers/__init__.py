@@ -40,6 +40,7 @@ from .project_parser import ProjectParser
 from .blog_parser import BlogParser
 from .idea_parser import IdeaParser
 from .update_parser import UpdateParser
+from .episode_parser import EpisodeParser
 from .parser_factory import ParserFactory, ParsedContentCollection
 
 __all__ = [
@@ -53,6 +54,7 @@ __all__ = [
     'BlogParser',
     'IdeaParser',
     'UpdateParser',
+    'EpisodeParser',
 
     # Factory and utilities
     'ParserFactory',
@@ -84,3 +86,7 @@ ParserFactory.register_parser('updates', UpdateParser)
 ParserFactory.register_parser('recent_update', UpdateParser)
 ParserFactory.register_parser('moment', UpdateParser)
 ParserFactory.register_parser('moments', UpdateParser)
+ParserFactory.register_parser('episode', EpisodeParser)
+ParserFactory.register_parser('episodes', EpisodeParser)
+ParserFactory.register_parser('series', EpisodeParser)
+ParserFactory.register_parser('tutorial_series', EpisodeParser)

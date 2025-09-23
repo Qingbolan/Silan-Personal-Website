@@ -31,11 +31,11 @@ class ProjectParser(BaseParser):
     def parse_folder(self, folder_path: Path) -> Optional[ExtractedContent]:
         """
         Parse a project folder structure.
-        
+
         Expected structure:
         project-name/
         ├── README.md (main content)
-        ├── config.yaml (project configuration)
+        ├── .silan-cache (project configuration)
         ├── assets/
         │   ├── images/
         │   ├── videos/
@@ -65,14 +65,14 @@ class ProjectParser(BaseParser):
                 return None
             
             # Load project configuration if exists
-            config_file = folder_path / 'config.yaml'
+            config_file = folder_path / '.silan-cache'
             config_data = {}
             if config_file.exists():
                 try:
                     with open(config_file, 'r', encoding='utf-8') as f:
                         config_data = yaml.safe_load(f) or {}
                 except Exception as e:
-                    self.warning(f"Error reading config.yaml: {e}")
+                    self.warning(f"Error reading .silan-cache: {e}")
             
             # Enhance extracted data with folder structure
             self._enhance_with_folder_data(extracted, folder_path, config_data)
@@ -90,7 +90,7 @@ class ProjectParser(BaseParser):
         if config_data:
             project_data = extracted.main_entity
 
-            # Handle nested config structure (config.yaml may have 'project' key)
+            # Handle nested config structure (.silan-cache may have 'project' key)
             if 'project' in config_data:
                 config_project_data = config_data['project']
             else:
@@ -155,6 +155,7 @@ class ProjectParser(BaseParser):
                     with open(lf, 'r', encoding='utf-8', errors='ignore') as f:
                         license_text = f.read()
                     break
+
             if license_text:
                 detected = self._detect_license_from_text(license_text)
                 # Inject both license type and full license text into details metadata for downstream sync
@@ -339,9 +340,16 @@ class ProjectParser(BaseParser):
         """Parse project content and extract structured data"""
         metadata = post.metadata
         content = post.content
-        
-        # Extract main project data
-        project_data = self._extract_project_data(metadata, content)
+
+        # Get project collection configuration from metadata
+        project_id = metadata.get('project_id', '')
+        project_info = metadata.get('project_info', {})
+        project_config = metadata.get('project_config', {})
+        file_info = metadata.get('file_info', {})
+        file_type = metadata.get('file_type', '')
+
+        # Extract main project data with collection context
+        project_data = self._extract_project_data(metadata, content, project_info, project_config, file_info)
         # Include raw README content for downstream sync (DB/API)
         project_data['content'] = content
         extracted.main_entity = project_data
@@ -363,16 +371,21 @@ class ProjectParser(BaseParser):
         # Extract performance metrics
         metrics = self._extract_performance_metrics(content)
         
-        # Store all extracted data
+        # Store all extracted data including collection configuration
         extracted.metadata.update({
             'frontmatter': metadata,  # Preserve original frontmatter
             'details': project_details,
             'relationships': relationships,
             'metrics': metrics,
-            'sections': self._extract_sections(content)
+            'sections': self._extract_sections(content),
+            'project_id': project_id,
+            'project_info': project_info,
+            'project_config': project_config,
+            'file_info': file_info,
+            'file_type': file_type
         })
     
-    def _extract_project_data(self, metadata: Dict, content: str) -> Dict[str, Any]:
+    def _extract_project_data(self, metadata: Dict, content: str, project_info: Dict = None, project_config: Dict = None, file_info: Dict = None) -> Dict[str, Any]:
         """Extract main project information"""
         # Extract title from metadata or first heading
         title = metadata.get('title', '')
@@ -393,23 +406,52 @@ class ProjectParser(BaseParser):
         # Extract project type/difficulty
         project_type = self._extract_project_type(metadata, content)
         
+        # Use information from project registry and config if available
+        project_info = project_info or {}
+        project_config = project_config or {}
+        file_info = file_info or {}
+
+        # Override with collection/project information
+        project_details = project_config.get('project_info', {})
+        implementation = project_config.get('implementation', {})
+
+        title = file_info.get('title', project_details.get('title', project_info.get('title', title)))
+        slug = project_details.get('slug', project_info.get('slug', slug))
+        description = file_info.get('description', project_details.get('abstract', project_info.get('description', metadata.get('description', ''))))
+
         project_data = {
             'title': title,
             'slug': slug,
-            'description': metadata.get('description', ''),
-            'project_type': project_type,
-            'status': status,
-            'start_date': start_date,
-            'end_date': end_date,
-            'github_url': metadata.get('github_url', ''),
-            'demo_url': metadata.get('demo_url', ''),
-            'documentation_url': metadata.get('docs_url', metadata.get('documentation_url', '')),
+            'description': description,
+            'project_type': project_details.get('type', project_info.get('type', project_type)),
+            'category': project_details.get('category', project_info.get('category', metadata.get('category', ''))),
+            'field': project_details.get('field', project_info.get('field', metadata.get('field', ''))),
+            'priority': project_details.get('priority', project_info.get('priority', metadata.get('priority', 'medium'))),
+            'complexity': project_details.get('complexity', project_info.get('complexity', metadata.get('complexity', 'medium'))),
+            'status': project_details.get('status', project_info.get('status', status)),
+            'start_date': self._parse_date(project_details.get('created_date', start_date)),
+            'end_date': self._parse_date(project_details.get('updated_date', end_date)),
+            'estimated_duration': project_details.get('estimated_duration', project_info.get('estimated_duration', metadata.get('estimated_duration', ''))),
+            'collaboration_needed': project_details.get('collaboration_needed', project_info.get('collaboration_needed', metadata.get('collaboration_needed', False))),
+            'funding_required': project_details.get('funding_required', project_info.get('funding_required', metadata.get('funding_required', False))),
+            'github_url': implementation.get('repository_url', project_info.get('repository_url', metadata.get('github_url', ''))),
+            'demo_url': implementation.get('demo_url', project_info.get('demo_url', metadata.get('demo_url', ''))),
+            'documentation_url': implementation.get('documentation_url', metadata.get('docs_url', metadata.get('documentation_url', ''))),
             'thumbnail_url': metadata.get('image', metadata.get('thumbnail', '')),
-            'is_featured': metadata.get('featured', False),
+            'is_featured': project_details.get('is_featured', project_info.get('is_featured', metadata.get('featured', False))),
             'is_public': metadata.get('public', True),
             'view_count': 0,
             'star_count': metadata.get('stars', 0),
-            'sort_order': metadata.get('id', 0)
+            'like_count': 0,
+            'sort_order': project_info.get('sort_order', metadata.get('id', 0)),
+            # Add project collection context
+            'project_id': metadata.get('project_id', ''),
+            'directory_path': project_info.get('directory_path', ''),
+            'has_multiple_files': project_info.get('has_multiple_files', False),
+            'file_type': file_info.get('file_type', ''),
+            'language': file_info.get('language', ''),
+            'supports_multilang': file_info.get('supports_multilang', False),
+            'deployment_status': implementation.get('deployment_status', '')
         }
         
         return project_data
@@ -825,7 +867,8 @@ class ProjectParser(BaseParser):
         # Fallback generic patterns
         generic = re.search(r'License[:\s]*([A-Za-z0-9 .+-]+)', text, re.IGNORECASE)
         if generic and generic.group(1):
-            return generic.group(1).strip()
+            result = generic.group(1).strip()
+            return result
         return ''
 
     def _extract_version(self, content: str) -> str:

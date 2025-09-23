@@ -27,17 +27,24 @@ class BlogParser(BaseParser):
         """Parse blog post content and extract structured data"""
         metadata = post.metadata
         content = post.content
-        
+
         # Add filename to metadata for prefix detection
         if hasattr(extracted, 'source_file') and extracted.source_file:
             filename = extracted.source_file.name
             metadata['filename'] = filename
-            
+
             # folder_prefix should now be available from passed metadata
             # No need to manually detect from parent folder
+
+        # Get blog collection configuration from metadata
+        blog_id = metadata.get('blog_id', '')
+        blog_info = metadata.get('blog_info', {})
+        series_config = metadata.get('series_config', {})
+        file_info = metadata.get('file_info', {})
+        language = metadata.get('language', '')
         
-        # Extract main blog post data
-        blog_data = self._extract_blog_data(metadata, content)
+        # Extract main blog post data with collection context
+        blog_data = self._extract_blog_data(metadata, content, blog_info, series_config, file_info)
         extracted.main_entity = blog_data
         
         # Extract categories and tags
@@ -56,17 +63,23 @@ class BlogParser(BaseParser):
         # Extract related posts/references
         related_posts = self._extract_related_posts(content)
         
-        # Store all extracted data
+        # Store all extracted data including collection configuration
         extracted.metadata.update({
             'categories_data': [{'name': cat, 'slug': self._generate_slug(cat)} for cat in categories],
             'tags_data': [{'name': tag, 'slug': self._generate_slug(tag)} for tag in tags],
             'series': series_info,
             'content_analysis': content_analysis,
             'related_posts': related_posts,
-            'sections': self._extract_sections(content)
+            'sections': self._extract_sections(content),
+            'blog_id': blog_id,
+            'blog_info': blog_info,
+            'series_config': series_config,
+            'file_info': file_info,
+            'language': language,
+            'frontmatter': metadata  # Preserve original frontmatter
         })
     
-    def _extract_blog_data(self, metadata: Dict, content: str) -> Dict[str, Any]:
+    def _extract_blog_data(self, metadata: Dict, content: str, blog_info: Dict = None, series_config: Dict = None, file_info: Dict = None) -> Dict[str, Any]:
         """Extract main blog post information"""
         # Generate slug if not provided
         title = metadata.get('title', '')
@@ -92,21 +105,40 @@ class BlogParser(BaseParser):
         # Extract series information for main entity
         series_info = self._extract_series_info(metadata, content)
         
+        # Use information from blog registry and series config if available
+        blog_info = blog_info or {}
+        series_config = series_config or {}
+        file_info = file_info or {}
+
+        # Override with collection/series information
+        title = file_info.get('title', blog_info.get('title', title))
+        slug = blog_info.get('slug', slug)
+        content_type = series_config.get('series_info', {}).get('content_type', blog_info.get('content_type', content_type))
+        category = series_config.get('series_info', {}).get('category', blog_info.get('category', metadata.get('category', '')))
+
         blog_data = {
             'title': title,
             'slug': slug,
-            'excerpt': excerpt,
+            'excerpt': file_info.get('description', blog_info.get('description', excerpt)),
             'content': content,
             'content_type': content_type,
+            'category': category,
             'status': self._determine_status(metadata),
-            'is_featured': metadata.get('featured', False),
+            'is_featured': blog_info.get('is_featured', metadata.get('featured', False)),
             'featured_image_url': featured_image,
             'reading_time_minutes': reading_metrics['reading_time'],
             'view_count': metadata.get('views', 0),
             'like_count': metadata.get('likes', 0),
             'comment_count': 0,
             'published_at': pub_date,
-            'series': series_info
+            'series': series_info,
+            'language': file_info.get('language', ''),
+            'sort_order': blog_info.get('sort_order', 0),
+            # Add blog collection context
+            'blog_id': metadata.get('blog_id', ''),
+            'directory_path': blog_info.get('directory_path', ''),
+            'has_series_config': blog_info.get('has_series_config', False),
+            'language_support': blog_info.get('language_support', [])
         }
         
         return blog_data

@@ -11,4 +11,5 @@ Currently pursuing Master of Computing with AI specialization at NUS.
 
 - Coursework: deep learning, distributed systems, NLP
 - Activities: research collaborations, reading group
+- Updated: Making good progress in Q3 2024
 

@@ -1,0 +1,59 @@
+# Silan Project Configuration
+project:
+  name: "test-fixed"
+  description: "A portfolio project managed with Silan Database Tools"
+  language: "en"
+  created: "2025-09-23"
+  version: "1.0.0"
+
+content:
+  directory: "content"
+  types:
+    - blog
+    - projects
+    - ideas
+    - moment
+    - episode
+    - resume
+
+templates:
+  directory: "templates"
+  auto_apply: true
+
+database:
+  default_type: "sqlite"
+  sqlite:
+    path: "portfolio.db"
+  mysql:
+    host: "localhost"
+    port: 3306
+    charset: "utf8mb4"
+  postgresql:
+    host: "localhost"
+    port: 5432
+
+backend:
+  enabled: false
+  host: "0.0.0.0"
+  port: 5200
+  cors:
+    enabled: true
+    origins:
+      - "http://localhost:3000"
+      - "http://localhost:8080"
+
+sync:
+  auto_backup: true
+  create_tables: true
+  validate_content: true
+
+logging:
+  level: "info"
+  file: ".silan/silan.log"
+
+workspace:
+  owner:
+    username: "silan"
+    email: "Silan.Hu@u.nus.edu"
+    first_name: "Silan"
+    last_name: "Hu"

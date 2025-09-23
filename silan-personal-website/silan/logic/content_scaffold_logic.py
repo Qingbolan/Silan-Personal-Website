@@ -57,7 +57,7 @@ class ContentScaffoldLogic(ModernLogger):
             "research", "notes", "experiments", "references", "prototypes", "assets"
         ])
 
-        # Metadata config.yaml
+        # Metadata .silan-cache
         config = {
             "idea": {
                 "title": title,
@@ -80,8 +80,8 @@ class ContentScaffoldLogic(ModernLogger):
             self.file_ops.write_file(readme_path, content)
             self.debug(f"Created README: {readme_path}")
 
-        # Save config.yaml (non-destructive)
-        config_path = idea_root / "config.yaml"
+        # Save .silan-cache (non-destructive)
+        config_path = idea_root / ".silan-cache"
         if not config_path.exists():
             self.file_ops.write_file(config_path, yaml.safe_dump(config, sort_keys=False))
             self.debug(f"Created config: {config_path}")
@@ -133,7 +133,7 @@ class ContentScaffoldLogic(ModernLogger):
         if not license_path.exists():
             self.file_ops.write_file(license_path, self._license_text(options.license))
 
-        # config.yaml for metadata
+        # .silan-cache for metadata
         config = {
             "project": {
                 "title": name,
@@ -144,7 +144,7 @@ class ContentScaffoldLogic(ModernLogger):
                 "created": datetime.date.today().isoformat(),
             }
         }
-        config_path = proj_root / "config.yaml"
+        config_path = proj_root / ".silan-cache"
         if not config_path.exists():
             self.file_ops.write_file(config_path, yaml.safe_dump(config, sort_keys=False))
 

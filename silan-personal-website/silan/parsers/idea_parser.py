@@ -77,14 +77,14 @@ class IdeaParser(BaseParser):
                 extracted.main_entity['motivation'] = debug_motivation
             
             # Load idea configuration if exists
-            config_file = folder_path / 'config.yaml'
+            config_file = folder_path / '.silan-cache'
             config_data = {}
             if config_file.exists():
                 try:
                     with open(config_file, 'r', encoding='utf-8') as f:
                         config_data = yaml.safe_load(f) or {}
                 except Exception as e:
-                    self.warning(f"Error reading config.yaml: {e}")
+                    self.warning(f"Error reading .silan-cache: {e}")
             
             # Enhance extracted data with folder structure
             self._enhance_with_folder_data(extracted, folder_path, config_data)
@@ -106,7 +106,7 @@ class IdeaParser(BaseParser):
         if config_data:
             idea_data = extracted.main_entity
             
-            # Handle nested config structure (config.yaml may have 'idea' key)
+            # Handle nested config structure (.silan-cache may have 'idea' key)
             if 'idea' in config_data:
                 config_idea_data = config_data['idea']
             else:
@@ -436,9 +436,16 @@ class IdeaParser(BaseParser):
         """Parse idea content and extract structured data"""
         metadata = post.metadata
         content = post.content
-        
-        # Extract main idea data
-        idea_data = self._extract_idea_data(metadata, content)
+
+        # Get idea collection configuration from metadata
+        idea_id = metadata.get('idea_id', '')
+        idea_info = metadata.get('idea_info', {})
+        project_config = metadata.get('project_config', {})
+        file_info = metadata.get('file_info', {})
+        file_type = metadata.get('file_type', '')
+
+        # Extract main idea data with collection context
+        idea_data = self._extract_idea_data(metadata, content, idea_info, project_config, file_info)
         extracted.main_entity = idea_data
         
         # Extract technologies and requirements
@@ -460,17 +467,23 @@ class IdeaParser(BaseParser):
         # Extract market analysis
         market_analysis = self._analyze_market_potential(content)
         
-        # Store all extracted data
+        # Store all extracted data including collection configuration
         extracted.metadata.update({
             'implementation': implementation,
             'feasibility': feasibility,
             'collaboration': collaboration,
             'business_analysis': business_analysis,
             'market_analysis': market_analysis,
-            'sections': self._extract_sections(content)
+            'sections': self._extract_sections(content),
+            'idea_id': idea_id,
+            'idea_info': idea_info,
+            'project_config': project_config,
+            'file_info': file_info,
+            'file_type': file_type,
+            'frontmatter': metadata  # Preserve original frontmatter
         })
     
-    def _extract_idea_data(self, metadata: Dict, content: str) -> Dict[str, Any]:
+    def _extract_idea_data(self, metadata: Dict, content: str, idea_info: Dict = None, project_config: Dict = None, file_info: Dict = None) -> Dict[str, Any]:
         """Extract main idea information"""
         # Extract title from metadata or content
         title = metadata.get('title', '')
@@ -539,9 +552,20 @@ class IdeaParser(BaseParser):
         elif metadata.get('fundingStatus') == 'funded':
             funding_required = False
         
+        # Use information from idea registry and project config if available
+        idea_info = idea_info or {}
+        project_config = project_config or {}
+        file_info = file_info or {}
+
+        # Override with collection/project information
+        idea_project_info = project_config.get('idea_info', {})
+        title = file_info.get('title', idea_project_info.get('title', idea_info.get('title', title)))
+        slug = idea_project_info.get('slug', idea_info.get('slug', slug))
+        abstract = file_info.get('description', idea_project_info.get('abstract', idea_info.get('description', abstract)))
+
         # Parse duration from string like "6-8 months"
-        duration_months = self._extract_duration_months(metadata.get('estimated_duration', ''))
-        
+        duration_months = self._extract_duration_months(idea_project_info.get('estimated_duration', metadata.get('estimated_duration', '')))
+
         idea_data = {
             'title': title,
             'slug': slug,
@@ -549,16 +573,27 @@ class IdeaParser(BaseParser):
             'motivation': motivation, # Ensure motivation is preserved
             'methodology': solution_overview or self._extract_methodology(content),
             'expected_outcome': self._extract_expected_outcome(content),
-            'status': self._map_idea_status(metadata.get('status', 'draft')),
+            'status': self._map_idea_status(idea_project_info.get('status', idea_info.get('status', metadata.get('status', 'draft')))),
+            'category': idea_project_info.get('category', idea_info.get('category', metadata.get('category', ''))),
+            'field': idea_project_info.get('field', idea_info.get('field', metadata.get('field', ''))),
+            'priority': idea_project_info.get('priority', idea_info.get('priority', metadata.get('priority', 'medium'))),
             'estimated_duration_months': duration_months,
-            'collaboration_needed': collaboration_needed,
-            'funding_required': funding_required,
+            'collaboration_needed': idea_project_info.get('collaboration_needed', idea_info.get('collaboration_needed', collaboration_needed)),
+            'funding_required': idea_project_info.get('funding_required', idea_info.get('funding_required', funding_required)),
             'estimated_budget': financial_estimates.get('budget'),
             'required_resources': self._extract_required_resources_string(content),
-            'is_public': metadata.get('is_public', True),  # Default to public for content-extracted ideas
+            'is_public': metadata.get('is_public', True),
+            'is_featured': idea_project_info.get('is_featured', idea_info.get('is_featured', False)),
             'view_count': 0,
             'like_count': 0,
-            'priority': self._map_priority_level(feasibility_score, impact_score)
+            'sort_order': idea_info.get('sort_order', 0),
+            # Add idea collection context
+            'idea_id': metadata.get('idea_id', ''),
+            'directory_path': idea_info.get('directory_path', ''),
+            'has_multiple_files': idea_info.get('has_multiple_files', False),
+            'file_type': file_info.get('file_type', ''),
+            'language': file_info.get('language', ''),
+            'supports_multilang': file_info.get('supports_multilang', False)
         }
         
         return idea_data

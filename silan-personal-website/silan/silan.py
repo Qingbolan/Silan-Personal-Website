@@ -41,6 +41,7 @@ class SilanCLI:
         # New content scaffolding groups
         cli.add_command(self._create_ideas_group())
         cli.add_command(self._create_projects_group())
+        cli.add_command(self._create_new_command())
 
         cli.add_command(self._create_status_command())
         cli.add_command(self._create_help_command())
@@ -407,6 +408,41 @@ class SilanCLI:
             logic.success(f"Project scaffold created: {root}")
 
         return projects
+
+    def _create_new_command(self):
+        """Create unified new command for all content types"""
+        import click
+
+        @click.command(name='new')
+        @click.argument('content_type', type=click.Choice(['blog', 'project', 'idea', 'episode', 'resume']))
+        @click.argument('name')
+        @click.option('--title', help='Content title (defaults to name)')
+        @click.option('--description', help='Content description')
+        @click.option('--category', help='Content category')
+        @click.option('--tag', 'tags', multiple=True, help='Tags (repeatable)')
+        @click.option('--language', default='en', type=click.Choice(['en', 'zh', 'both']),
+                      help='Language support (default: en)')
+        @click.option('--status', help='Initial status')
+        @click.option('--type', 'sub_type', help='Content subtype (e.g., vlog, tutorial)')
+        def new(content_type: str, name: str, title: str, description: str, category: str,
+                tags: tuple, language: str, status: str, sub_type: str):
+            """Create new content of specified type"""
+            success = self.cli_logic.execute_command(
+                'new',
+                content_type=content_type,
+                name=name,
+                title=title or name.replace('-', ' ').replace('_', ' ').title(),
+                description=description,
+                category=category,
+                tags=list(tags) if tags else [],
+                language=language,
+                status=status,
+                sub_type=sub_type
+            )
+            if not success:
+                raise click.ClickException(f"Failed to create {content_type}: {name}")
+
+        return new
 
 
 # Create the CLI instance and get the main group

@@ -13,6 +13,7 @@ from .project_parser import ProjectParser
 from .blog_parser import BlogParser
 from .idea_parser import IdeaParser
 from .update_parser import UpdateParser
+from .episode_parser import EpisodeParser
 
 
 class ParserFactory:
@@ -36,6 +37,10 @@ class ParserFactory:
         'update': UpdateParser,
         'updates': UpdateParser,
         'moment': UpdateParser,
+        # Register episode/series
+        'episode': EpisodeParser,
+        'episodes': EpisodeParser,  # Handle plural
+        'series': EpisodeParser,    # Alternative name
     }
     
     # Default parser for unknown content types

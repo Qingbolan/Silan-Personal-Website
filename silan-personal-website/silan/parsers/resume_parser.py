@@ -27,9 +27,14 @@ class ResumeParser(BaseParser):
         """Parse resume content and extract structured data"""
         metadata = post.metadata
         content = post.content
-        
-        # Extract personal information
-        personal_info = self._extract_personal_info(metadata, content)
+
+        # Get resume configuration from metadata
+        resume_config = metadata.get('resume_config', {})
+        file_info = metadata.get('file_info', {})
+        language = metadata.get('language', '')
+
+        # Extract personal information with configuration context
+        personal_info = self._extract_personal_info(metadata, content, resume_config, file_info)
         extracted.main_entity = personal_info
         
         # Extract social links
@@ -71,7 +76,7 @@ class ResumeParser(BaseParser):
             'recent_updates': recent_updates
         })
         
-        # Store all extracted data in metadata as well for other uses
+        # Store all extracted data in metadata including configuration
         extracted.metadata.update({
             'title': extracted.main_entity.get('title', ''),
             'current_status': extracted.main_entity.get('current_status', ''),
@@ -82,15 +87,24 @@ class ResumeParser(BaseParser):
             'awards': awards_data,
             'skills': skills_data,
             'research': research_data,
-            'recent_updates': recent_updates
+            'recent_updates': recent_updates,
+            'resume_config': resume_config,
+            'file_info': file_info,
+            'language': language,
+            'frontmatter': metadata  # Preserve original frontmatter
         })
         
         extracted.technologies = technologies
     
-    def _extract_personal_info(self, metadata: Dict, content: str) -> Dict[str, Any]:
+    def _extract_personal_info(self, metadata: Dict, content: str, resume_config: Dict = None, file_info: Dict = None) -> Dict[str, Any]:
         """Extract personal information from metadata and content"""
+        # Use file info from config for language context, but extract content from markdown
+        resume_config = resume_config or {}
+        file_info = file_info or {}
+
         # Extract title from content or metadata
         title = self._extract_professional_title(content) or metadata.get('title', '')
+
         personal_info = {
             'full_name': metadata.get('name', ''),
             'title': title,
@@ -99,8 +113,13 @@ class ResumeParser(BaseParser):
             'email': metadata.get('email', ''),
             'location': metadata.get('location', ''),
             'website': metadata.get('website', ''),
+            'linkedin_url': metadata.get('linkedin', ''),
+            'github_url': metadata.get('github', ''),
             'avatar_url': self._extract_avatar_url(metadata, content),
-            'is_primary': True
+            'is_primary': file_info.get('is_primary', True),
+            'language': file_info.get('language', ''),
+            'language_name': file_info.get('language_name', ''),
+            'sort_order': file_info.get('sort_order', 0)
         }
         
         # Extract contact information if structured

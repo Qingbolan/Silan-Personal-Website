@@ -36,9 +36,12 @@ class UUID(TypeDecorator):
         if value is None:
             return value
         else:
-            if not isinstance(value, uuid.UUID):
-                return uuid.UUID(value)
-            return value
+            # Always return string UUID for cross-dialect consistency (esp. SQLite)
+            try:
+                return str(value) if isinstance(value, uuid.UUID) else str(uuid.UUID(str(value)))
+            except Exception:
+                # Fallback to plain string to avoid driver sentinel mismatches
+                return str(value)
 
 
 class Base(DeclarativeBase):

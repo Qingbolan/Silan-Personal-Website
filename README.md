@@ -407,11 +407,11 @@ api-test-portfolio/content/
 ├── projects/                              # Portfolio projects
 │   └── silan-personal-website/            # Main project showcase
 │       ├── README.md
-│       └── config.yaml
+│       └── .silan-cache
 ├── ideas/                                 # Research ideas
 │   └── silan-personal-website/            # Project idea documentation
 │       ├── README.md
-│       └── config.yaml
+│       └── .silan-cache
 ├── resume/                                # Professional information
 │   └── resume.md
 └── updates/                               # Timeline updates

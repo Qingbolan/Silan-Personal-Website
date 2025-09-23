@@ -1,0 +1,107 @@
+content_files:
+- file_id: overview
+  file_path: README.md
+  is_primary: true
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+- file_id: episode_01
+  file_path: episode-01-setup.md
+  is_primary: false
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+- file_id: episode_02
+  file_path: episode-02-content.md
+  is_primary: false
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+series_info:
+  title: Portfolio Tutorial Series
+  description: Complete guide to building and managing your portfolio with Silan
+  type: episode
+  series_id: portfolio-tutorial-series
+  slug: portfolio-tutorial-series
+  series_status: active
+  total_episodes: 10
+  published_episodes: 2
+  language: en
+  author: Silan Team
+  difficulty: beginner
+  estimated_duration: 3 hours total
+  category: education
+  tags:
+  - tutorial
+  - portfolio
+  - silan
+  - beginner
+  - education
+  featured: true
+  allow_comments: true
+  share_enabled: true
+  episodes:
+    1:
+      title: Setting Up Your Portfolio Project
+      file: episode-01-setup.md
+      duration: 15 minutes
+      status: published
+      created: '2025-09-23'
+    2:
+      title: Creating Rich Content
+      file: episode-02-content.md
+      duration: 20 minutes
+      status: published
+      created: '2025-09-23'
+    3:
+      title: Content Organization
+      file: episode-03-organization.md
+      duration: 18 minutes
+      status: draft
+      created: '2025-09-23'
+    4:
+      title: Database Integration
+      file: episode-04-database.md
+      duration: 25 minutes
+      status: planned
+      created: '2025-09-23'
+    5:
+      title: Advanced Features
+      file: episode-05-advanced.md
+      duration: 30 minutes
+      status: planned
+      created: '2025-09-23'
+  objectives:
+  - Master Silan CLI commands
+  - Create professional portfolio content
+  - Organize and manage content effectively
+  - Integrate with databases and external tools
+  - Deploy and maintain your portfolio
+  audience:
+    primary: developers
+    secondary: designers
+    level: beginner to intermediate
+    prerequisites:
+    - Basic command line knowledge
+    - Markdown familiarity
+    - Git basics
+  features:
+    interactive_exercises: true
+    code_examples: true
+    downloadable_resources: true
+    community_support: true
+    progress_tracking: true
+sync_metadata:
+  content_type: episode
+  item_id: portfolio-tutorial-series
+  sync_enabled: true
+  last_hash: c20d289c0d07ffb4
+  last_sync_date: '2025-09-23T17:21:28.220436'
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_count: 3
+  total_size: 0
+  sync_status: completed

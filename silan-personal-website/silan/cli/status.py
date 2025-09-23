@@ -18,7 +18,7 @@ def execute_status_command(logger: Optional[ModernLogger] = None) -> bool:
     cmd_logger = logger or StatusCommandLogger()
     
     try:
-        status_logic = StatusLogic(cmd_logger)
+        status_logic = StatusLogic()
         
         # Show comprehensive status
         status_logic.show_project_status()

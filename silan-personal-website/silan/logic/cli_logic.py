@@ -50,6 +50,7 @@ class CLILogic(SilanCLILogger):
             'db-config': self._handle_db_config,
             'backend': self._handle_backend,
             'frontend': self._handle_frontend,
+            'new': self._handle_new,
             'status': self._handle_status,
             'help': self._handle_help
         }
@@ -216,7 +217,195 @@ class CLILogic(SilanCLILogger):
         else:
             self.error(f"Unknown backend action: {action}")
             return False
-    
+
+    def _handle_new(self, content_type: str, name: str, title: str = None, description: str = None,
+                   category: str = None, tags: list = None, language: str = 'en',
+                   status: str = None, sub_type: str = None, **kwargs) -> bool:
+        """Handle new content creation command"""
+        from .content_scaffold_logic import ContentScaffoldLogic, IdeaOptions, ProjectOptions
+
+        try:
+            scaffold_logic = ContentScaffoldLogic()
+
+            # Set defaults based on content type
+            if not title:
+                title = name.replace('-', ' ').replace('_', ' ').title()
+
+            # Create content based on type
+            if content_type == 'idea':
+                options = IdeaOptions(
+                    category=category,
+                    tags=tags or [],
+                    research_field=category
+                )
+                result = scaffold_logic.create_idea(title, options)
+                self.success(f"✅ Created idea: {result}")
+                return True
+
+            elif content_type == 'project':
+                options = ProjectOptions(
+                    description=description,
+                    tags=tags or [],
+                    status=status or 'active',
+                    license='MIT'
+                )
+                result = scaffold_logic.create_project(name, options)
+                self.success(f"✅ Created project: {result}")
+                return True
+
+            else:
+                # For other content types, we'll implement simple template creation
+                return self._create_simple_template(content_type, name, title, description,
+                                                  category, tags, language, status, sub_type)
+
+        except Exception as e:
+            self.error(f"❌ Error creating {content_type}: {e}")
+            return False
+
+    def _create_simple_template(self, content_type: str, name: str, title: str,
+                               description: str, category: str, tags: list,
+                               language: str, status: str, sub_type: str) -> bool:
+        """Create simple template for content types not handled by scaffold logic"""
+        from pathlib import Path
+        import yaml
+        from datetime import datetime
+
+        content_dir = Path.cwd() / "content" / content_type
+        content_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create templates based on content type
+        if content_type == 'blog':
+            item_dir = content_dir / name
+            item_dir.mkdir(exist_ok=True)
+
+            # Create .silan-cache for blog
+            config_data = {
+                'sync_metadata': {
+                    'item_id': name,
+                    'content_type': 'blog_post',
+                    'sync_enabled': True
+                },
+                'series_info': {
+                    'series_id': name,
+                    'title': title,
+                    'description': description,
+                    'category': category or 'general',
+                    'content_type': sub_type or 'article'
+                },
+                'content_files': [
+                    {
+                        'file_id': 'en',
+                        'language': 'en',
+                        'file_path': 'en.md',
+                        'is_primary': True
+                    }
+                ]
+            }
+
+            config_file = item_dir / '.silan-cache'
+            with open(config_file, 'w') as f:
+                yaml.dump(config_data, f, default_flow_style=False)
+
+            # Create content file
+            frontmatter = {
+                'title': title,
+                'author': 'Author Name',
+                'date': datetime.now().strftime('%Y-%m-%d'),
+                'type': sub_type or 'article',
+                'excerpt': description or f'Brief description of {title}',
+                'tags': tags or [],
+                'status': status or 'draft',
+                'language': 'en'
+            }
+
+            content_file = item_dir / 'en.md'
+            with open(content_file, 'w') as f:
+                f.write('---\n')
+                yaml.dump(frontmatter, f, default_flow_style=False)
+                f.write('---\n\n')
+                f.write(f'# {title}\n\n')
+                f.write(f'{description or "Add your content here..."}\n\n')
+                f.write('## Introduction\n\n')
+                f.write('Write your introduction here.\n\n')
+                f.write('## Main Content\n\n')
+                f.write('Add your main content here.\n\n')
+                f.write('## Conclusion\n\n')
+                f.write('Summarize your content here.\n')
+
+            self.success(f"✅ Created blog post: {item_dir}")
+            return True
+
+        elif content_type == 'episode':
+            series_dir = content_dir / name
+            series_dir.mkdir(exist_ok=True)
+
+            # Create series config
+            config_data = {
+                'sync_metadata': {
+                    'item_id': name,
+                    'content_type': 'episode_series',
+                    'sync_enabled': True
+                },
+                'series_info': {
+                    'series_id': name,
+                    'title': title,
+                    'description': description,
+                    'category': category or 'tutorial'
+                },
+                'episodes': []
+            }
+
+            config_file = series_dir / '.silan-cache'
+            with open(config_file, 'w') as f:
+                yaml.dump(config_data, f, default_flow_style=False)
+
+            self.success(f"✅ Created episode series: {series_dir}")
+            return True
+
+        elif content_type == 'resume':
+            # Create resume files
+            resume_file = content_dir / 'resume.md'
+
+            frontmatter = {
+                'title': 'Professional Resume',
+                'name': 'Your Name',
+                'email': 'your.email@example.com',
+                'phone': '+1 (xxx) xxx-xxxx',
+                'location': 'Your Location',
+                'language': language
+            }
+
+            with open(resume_file, 'w') as f:
+                f.write('---\n')
+                yaml.dump(frontmatter, f, default_flow_style=False)
+                f.write('---\n\n')
+                f.write('# Your Name\n\n')
+                f.write('## Contact Information\n\n')
+                f.write('- Email: your.email@example.com\n')
+                f.write('- Phone: +1 (xxx) xxx-xxxx\n')
+                f.write('- Location: Your Location\n\n')
+                f.write('## Professional Summary\n\n')
+                f.write('Add your professional summary here.\n\n')
+                f.write('## Experience\n\n')
+                f.write('### Job Title - Company Name\n')
+                f.write('*Date Range*\n\n')
+                f.write('- Achievement or responsibility\n')
+                f.write('- Another achievement or responsibility\n\n')
+                f.write('## Education\n\n')
+                f.write('### Degree - Institution\n')
+                f.write('*Date Range*\n\n')
+                f.write('## Skills\n\n')
+                f.write('- Skill 1\n')
+                f.write('- Skill 2\n')
+                f.write('- Skill 3\n')
+
+            self.success(f"✅ Created resume: {resume_file}")
+            return True
+
+        else:
+            self.error(f"Template creation for {content_type} not implemented")
+            return False
+
     def _handle_status(self, **kwargs) -> bool:
         """Handle status command"""
         return execute_status_command(self)

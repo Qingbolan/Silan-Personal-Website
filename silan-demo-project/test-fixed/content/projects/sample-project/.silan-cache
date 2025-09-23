@@ -1,0 +1,49 @@
+content_files:
+- file_id: main
+  file_path: README.md
+  is_primary: true
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+- file_id: license
+  file_path: LICENSE
+  is_primary: false
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+- file_id: structure
+  file_path: docs/STRUCTURE.md
+  is_primary: false
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+project_info:
+  category: demonstration
+  description: A demonstration project showing the structure and capabilities
+  project_id: sample-project
+  title: Sample Project
+  slug: sample-project
+  status: active
+  start_date: '2025-09-23'
+  technologies:
+  - Markdown
+  - Silan
+  - Database
+  featured: true
+  github_url: null
+  demo_url: null
+  license: MIT
+sync_metadata:
+  content_type: project
+  item_id: sample-project
+  sync_enabled: true
+  last_hash: 6a847ae525c05ca9
+  last_sync_date: '2025-09-23T17:21:28.220436'
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_count: 3
+  total_size: 0
+  sync_status: completed

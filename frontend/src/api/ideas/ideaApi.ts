@@ -39,17 +39,19 @@ export const fetchIdeas = async (
   params: Partial<IdeaListRequest> = {},
   language: 'en' | 'zh' = 'en'
 ): Promise<IdeaData[]> => {
-  const response = await get<IdeaListResponse>('/api/v1/ideas', {
+  const response = await get<any>('/api/v1/ideas', {
     ...params,
     lang: formatLanguage(language)
   });
-  
-  // Ensure consistent data structure
-  const ideas = (response.ideas || []).map(idea => ({
+
+  // Ensure consistent data structure and transform snake_case to camelCase
+  const ideas = (response.ideas || []).map((idea: any) => ({
     ...idea,
-    tags: idea.tags || []
+    tags: idea.tags || [],
+    createdAt: idea.created_at || idea.createdAt,
+    lastUpdated: idea.last_updated || idea.lastUpdated
   }));
-  
+
   return ideas;
 };
 
@@ -57,16 +59,18 @@ export const fetchIdeas = async (
  * Get single idea by ID
  */
 export const fetchIdeaById = async (id: string, language: 'en' | 'zh' = 'en'): Promise<IdeaData | null> => {
-  const response = await get<IdeaData>(`/api/v1/ideas/${id}`, {
+  const response = await get<any>(`/api/v1/ideas/${id}`, {
     lang: formatLanguage(language)
   });
-  
+
   if (!response) return null;
-  
-  // Ensure consistent data structure
+
+  // Transform snake_case to camelCase for frontend compatibility
   return {
     ...response,
-    tags: response.tags || []
+    tags: response.tags || [],
+    createdAt: response.created_at || response.createdAt,
+    lastUpdated: response.last_updated || response.lastUpdated
   };
 };
 
@@ -78,17 +82,19 @@ export const searchIdeas = async (
   params: IdeaSearchRequest,
   language: 'en' | 'zh' = 'en'
 ): Promise<IdeaData[]> => {
-  const response = await get<IdeaListResponse>('/api/v1/ideas/search', {
+  const response = await get<any>('/api/v1/ideas/search', {
     ...params,
     lang: formatLanguage(language)
   });
-  
-  // Ensure consistent data structure
-  const ideas = (response.ideas || []).map(idea => ({
+
+  // Ensure consistent data structure and transform snake_case to camelCase
+  const ideas = (response.ideas || []).map((idea: any) => ({
     ...idea,
-    tags: idea.tags || []
+    tags: idea.tags || [],
+    createdAt: idea.created_at || idea.createdAt,
+    lastUpdated: idea.last_updated || idea.lastUpdated
   }));
-  
+
   return ideas;
 };
 
