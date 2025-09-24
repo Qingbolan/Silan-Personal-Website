@@ -212,19 +212,10 @@ class ResumeParser(BaseParser):
         """Extract education information with detailed parsing"""
         education_data = []
         
-        # Find education section
-        education_section = self._extract_section(content, 'Education')
-        if not education_section:
-            return education_data
-        
-        # Parse education entries by looking for ### headers
-        entries = re.split(r'\n###\s+', education_section)
-        
-        for entry in entries:
-            if not entry.strip():
-                continue
-            
-            education_record = self._parse_education_entry(entry)
+        for index, entry_lines in enumerate(
+            self._iterate_section_blocks(content, 'Education', heading_level=3)
+        ):
+            education_record = self._parse_education_entry(entry_lines, sort_order=index)
             if education_record:
                 education_data.append(education_record)
         
@@ -264,14 +255,13 @@ class ResumeParser(BaseParser):
         
         return education_data
     
-    def _parse_education_entry(self, entry: str) -> Optional[Dict[str, Any]]:
-        """Parse a single education entry"""
-        lines = entry.strip().split('\n')
+    def _parse_education_entry(self, lines: List[str], *, sort_order: int = 0) -> Optional[Dict[str, Any]]:
+        """Parse a single education entry represented by pre-split lines."""
         if not lines:
             return None
         
         # First line is the institution
-        institution = lines[0].strip('#').strip()
+        institution = lines[0].lstrip('#').strip()
         
         education_record = {
             'institution': institution,
@@ -284,11 +274,11 @@ class ResumeParser(BaseParser):
             'location': '',
             'institution_website': '',
             'institution_logo_url': '',
-            'sort_order': 0
+            'sort_order': sort_order
         }
-        
+
         description_lines = []
-        
+
         for line in lines[1:]:
             line = line.strip()
             if not line:
@@ -353,39 +343,29 @@ class ResumeParser(BaseParser):
         
         # Store details for education details table
         education_record['details'] = [detail.strip() for detail in description_lines if detail.strip()]
-        
+
         return education_record
     
     def _extract_work_experience(self, content: str) -> List[Dict[str, Any]]:
         """Extract work experience with detailed parsing"""
         experience_data = []
         
-        # Find work experience section
-        work_section = self._extract_section(content, 'Work Experience')
-        if not work_section:
-            return experience_data
-        
-        # Parse experience entries
-        entries = re.split(r'\n###\s+', work_section)
-        
-        for entry in entries:
-            if not entry.strip():
-                continue
-            
-            experience_record = self._parse_experience_entry(entry)
+        for index, entry_lines in enumerate(
+            self._iterate_section_blocks(content, 'Work Experience', heading_level=3)
+        ):
+            experience_record = self._parse_experience_entry(entry_lines, sort_order=index)
             if experience_record:
                 experience_data.append(experience_record)
-        
+
         return experience_data
-    
-    def _parse_experience_entry(self, entry: str) -> Optional[Dict[str, Any]]:
-        """Parse a single work experience entry"""
-        lines = entry.strip().split('\n')
+
+    def _parse_experience_entry(self, lines: List[str], *, sort_order: int = 0) -> Optional[Dict[str, Any]]:
+        """Parse a single work experience entry represented by pre-split lines."""
         if not lines:
             return None
         
         # First line is the company
-        company = lines[0].strip('#').strip()
+        company = lines[0].lstrip('#').strip()
         
         experience_record = {
             'company': company,
@@ -396,11 +376,11 @@ class ResumeParser(BaseParser):
             'location': '',
             'company_website': '',
             'company_logo_url': '',
-            'sort_order': 0
+            'sort_order': sort_order
         }
-        
+
         description_lines = []
-        
+
         for line in lines[1:]:
             line = line.strip()
             if not line:

@@ -47,14 +47,8 @@ class ProjectParser(BaseParser):
         try:
             # Look for main content file
             main_files = ['README.md', 'index.md', 'project.md']
-            main_file = None
-            
-            for filename in main_files:
-                file_path = folder_path / filename
-                if file_path.exists():
-                    main_file = file_path
-                    break
-            
+            main_file = self._find_first_existing(folder_path, main_files)
+
             if not main_file:
                 self.error(f"No main content file found in {folder_path}")
                 return None
@@ -200,37 +194,37 @@ class ProjectParser(BaseParser):
         images = []
         
         # Image extensions
-        image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'}
-        
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp']
+
         # Scan images subfolder
         images_folder = assets_folder / 'images'
-        if images_folder.exists():
-            for img_file in images_folder.rglob('*'):
-                if img_file.is_file() and img_file.suffix.lower() in image_exts:
-                    images.append({
-                        'image_url': str(img_file.relative_to(assets_folder)),
-                        'alt_text': img_file.stem.replace('-', ' ').replace('_', ' ').title(),
-                        'caption': img_file.stem.replace('-', ' ').replace('_', ' ').title(),
-                        'image_type': self._classify_project_image(str(img_file), img_file.stem),
-                        'sort_order': len(images),
-                        'file_size': img_file.stat().st_size if img_file.exists() else 0
-                    })
-        
+        sort_index = 0
+        for img_file in self._iter_files(images_folder, image_exts):
+            stat = img_file.stat()
+            images.append({
+                'image_url': str(img_file.relative_to(assets_folder)),
+                'alt_text': img_file.stem.replace('-', ' ').replace('_', ' ').title(),
+                'caption': img_file.stem.replace('-', ' ').replace('_', ' ').title(),
+                'image_type': self._classify_project_image(str(img_file), img_file.stem),
+                'sort_order': sort_index,
+                'file_size': stat.st_size
+            })
+            sort_index += 1
+
         # Scan videos subfolder
         videos_folder = assets_folder / 'videos'
-        if videos_folder.exists():
-            video_exts = {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
-            for video_file in videos_folder.rglob('*'):
-                if video_file.is_file() and video_file.suffix.lower() in video_exts:
-                    images.append({
-                        'image_url': str(video_file.relative_to(assets_folder)),
-                        'alt_text': video_file.stem.replace('-', ' ').replace('_', ' ').title(),
-                        'caption': video_file.stem.replace('-', ' ').replace('_', ' ').title(),
-                        'image_type': 'video',
-                        'sort_order': len(images),
-                        'file_size': video_file.stat().st_size if video_file.exists() else 0
-                    })
-        
+        for video_file in self._iter_files(videos_folder, ['.mp4', '.avi', '.mov', '.mkv', '.webm']):
+            stat = video_file.stat()
+            images.append({
+                'image_url': str(video_file.relative_to(assets_folder)),
+                'alt_text': video_file.stem.replace('-', ' ').replace('_', ' ').title(),
+                'caption': video_file.stem.replace('-', ' ').replace('_', ' ').title(),
+                'image_type': 'video',
+                'sort_order': sort_index,
+                'file_size': stat.st_size
+            })
+            sort_index += 1
+
         return images
     
     def _scan_documentation_files(self, folder_path: Path) -> List[Dict[str, Any]]:
@@ -238,21 +232,15 @@ class ProjectParser(BaseParser):
         docs = []
         
         # Documentation extensions
-        doc_exts = {'.md', '.txt', '.rst', '.adoc'}
-        
+        doc_exts = ['.md', '.txt', '.rst', '.adoc']
+
         # Scan docs subfolder
         docs_folder = folder_path / 'assets' / 'docs'
-        if docs_folder.exists():
-            for doc_file in docs_folder.rglob('*'):
-                if doc_file.is_file() and doc_file.suffix.lower() in doc_exts:
-                    docs.append({
-                        'filename': doc_file.name,
-                        'path': str(doc_file.relative_to(folder_path)),
-                        'type': self._classify_documentation_type(doc_file.name),
-                        'size': doc_file.stat().st_size,
-                        'modified': datetime.fromtimestamp(doc_file.stat().st_mtime)
-                    })
-        
+        for doc_file in self._iter_files(docs_folder, doc_exts):
+            record = self._build_file_record(doc_file, relative_to=folder_path)
+            record['type'] = self._classify_documentation_type(doc_file.name)
+            docs.append(record)
+
         return docs
     
     def _scan_notes_folder(self, notes_folder: Path) -> List[Dict[str, Any]]:
@@ -262,24 +250,17 @@ class ProjectParser(BaseParser):
         if not notes_folder.exists():
             return notes
         
-        for note_file in notes_folder.rglob('*.md'):
-            if note_file.is_file():
-                try:
-                    # Read first few lines for summary
-                    with open(note_file, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        summary = content[:200] + ('...' if len(content) > 200 else '')
-                    
-                    notes.append({
-                        'filename': note_file.name,
-                        'path': str(note_file.relative_to(notes_folder)),
-                        'summary': summary,
-                        'size': note_file.stat().st_size,
-                        'modified': datetime.fromtimestamp(note_file.stat().st_mtime)
-                    })
-                except Exception:
-                    continue
-        
+        for note_file in self._iter_files(notes_folder, ['.md']):
+            try:
+                content = self.file_ops.read_file(note_file)
+                summary = content[:200] + ('...' if len(content) > 200 else '')
+
+                record = self._build_file_record(note_file, relative_to=notes_folder)
+                record['summary'] = summary
+                notes.append(record)
+            except Exception:
+                continue
+
         return notes
     
     def _scan_research_folder(self, research_folder: Path) -> List[Dict[str, Any]]:
@@ -292,16 +273,11 @@ class ProjectParser(BaseParser):
         # Research file extensions
         research_exts = {'.md', '.txt', '.pdf', '.doc', '.docx', '.xlsx', '.csv'}
         
-        for research_file in research_folder.rglob('*'):
-            if research_file.is_file() and research_file.suffix.lower() in research_exts:
-                research.append({
-                    'filename': research_file.name,
-                    'path': str(research_file.relative_to(research_folder)),
-                    'type': self._classify_research_type(research_file.name),
-                    'size': research_file.stat().st_size,
-                    'modified': datetime.fromtimestamp(research_file.stat().st_mtime)
-                })
-        
+        for research_file in self._iter_files(research_folder, research_exts):
+            record = self._build_file_record(research_file, relative_to=research_folder)
+            record['type'] = self._classify_research_type(research_file.name)
+            research.append(record)
+
         return research
     
     def _classify_documentation_type(self, filename: str) -> str:
@@ -442,6 +418,7 @@ class ProjectParser(BaseParser):
             'is_public': metadata.get('public', True),
             'view_count': 0,
             'star_count': metadata.get('stars', 0),
+            'tags': metadata.get('tags', []) or [],
             'like_count': 0,
             'sort_order': project_info.get('sort_order', metadata.get('id', 0)),
             # Add project collection context

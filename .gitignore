@@ -14,6 +14,24 @@ __pycache__
 /dist
 /api-test-portfolio
 
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+venv/
+
+# Tools
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.coverage
+dist/
+build/
+*.egg-info/
+
 # misc
 .DS_Store
 .env.local

@@ -6,8 +6,11 @@ Handles hierarchical series structure with individual episode content.
 """
 
 import re
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 from datetime import datetime, date
+
+import yaml
 from .base_parser import BaseParser, ExtractedContent
 
 
@@ -31,10 +34,26 @@ class EpisodeParser(BaseParser):
         content = post.content
 
         # Extract series and episode context from metadata (includes config and episode info)
-        series_name = metadata.get('series_name', '')
-        episode_name = metadata.get('episode_name', '')
+        episode_path = Path(extracted.file_path)
+
+        series_name = metadata.get('series_name') or metadata.get('series') or ''
+        episode_name = metadata.get('episode_name') or metadata.get('title') or episode_path.stem
         series_config = metadata.get('series_config', {})
         episode_info = metadata.get('episode_info', {})
+
+        if not series_config:
+            series_config = self._load_series_config(episode_path)
+
+        if series_config and not series_name:
+            series_name = series_config.get('series_info', {}).get('title', series_name)
+
+        if not episode_info:
+            episode_info = self._resolve_episode_info(episode_path, series_config, metadata)
+
+        metadata.setdefault('series_name', series_name)
+        metadata.setdefault('episode_name', episode_name)
+        metadata.setdefault('series_config', series_config)
+        metadata.setdefault('episode_info', episode_info)
 
         # Extract main episode data with enhanced information from config
         episode_data = self._extract_episode_data(metadata, content, series_name, episode_name, series_config, episode_info)
@@ -119,14 +138,14 @@ class EpisodeParser(BaseParser):
 
         series_data = {
             'series_name': series_name,
-            'series_title': series_info.get('title', metadata.get('series_title', series_name.replace('-', ' ').title())),
-            'series_description': series_info.get('description', metadata.get('series_description', '')),
-            'series_category': series_info.get('category', metadata.get('series_category', 'tutorial')),
+            'series_title': series_info.get('title') or metadata.get('series_title') or series_name.replace('-', ' ').title(),
+            'series_description': series_info.get('description') or metadata.get('series_description', ''),
+            'series_category': series_info.get('category') or metadata.get('series_category', 'tutorial'),
             'total_episodes': len(series_config.get('episodes', [])) or metadata.get('total_episodes', 0),
-            'series_status': series_info.get('status', metadata.get('series_status', 'ongoing')),
-            'target_audience': series_info.get('target_audience', metadata.get('target_audience', 'general')),
-            'prerequisites': learning_info.get('prerequisites', metadata.get('prerequisites', [])),
-            'learning_objectives': learning_info.get('learning_objectives', metadata.get('learning_objectives', []))
+            'series_status': series_info.get('status') or metadata.get('series_status', 'ongoing'),
+            'target_audience': series_info.get('target_audience') or metadata.get('target_audience', 'general'),
+            'prerequisites': learning_info.get('prerequisites') or metadata.get('prerequisites', []),
+            'learning_objectives': learning_info.get('learning_objectives') or metadata.get('learning_objectives', []),
         }
 
         return series_data
@@ -169,6 +188,81 @@ class EpisodeParser(BaseParser):
             navigation.update(nav_links)
 
         return navigation
+
+    def _load_series_config(self, episode_path: Path) -> Dict[str, Any]:
+        """Load series configuration from .silan-cache if available."""
+        cache_file = episode_path.parent / '.silan-cache'
+        if not cache_file.exists():
+            return {}
+
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                cache_data = yaml.safe_load(f) or {}
+        except Exception:
+            return {}
+
+        series_info = cache_data.get('series_info', {}) or {}
+        series_info = dict(series_info)
+        episodes_map = series_info.pop('episodes', {}) or cache_data.get('episodes', {}) or {}
+
+        episodes: List[Dict[str, Any]] = []
+        for idx, (key, info) in enumerate(episodes_map.items()):
+            info = info or {}
+            sort_order = info.get('sort_order')
+            if sort_order is None:
+                try:
+                    sort_order = int(key)
+                except (TypeError, ValueError):
+                    sort_order = idx
+
+            episode_id = info.get('episode_id') or info.get('file') or str(key)
+            episodes.append({
+                'episode_id': str(episode_id),
+                'title': info.get('title', ''),
+                'description': info.get('description', ''),
+                'file_path': info.get('file', ''),
+                'sort_order': sort_order,
+                'status': info.get('status', ''),
+                'duration_minutes': info.get('duration', ''),
+            })
+
+        episodes.sort(key=lambda item: item.get('sort_order') or 0)
+
+        navigation = cache_data.get('navigation', {}) or {}
+        learning_info = cache_data.get('learning_info', {}) or {}
+
+        return {
+            'series_info': series_info,
+            'episodes': episodes,
+            'navigation': navigation,
+            'learning_info': learning_info,
+        }
+
+    def _resolve_episode_info(
+        self,
+        episode_path: Path,
+        series_config: Dict[str, Any],
+        metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Build episode info when not provided in metadata."""
+        file_name = episode_path.name
+        episodes = series_config.get('episodes', []) if series_config else []
+
+        for entry in episodes:
+            file_path = entry.get('file_path') or entry.get('file')
+            if file_path and Path(file_path).name == file_name:
+                episode_info = dict(entry)
+                episode_info.setdefault('episode_id', entry.get('episode_id', file_name))
+                return episode_info
+
+        return {
+            'episode_id': metadata.get('episode_id', file_name),
+            'title': metadata.get('title', ''),
+            'description': metadata.get('description', ''),
+            'duration_minutes': metadata.get('duration', 0),
+            'status': metadata.get('status', 'draft'),
+            'sort_order': metadata.get('episode_number'),
+        }
 
     def _extract_navigation_links(self, content: str) -> Dict[str, Any]:
         """Extract navigation links from episode content"""
@@ -452,8 +546,13 @@ class EpisodeParser(BaseParser):
             extracted.validation_warnings.append('Missing episode name')
 
         # Validate episode number
-        episode_number = main_entity.get('episode_number', 0)
-        if episode_number <= 0:
+        episode_number = main_entity.get('episode_number')
+        if episode_number is None:
+            extracted.validation_warnings.append('Missing or invalid episode number')
+        elif isinstance(episode_number, (int, float)):
+            if episode_number <= 0:
+                extracted.validation_warnings.append('Missing or invalid episode number')
+        else:
             extracted.validation_warnings.append('Missing or invalid episode number')
 
         # Validate dates

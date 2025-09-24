@@ -159,29 +159,19 @@ class IdeaParser(BaseParser):
             'technical_research': []
         }
         
-        if not research_folder.exists():
-            return research_data
-        
-        for research_file in research_folder.rglob('*'):
-            if research_file.is_file() and research_file.suffix.lower() in {'.md', '.txt', '.pdf', '.doc', '.docx'}:
-                filename_lower = research_file.name.lower()
-                
-                file_data = {
-                    'filename': research_file.name,
-                    'path': str(research_file.relative_to(research_folder)),
-                    'size': research_file.stat().st_size,
-                    'modified': datetime.fromtimestamp(research_file.stat().st_mtime)
-                }
-                
-                # Categorize research file
-                if any(keyword in filename_lower for keyword in ['paper', 'article', 'journal']):
-                    research_data['papers'].append(file_data)
-                elif any(keyword in filename_lower for keyword in ['market', 'user', 'survey']):
-                    research_data['market_analysis'].append(file_data)
-                elif any(keyword in filename_lower for keyword in ['competitor', 'competitive', 'analysis']):
-                    research_data['competitive_analysis'].append(file_data)
-                else:
-                    research_data['technical_research'].append(file_data)
+        for research_file in self._iter_files(research_folder, ['.md', '.txt', '.pdf', '.doc', '.docx']):
+            filename_lower = research_file.name.lower()
+            file_data = self._build_file_record(research_file, relative_to=research_folder)
+
+            # Categorize research file
+            if any(keyword in filename_lower for keyword in ['paper', 'article', 'journal']):
+                research_data['papers'].append(file_data)
+            elif any(keyword in filename_lower for keyword in ['market', 'user', 'survey']):
+                research_data['market_analysis'].append(file_data)
+            elif any(keyword in filename_lower for keyword in ['competitor', 'competitive', 'analysis']):
+                research_data['competitive_analysis'].append(file_data)
+            else:
+                research_data['technical_research'].append(file_data)
         
         return research_data
     
@@ -189,30 +179,18 @@ class IdeaParser(BaseParser):
         """Scan notes folder for development notes"""
         notes = []
         
-        if not notes_folder.exists():
-            return notes
-        
-        for note_file in notes_folder.rglob('*.md'):
-            if note_file.is_file():
-                try:
-                    # Read content for analysis
-                    with open(note_file, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        summary = content[:200] + ('...' if len(content) > 200 else '')
-                    
-                    # Categorize note type
-                    note_type = self._categorize_note_type(note_file.name, content)
-                    
-                    notes.append({
-                        'filename': note_file.name,
-                        'path': str(note_file.relative_to(notes_folder)),
-                        'type': note_type,
-                        'summary': summary,
-                        'size': note_file.stat().st_size,
-                        'modified': datetime.fromtimestamp(note_file.stat().st_mtime)
-                    })
-                except Exception:
-                    continue
+        for note_file in self._iter_files(notes_folder, ['.md']):
+            try:
+                content = self.file_ops.read_file(note_file)
+            except Exception:
+                continue
+
+            summary = content[:200] + ('...' if len(content) > 200 else '')
+            note_type = self._categorize_note_type(note_file.name, content)
+
+            record = self._build_file_record(note_file, relative_to=notes_folder)
+            record.update({'type': note_type, 'summary': summary})
+            notes.append(record)
         
         return notes
     
@@ -220,29 +198,18 @@ class IdeaParser(BaseParser):
         """Scan experiments folder for experiment records"""
         experiments = []
         
-        if not experiments_folder.exists():
-            return experiments
-        
-        for exp_file in experiments_folder.rglob('*'):
-            if exp_file.is_file():
-                experiment_data = {
-                    'filename': exp_file.name,
-                    'path': str(exp_file.relative_to(experiments_folder)),
-                    'type': self._classify_experiment_type(exp_file.name),
-                    'size': exp_file.stat().st_size,
-                    'modified': datetime.fromtimestamp(exp_file.stat().st_mtime)
-                }
-                
-                # Try to extract experiment metadata from markdown files
-                if exp_file.suffix.lower() == '.md':
-                    try:
-                        with open(exp_file, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                            experiment_data['summary'] = content[:200] + ('...' if len(content) > 200 else '')
-                    except Exception:
-                        pass
-                
-                experiments.append(experiment_data)
+        for exp_file in self._iter_files(experiments_folder):
+            experiment_data: Dict[str, Any] = self._build_file_record(exp_file, relative_to=experiments_folder)
+            experiment_data['type'] = self._classify_experiment_type(exp_file.name)
+
+            if exp_file.suffix.lower() == '.md':
+                try:
+                    content = self.file_ops.read_file(exp_file)
+                    experiment_data['summary'] = content[:200] + ('...' if len(content) > 200 else '')
+                except Exception:
+                    pass
+
+            experiments.append(experiment_data)
         
         return experiments
     
@@ -250,33 +217,20 @@ class IdeaParser(BaseParser):
         """Scan references folder for reference materials"""
         references = []
         
-        if not references_folder.exists():
-            return references
-        
-        reference_exts = {'.md', '.txt', '.pdf', '.url', '.webloc'}
-        
-        for ref_file in references_folder.rglob('*'):
-            if ref_file.is_file() and ref_file.suffix.lower() in reference_exts:
-                ref_data = {
-                    'filename': ref_file.name,
-                    'path': str(ref_file.relative_to(references_folder)),
-                    'type': self._classify_reference_type(ref_file.name),
-                    'size': ref_file.stat().st_size,
-                    'modified': datetime.fromtimestamp(ref_file.stat().st_mtime)
-                }
-                
-                # Extract URL from .url files
-                if ref_file.suffix.lower() == '.url':
-                    try:
-                        with open(ref_file, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                            url_match = re.search(r'URL=(.+)', content)
-                            if url_match:
-                                ref_data['url'] = url_match.group(1).strip()
-                    except Exception:
-                        pass
-                
-                references.append(ref_data)
+        for ref_file in self._iter_files(references_folder, ['.md', '.txt', '.pdf', '.url', '.webloc']):
+            ref_data: Dict[str, Any] = self._build_file_record(ref_file, relative_to=references_folder)
+            ref_data['type'] = self._classify_reference_type(ref_file.name)
+
+            if ref_file.suffix.lower() == '.url':
+                try:
+                    content = self.file_ops.read_file(ref_file)
+                    url_match = re.search(r'URL=(.+)', content)
+                    if url_match:
+                        ref_data['url'] = url_match.group(1).strip()
+                except Exception:
+                    pass
+
+            references.append(ref_data)
         
         return references
     
@@ -284,20 +238,10 @@ class IdeaParser(BaseParser):
         """Scan prototypes folder for prototype files"""
         prototypes = []
         
-        if not prototypes_folder.exists():
-            return prototypes
-        
-        for proto_file in prototypes_folder.rglob('*'):
-            if proto_file.is_file():
-                prototype_data = {
-                    'filename': proto_file.name,
-                    'path': str(proto_file.relative_to(prototypes_folder)),
-                    'type': self._classify_prototype_type(proto_file.name),
-                    'size': proto_file.stat().st_size,
-                    'modified': datetime.fromtimestamp(proto_file.stat().st_mtime)
-                }
-                
-                prototypes.append(prototype_data)
+        for proto_file in self._iter_files(prototypes_folder):
+            record = self._build_file_record(proto_file, relative_to=prototypes_folder)
+            record['type'] = self._classify_prototype_type(proto_file.name)
+            prototypes.append(record)
         
         return prototypes
     
@@ -309,43 +253,40 @@ class IdeaParser(BaseParser):
             'documents': []
         }
         
-        if not assets_folder.exists():
-            return assets_data
-        
-        # Image extensions
-        image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'}
-        video_exts = {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
-        doc_exts = {'.pdf', '.doc', '.docx', '.ppt', '.pptx'}
-        
-        for asset_file in assets_folder.rglob('*'):
-            if not asset_file.is_file():
-                continue
-            
-            ext = asset_file.suffix.lower()
-            
-            if ext in image_exts:
-                assets_data['images'].append({
-                    'image_url': str(asset_file.relative_to(assets_folder)),
-                    'alt_text': asset_file.stem.replace('-', ' ').replace('_', ' ').title(),
-                    'caption': asset_file.stem.replace('-', ' ').replace('_', ' ').title(),
-                    'image_type': self._classify_idea_image_type(asset_file.name),
-                    'sort_order': len(assets_data['images']),
-                    'file_size': asset_file.stat().st_size
-                })
-            elif ext in video_exts:
-                assets_data['videos'].append({
-                    'filename': asset_file.name,
-                    'path': str(asset_file.relative_to(assets_folder)),
-                    'size': asset_file.stat().st_size,
-                    'modified': datetime.fromtimestamp(asset_file.stat().st_mtime)
-                })
-            elif ext in doc_exts:
-                assets_data['documents'].append({
-                    'filename': asset_file.name,
-                    'path': str(asset_file.relative_to(assets_folder)),
-                    'size': asset_file.stat().st_size,
-                    'modified': datetime.fromtimestamp(asset_file.stat().st_mtime)
-                })
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp']
+        video_exts = ['.mp4', '.avi', '.mov', '.mkv', '.webm']
+        doc_exts = ['.pdf', '.doc', '.docx', '.ppt', '.pptx']
+
+        sort_index = 0
+        for asset_file in self._iter_files(assets_folder, image_exts):
+            stat = asset_file.stat()
+            assets_data['images'].append({
+                'image_url': str(asset_file.relative_to(assets_folder)),
+                'alt_text': asset_file.stem.replace('-', ' ').replace('_', ' ').title(),
+                'caption': asset_file.stem.replace('-', ' ').replace('_', ' ').title(),
+                'image_type': self._classify_idea_image_type(asset_file.name),
+                'sort_order': sort_index,
+                'file_size': stat.st_size
+            })
+            sort_index += 1
+
+        for asset_file in self._iter_files(assets_folder, video_exts):
+            stat = asset_file.stat()
+            assets_data['videos'].append({
+                'filename': asset_file.name,
+                'path': str(asset_file.relative_to(assets_folder)),
+                'size': stat.st_size,
+                'modified': datetime.fromtimestamp(stat.st_mtime)
+            })
+
+        for asset_file in self._iter_files(assets_folder, doc_exts):
+            stat = asset_file.stat()
+            assets_data['documents'].append({
+                'filename': asset_file.name,
+                'path': str(asset_file.relative_to(assets_folder)),
+                'size': stat.st_size,
+                'modified': datetime.fromtimestamp(stat.st_mtime)
+            })
         
         return assets_data
     
@@ -530,11 +471,6 @@ class IdeaParser(BaseParser):
         # Extract solution overview
         solution_overview = self._extract_solution_overview(content)
         
-        # Calculate scores
-        feasibility_score = self._calculate_feasibility_score(metadata, content)
-        impact_score = self._calculate_impact_score(metadata, content)
-        innovation_score = self._calculate_innovation_score(content)
-        
         # Extract financial estimates
         financial_estimates = self._extract_financial_estimates(metadata, content)
         
@@ -654,18 +590,6 @@ class IdeaParser(BaseParser):
                 return section_content[:500]  # Limit length
         return ''
     
-    def _map_priority_level(self, feasibility_score: float, impact_score: float):
-        """Map scores to priority levels matching enum"""
-        from silan.models.ideas import IdeaPriority
-        
-        avg_score = (feasibility_score + impact_score) / 2
-        if avg_score >= 8.0:
-            return IdeaPriority.HIGH
-        elif avg_score >= 6.0:
-            return IdeaPriority.MEDIUM
-        else:
-            return IdeaPriority.LOW
-    
     def _map_idea_status(self, status: str):
         """Map status to IdeaStatus enum values"""
         from silan.models.ideas import IdeaStatus
@@ -710,21 +634,13 @@ class IdeaParser(BaseParser):
         for i, tech in enumerate(all_techs):
             if not tech or not tech.strip():
                 continue
-            
+
             tech_name = tech.strip()
-            category = self._categorize_technology(tech_name)
-            
-            tech_data = {
+            technologies.append({
                 'technology_name': tech_name,
-                'technology_type': category,
-                'required_expertise': self._assess_required_expertise(tech_name, content),
-                'availability': self._assess_tech_availability(tech_name),
-                'learning_curve': self._assess_learning_curve(tech_name),
-                'cost_factor': self._assess_tech_cost(tech_name),
+                'technology_type': self._categorize_technology(tech_name),
                 'sort_order': i
-            }
-            
-            technologies.append(tech_data)
+            })
         
         return technologies
     
@@ -833,7 +749,7 @@ class IdeaParser(BaseParser):
                     'phase_number': i + 1,
                     'name': f'Phase {i + 1}',
                     'description': item,
-                    'estimated_duration': self._extract_phase_duration(item),
+                    'estimated_duration': None,
                     'dependencies': []
                 })
         
@@ -920,8 +836,8 @@ class IdeaParser(BaseParser):
             for item in risk_items:
                 risks.append({
                     'description': item,
-                    'probability': self._assess_risk_probability(item),
-                    'impact': self._assess_risk_impact(item),
+                    'probability': '',
+                    'impact': '',
                     'mitigation': ''
                 })
         
@@ -938,30 +854,17 @@ class IdeaParser(BaseParser):
         return dependencies
     
     def _analyze_feasibility(self, content: str) -> Dict[str, Any]:
-        """Analyze idea feasibility"""
-        feasibility = {
-            'technical_feasibility': self._assess_technical_feasibility(content),
-            'market_feasibility': self._assess_market_feasibility(content),
-            'financial_feasibility': self._assess_financial_feasibility(content),
-            'operational_feasibility': self._assess_operational_feasibility(content),
-            'overall_score': 0.0
-        }
-        
-        # Calculate overall score
-        scores = [feasibility[key] for key in feasibility if key != 'overall_score' and isinstance(feasibility[key], (int, float))]
-        if scores:
-            feasibility['overall_score'] = sum(scores) / len(scores)
-        
-        return feasibility
+        """Placeholder feasibility analysis."""
+        return {}
     
     def _extract_collaboration_requirements(self, content: str) -> Dict[str, Any]:
         """Extract collaboration requirements"""
         collaboration = {
-            'team_size_needed': self._estimate_team_size(content),
-            'skills_needed': self._extract_required_skills(content),
-            'roles_needed': self._extract_required_roles(content),
-            'collaboration_type': self._determine_collaboration_type(content),
-            'remote_friendly': self._assess_remote_feasibility(content)
+            'team_size_needed': None,
+            'skills_needed': [],
+            'roles_needed': [],
+            'collaboration_type': '',
+            'remote_friendly': None
         }
         
         return collaboration
@@ -969,11 +872,11 @@ class IdeaParser(BaseParser):
     def _analyze_business_potential(self, content: str) -> Dict[str, Any]:
         """Analyze business potential"""
         business = {
-            'monetization_potential': self._assess_monetization_potential(content),
-            'scalability': self._assess_scalability(content),
-            'competitive_advantage': self._extract_competitive_advantage(content),
-            'target_users': self._extract_target_users(content),
-            'business_model': self._extract_business_model(content)
+            'monetization_potential': '',
+            'scalability': '',
+            'competitive_advantage': '',
+            'target_users': '',
+            'business_model': ''
         }
         
         return business
@@ -981,11 +884,11 @@ class IdeaParser(BaseParser):
     def _analyze_market_potential(self, content: str) -> Dict[str, Any]:
         """Analyze market potential"""
         market = {
-            'market_size': self._assess_market_size(content),
-            'growth_potential': self._assess_growth_potential(content),
-            'competition_level': self._assess_competition_level(content),
-            'market_trends': self._extract_market_trends(content),
-            'barriers_to_entry': self._extract_barriers_to_entry(content)
+            'market_size': '',
+            'growth_potential': '',
+            'competition_level': '',
+            'market_trends': [],
+            'barriers_to_entry': []
         }
         
         return market
@@ -1121,98 +1024,6 @@ class IdeaParser(BaseParser):
         
         return estimates
     
-    def _calculate_feasibility_score(self, metadata: Dict, content: str) -> float:
-        """Calculate feasibility score (1-10)"""
-        score = metadata.get('feasibility_score', 5.0)
-        
-        if score is None:
-            # Calculate based on content analysis
-            score = 5.0  # Base score
-            
-            content_lower = content.lower()
-            
-            # Positive factors
-            if any(keyword in content_lower for keyword in ['simple', 'straightforward', 'proven', 'existing technology']):
-                score += 1
-            
-            if any(keyword in content_lower for keyword in ['prototype', 'tested', 'validated']):
-                score += 1
-            
-            # Negative factors
-            if any(keyword in content_lower for keyword in ['complex', 'challenging', 'unproven', 'cutting-edge']):
-                score -= 1
-            
-            if any(keyword in content_lower for keyword in ['research needed', 'experimental', 'theoretical']):
-                score -= 1
-        
-        return max(1.0, min(10.0, float(score)))
-    
-    def _calculate_impact_score(self, metadata: Dict, content: str) -> float:
-        """Calculate impact score (1-10)"""
-        score = metadata.get('impact_score', 5.0)
-        
-        if score is None:
-            score = 5.0  # Base score
-            
-            content_lower = content.lower()
-            
-            # High impact indicators
-            if any(keyword in content_lower for keyword in ['revolutionary', 'game-changing', 'disrupting', 'transformative']):
-                score += 2
-            
-            if any(keyword in content_lower for keyword in ['millions of users', 'global', 'widespread']):
-                score += 1
-            
-            # Lower impact indicators
-            if any(keyword in content_lower for keyword in ['niche', 'small market', 'limited scope']):
-                score -= 1
-        
-        return max(1.0, min(10.0, float(score)))
-    
-    def _calculate_innovation_score(self, content: str) -> float:
-        """Calculate innovation score (1-10)"""
-        score = 5.0  # Base score
-        content_lower = content.lower()
-        
-        # Innovation indicators
-        if any(keyword in content_lower for keyword in ['novel', 'innovative', 'first-of-its-kind', 'breakthrough']):
-            score += 2
-        
-        if any(keyword in content_lower for keyword in ['new approach', 'unique', 'original']):
-            score += 1
-        
-        # Existing solution indicators
-        if any(keyword in content_lower for keyword in ['similar to', 'based on existing', 'incremental improvement']):
-            score -= 1
-        
-        return max(1.0, min(10.0, score))
-    
-    def _calculate_priority_level(self, feasibility: float, impact: float) -> str:
-        """Calculate priority level based on feasibility and impact"""
-        if feasibility >= 7 and impact >= 7:
-            return 'high'
-        elif feasibility >= 5 and impact >= 5:
-            return 'medium'
-        else:
-            return 'low'
-    
-    # Additional helper methods for detailed analysis
-    def _assess_technical_feasibility(self, content: str) -> float:
-        """Assess technical feasibility (1-10)"""
-        # Simplified implementation
-        return 7.0
-    
-    def _assess_market_feasibility(self, content: str) -> float:
-        """Assess market feasibility (1-10)"""
-        return 6.0
-    
-    def _assess_financial_feasibility(self, content: str) -> float:
-        """Assess financial feasibility (1-10)"""
-        return 5.0
-    
-    def _assess_operational_feasibility(self, content: str) -> float:
-        """Assess operational feasibility (1-10)"""
-        return 6.0
     
     def _validate_content(self, extracted: ExtractedContent):
         """Validate extracted idea content"""
@@ -1231,12 +1042,6 @@ class IdeaParser(BaseParser):
         if not main_entity.get('solution_overview'):
             extracted.validation_warnings.append('Missing solution overview')
         
-        # Validate scores
-        for score_field in ['feasibility_score', 'impact_score', 'innovation_score']:
-            score = main_entity.get(score_field, 0)
-            if score < 1 or score > 10:
-                extracted.validation_errors.append(f'Invalid {score_field}: must be between 1-10')
-        
         # Validate financial data
         budget = main_entity.get('estimated_budget')
         if budget is not None and budget < 0:
@@ -1246,76 +1051,3 @@ class IdeaParser(BaseParser):
         duration = main_entity.get('estimated_duration_months')
         if duration is not None and duration <= 0:
             extracted.validation_errors.append('Duration must be positive')
-    
-    # Placeholder methods for complex analysis (would need ML/NLP in real implementation)
-    def _extract_target_market(self, content: str) -> str:
-        return 'General'
-    
-    def _assess_competition_level(self, content: str) -> str:
-        return 'medium'
-    
-    def _assess_technical_complexity(self, content: str) -> str:
-        return 'medium'
-    
-    def _estimate_team_size(self, content: str) -> int:
-        return 3
-    
-    def _extract_required_skills(self, content: str) -> List[str]:
-        return []
-    
-    def _extract_required_roles(self, content: str) -> List[str]:
-        return []
-    
-    def _determine_collaboration_type(self, content: str) -> str:
-        return 'team-based'
-    
-    def _assess_remote_feasibility(self, content: str) -> bool:
-        return True
-    
-    def _assess_monetization_potential(self, content: str) -> str:
-        return 'medium'
-    
-    def _assess_scalability(self, content: str) -> str:
-        return 'medium'
-    
-    def _extract_competitive_advantage(self, content: str) -> str:
-        return ''
-    
-    def _extract_target_users(self, content: str) -> str:
-        return ''
-    
-    def _extract_business_model(self, content: str) -> str:
-        return ''
-    
-    def _assess_market_size(self, content: str) -> str:
-        return 'medium'
-    
-    def _assess_growth_potential(self, content: str) -> str:
-        return 'medium'
-    
-    def _extract_market_trends(self, content: str) -> List[str]:
-        return []
-    
-    def _extract_barriers_to_entry(self, content: str) -> List[str]:
-        return []
-    
-    def _extract_phase_duration(self, item: str) -> Optional[str]:
-        return None
-    
-    def _assess_risk_probability(self, item: str) -> str:
-        return 'medium'
-    
-    def _assess_risk_impact(self, item: str) -> str:
-        return 'medium'
-    
-    def _assess_required_expertise(self, tech_name: str, content: str) -> str:
-        return 'intermediate'
-    
-    def _assess_tech_availability(self, tech_name: str) -> str:
-        return 'available'
-    
-    def _assess_learning_curve(self, tech_name: str) -> str:
-        return 'medium'
-    
-    def _assess_tech_cost(self, tech_name: str) -> str:
-        return 'medium'
