@@ -1592,6 +1592,13 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                         slug = frontmatter.get('slug', self._generate_slug(title))
                         current_blog_slugs.add(slug)
 
+                    elif content_type == 'episode':
+                        # Episodes are stored as blog posts with content_type=episode
+                        main_entity = content_data.get('main_entity', {})
+                        title = main_entity.get('title', 'Untitled Episode')
+                        slug = main_entity.get('slug', self._generate_slug(title))
+                        current_blog_slugs.add(slug)
+
                     elif content_type == 'projects':
                         frontmatter = content_data.get('frontmatter', content_data)
                         title = content_data.get('title', frontmatter.get('title', 'Untitled Project'))
@@ -2188,16 +2195,17 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
     def _sync_episode(self, session: Session, content_data: Dict[str, Any], item: Dict[str, Any], content_hash: str = None) -> None:
         """Sync episode content to database as specialized blog posts with series support"""
         try:
-            # Extract episode data
-            frontmatter = content_data.get('frontmatter', content_data)
-            content = content_data.get('content', '')
+            # Extract episode data - episodes use parsed main_entity data
+            main_entity = content_data.get('main_entity', {})
+            frontmatter = content_data.get('frontmatter', {})
+            content = main_entity.get('content', content_data.get('content', ''))
 
-            # Episode-specific fields
-            title = frontmatter.get('title', 'Untitled Episode')
-            slug = frontmatter.get('slug', self._generate_slug(title))
-            series_name = frontmatter.get('series_name', '')
-            episode_name = frontmatter.get('episode_name', '')
-            episode_number = frontmatter.get('episode_number', 0)
+            # Episode-specific fields from parsed main_entity
+            title = main_entity.get('title', 'Untitled Episode')
+            slug = main_entity.get('slug', self._generate_slug(title))
+            series_name = main_entity.get('series_name', '')
+            episode_name = main_entity.get('episode_name', '')
+            episode_number = main_entity.get('episode_number', 0)
 
             # Determine status
             status = self._determine_blog_status(frontmatter, content_data)
@@ -2210,18 +2218,19 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                 from ..models.blog import BlogStatus, BlogContentType
                 existing_post.title = title
                 existing_post.content = content
-                existing_post.excerpt = frontmatter.get('description', frontmatter.get('summary', ''))
-                existing_post.is_featured = frontmatter.get('featured', False)
+                existing_post.excerpt = main_entity.get('description', frontmatter.get('description', frontmatter.get('summary', '')))
+                existing_post.is_featured = main_entity.get('is_featured', frontmatter.get('featured', False))
                 existing_post.content_type = BlogContentType.EPISODE
                 existing_post.status = BlogStatus(status.lower())
                 existing_post.updated_at = datetime.utcnow()
 
                 # Handle view and like counts
-                existing_post.view_count = frontmatter.get('views', existing_post.view_count)
-                existing_post.like_count = frontmatter.get('likes', existing_post.like_count)
+                existing_post.view_count = main_entity.get('view_count', frontmatter.get('views', existing_post.view_count))
+                existing_post.like_count = main_entity.get('like_count', frontmatter.get('likes', existing_post.like_count))
 
-                if frontmatter.get('published_date'):
-                    existing_post.published_at = self._parse_datetime(frontmatter['published_date'])
+                published_date = main_entity.get('published_date') or frontmatter.get('published_date')
+                if published_date:
+                    existing_post.published_at = self._parse_datetime(published_date)
 
                 blog_post = existing_post
                 self.sync_stats['updated_count'] += 1
@@ -2229,18 +2238,19 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                 # Create new episode
                 from ..models.blog import BlogStatus, BlogContentType
                 assert self.current_user_id is not None
+                published_date = main_entity.get('published_date') or frontmatter.get('published_date')
                 blog_post = BlogPost(
                     user_id=self.current_user_id,
                     title=title,
                     slug=slug,
                     content=content,
-                    excerpt=frontmatter.get('description', frontmatter.get('summary', '')),
-                    is_featured=frontmatter.get('featured', False),
+                    excerpt=main_entity.get('description', frontmatter.get('description', frontmatter.get('summary', ''))),
+                    is_featured=main_entity.get('is_featured', frontmatter.get('featured', False)),
                     content_type=BlogContentType.EPISODE,
                     status=BlogStatus(status.lower()),
-                    view_count=frontmatter.get('views', 0),
-                    like_count=frontmatter.get('likes', 0),
-                    published_at=self._parse_datetime(frontmatter.get('published_date', datetime.utcnow()))
+                    view_count=main_entity.get('view_count', frontmatter.get('views', 0)),
+                    like_count=main_entity.get('like_count', frontmatter.get('likes', 0)),
+                    published_at=self._parse_datetime(published_date or datetime.utcnow())
                 )
                 session.add(blog_post)
                 session.flush()  # Get the ID
@@ -2548,6 +2558,13 @@ class DatabaseSyncLogic(DatabaseSyncLogger):
                         frontmatter = content_data.get('frontmatter', content_data)
                         title = frontmatter.get('title', 'Untitled')
                         slug = frontmatter.get('slug', self._generate_slug(title))
+                        current_blog_slugs.add(slug)
+
+                    elif content_type == 'episode':
+                        # Episodes are stored as blog posts with content_type=episode
+                        main_entity = content_data.get('main_entity', {})
+                        title = main_entity.get('title', 'Untitled Episode')
+                        slug = main_entity.get('slug', self._generate_slug(title))
                         current_blog_slugs.add(slug)
 
                     elif content_type == 'projects':

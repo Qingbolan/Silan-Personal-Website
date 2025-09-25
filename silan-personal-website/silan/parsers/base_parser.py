@@ -1,20 +1,17 @@
-"""
-Base parser class providing common functionality for all content parsers.
+"""Shared parsing primitives used across Markdown content parsers."""
 
-This module defines the base class that all specialized content parsers inherit from,
-providing shared functionality for content extraction, validation, and data structures.
-"""
-
-import frontmatter
-import markdown2
-import re
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Union, Tuple
-from datetime import datetime, date
-from dataclasses import dataclass, field
 import json
 import hashlib
+import re
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime, date
+from pathlib import Path
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Union
+
+import frontmatter
+
+from ..utils.file_operations import FileOperations
 from ..utils.logger import ModernLogger
 
 @dataclass
@@ -56,12 +53,7 @@ class BaseParser(ABC, ModernLogger):
     def __init__(self, content_dir: Path, logger_name: str = "base_parser"):
         ModernLogger.__init__(self, name=logger_name)
         self.content_dir = content_dir
-        self.markdown = markdown2.Markdown(extras=[
-            'fenced-code-blocks', 'tables', 'footnotes', 'task_list',
-            'strike', 'target-blank-links', 'code-friendly', 'cuddled-lists',
-            'metadata', 'header-ids', 'toc', 'wiki-tables', 'smarty-pants',
-            'break-on-newline', 'nofollow'
-        ])
+        self.file_ops = FileOperations(logger=self)
         
         # Technology categorization mapping
         self.tech_categories = {
@@ -110,28 +102,6 @@ class BaseParser(ABC, ModernLogger):
             ]
         }
         
-        # Date parsing patterns
-        self.date_patterns = [
-            r'(\d{4})-(\d{2})-(\d{2})',  # YYYY-MM-DD
-            r'(\d{2})/(\d{2})/(\d{4})',  # MM/DD/YYYY
-            r'(\d{1,2})\s+(\w+)\s+(\d{4})',  # DD Month YYYY
-            r'(\w+)\s+(\d{1,2}),?\s+(\d{4})',  # Month DD, YYYY
-            r'(\w+)\s+(\d{4})',  # Month YYYY
-            r'(\d{4})',  # YYYY
-        ]
-        
-        # Common section patterns
-        self.section_patterns = {
-            'overview': [r'##\s*Overview', r'##\s*Summary', r'##\s*About'],
-            'features': [r'##\s*(?:Key\s+)?Features?', r'##\s*Functionality'],
-            'technology': [r'##\s*(?:Technical\s+)?(?:Architecture|Stack|Implementation)'],
-            'challenges': [r'##\s*Challenges?', r'##\s*Difficulties', r'##\s*Problems'],
-            'solutions': [r'##\s*Solutions?', r'##\s*Approach', r'##\s*Methodology'],
-            'results': [r'##\s*Results?', r'##\s*Outcomes?', r'##\s*Performance'],
-            'future': [r'##\s*Future', r'##\s*Next\s+Steps?', r'##\s*Roadmap'],
-            'lessons': [r'##\s*Lessons', r'##\s*Takeaways?', r'##\s*Learnings?']
-        }
-    
     def parse_file(self, file_path: Path, metadata: Optional[Dict[str, Any]] = None) -> Optional[ExtractedContent]:
         """
         Parse a single markdown file and extract structured content.
@@ -445,3 +415,95 @@ class BaseParser(ABC, ModernLogger):
         text = re.sub(r'`([^`]+)`', r'\1', text)        # Code
         
         return text.strip()
+
+    def _find_first_existing(self, base_dir: Path, candidates: Iterable[Union[str, Path]]) -> Optional[Path]:
+        """Return the first existing path under ``base_dir`` from the candidates."""
+        if not base_dir:
+            return None
+
+        for candidate in candidates:
+            candidate_path = Path(candidate)
+            path = candidate_path if candidate_path.is_absolute() else base_dir / candidate_path
+            if path.exists():
+                return path
+
+        return None
+
+    def _iter_files(
+        self,
+        root: Path,
+        extensions: Optional[Iterable[str]] = None,
+        *,
+        recursive: bool = True,
+    ) -> Iterator[Path]:
+        """Yield files beneath ``root`` optionally filtered by extension."""
+        if not root or not root.exists():
+            return iter(())
+
+        ext_set = None
+        if extensions is not None:
+            ext_set = {
+                ext.lower() if ext.startswith('.') else f'.{ext.lower()}'
+                for ext in extensions
+            }
+
+        iterator = root.rglob('*') if recursive else root.glob('*')
+        for path in iterator:
+            if not path.is_file():
+                continue
+            if ext_set and path.suffix.lower() not in ext_set:
+                continue
+            yield path
+
+    def _build_file_record(
+        self,
+        file_path: Path,
+        *,
+        relative_to: Optional[Path] = None,
+        include_stats: bool = True,
+    ) -> Dict[str, Any]:
+        """Create a metadata record for a file with optional stat fields."""
+        record: Dict[str, Any] = {'filename': file_path.name}
+
+        if relative_to:
+            try:
+                record['path'] = str(file_path.relative_to(relative_to))
+            except ValueError:
+                record['path'] = str(file_path)
+        else:
+            record['path'] = str(file_path)
+
+        if include_stats:
+            stat = file_path.stat()
+            record['size'] = stat.st_size
+            record['modified'] = datetime.fromtimestamp(stat.st_mtime)
+
+        return record
+
+    def _split_section_entries(self, section_content: str, heading_level: int = 3) -> List[List[str]]:
+        """Split a Markdown section into entry blocks keyed by heading level."""
+        if not section_content:
+            return []
+
+        pattern = rf'\n#{{{heading_level}}}\s+'
+        raw_entries = re.split(pattern, section_content.strip())
+
+        blocks: List[List[str]] = []
+        for entry in raw_entries:
+            lines = [line.strip() for line in entry.strip().split('\n') if line.strip()]
+            if lines:
+                blocks.append(lines)
+
+        return blocks
+
+    def _iterate_section_blocks(
+        self,
+        content: str,
+        section_title: str,
+        *,
+        heading_level: int = 3,
+    ) -> Iterator[List[str]]:
+        """Yield structured line blocks for subsections inside a Markdown section."""
+        section_content = self._extract_section(content, section_title)
+        for block in self._split_section_entries(section_content, heading_level=heading_level):
+            yield block

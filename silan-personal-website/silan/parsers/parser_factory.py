@@ -81,12 +81,9 @@ class ParserFactory:
         """
         # Determine content type if not provided
         if not content_type:
-            content_type = self._detect_content_type(file_path, metadata)
-        
-        # Get parser class
-        parser_class = self._parsers.get(content_type.lower(), self._default_parser)
-        
-        # Create and return parser instance
+            content_type = cls._detect_content_type(file_path, metadata)
+
+        parser_class = cls._parsers.get(content_type.lower(), cls._default_parser)
         return parser_class(content_dir)
     
     @classmethod
