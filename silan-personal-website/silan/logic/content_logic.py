@@ -512,9 +512,33 @@ class ContentLogic(ContentLogger):
                         except Exception as e:
                             print(f"Warning: Could not read series config {series_config_path}: {e}")
 
-                    # Get episode registry from series config
-                    episode_registry = series_config.get('episodes', [])
-                    episode_lookup = {ep.get('episode_id'): ep for ep in episode_registry}
+                    # Get episode registry from series config - check both locations
+                    episodes_map = series_config.get('episodes', {})
+                    series_info = series_config.get('series_info', {})
+                    if 'episodes' in series_info:
+                        episodes_map = series_info['episodes']
+
+                    if isinstance(episodes_map, dict):
+                        # Handle episodes as a dict (numeric keys with episode info)
+                        episode_lookup = {}
+                        for key, info in episodes_map.items():
+                            file_name = info.get('file', '')
+                            if file_name:
+                                # Use the filename without extension as the lookup key
+                                episode_id = Path(file_name).stem
+                                episode_lookup[episode_id] = {
+                                    'episode_id': episode_id,
+                                    'title': info.get('title', ''),
+                                    'description': info.get('description', ''),
+                                    'file_path': file_name,
+                                    'sort_order': key if isinstance(key, int) else int(key),
+                                    'status': info.get('status', ''),
+                                    'duration_minutes': info.get('duration', ''),
+                                }
+                    else:
+                        # Handle episodes as a list (fallback for other structures)
+                        episode_registry = episodes_map if isinstance(episodes_map, list) else []
+                        episode_lookup = {ep.get('episode_id'): ep for ep in episode_registry}
 
                     # Each series directory contains episode parts
                     for episode_dir in series_dir.iterdir():
