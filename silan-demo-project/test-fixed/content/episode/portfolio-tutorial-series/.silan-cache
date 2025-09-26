@@ -27,12 +27,12 @@ series_info:
   series_id: portfolio-tutorial-series
   slug: portfolio-tutorial-series
   series_status: active
-  total_episodes: 10
-  published_episodes: 2
+  total_episodes: 3
+  published_episodes: 3
   language: en
   author: Silan Team
   difficulty: beginner
-  estimated_duration: 3 hours total
+  estimated_duration: 40 minutes total
   category: education
   tags:
   - tutorial
@@ -44,42 +44,62 @@ series_info:
   allow_comments: true
   share_enabled: true
   episodes:
+    0:
+      title: Portfolio Tutorial Series Overview
+      file: README.md
+      duration: 5 minutes
+      status: published
+      created: '2025-09-23'
+      episode_number: 0
+      type: episode
+      difficulty: beginner
+      description: Comprehensive overview of the Portfolio Tutorial Series, including
+        objectives, structure, and what you'll build
+      tags:
+      - tutorial
+      - overview
+      - portfolio
+      - introduction
+      next_episode: episode-01-setup.md
     1:
       title: Setting Up Your Portfolio Project
       file: episode-01-setup.md
       duration: 15 minutes
       status: published
       created: '2025-09-23'
+      episode_number: 1
+      type: episode
+      difficulty: beginner
+      description: Learn how to initialize and set up the foundation of your portfolio
+        project using Silan
+      tags:
+      - tutorial
+      - setup
+      - portfolio
+      - initialization
+      prev_episode: README.md
+      next_episode: episode-02-content.md
     2:
       title: Creating Rich Content
       file: episode-02-content.md
       duration: 20 minutes
       status: published
       created: '2025-09-23'
-    3:
-      title: Content Organization
-      file: episode-03-organization.md
-      duration: 18 minutes
-      status: draft
-      created: '2025-09-23'
-    4:
-      title: Database Integration
-      file: episode-04-database.md
-      duration: 25 minutes
-      status: planned
-      created: '2025-09-23'
-    5:
-      title: Advanced Features
-      file: episode-05-advanced.md
-      duration: 30 minutes
-      status: planned
-      created: '2025-09-23'
+      episode_number: 2
+      type: episode
+      difficulty: beginner
+      description: Master the art of creating engaging, rich content that showcases
+        your projects effectively
+      tags:
+      - tutorial
+      - content
+      - portfolio
+      - writing
+      prev_episode: episode-01-setup.md
   objectives:
-  - Master Silan CLI commands
-  - Create professional portfolio content
-  - Organize and manage content effectively
-  - Integrate with databases and external tools
-  - Deploy and maintain your portfolio
+  - Understand portfolio tutorial series overview
+  - Set up your portfolio project foundation
+  - Create rich, engaging content for your portfolio
   audience:
     primary: developers
     secondary: designers
@@ -99,7 +119,7 @@ sync_metadata:
   item_id: portfolio-tutorial-series
   sync_enabled: true
   last_hash: c20d289c0d07ffb4
-  last_sync_date: '2025-09-25T05:11:21.301314'
+  last_sync_date: '2025-09-26T06:45:06.676095'
   created: '2025-09-23'
   last_modified: '2025-09-23'
   file_count: 3

@@ -8,23 +8,63 @@ import enum
 
 from .base import Base, TimestampMixin, UUID, generate_uuid
 
+try:
+    from ..config import config
+    _config_available = True
+except ImportError:
+    _config_available = False
+
 if TYPE_CHECKING:
     from .user import User, Language, UserIdentity
     from .ideas import Idea, CommentLike, Comment
 
 
+def _get_blog_config_values():
+    """Get blog configuration values or fallback to defaults"""
+    if _config_available:
+        models_config = config.get_models_config()
+        blog_config = models_config.get('models', {}).get('blog', {})
+        return {
+            'types': blog_config.get('types', {
+                'article': 'article',
+                'vlog': 'vlog',
+                'episode': 'episode'
+            }),
+            'status': blog_config.get('status', {
+                'draft': 'draft',
+                'published': 'published',
+                'archived': 'archived'
+            })
+        }
+    else:
+        return {
+            'types': {
+                'article': 'article',
+                'vlog': 'vlog',
+                'episode': 'episode'
+            },
+            'status': {
+                'draft': 'draft',
+                'published': 'published',
+                'archived': 'archived'
+            }
+        }
+
+# Load blog configuration values
+_blog_config = _get_blog_config_values()
+
 class BlogContentType(enum.Enum):
-    """Enumeration for blog content types - matching Go schema"""
-    ARTICLE = "article"
-    VLOG = "vlog"
-    EPISODE = "episode"
+    """Enumeration for blog content types - values loaded from configuration"""
+    ARTICLE = _blog_config['types']['article']
+    VLOG = _blog_config['types']['vlog']
+    EPISODE = _blog_config['types']['episode']
 
 
 class BlogStatus(enum.Enum):
-    """Enumeration for blog status - matching Go schema"""
-    DRAFT = "draft"
-    PUBLISHED = "published"
-    ARCHIVED = "archived"
+    """Enumeration for blog status - values loaded from configuration"""
+    DRAFT = _blog_config['status']['draft']
+    PUBLISHED = _blog_config['status']['published']
+    ARCHIVED = _blog_config['status']['archived']
 
 
 class BlogCategory(Base, TimestampMixin):

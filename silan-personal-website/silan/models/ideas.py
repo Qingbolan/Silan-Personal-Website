@@ -8,27 +8,75 @@ import enum
 
 from .base import Base, TimestampMixin, UUID, generate_uuid
 
+try:
+    from ..config import config
+    _config_available = True
+except ImportError:
+    _config_available = False
+
 if TYPE_CHECKING:
     from .user import User, Language, UserIdentity
     from .blog import BlogPost
 
 
+def _get_ideas_config_values():
+    """Get ideas configuration values or fallback to defaults"""
+    if _config_available:
+        models_config = config.get_models_config()
+        ideas_config = models_config.get('models', {}).get('ideas', {})
+        return {
+            'status': ideas_config.get('status', {
+                'draft': 'draft',
+                'hypothesis': 'hypothesis',
+                'experimenting': 'experimenting',
+                'validating': 'validating',
+                'published': 'published',
+                'concluded': 'concluded'
+            }),
+            'priority': ideas_config.get('priority', {
+                'low': 'low',
+                'medium': 'medium',
+                'high': 'high',
+                'urgent': 'urgent'
+            })
+        }
+    else:
+        return {
+            'status': {
+                'draft': 'draft',
+                'hypothesis': 'hypothesis',
+                'experimenting': 'experimenting',
+                'validating': 'validating',
+                'published': 'published',
+                'concluded': 'concluded'
+            },
+            'priority': {
+                'low': 'low',
+                'medium': 'medium',
+                'high': 'high',
+                'urgent': 'urgent'
+            }
+        }
+
+# Load ideas configuration values
+_ideas_config = _get_ideas_config_values()
+
 class IdeaStatus(enum.Enum):
-    """Idea status enumeration - matching Go schema"""
-    DRAFT = "draft"
-    HYPOTHESIS = "hypothesis"
-    EXPERIMENTING = "experimenting"
-    VALIDATING = "validating"
-    PUBLISHED = "published"
-    CONCLUDED = "concluded"
+    """Idea status enumeration - values loaded from configuration"""
+    DRAFT = _ideas_config['status']['draft']
+    HYPOTHESIS = _ideas_config['status']['hypothesis']
+    EXPERIMENTING = _ideas_config['status']['experimenting']
+    VALIDATING = _ideas_config['status']['validating']
+    PUBLISHED = _ideas_config['status']['published']
+    CONCLUDED = _ideas_config['status']['concluded']
 
 
 class IdeaPriority(enum.Enum):
-    """Idea priority enumeration - matching Go schema"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    URGENT = "urgent"
+    """Idea priority enumeration - values loaded from configuration"""
+    LOW = _ideas_config['priority']['low']
+    MEDIUM = _ideas_config['priority']['medium']
+    HIGH = _ideas_config['priority']['high']
+    URGENT = _ideas_config['priority']['urgent']
 
 
 class Idea(Base, TimestampMixin):

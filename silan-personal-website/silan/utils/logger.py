@@ -21,6 +21,12 @@ import os
 from typing import Any, Optional, Tuple
 from pyfiglet import Figlet
 
+try:
+    from ..config import config
+except ImportError:
+    # Fallback if config module is not available
+    config = None
+
 class ModernLogger:
     """
     Modern colorful logger with smooth gradient styling inspired by Vue CLI,
@@ -36,26 +42,29 @@ class ModernLogger:
         "CRITICAL": "💀"
     }
 
-    # Hardcoded gradient endpoints - can be overridden in subclasses
-    GRADIENT_START = "#41B883"  # Vue green
-    GRADIENT_END   = "#6574CD"  # Vue purple
-    
-    # Default custom theme - can be extended in subclasses
-    DEFAULT_THEME = {
-        "info": "bold cyan",
-        "warning": "bold yellow",
-        "error": "bold red",
-        "critical": "bold white on red",
-        "success": "#4CAF50",
-        "vue_primary": "#42B883",
-        "vue_secondary": "#35495E",
-        "logging.time": "dim white",
-        "logging.level.debug": "grey70",
-        "logging.level.info": "bold cyan",
-        "logging.level.warning": "bold yellow",
-        "logging.level.error": "bold red",
-        "logging.level.critical": "bold white on red",
-    }
+    @classmethod
+    def _load_config_values(cls):
+        """Load configuration values from YAML config files."""
+        # Always use hardcoded values for consistency
+        return {
+            'gradient_start': "#41B883",
+            'gradient_end': "#6574CD",
+            'theme': {
+                "info": "bold cyan",
+                "warning": "bold yellow",
+                "error": "bold red",
+                "critical": "bold white on red",
+                "success": "#4CAF50",
+                "vue_primary": "#42B883",
+                "vue_secondary": "#35495E",
+                "logging.time": "dim white",
+                "logging.level.debug": "grey70",
+                "logging.level.info": "bold cyan",
+                "logging.level.warning": "bold yellow",
+                "logging.level.error": "bold red",
+                "logging.level.critical": "bold white on red",
+            }
+        }
 
     def __init__(
         self,
@@ -65,13 +74,19 @@ class ModernLogger:
         show_path: bool = False,
         rich_tracebacks: bool = True
     ):
+        # Load configuration values
+        config_values = self._load_config_values()
+        self.GRADIENT_START = config_values['gradient_start']
+        self.GRADIENT_END = config_values['gradient_end']
+        self.DEFAULT_THEME = config_values['theme']
+
         # Store instance configuration
         self.name = name
         self.level = level
         self.log_file = log_file
         self.show_path = show_path
         self.rich_tracebacks = rich_tracebacks
-        
+
         # Initialize logger
         self._initialize_logger()
     
