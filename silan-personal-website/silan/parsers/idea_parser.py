@@ -149,6 +149,10 @@ class IdeaParser(BaseParser):
         extracted.metadata['assets'] = assets_data
         if assets_data.get('images'):
             extracted.images.extend(assets_data['images'])
+
+        # Process special files using base class method (REFERENCES.md, TIMELINE.md, NOTES.md)
+        idea_file_config = self._get_idea_special_file_config()
+        self.process_special_files(extracted, folder_path, idea_file_config)
     
     def _scan_research_folder(self, research_folder: Path) -> Dict[str, Any]:
         """Scan research folder for research materials"""
@@ -1051,3 +1055,179 @@ class IdeaParser(BaseParser):
         duration = main_entity.get('estimated_duration_months')
         if duration is not None and duration <= 0:
             extracted.validation_errors.append('Duration must be positive')
+
+    def _get_idea_special_file_config(self) -> Dict[str, Dict[str, Any]]:
+        """Get idea-specific configuration for special file processing"""
+        # Get base configuration from YAML
+        base_config = self._get_default_special_file_config()
+
+        # Try to get idea-specific overrides from config
+        try:
+            from ..config import config
+            parsers_config = config.get_parsers_config()
+            idea_config = parsers_config.get('parsers', {}).get('idea_parser', {})
+            post_processors = idea_config.get('special_file_processing', {}).get('post_processors', {})
+        except:
+            post_processors = {}
+
+        # Apply idea-specific customizations
+        idea_config = base_config.copy()
+
+        # Update with idea-specific post-processors and metadata keys
+        if 'REFERENCES.md' in idea_config:
+            idea_config['REFERENCES.md'].update({
+                'metadata_key': 'references',
+                'post_process': post_processors.get('references', 'idea_references')
+            })
+
+        if 'TIMELINE.md' in idea_config:
+            idea_config['TIMELINE.md'].update({
+                'metadata_key': 'project_timeline',
+                'post_process': post_processors.get('timeline', None)
+            })
+
+        if 'NOTES.md' in idea_config:
+            idea_config['NOTES.md'].update({
+                'metadata_key': 'development_notes',
+                'post_process': post_processors.get('notes', 'idea_notes')
+            })
+
+        return idea_config
+
+    def _apply_post_processing(
+        self,
+        structured_data: Any,
+        post_processor: str,
+        metadata_key: str,
+        extracted: ExtractedContent
+    ) -> Any:
+        """Apply idea-specific post-processing to structured data"""
+        if post_processor == 'idea_references':
+            # For idea references, we want to integrate with existing references structure
+            if not extracted.metadata.get('references'):
+                extracted.metadata['references'] = {'papers': [], 'books': [], 'websites': [], 'tools': []}
+
+            extracted.metadata['references']['extracted_from_file'] = structured_data
+            return extracted.metadata['references']
+
+        elif post_processor == 'idea_notes':
+            # For idea notes, we want to add it as a list item to development_notes
+            if not extracted.metadata.get('development_notes'):
+                extracted.metadata['development_notes'] = []
+
+            # structured_data is the notes dict from base class
+            extracted.metadata['development_notes'].append(structured_data)
+            return extracted.metadata['development_notes']
+
+        return structured_data
+
+    def _extract_references_from_content(self, content: str) -> List[Dict[str, Any]]:
+        """Extract structured references from REFERENCES.md content"""
+        references = []
+        import re
+
+        # Look for markdown links first
+        link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+        links = re.findall(link_pattern, content)
+
+        for title, url in links:
+            references.append(self._create_reference_entry(title, url))
+
+        # Look for "URL:" format references
+        url_pattern = r'^\s*-\s*URL:\s*([^\s]+)'
+        title_pattern = r'^\d+\.\s*\*\*"?([^"*]+)"?\*\*'
+
+        lines = content.split('\n')
+        current_title = None
+
+        for line in lines:
+            line = line.strip()
+
+            # Check for title line
+            title_match = re.match(title_pattern, line)
+            if title_match:
+                current_title = title_match.group(1).strip()
+                continue
+
+            # Check for URL line
+            url_match = re.match(url_pattern, line)
+            if url_match and current_title:
+                url = url_match.group(1).strip()
+                references.append(self._create_reference_entry(current_title, url))
+                current_title = None  # Reset for next reference
+
+        # Look for simple URL lines
+        simple_url_pattern = r'https?://[^\s]+'
+        for line in lines:
+            if not line.strip().startswith('-') and not line.strip().startswith('*'):
+                urls = re.findall(simple_url_pattern, line)
+                for url in urls:
+                    # Try to find a title in the same line
+                    title_part = re.sub(simple_url_pattern, '', line).strip()
+                    title = title_part if title_part else url
+                    references.append(self._create_reference_entry(title, url))
+
+        return references
+
+    def _create_reference_entry(self, title: str, url: str) -> Dict[str, Any]:
+        """Create a reference entry with type classification"""
+        ref_type = 'website'
+        if 'arxiv.org' in url or 'doi.org' in url:
+            ref_type = 'paper'
+        elif 'github.com' in url:
+            ref_type = 'tool'
+        elif any(ext in url for ext in ['.pdf', '.doc']):
+            ref_type = 'document'
+        elif any(domain in url for domain in ['hubspot.com', 'contentmarketinginstitute.com']):
+            ref_type = 'report'
+
+        return {
+            'title': title.strip(),
+            'url': url.strip(),
+            'type': ref_type
+        }
+
+    def _extract_timeline_from_content(self, content: str) -> Dict[str, Any]:
+        """Extract structured timeline from TIMELINE.md content"""
+        timeline = {
+            'phases': [],
+            'milestones': [],
+            'total_duration': None
+        }
+
+        # Look for phase sections or date patterns
+        import re
+
+        # Look for dates and associated tasks
+        date_pattern = r'(\d{4}-\d{2}-\d{2}|\w+ \d{1,2}, \d{4})'
+        lines = content.split('\n')
+
+        current_phase = None
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Check for phase headers
+            if line.startswith('#'):
+                phase_title = re.sub(r'^#+\s*', '', line)
+                current_phase = {
+                    'title': phase_title,
+                    'tasks': [],
+                    'start_date': None,
+                    'end_date': None
+                }
+                timeline['phases'].append(current_phase)
+
+            # Check for dates
+            date_match = re.search(date_pattern, line)
+            if date_match and current_phase:
+                date_str = date_match.group(1)
+                task_text = line.replace(date_str, '').strip()
+                if task_text:
+                    current_phase['tasks'].append({
+                        'date': date_str,
+                        'task': task_text
+                    })
+
+        return timeline

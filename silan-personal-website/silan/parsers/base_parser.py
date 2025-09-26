@@ -14,6 +14,12 @@ import frontmatter
 from ..utils.file_operations import FileOperations
 from ..utils.logger import ModernLogger
 
+try:
+    from ..config import config
+    _config_available = True
+except ImportError:
+    _config_available = False
+
 @dataclass
 class ExtractedContent:
     """Base container for extracted content data"""
@@ -507,3 +513,298 @@ class BaseParser(ABC, ModernLogger):
         section_content = self._extract_section(content, section_title)
         for block in self._split_section_entries(section_content, heading_level=heading_level):
             yield block
+
+    def process_special_files(
+        self,
+        extracted: ExtractedContent,
+        folder_path: Path,
+        file_config: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """
+        Generic method to process special files in content directories.
+
+        Supports common special files like REFERENCES.md, TIMELINE.md, NOTES.md, etc.
+        Subclasses can override this method or extend it with their own file processors.
+
+        Args:
+            extracted: ExtractedContent object to populate with file data
+            folder_path: Path to the folder containing special files
+            file_config: Optional configuration dict for file processing rules
+        """
+        if file_config is None:
+            file_config = self._get_default_special_file_config()
+
+        for file_pattern, processor_config in file_config.items():
+            self._process_special_file_pattern(extracted, folder_path, file_pattern, processor_config)
+
+    def get_content_type_config(self, content_type: str) -> Dict[str, Any]:
+        """Get processing configuration for a specific content type from YAML config only"""
+        if not _config_available:
+            self.error(f"Configuration system not available - cannot load config for content type: {content_type}")
+            return {}
+
+        parsers_config = config.get_parsers_config()
+        content_types = parsers_config.get('content_types', {})
+        processing_rules = content_types.get('processing_rules', {})
+        content_config = processing_rules.get(content_type, {})
+
+        if not content_config:
+            self.warning(f"No configuration found for content type '{content_type}' in parsers.yaml")
+            return {}
+
+        self.debug(f"Loaded configuration for content type '{content_type}' from YAML")
+        return content_config
+
+    def should_process_special_files(self, content_type: str) -> bool:
+        """Check if special file processing should be enabled for this content type"""
+        content_config = self.get_content_type_config(content_type)
+        return content_config.get('special_files_enabled', False)
+
+    def _get_default_special_file_config(self) -> Dict[str, Dict[str, Any]]:
+        """Get special file configuration from YAML config only"""
+        if not _config_available:
+            self.error("Configuration system not available - cannot load special file config")
+            return {}
+
+        parsers_config = config.get_parsers_config()
+        special_files_config = parsers_config.get('special_files', {}).get('files', {})
+
+        if not special_files_config:
+            self.warning("No special file configuration found in parsers.yaml")
+            return {}
+
+        self.debug(f"Loaded {len(special_files_config)} special file configurations from YAML")
+        return special_files_config
+
+    def _process_special_file_pattern(
+        self,
+        extracted: ExtractedContent,
+        folder_path: Path,
+        file_pattern: str,
+        processor_config: Dict[str, Any]
+    ) -> None:
+        """Process a specific special file pattern"""
+        file_path = folder_path / file_pattern
+
+        if not file_path.exists():
+            return
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Store raw content
+            content_key = processor_config.get('content_key')
+            if content_key:
+                extracted.metadata[content_key] = content
+
+            # Store file info
+            file_key = processor_config.get('file_key')
+            if file_key:
+                extracted.metadata[file_key] = self._build_file_record(file_path, relative_to=folder_path)
+
+            # Process structured data
+            processor_name = processor_config.get('processor')
+            metadata_key = processor_config.get('metadata_key')
+
+            if processor_name and metadata_key:
+                structured_data = self._extract_structured_data(content, processor_name, file_path)
+                if structured_data:
+                    # Apply post-processing if specified
+                    post_processor = processor_config.get('post_process')
+                    if post_processor:
+                        structured_data = self._apply_post_processing(structured_data, post_processor, metadata_key, extracted)
+
+                    extracted.metadata[metadata_key] = structured_data
+
+        except Exception as e:
+            self.warning(f"Error processing special file {file_pattern}: {e}")
+
+    def _apply_post_processing(
+        self,
+        structured_data: Any,
+        post_processor: str,
+        metadata_key: str,
+        extracted: ExtractedContent
+    ) -> Any:
+        """Apply post-processing to structured data. Can be overridden by subclasses."""
+        # Default implementation does nothing - subclasses can override
+        return structured_data
+
+    def _extract_structured_data(self, content: str, processor_name: str, file_path: Path) -> Any:
+        """Extract structured data from file content based on processor type"""
+        try:
+            if processor_name == 'references':
+                return self._extract_references_from_content(content)
+            elif processor_name == 'timeline':
+                return self._extract_timeline_from_content(content)
+            elif processor_name == 'notes':
+                return self._extract_notes_from_content(content, file_path)
+            elif processor_name == 'todo':
+                return self._extract_todo_from_content(content)
+            elif processor_name == 'changelog':
+                return self._extract_changelog_from_content(content)
+            else:
+                self.debug(f"Unknown processor: {processor_name}")
+                return None
+        except Exception as e:
+            self.warning(f"Error in {processor_name} processor: {e}")
+            return None
+
+    def _extract_references_from_content(self, content: str) -> List[Dict[str, Any]]:
+        """Extract structured references from content (can be overridden by subclasses)"""
+        references = []
+        import re
+
+        # Look for standard markdown links
+        link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+        links = re.findall(link_pattern, content)
+
+        for title, url in links:
+            references.append(self._create_reference_entry(title, url))
+
+        # Look for "URL:" format references
+        url_pattern = r'^\s*-\s*URL:\s*([^\s]+)'
+        title_pattern = r'^\d+\.\s*\*\*"?([^"*]+)"?\*\*'
+
+        lines = content.split('\n')
+        current_title = None
+
+        for line in lines:
+            line = line.strip()
+
+            # Check for title line
+            title_match = re.match(title_pattern, line)
+            if title_match:
+                current_title = title_match.group(1).strip()
+                continue
+
+            # Check for URL line
+            url_match = re.match(url_pattern, line)
+            if url_match and current_title:
+                url = url_match.group(1).strip()
+                references.append(self._create_reference_entry(current_title, url))
+                current_title = None
+
+        return references
+
+    def _create_reference_entry(self, title: str, url: str) -> Dict[str, Any]:
+        """Create a reference entry with type classification"""
+        ref_type = 'website'
+        if 'arxiv.org' in url or 'doi.org' in url:
+            ref_type = 'paper'
+        elif 'github.com' in url:
+            ref_type = 'tool'
+        elif any(ext in url for ext in ['.pdf', '.doc']):
+            ref_type = 'document'
+
+        return {
+            'title': title.strip(),
+            'url': url.strip(),
+            'type': ref_type
+        }
+
+    def _extract_timeline_from_content(self, content: str) -> Dict[str, Any]:
+        """Extract structured timeline from content (can be overridden by subclasses)"""
+        timeline = {
+            'phases': [],
+            'milestones': [],
+            'total_duration': None
+        }
+
+        import re
+        lines = content.split('\n')
+        current_phase = None
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Check for phase headers (## or ###)
+            if re.match(r'^#{2,3}\s+', line):
+                phase_title = re.sub(r'^#+\s*', '', line)
+                current_phase = {
+                    'title': phase_title,
+                    'tasks': [],
+                    'start_date': None,
+                    'end_date': None
+                }
+                timeline['phases'].append(current_phase)
+
+            # Look for task items (- [ ] or - [x])
+            elif current_phase and re.match(r'^\s*-\s*\[[x ]\]', line):
+                task_text = re.sub(r'^\s*-\s*\[[x ]\]\s*', '', line)
+                is_completed = '[x]' in line
+                current_phase['tasks'].append({
+                    'task': task_text,
+                    'completed': is_completed
+                })
+
+        return timeline
+
+    def _extract_notes_from_content(self, content: str, file_path: Path) -> Dict[str, Any]:
+        """Extract structured notes from content"""
+        word_count = len(content.split()) if content else 0
+
+        return {
+            'file_name': file_path.name,
+            'file_path': str(file_path),
+            'type': 'general_notes',
+            'content_preview': content[:500] if content else '',
+            'word_count': word_count,
+            'created': datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+        }
+
+    def _extract_todo_from_content(self, content: str) -> List[Dict[str, Any]]:
+        """Extract structured todo items from content"""
+        import re
+        todos = []
+        lines = content.split('\n')
+
+        for line in lines:
+            line = line.strip()
+            # Match todo items like - [ ] Task or - [x] Completed task
+            todo_match = re.match(r'^\s*-\s*\[([x ])\]\s*(.+)', line)
+            if todo_match:
+                is_completed = todo_match.group(1) == 'x'
+                task = todo_match.group(2).strip()
+                todos.append({
+                    'task': task,
+                    'completed': is_completed
+                })
+
+        return todos
+
+    def _extract_changelog_from_content(self, content: str) -> Dict[str, Any]:
+        """Extract structured changelog from content"""
+        import re
+        changelog = {
+            'versions': [],
+            'unreleased': []
+        }
+
+        lines = content.split('\n')
+        current_version = None
+
+        for line in lines:
+            line = line.strip()
+
+            # Look for version headers like ## [1.0.0] - 2023-01-01
+            version_match = re.match(r'^#{1,3}\s*\[?([^\]]+)\]?\s*-?\s*(\d{4}-\d{2}-\d{2})?', line)
+            if version_match:
+                version = version_match.group(1)
+                date = version_match.group(2)
+                current_version = {
+                    'version': version,
+                    'date': date,
+                    'changes': []
+                }
+                changelog['versions'].append(current_version)
+
+            # Look for change items
+            elif current_version and line.startswith('-'):
+                change = line[1:].strip()
+                current_version['changes'].append(change)
+
+        return changelog

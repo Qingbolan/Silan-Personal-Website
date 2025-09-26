@@ -9,31 +9,85 @@ import enum
 
 from .base import Base, TimestampMixin, UUID, generate_uuid
 
+try:
+    from ..config import config
+    _config_available = True
+except ImportError:
+    _config_available = False
+
 if TYPE_CHECKING:
     from .user import User, Language
 
 
+def _get_recent_updates_config_values():
+    """Get recent updates configuration values or fallback to defaults"""
+    if _config_available:
+        models_config = config.get_models_config()
+        updates_config = models_config.get('models', {}).get('recent_updates', {})
+        return {
+            'types': updates_config.get('types', {
+                'work': 'work',
+                'education': 'education',
+                'research': 'research',
+                'publication': 'publication',
+                'project': 'project'
+            }),
+            'status': updates_config.get('status', {
+                'active': 'active',
+                'ongoing': 'ongoing',
+                'completed': 'completed'
+            }),
+            'priority': updates_config.get('priority', {
+                'high': 'high',
+                'medium': 'medium',
+                'low': 'low'
+            })
+        }
+    else:
+        return {
+            'types': {
+                'work': 'work',
+                'education': 'education',
+                'research': 'research',
+                'publication': 'publication',
+                'project': 'project'
+            },
+            'status': {
+                'active': 'active',
+                'ongoing': 'ongoing',
+                'completed': 'completed'
+            },
+            'priority': {
+                'high': 'high',
+                'medium': 'medium',
+                'low': 'low'
+            }
+        }
+
+# Load recent updates configuration values
+_updates_config = _get_recent_updates_config_values()
+
 class UpdateType(enum.Enum):
-    """Enumeration for update types - matching Go schema"""
-    WORK = "work"
-    EDUCATION = "education"
-    RESEARCH = "research"
-    PUBLICATION = "publication"
-    PROJECT = "project"
+    """Enumeration for update types - values loaded from configuration"""
+    WORK = _updates_config['types']['work']
+    EDUCATION = _updates_config['types']['education']
+    RESEARCH = _updates_config['types']['research']
+    PUBLICATION = _updates_config['types']['publication']
+    PROJECT = _updates_config['types']['project']
 
 
 class UpdateStatus(enum.Enum):
-    """Enumeration for update status - matching Go schema"""
-    ACTIVE = "active"
-    ONGOING = "ongoing"
-    COMPLETED = "completed"
+    """Enumeration for update status - values loaded from configuration"""
+    ACTIVE = _updates_config['status']['active']
+    ONGOING = _updates_config['status']['ongoing']
+    COMPLETED = _updates_config['status']['completed']
 
 
 class UpdatePriority(enum.Enum):
-    """Enumeration for update priority - matching Go schema"""
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
+    """Enumeration for update priority - values loaded from configuration"""
+    HIGH = _updates_config['priority']['high']
+    MEDIUM = _updates_config['priority']['medium']
+    LOW = _updates_config['priority']['low']
 
 
 class RecentUpdate(Base, TimestampMixin):

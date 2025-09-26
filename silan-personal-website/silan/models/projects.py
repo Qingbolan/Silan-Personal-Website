@@ -8,16 +8,44 @@ import enum
 
 from .base import Base, TimestampMixin, UUID, generate_uuid
 
+try:
+    from ..config import config
+    _config_available = True
+except ImportError:
+    _config_available = False
+
 if TYPE_CHECKING:
     from .user import User, Language
 
 
+def _get_project_status_values():
+    """Get project status values from configuration or fallback to defaults"""
+    if _config_available:
+        models_config = config.get_models_config()
+        project_status = models_config.get('models', {}).get('projects', {}).get('status', {})
+        return {
+            'ACTIVE': project_status.get('active', 'active'),
+            'COMPLETED': project_status.get('completed', 'completed'),
+            'PAUSED': project_status.get('paused', 'paused'),
+            'CANCELLED': project_status.get('cancelled', 'cancelled')
+        }
+    else:
+        return {
+            'ACTIVE': 'active',
+            'COMPLETED': 'completed',
+            'PAUSED': 'paused',
+            'CANCELLED': 'cancelled'
+        }
+
+# Load project status values
+_status_values = _get_project_status_values()
+
 class ProjectStatus(enum.Enum):
-    """Project status enumeration - matching Go schema"""
-    ACTIVE = "active"
-    COMPLETED = "completed"
-    PAUSED = "paused"
-    CANCELLED = "cancelled"
+    """Project status enumeration - values loaded from configuration"""
+    ACTIVE = _status_values['ACTIVE']
+    COMPLETED = _status_values['COMPLETED']
+    PAUSED = _status_values['PAUSED']
+    CANCELLED = _status_values['CANCELLED']
 
 
 class Project(Base, TimestampMixin):
