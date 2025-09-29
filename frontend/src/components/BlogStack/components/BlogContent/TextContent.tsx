@@ -317,40 +317,23 @@ export const TextContent: React.FC<TextContentProps> = ({
       return renderInlineMarkdown(text);
     }
 
-    // Enhanced handling for inline list patterns
-    // Pattern 1: "- Item1: description - Item2: description - Item3: description"
-    if (text.includes(' - ') && (text.startsWith('- ') || text.startsWith('• '))) {
-      // More sophisticated pattern to split list items
-      // Look for patterns like " - [Word/Phrase followed by :]"
-      const splitPattern = / - (?=[A-Z][^:]*:)/g;
-
-      if (splitPattern.test(text)) {
-        // Reset the regex and split
-        splitPattern.lastIndex = 0;
-        const parts = text.split(splitPattern);
+    // Avoid over-aggressive inline list conversion: if text already looks like a single bullet
+    // or contains URLs/code-like patterns, do not rewrite it.
+    const hasUrl = /https?:\/\//i.test(text) || /\[[^\]]+\]\([^\)]+\)/.test(text);
+    const looksLikeSingleBullet = /^[-•]\s+.+$/.test(text) && !/\n/.test(text);
+    if (!hasUrl && !looksLikeSingleBullet) {
+      // Pattern: many inline segments like " - Title: desc - Title: desc - Title: desc"
+      const inlineListPattern = / - [A-Z][^-:]*:/g;
+      const matches = text.match(inlineListPattern);
+      // Require at least 3 items to treat as a list to reduce false positives
+      if (matches && matches.length >= 3) {
+        const parts = text.split(/ - (?=[A-Z][^-:]*:)/);
         const items = parts.map(part => part.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
-        const listText = items.map(item => `- ${item}`).join('\n');
-        return renderFullMarkdown(listText);
-      } else {
-        // Fallback: simple split by ' - ' or ' • '
-        const items = text.split(/ - | • /).map(item => item.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
         const listText = items.map(item => `- ${item}`).join('\n');
         return renderFullMarkdown(listText);
       }
     }
 
-    // Pattern 2: Check for multiple items separated by specific patterns
-    // "Digital-First Hiring: ... - Global Competition: ... - Continuous Learning: ..."
-    const inlineListPattern = / - [A-Z][^-]*:/g;
-    const matches = text.match(inlineListPattern);
-
-    if (matches && matches.length >= 2) {
-      // This looks like an inline list, convert to proper markdown list
-      const parts = text.split(/ - (?=[A-Z][^-]*:)/);
-      const items = parts.map(part => part.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
-      const listText = items.map(item => `- ${item}`).join('\n');
-      return renderFullMarkdown(listText);
-    }
 
     // For plain text with line breaks, process line breaks
     if (text.includes('\n')) {

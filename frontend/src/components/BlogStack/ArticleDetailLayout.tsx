@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   ChevronUp, 
@@ -17,6 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { useTheme } from '../ThemeContext';
 import { BlogData, UserAnnotation, SelectedText } from './types/blog';
 import { BlogContentRenderer } from './components/BlogContentRenderer';
 import BlogComments from './components/BlogComments';
@@ -64,6 +65,8 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
   const { language } = useLanguage();
   const navigate = useNavigate();
   const { sections } = useTOC(post);
+  const { isDarkMode } = useTheme();
+  const reduceMotion = useReducedMotion();
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [metaSidebarCollapsed, setMetaSidebarCollapsed] = useState(false); // Default open on desktop
   const [tocCollapsed, setTocCollapsed] = useState(false); // Default open on desktop
@@ -153,9 +156,16 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
     <div className="min-h-screen">
       {/* Fixed Header - Y轴 0，考虑顶部导航栏 */}
       <motion.div
-        className={`fixed top-12 xs:top-14 sm:top-16 left-0 right-0 z-40 border-b border-theme-border ${metaSidebarCollapsed ? 'ml-12' : 'ml-60'} ${tocCollapsed ? 'mr-12' : 'mr-60'}`}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        role="region"
+        aria-label={language === 'en' ? 'Article header' : '文章页头'}
+        className={`fixed top-16 xs:top-18 sm:top-20 left-0 right-0 z-40 border-b border-theme-border ${metaSidebarCollapsed ? 'lg:ml-12' : 'lg:ml-60'} ${tocCollapsed ? 'lg:mr-12' : 'lg:mr-60'}`}
+        initial={reduceMotion ? false : { opacity: 0, y: -12 }}
+        animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+        style={{
+          backgroundColor: isDarkMode ? 'rgba(26,26,26,0.50)' : 'rgba(255,255,255,0.70)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)'
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -186,10 +196,10 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
 
       {/* Meta Sidebar - Y轴轨道 1 - Hidden on mobile */}
       <motion.div
-        className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 hidden lg:block ${metaSidebarCollapsed ? 'w-12' : 'w-60'
+        className={`fixed left-0 top-16 xs:top-18 sm:top-20 bottom-0 z-40 transition-all duration-300 hidden lg:block ${metaSidebarCollapsed ? 'w-12' : 'w-60'
           }`}
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial={reduceMotion ? false : { opacity: 0, x: -20 }}
+        animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
       >
         <div className="h-full overflow-y-auto p-4 pt-3.5 pl-5">
                       {/* Sidebar Toggle */}
@@ -313,12 +323,12 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
       </motion.div>
 
       {/* Main Content - Y轴轨道 2 - Responsive layout */}
-      <div className={`transition-all duration-300 ${metaSidebarCollapsed ? 'ml-12' : 'ml-60'} ${tocCollapsed ? 'mr-0' : 'mr-60'}`}>
-        <div className="pt-20 pb-20 px-4 sm:px-6 lg:px-8">
+      <div className={`transition-all duration-300 ${metaSidebarCollapsed ? 'lg:ml-12' : 'lg:ml-60'} ${tocCollapsed ? 'lg:mr-0' : 'lg:mr-60'}`}>
+        <div className="pt-24 sm:pt-28 lg:pt-32 pb-20 px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="mx-auto w-full max-w-[75ch]"
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
           >
             {/* Content Section */}
             {post.type === 'vlog' ? (
@@ -567,8 +577,8 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
       {/* TOC Sidebar Overlay - Mobile */}
       <motion.div
         className={`fixed inset-0 z-40 lg:hidden ${tocCollapsed ? 'pointer-events-none' : ''}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: tocCollapsed ? 0 : 1 }}
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={reduceMotion ? undefined : { opacity: tocCollapsed ? 0 : 1 }}
       >
         <div
           className="absolute inset-0 bg-black/20 backdrop-blur-sm"
@@ -578,10 +588,10 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
           }}
         />
         <motion.div
-          className="absolute right-0 top-16 bottom-0 w-60 max-w-[85vw] bg-theme-surface border-l border-theme-border"
-          initial={{ x: 320 }}
-          animate={{ x: tocCollapsed ? 320 : 0 }}
-          transition={{ type: 'tween', duration: 0.3 }}
+          className="absolute right-0 top-16 xs:top-18 sm:top-20 bottom-0 w-60 max-w-[85vw] bg-theme-surface border-l border-theme-border"
+          initial={reduceMotion ? false : { x: 320 }}
+          animate={reduceMotion ? undefined : { x: tocCollapsed ? 320 : 0 }}
+          transition={reduceMotion ? undefined : { type: 'tween', duration: 0.3 }}
         >
           <div className="h-full overflow-y-auto p-4">
             <button

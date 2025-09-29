@@ -39,6 +39,48 @@ export const BlogContentRenderer: React.FC<BlogContentRendererProps> = ({
   onHighlightAnnotation,
   onCancelAnnotation
 }) => {
+  // Normalize incoming content items to a stable shape to avoid brittle rendering
+  const normalizeType = (t?: string): BlogContent['type'] => {
+    const type = (t || 'text').toLowerCase().trim();
+    if (['blockquote', 'quote'].includes(type)) return 'quote';
+    if (['img', 'image', 'picture', 'gif'].includes(type)) return 'image';
+    if (['video', 'youtube', 'vimeo', 'bilibili'].includes(type)) return 'video';
+    if (['code', 'codeblock', 'pre'].includes(type)) return 'code';
+    if (['heading', 'title', 'h', 'h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(type)) return 'heading';
+    if (['text', 'paragraph', 'p'].includes(type)) return 'text';
+    return 'text';
+  };
+
+  const normalizeItem = (item: BlogContent, index: number): BlogContent => {
+    const normType = normalizeType(item.type as unknown as string);
+    // Shallow clone with normalized type
+    const normalized: BlogContent = {
+      ...item,
+      type: normType,
+      id: item.id || `content-${index}`,
+    };
+
+    // Normalize heading level if this is a heading-like type coming as hN
+    if (item.type && /^h[1-6]$/.test(item.type.toLowerCase())) {
+      normalized.type = 'heading';
+      const levelNum = parseInt(item.type.substr(1), 10);
+      normalized.level = Math.min(6, Math.max(1, levelNum));
+    }
+
+    // If a generic "title" or "headingX" arrives, coerce level sensibly
+    if (['title'].includes((item.type || '').toLowerCase()) && !item.level) {
+      normalized.level = 1;
+    }
+
+    // Clamp heading level into 1..6
+    if (normalized.type === 'heading') {
+      const level = typeof normalized.level === 'number' ? normalized.level : 2;
+      normalized.level = Math.min(6, Math.max(1, level));
+    }
+
+    return normalized;
+  };
+
   // Track text content index separately for drop cap functionality
   let textContentIndex = 0;
   let imageContentIndex = 0;
@@ -129,7 +171,7 @@ export const BlogContentRenderer: React.FC<BlogContentRendererProps> = ({
 
   return (
     <div className="mb-0">
-      {content.map((item) => renderContent(item))}
+      {content.map((item, idx) => renderContent(normalizeItem(item, idx)))}
     </div>
   );
-}; 
+};

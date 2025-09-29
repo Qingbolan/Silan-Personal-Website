@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../components/LanguageContext';
@@ -83,6 +83,7 @@ const ResumeWebsite: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   const { colors } = useTheme();
+  const reduceMotion = useReducedMotion();
   const { language } = useLanguage();
   const { t } = useTranslation();
 
@@ -200,16 +201,18 @@ const ResumeWebsite: React.FC = () => {
 
   return (
     <motion.div
+      role="main"
+      aria-label={t('resume.page_label', { defaultValue: 'Resume' })}
       className="min-h-screen relative"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={reduceMotion ? undefined : { opacity: 1 }}
+      transition={reduceMotion ? undefined : { duration: 0.5 }}
     >
       {/* Table of Contents */}
       <TableOfContents sections={tocSections} />
       
       {/* Project Section */}
-      <div id="hero-section">
+      <div id="hero-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
         <ProjectSection 
           name={resumeData.name || ''}
           title={resumeData.title || ''}
@@ -223,7 +226,7 @@ const ResumeWebsite: React.FC = () => {
       <div className="max-w-6xl mx-auto px-3 xs:px-4 pb-12 xs:pb-16 sm:pb-20 space-y-6 xs:space-y-8 sm:space-y-12">
         {/* Recent Section - At the top for prominence */}
         {resumeData.sections?.recent && resumeData.sections.recent.content && (
-          <div id="recent-section">
+          <div id="recent-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
             <RecentSection 
               data={resumeData.sections.recent.content} 
               title={resumeData.sections.recent.title} 
@@ -234,7 +237,7 @@ const ResumeWebsite: React.FC = () => {
 
         {/* Experience Section */}
         {resumeData.sections?.experience && resumeData.sections.experience.content && (
-          <div id="experience-section">
+          <div id="experience-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
             <SectionCard 
               title={resumeData.sections.experience.title} 
               delay={0.2}
@@ -257,7 +260,7 @@ const ResumeWebsite: React.FC = () => {
 
         {/* Education Section */}
         {resumeData.sections?.education && resumeData.sections.education.content && (
-          <div id="education-section">
+          <div id="education-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
             <SectionCard 
               title={resumeData.sections.education.title} 
               delay={0.3}
@@ -280,7 +283,7 @@ const ResumeWebsite: React.FC = () => {
 
         {/* Research Section */}
         {resumeData.sections?.research && resumeData.sections.research.content && (
-          <div id="research-section">
+          <div id="research-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
             <SectionCard 
               title={resumeData.sections.research.title} 
               delay={0.4}
@@ -300,7 +303,7 @@ const ResumeWebsite: React.FC = () => {
 
         {/* Publications Section */}
         {resumeData.sections?.publications && resumeData.sections.publications.content && (
-          <div id="publications-section">
+          <div id="publications-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
             <SectionCard 
               title={resumeData.sections.publications.title} 
               delay={0.5}
@@ -326,7 +329,7 @@ const ResumeWebsite: React.FC = () => {
 
         {/* Awards Section */}
         {resumeData.sections?.awards && resumeData.sections.awards.content && (
-          <div id="awards-section">
+          <div id="awards-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
             <SectionCard 
               title={resumeData.sections.awards.title} 
               delay={0.6}
@@ -351,7 +354,7 @@ const ResumeWebsite: React.FC = () => {
 
         {/* Skills Section */}
         {resumeData.sections?.skills && resumeData.sections.skills.content && (
-          <div id="skills-section">
+          <div id="skills-section" className="scroll-mt-24 sm:scroll-mt-28 lg:scroll-mt-32">
             <SectionCard 
               title={resumeData.sections.skills.title} 
               delay={0.7}

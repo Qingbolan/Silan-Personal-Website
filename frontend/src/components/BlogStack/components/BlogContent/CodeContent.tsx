@@ -1,8 +1,24 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BlogContent } from '../../types/blog';
 import { useTheme } from '../../../ThemeContext';
 import { useLanguage } from '../../../LanguageContext';
 import { Copy, Check } from 'lucide-react';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-clike';
+import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-bash';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-jsx';
+import 'prismjs/components/prism-tsx';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-yaml';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-sql';
+import 'prismjs/components/prism-ini';
+import 'prismjs/components/prism-docker';
+import 'prismjs/components/prism-powershell';
 
 interface CodeContentProps {
   item: BlogContent;
@@ -15,9 +31,39 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
   const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
 
+  // Normalize code content to avoid odd Unicode or BOM artifacts
+  const code = useMemo(() => {
+    let text = (item.content ?? '').replace(/^\uFEFF/, ''); // strip BOM
+    // Normalize line endings
+    text = text.replace(/\r\n?/g, '\n');
+    return text;
+  }, [item.content]);
+
+  const mapLanguage = (lang?: string): string => {
+    const s = (lang || '').toLowerCase();
+    if (['bash', 'sh', 'shell'].includes(s)) return 'bash';
+    if (['js', 'javascript', 'node'].includes(s)) return 'javascript';
+    if (['ts', 'typescript'].includes(s)) return 'typescript';
+    if (['jsx'].includes(s)) return 'jsx';
+    if (['tsx'].includes(s)) return 'tsx';
+    if (['py', 'python'].includes(s)) return 'python';
+    if (['json'].includes(s)) return 'json';
+    if (['yml', 'yaml'].includes(s)) return 'yaml';
+    if (['md', 'markdown'].includes(s)) return 'markdown';
+    if (['sql'].includes(s)) return 'sql';
+    if (['ini', 'cfg', 'conf'].includes(s)) return 'ini';
+    if (['docker', 'dockerfile'].includes(s)) return 'docker';
+    if (['ps', 'ps1', 'powershell'].includes(s)) return 'powershell';
+    if (['html', 'xml'].includes(s)) return 'markup';
+    if (['css'].includes(s)) return 'css';
+    return 'bash';
+  };
+
+  const langId = useMemo(() => mapLanguage(item.language), [item.language]);
+
   const handleCopyCode = async () => {
     try {
-      await navigator.clipboard.writeText(item.content);
+      await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -74,35 +120,36 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
         
         {/* Code Block */}
         <div className="relative">
-          <pre className="p-6 overflow-x-auto text-sm leading-relaxed   
-                          scrollbar-thin scrollbar-thumb-theme-accent/20 scrollbar-track-transparent"
-               style={{
-                 fontFamily: 'JetBrains Mono, Monaco, Menlo, "Ubuntu Mono", Consolas, monospace',
-                 fontFeatureSettings: '"liga" 1, "calt" 1',
-                 tabSize: 2
-               }}>
-            <code className={`block whitespace-pre font-mono ${
-              isDarkMode ? 'text-gray-100' : 'text-gray-800'
-            }`}
-                  style={{
-                    fontSize: '0.875rem',
-                    lineHeight: '1.7'
-                  }}>
-              {item.content}
-            </code>
-          </pre>
-          
-          {/* Line Numbers (Optional Enhancement) */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-theme-surface-secondary/50
-                          border-r border-theme-card-border/50 pointer-events-none hidden lg:block">
-            <div className="p-6 text-xs text-theme-text-tertiary font-mono leading-relaxed">
-              {item.content.split('\n').map((_, i) => (
-                <div key={i} className="text-right pr-3" style={{ lineHeight: '1.7' }}>
-                  {i + 1}
+          <pre
+            className="p-0 overflow-x-auto text-sm leading-relaxed scrollbar-thin scrollbar-thumb-theme-accent/20 scrollbar-track-transparent"
+            aria-label={item.language || 'code'}
+            style={{
+              fontFamily: 'JetBrains Mono, Monaco, Menlo, "Ubuntu Mono", Consolas, monospace',
+              fontVariantLigatures: 'none', // avoid unexpected ligatures
+              tabSize: 2,
+              margin: 0,
+            }}
+          >
+            <code className={`language-${langId} ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+              {/* Render per-line with Prism highlight to keep line numbers aligned */}
+              {code.split('\n').map((line, i) => (
+                <div key={i} className="flex items-start">
+                  <span
+                    className="select-none text-right w-10 pr-3 mr-2 text-xs text-theme-text-tertiary hidden lg:block"
+                    style={{ lineHeight: '1.7' }}
+                    aria-hidden
+                  >
+                    {i + 1}
+                  </span>
+                  <span
+                    className="whitespace-pre block px-6 py-1"
+                    style={{ lineHeight: '1.7' }}
+                    dangerouslySetInnerHTML={{ __html: Prism.highlight(line || ' ', Prism.languages[langId] || Prism.languages.markup, langId) }}
+                  />
                 </div>
               ))}
-            </div>
-          </div>
+            </code>
+          </pre>
         </div>
         
         {/* Caption */}

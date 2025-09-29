@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Clock, Filter, Eye, ChevronRight, Zap, 
@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Markdown from '../ui/Markdown';
+import { useTheme } from '../ThemeContext';
 
 export interface RecentItem {
   id: string;
@@ -26,6 +27,9 @@ interface RecentSectionProps {
 
 const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 }) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
   const [filter, setFilter] = useState<string>('all');
   const navigate = useNavigate();
 
@@ -67,11 +71,52 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
     }
   };
 
-  // Filter data - always show only the first item
+  // Filter and sort data (newest first). Height will be limited by container.
+  // Normalize types to a known set
+  const normalizeType = (t: string): 'work' | 'education' | 'research' | 'publication' | 'project' | 'other' => {
+    const s = (t || '').toLowerCase();
+    if (['work', 'job', 'career'].includes(s)) return 'work';
+    if (['education', 'school', 'study'].includes(s)) return 'education';
+    if (['research', 'r&d', 'rd'].includes(s)) return 'research';
+    if (['publication', 'paper', 'pub'].includes(s)) return 'publication';
+    if (['project', 'projects', 'proj'].includes(s)) return 'project';
+    return 'other';
+  };
+
+  const normalized = useMemo(() => data.map(item => ({ ...item, _type: normalizeType(item.type) })), [data]);
+
+  const typeOrder: Array<'work' | 'education' | 'research' | 'publication' | 'project'> = [
+    'work', 'education', 'research', 'publication', 'project'
+  ];
+
+  const availableTypes = useMemo(() => {
+    const counts: Record<string, number> = {};
+    normalized.forEach(i => { counts[i._type] = (counts[i._type] || 0) + 1; });
+    return ['all', ...typeOrder.filter(t => (counts[t] || 0) > 0)];
+  }, [normalized]);
+
+  useEffect(() => {
+    if (!availableTypes.includes(filter)) {
+      setFilter('all');
+    }
+  }, [availableTypes, filter]);
+
   const filteredData = useMemo(() => {
-    const filtered = filter === 'all' ? data : data.filter(item => item.type === filter);
-    return filtered.slice(0, 1);
-  }, [data, filter]);
+    const source = filter === 'all' ? normalized : normalized.filter(item => item._type === filter);
+    return [...source].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [normalized, filter]);
+
+  // Detect if list is visually truncated by max-height
+  useEffect(() => {
+    const check = () => {
+      const el = listRef.current;
+      if (!el) return;
+      setIsTruncated(el.scrollHeight > el.clientHeight + 2); // allow small rounding
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [filteredData]);
 
   const filterTypes = ['all', 'work', 'education', 'research', 'publication', 'project'];
 
@@ -99,7 +144,17 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
             <Filter size={12} className="w-3 h-3 xs:w-3.5 xs:h-3.5" />
             {t('resume.filter_by_type')}:
           </span>
-          {filterTypes.map((type) => (
+          {availableTypes.map((type) => {
+            const labelMap: Record<string, string> = {
+              all: t('resume.all_types', { defaultValue: 'All Types' }),
+              work: t('resume.work', { defaultValue: 'Work' }),
+              education: t('resume.education', { defaultValue: 'Education' }),
+              research: t('resume.research', { defaultValue: 'Research' }),
+              publication: t('resume.publication', { defaultValue: 'Publication' }),
+              project: t('resume.project', { defaultValue: 'Project' })
+            };
+            const label = labelMap[type] ?? type;
+            return (
             <button
               key={type}
               onClick={() => setFilter(type)}
@@ -109,21 +164,33 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
                   : 'bg-theme-surface-elevated text-theme-secondary hover:bg-theme-surface-tertiary'
               }`}
             >
-              {type === 'all' ? t('resume.all_types') : t(`resume.${type}`)}
+              {label}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Recent Items */}
-      <div className="space-y-2 xs:space-y-3">
-        {filteredData.map((item: RecentItem, index: number) => (
+      {/* Recent Items (show top N, limited height, gradient + CTA) */}
+      <div className="relative" role="list" aria-label={t('resume.recent_updates', { defaultValue: 'Recent updates' })}>
+        <div ref={listRef} className="space-y-2 xs:space-y-3 max-h-72 sm:max-h-80 lg:max-h-96 overflow-hidden">
+          {filteredData.map((item: RecentItem, index: number) => (
           <motion.div
             key={item.id}
-            className="p-3 xs:p-4 rounded-lg border border-theme-surface-tertiary bg-theme-surface-elevated hover:bg-theme-card transition-colors duration-200"
+            className="p-3 xs:p-4 rounded-lg border border-theme-surface-tertiary bg-theme-surface-elevated hover:bg-theme-card transition-colors duration-200 cursor-pointer"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
+            role="link"
+            tabIndex={0}
+            onClick={() => navigate(`/recent-updates?id=${encodeURIComponent(item.id)}`)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(`/recent-updates?id=${encodeURIComponent(item.id)}`);
+              }
+            }}
+            aria-label={`${t('resume.view_details', { defaultValue: 'View details' })}: ${item.title}`}
           >
             <div className="flex items-start gap-2 xs:gap-3">
               <div className="flex-1 min-w-0">
@@ -171,20 +238,32 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
             </div>
           </motion.div>
         ))}
+        </div>
+        {/* Gradient overlay + CTA */}
+        {isTruncated && (
+          <>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 sm:h-20"
+              style={{
+                background: `linear-gradient(180deg, rgba(0,0,0,0) 0%, ${colors.surfaceElevated}CC 60%, ${colors.surfaceElevated}FF 100%)`
+              }}
+            />
+            <div className="absolute inset-x-0 bottom-2 flex justify-center">
+              <button
+                onClick={handleViewMore}
+                className="inline-flex items-center gap-1.5 xs:gap-2 px-3 xs:px-4 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-theme-primary hover:text-white transition-colors rounded-lg btn-touch"
+                style={{ backgroundColor: `${colors.primary}1A` }}
+              >
+                {t('resume.view_all', { defaultValue: 'Show More' })}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* View More Button - Always show if there's more than 1 item */}
-      {data.length > 1 && (
-        <div className="mt-3 xs:mt-4 text-center">
-          <button
-            onClick={handleViewMore}
-            className="inline-flex items-center gap-1.5 xs:gap-2 px-3 xs:px-4 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-theme-primary hover:text-theme-accent transition-colors hover:bg-theme-surface-elevated rounded-lg btn-touch"
-          >
-            {t('resume.view_all')} ({data.length - 1} more)
-            <ChevronRight size={14} className="w-3.5 h-3.5 xs:w-4 xs:h-4" />
-          </button>
-        </div>
-      )}
+      {/* Bottom CTA moved into gradient overlay */}
     </motion.section>
   );
 };
