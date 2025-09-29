@@ -320,42 +320,52 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
               </div>
               {/* Series Navigation */}
               {seriesData && (
-                <div className="rounded-lg border border-theme-border">
-                  <div className="space-y-1 overflow-y-auto">
+                <div className="mt-3 rounded-lg border border-theme-border overflow-hidden">
+                  <div className="px-3 py-2 bg-theme-surface/50 border-b border-theme-border">
+                    <h4 className="text-xs font-semibold text-theme-primary uppercase tracking-wider">
+                      {language === 'en' ? 'Series Episodes' : '系列剧集'}
+                    </h4>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
                     {seriesData.episodes.map((episode) => (
                       <motion.div
                         key={episode.id}
-                        className={`p-2 rounded-lg border cursor-pointer transition-all duration-200 text-sm ${episode.current
-                          ? 'bg-theme-primary/10 border-theme-primary text-theme-primary'
-                          : 'border-theme-border hover:border-theme-primary/50'
+                        className={`px-3 py-2 border-b border-theme-border/50 last:border-b-0 cursor-pointer transition-all duration-200 ${episode.id === post.id
+                          ? 'bg-theme-primary/10 text-theme-primary border-l-2 border-l-theme-primary'
+                          : 'hover:bg-theme-surface/70 text-theme-secondary hover:text-theme-primary'
                           }`}
-                        whileHover={{ x: 2 }}
                         onClick={() => handleEpisodeClick(episode.id)}
+                        whileHover={{ x: 2 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleCompletion(episode.id, !episode.completed);
-                            }}
-                            className="flex-shrink-0"
-                          >
-                            {episode.completed ? (
-                              <CheckCircle size={16} className="text-green-500" />
-                            ) : (
-                              <Circle size={16} className="text-theme-tertiary" />
-                            )}
-                          </button>
-                          <span className="text-xs font-medium w-6 text-center">
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs font-mono w-8 text-center px-1 py-0.5 rounded ${
+                            episode.id === post.id
+                              ? 'bg-theme-primary text-white' 
+                              : 'bg-theme-surface text-theme-secondary'
+                          }`}>
                             {episode.order}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate text-xs">
+                            <p className={`font-medium truncate text-xs leading-4 ${
+                              episode.id === post.id ? 'text-theme-primary' : 'text-theme-primary/90'
+                            }`}>
                               {language === 'zh' && episode.titleZh ? episode.titleZh : episode.title}
                             </p>
-                            <p className="text-xs text-theme-secondary">{episode.duration}</p>
+                            {episode.duration && (
+                              <p className={`text-xs mt-1 ${
+                                episode.id === post.id ? 'text-theme-primary/70' : 'text-theme-secondary'
+                              }`}>
+                                <Clock size={10} className="inline mr-1" />
+                                {episode.duration}
+                              </p>
+                            )}
                           </div>
-                          {episode.current && <Play size={12} />}
+                          {episode.id === post.id && (
+                            <div className="flex-shrink-0">
+                              <div className="w-2 h-2 bg-theme-primary rounded-full animate-pulse"></div>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     ))}
