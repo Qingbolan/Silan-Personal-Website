@@ -42,8 +42,8 @@ Before we start, ensure you have the following installed:
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/Qingbolan/AIPro-Resume.git
-cd AIPro-Resume
+git clone https://github.com/Qingbolan/Silan-Personal-Website.git
+cd Silan-Personal-Website
 ```
 
 ### Explore the Project Structure
@@ -286,7 +286,7 @@ Congratulations! You've successfully set up the Silan Personal Website platform.
 ### Resources
 
 - **Demo**: https://silan.tech
-- **Repository**: https://github.com/Qingbolan/AIPro-Resume
+- **Repository**: https://github.com/Qingbolan/Silan-Personal-Website
 - **Documentation**: Check the README.md file
 - **Community**: Join discussions on GitHub
 

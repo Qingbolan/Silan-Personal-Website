@@ -1,5 +1,5 @@
 {
-  "name": "aipro-resume",
+  "name": "Silan-Personal-Website",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -20,8 +20,10 @@
     "antd": "^5.27.3",
     "axios": "^1.7.7",
     "framer-motion": "^11.11.9",
+    "gsap": "^3.13.0",
     "i18next": "^23.15.2",
     "lucide-react": "^0.441.0",
+    "ogl": "^1.0.11",
     "prismjs": "^1.30.0",
     "react": "^18.3.1",
     "react-color4bg": "^0.2.1",

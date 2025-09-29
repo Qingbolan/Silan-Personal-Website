@@ -166,7 +166,7 @@ As we move forward in an increasingly digital world, the Silan Personal Website 
 The project is open source, actively maintained, and continuously evolving. It represents a commitment to the technical community and a belief that everyone deserves a professional online presence that matches their technical capabilities.
 
 **Experience the vision yourself**: [https://silan.tech](https://silan.tech)  
-**Contribute to the future**: [https://github.com/Qingbolan/AIPro-Resume](https://github.com/Qingbolan/AIPro-Resume)
+**Contribute to the future**: [https://github.com/Qingbolan/Silan-Personal-Website](https://github.com/Qingbolan/Silan-Personal-Website)
 
 ---
 

@@ -19,7 +19,7 @@ project_details:
   
 implementation:
   demo_url: "https://silan.tech"
-  repository: "https://github.com/Qingbolan/AIPro-Resume"
+  repository: "https://github.com/Qingbolan/Silan-Personal-Website"
   technologies: ["React", "TypeScript", "Go", "Python", "MySQL", "Redis", "Docker"]
   
 content:
@@ -30,8 +30,8 @@ links:
     url: "https://silan.tech"
     type: "demo"
   - name: "GitHub Repository"
-    url: "https://github.com/Qingbolan/AIPro-Resume"
+    url: "https://github.com/Qingbolan/Silan-Personal-Website"
     type: "code"
   - name: "Documentation"
-    url: "https://github.com/Qingbolan/AIPro-Resume/blob/main/README.md"
+    url: "https://github.com/Qingbolan/Silan-Personal-Website/blob/main/README.md"
     type: "docs"

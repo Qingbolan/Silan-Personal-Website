@@ -8,7 +8,7 @@ collaboration_needed: false
 funding_required: false
 estimated_duration: "ongoing"
 demo_url: "https://silan.tech"
-source_code: "https://github.com/Qingbolan/AIPro-Resume"
+source_code: "https://github.com/Qingbolan/Silan-Personal-Website"
 technologies:
   - React
   - TypeScript

@@ -892,6 +892,63 @@ p {
   background: linear-gradient(145deg, rgba(50, 49, 48, 0.9), rgba(45, 44, 43, 0.9));
 }
 
+/* Prism syntax highlight (theme-aware, minimal) */
+pre[class*="language-"], code[class*="language-"] {
+  color: var(--color-textPrimary, #1f2937);
+  background: transparent;
+  text-shadow: none;
+}
+code[class*="language-"] .token.comment,
+code[class*="language-"] .token.block-comment,
+code[class*="language-"] .token.prolog,
+code[class*="language-"] .token.doctype,
+code[class*="language-"] .token.cdata {
+  color: var(--color-textTertiary, #9ca3af);
+}
+code[class*="language-"] .token.punctuation {
+  color: var(--color-textSecondary, #6b7280);
+}
+code[class*="language-"] .token.property,
+code[class*="language-"] .token.tag,
+code[class*="language-"] .token.constant,
+code[class*="language-"] .token.symbol,
+code[class*="language-"] .token.deleted {
+  color: var(--color-accent, #42b883);
+}
+code[class*="language-"] .token.boolean,
+code[class*="language-"] .token.number {
+  color: #f59e0b; /* amber-500 */
+}
+code[class*="language-"] .token.selector,
+code[class*="language-"] .token.attr-name,
+code[class*="language-"] .token.string,
+code[class*="language-"] .token.char,
+code[class*="language-"] .token.builtin,
+code[class*="language-"] .token.inserted {
+  color: #10b981; /* emerald-500 */
+}
+code[class*="language-"] .token.operator,
+code[class*="language-"] .token.entity,
+code[class*="language-"] .token.url {
+  color: var(--color-textSecondary, #6b7280);
+}
+code[class*="language-"] .token.atrule,
+code[class*="language-"] .token.attr-value,
+code[class*="language-"] .token.keyword {
+  color: var(--color-primary, #42b883);
+}
+code[class*="language-"] .token.function,
+code[class*="language-"] .token.class-name {
+  color: #a78bfa; /* violet-400 */
+}
+code[class*="language-"] .token.regex,
+code[class*="language-"] .token.important,
+code[class*="language-"] .token.variable {
+  color: #ef4444; /* red-500 */
+}
+code[class*="language-"] .token.bold { font-weight: 700; }
+code[class*="language-"] .token.italic { font-style: italic; }
+
 /* ========================================
    Ant Design Custom Styles
    ======================================== */

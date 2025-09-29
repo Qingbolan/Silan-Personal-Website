@@ -261,29 +261,54 @@ const RecentUpdates: React.FC = () => {
     }
   };
 
+  // Normalize types to known set
+  const normalizeType = (t: string): 'work' | 'education' | 'research' | 'publication' | 'project' | 'other' => {
+    const s = (t || '').toLowerCase();
+    if (['work', 'job', 'career'].includes(s)) return 'work';
+    if (['education', 'school', 'study'].includes(s)) return 'education';
+    if (['research', 'r&d', 'rd'].includes(s)) return 'research';
+    if (['publication', 'paper', 'pub'].includes(s)) return 'publication';
+    if (['project', 'projects', 'proj'].includes(s)) return 'project';
+    return 'other';
+  };
+
+  const normalized = useMemo(() => recentData.map(i => ({ ...i, _type: normalizeType(i.type) })), [recentData]);
+
+  const applyTimeFilter = (items: typeof normalized) => {
+    if (!selectedTime) return items;
+    return items.filter(item => {
+      const date = new Date(item.date);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      if (selectedTime.month !== undefined) {
+        return year === selectedTime.year && month === selectedTime.month;
+      }
+      return year === selectedTime.year;
+    });
+  };
+
+  // Available types depend on current time filter
+  const typeOrder: Array<'work' | 'education' | 'research' | 'publication' | 'project'> = [
+    'work', 'education', 'research', 'publication', 'project'
+  ];
+
+  const availableTypes = useMemo(() => {
+    const items = applyTimeFilter(normalized);
+    const counts: Record<string, number> = {};
+    items.forEach(i => { counts[i._type] = (counts[i._type] || 0) + 1; });
+    return ['all', ...typeOrder.filter(t => (counts[t] || 0) > 0)];
+  }, [normalized, selectedTime]);
+
+  useEffect(() => {
+    if (!availableTypes.includes(filter)) setFilter('all');
+  }, [availableTypes, filter]);
+
   // Filter data by type and time
   const filteredData = useMemo(() => {
-    let filtered = filter === 'all' ? recentData : recentData.filter(item => item.type === filter);
-    
-    // Apply time filter
-    if (selectedTime) {
-      filtered = filtered.filter(item => {
-        const date = new Date(item.date);
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        
-        if (selectedTime.month !== undefined) {
-          return year === selectedTime.year && month === selectedTime.month;
-        } else {
-          return year === selectedTime.year;
-        }
-      });
-    }
-    
-    return filtered;
-  }, [recentData, filter, selectedTime]);
-
-  const filterTypes = ['all', 'work', 'education', 'research', 'publication', 'project'];
+    const base = applyTimeFilter(normalized);
+    const typed = filter === 'all' ? base : base.filter(item => item._type === filter);
+    return typed;
+  }, [normalized, filter, selectedTime]);
 
   const handleBack = () => {
     window.history.back();
@@ -383,7 +408,17 @@ const RecentUpdates: React.FC = () => {
               
               {/* Filter Buttons - Responsive Grid */}
               <div className="grid grid-cols-2 xs:grid-cols-3 sm:flex sm:flex-wrap gap-2 xs:gap-3">
-                {filterTypes.map((type) => (
+                {availableTypes.map((type) => {
+                  const labelMap: Record<string, string> = {
+                    all: t('resume.all_types', { defaultValue: 'All Types' }),
+                    work: t('resume.work', { defaultValue: 'Work' }),
+                    education: t('resume.education', { defaultValue: 'Education' }),
+                    research: t('resume.research', { defaultValue: 'Research' }),
+                    publication: t('resume.publication', { defaultValue: 'Publication' }),
+                    project: t('resume.project', { defaultValue: 'Project' }),
+                  };
+                  const label = labelMap[type] ?? type;
+                  return (
                   <button
                     key={type}
                     onClick={() => setFilter(type)}
@@ -393,9 +428,10 @@ const RecentUpdates: React.FC = () => {
                         : 'bg-theme-surface text-theme-secondary hover:bg-theme-surface-tertiary'
                     }`}
                   >
-                    {type === 'all' ? t('resume.all_types') : t(`resume.${type}`)}
+                    {label}
                   </button>
-                ))}
+                  );
+                })}
               </div>
               
               <div className="mt-3 xs:mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
@@ -446,7 +482,7 @@ const RecentUpdates: React.FC = () => {
                   <div className="flex items-start gap-3 xs:gap-4">
                     {/* Type Icon */}
                     <div className="flex-shrink-0 p-2 xs:p-2.5 sm:p-3 rounded-lg xs:rounded-xl bg-theme-primary/10 text-theme-primary">
-                      {getTypeIcon(item.type)}
+                      {getTypeIcon(item._type)}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -462,7 +498,7 @@ const RecentUpdates: React.FC = () => {
                             </span>
                             <span className="text-theme-tertiary">•</span>
                             <span className="text-theme-accent">
-                              {t(`resume.${item.type}`)}
+                              {t(`resume.${item._type}`, { defaultValue: (item._type || 'Other').toString() })}
                             </span>
                           </div>
                         </div>

@@ -63,10 +63,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Qingbolan/AIPro-Resume"
-Documentation = "https://github.com/Qingbolan/AIPro-Resume/blob/main/README.md"
-Repository = "https://github.com/Qingbolan/AIPro-Resume.git"
-"Bug Tracker" = "https://github.com/Qingbolan/AIPro-Resume/issues"
+Homepage = "https://github.com/Qingbolan/Silan-Personal-Website"
+Documentation = "https://github.com/Qingbolan/Silan-Personal-Website/blob/main/README.md"
+Repository = "https://github.com/Qingbolan/Silan-Personal-Website.git"
+"Bug Tracker" = "https://github.com/Qingbolan/Silan-Personal-Website/issues"
 
 [project.scripts]
 silan = "silan.silan:cli"

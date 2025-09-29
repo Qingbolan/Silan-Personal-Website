@@ -9,7 +9,7 @@ collaboration_needed: false
 funding_required: false
 estimated_duration: "ongoing"
 demo_url: "https://silan.tech"
-source_code: "https://github.com/Qingbolan/AIPro-Resume"
+source_code: "https://github.com/Qingbolan/Silan-Personal-Website"
 ---
 
 # Silan Personal Website - AI-Powered Resume Platform
@@ -156,7 +156,7 @@ func (l *GetProjectsLogic) GetProjects(req *types.GetProjectsRequest) (*types.Ge
   - Multi-language support (English/Chinese)
 
 ### Technical Showcase
-- **GitHub Repository**: https://github.com/Qingbolan/AIPro-Resume
+- **GitHub Repository**: https://github.com/Qingbolan/Silan-Personal-Website
 - **Documentation**: Comprehensive setup and deployment guides
 - **Community**: Active development and community contributions
 

@@ -1,6 +1,6 @@
 # Database Design Document
 
-## AIPro-Resume Website Database Schema
+## Silan-Personal-Website Website Database Schema
 
 ### Version: 1.0
 ### Date: 2025-01-07
@@ -10,7 +10,7 @@
 
 ## 1. Overview
 
-This document outlines the comprehensive database design for the AIPro-Resume website, following the Boyce-Codd Normal Form (BCNF) principles. The design supports multi-language content, user interactions, and all website functionalities including resume management, blog system, project portfolio, ideas management, and planning features.
+This document outlines the comprehensive database design for the Silan-Personal-Website website, following the Boyce-Codd Normal Form (BCNF) principles. The design supports multi-language content, user interactions, and all website functionalities including resume management, blog system, project portfolio, ideas management, and planning features.
 
 ## 2. Design Principles
 
@@ -1753,7 +1753,7 @@ INSERT INTO db_versions (version, description) VALUES ('1.0.0', 'Initial databas
 
 ## 23. Conclusion
 
-This comprehensive database design provides a robust foundation for the AIPro-Resume website with the following key features:
+This comprehensive database design provides a robust foundation for the Silan-Personal-Website website with the following key features:
 
 ### ✅ **Normalization (BCNF)**
 - All tables are properly normalized to Boyce-Codd Normal Form
