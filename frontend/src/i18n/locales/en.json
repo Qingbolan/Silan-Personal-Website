@@ -223,8 +223,6 @@
     "likes": "likes",
     "downloads": "downloads",
     "updated": "Updated",
-    "viewProjectDemo": "View {{title}} demo",
-    "viewProjectSourceCode": "View {{title}} source code",
     "viewProjectOnGitHub": "View {{title}} source code on GitHub",
     "viewLiveDemo": "View {{title}} live demo",
     "filterByTechnique": "Filter by Technique:",

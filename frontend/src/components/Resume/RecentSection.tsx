@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Clock, Filter, Eye, ChevronRight, Zap, 
+  Clock, Filter, Eye, Zap, 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -117,8 +117,6 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, [filteredData]);
-
-  const filterTypes = ['all', 'work', 'education', 'research', 'publication', 'project'];
 
   const handleViewMore = () => {
     // Navigate to recent updates page using React Router

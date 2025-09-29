@@ -190,7 +190,6 @@
     "medium": "中",
     "low": "低",
     "easy": "简单",
-    "medium": "中等",
     "hard": "困难"
   },
   "projects": {
@@ -219,8 +218,6 @@
     "likes": "点赞",
     "downloads": "下载",
     "updated": "更新于",
-    "viewProjectDemo": "查看{{title}}演示",
-    "viewProjectSourceCode": "查看{{title}}源代码",
     "viewProjectOnGitHub": "在GitHub上查看{{title}}源代码",
     "viewLiveDemo": "查看{{title}}在线演示",
     "filterByTechnique": "基于技术栈筛选：",

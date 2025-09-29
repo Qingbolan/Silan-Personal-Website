@@ -22,6 +22,17 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
     return null;
   }
 
+  // arXiv-style idea number, consistent with BlogStack pattern
+  const generateIdeaNumber = useCallback(() => {
+    const date = new Date(idea.createdAt || Date.now());
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hash = (idea.title + idea.id).split('').reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 0);
+    const n = String(Math.abs(hash) % 10000).padStart(4, '0');
+    return `idea.${year}${month}${day}.${n}`;
+  }, [idea.createdAt, idea.title, idea.id]);
+
   const getStatusText = useCallback((status: string) => {
     if (language === 'en') {
       switch (status) {
@@ -86,7 +97,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
 
   return (
     <motion.div
-      className="group p-6 rounded-2xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 ring-theme-primary card-interactive"
+      className="group overflow-hidden rounded-2xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 ring-theme-primary card-interactive"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -97,36 +108,63 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
       role="button"
       aria-label={`View idea: ${idea.title}`}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-lg ${getStatusClass(idea.status)}`}>
-            <Lightbulb size={20} className={
-              idea.status === 'published' ? 'text-theme-success' :
-              idea.status === 'validating' ? 'text-theme-600' :
-              idea.status === 'experimenting' ? 'text-purple-600' :
-              idea.status === 'hypothesis' ? 'text-theme-warning' :
-              idea.status === 'concluded' ? 'text-gray-600' :
-              'text-theme-accent'
-            } />
+      {/* Cover */}
+      <div className="relative w-full h-40 sm:h-48 overflow-hidden bg-gradient-project">
+        {/* Center watermark number and initial letter */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative">
+            <div
+              className="font-mono text-theme-primary opacity-15 text-xl sm:text-2xl text-center"
+              style={{ letterSpacing: '0.25em' }}
+            >
+              {generateIdeaNumber()}
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-6xl sm:text-7xl font-extrabold text-theme-primary opacity-25">
+                {idea.title.charAt(0).toUpperCase()}
+              </span>
+            </div>
           </div>
-          <div>
+        </div>
+        {/* Idea number badge */}
+        <div className="absolute top-2 left-2 z-10">
+          <div className="text-xs font-mono text-white bg-black/50 px-2 py-1 rounded backdrop-blur-sm">
+            {generateIdeaNumber()}
+          </div>
+        </div>
+        {/* Category/status badges */}
+        <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
+          <span className="w-2 h-2 rounded-full bg-theme-primary/90" aria-hidden />
+          <span className={`px-2 py-1 rounded-full text-[10px] font-semibold backdrop-blur-sm ${getStatusClass(idea.status)}`}>
+            {getStatusText(idea.status)}
+          </span>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg ${getStatusClass(idea.status)}`}>
+              <Lightbulb size={20} className={
+                idea.status === 'published' ? 'text-theme-success' :
+                idea.status === 'validating' ? 'text-theme-600' :
+                idea.status === 'experimenting' ? 'text-purple-600' :
+                idea.status === 'hypothesis' ? 'text-theme-warning' :
+                idea.status === 'concluded' ? 'text-gray-600' :
+                'text-theme-accent'
+              } />
+            </div>
             <h3 className="text-lg font-semibold text-theme-primary">
               {idea.title}
             </h3>
-            <p className="text-sm text-theme-tertiary">
-              {idea.category}
-            </p>
           </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(idea.status)}`}>
+            {getStatusText(idea.status)}
+          </span>
         </div>
-
-        <motion.div
-          className={`px-3 py-1 rounded-full text-xs font-semibold status-badge ${getStatusClass(idea.status)}`}
-          whileHover={{ scale: 1.05 }}
-        >
-          {getStatusText(idea.status)}
-        </motion.div>
-      </div>
+        <p className="text-sm text-theme-tertiary mb-3">{idea.description}</p>
 
       {/* Description */}
       <p className="text-sm leading-relaxed mb-4 text-theme-secondary">
@@ -167,6 +205,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
         >
           <Plus size={16} />
         </motion.button>
+      </div>
       </div>
     </motion.div>
   );
