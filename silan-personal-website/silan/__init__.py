@@ -16,7 +16,7 @@ __version__ = "1.0.0"
 __author__ = "Silan Hu"
 __email__ = "Silan.Hu@u.nus.edu"
 __description__ = "Lightweight database tools for markdown content synchronization"
-__url__ = "https://github.com/Qingbolan/AIPro-Resume"
+__url__ = "https://github.com/Qingbolan/Silan-Personal-Website"
 
 # Export main components
 from .silan import cli

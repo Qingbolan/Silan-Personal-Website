@@ -296,7 +296,7 @@ After watching this demo, you'll understand:
 ## 🔗 Resources and Links
 
 **Live Demo**: [https://silan.tech](https://silan.tech)
-**Source Code**: [https://github.com/Qingbolan/AIPro-Resume](https://github.com/Qingbolan/AIPro-Resume)
+**Source Code**: [https://github.com/Qingbolan/Silan-Personal-Website](https://github.com/Qingbolan/Silan-Personal-Website)
 **Documentation**: Available in the repository README
 **Community**: GitHub discussions and issues
 
@@ -353,7 +353,7 @@ After this demo, explore:
 
 **Ready to transform your professional online presence?**
 
-Start with the live demo at [https://silan.tech](https://silan.tech) and then dive into the source code at [https://github.com/Qingbolan/AIPro-Resume](https://github.com/Qingbolan/AIPro-Resume).
+Start with the live demo at [https://silan.tech](https://silan.tech) and then dive into the source code at [https://github.com/Qingbolan/Silan-Personal-Website](https://github.com/Qingbolan/Silan-Personal-Website).
 
 The future of professional online presence is here—and it's built for developers, by developers.
 

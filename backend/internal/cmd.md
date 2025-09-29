@@ -84,7 +84,7 @@
    84  ls
    85  cd ../
    86  ls
-   87  cd AIPro-Resume
+   87  cd Silan-Personal-Website
    88  npm install
    89  npm start
    90  clear
@@ -93,10 +93,10 @@
    93  npm clean
    94  npm install
    95  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-   96  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && rm package-lock.json
+   96  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && rm package-lock.json
    97  npm install
    98  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-   99  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm audit
+   99  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm audit
   100  q
   101  npm audit fix
   102  npm start
@@ -154,7 +154,7 @@
   154  rm -rf node_modules package-lock.json yarn.lock\nrm -rf .cache
   155  npm install --save-dev vite @vitejs/plugin-react
   156  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  157  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm install
+  157  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm install
   158  q
   159  rm -rf node_modules package-lock.json
   160  npm install
@@ -162,23 +162,23 @@
   162  npm run start
   163  npm run dev
   164  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  165  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm install
+  165  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm install
   166  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  167  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm install
+  167  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm install
   168  npm run dev
   169  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  170  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
+  170  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
   171  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  172  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && pkill -f vite
+  172  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && pkill -f vite
   173  q
   174  rm -rf node_modules/.vite
   175  q
   176  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   177  npm run dev
-  178  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && sleep 3 && ps aux | grep vite
+  178  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && sleep 3 && ps aux | grep vite
   179  ssh -p 49383 root@120.238.149.138 
   180  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  181  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  181  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   182  q
   183  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   184  npm start
@@ -193,7 +193,7 @@
   193  clear
   194  npm start
   195  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  196  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
+  196  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
   197  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   198  npm run dev
   199  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
@@ -277,7 +277,7 @@
   277  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   278  mv src/api/resumeApi.js src/api/resumeApi.ts
   279  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  280  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npx tsc --noEmit --skipLibCheck
+  280  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npx tsc --noEmit --skipLibCheck
   281  q
   282  npx tsc --noEmit --skipLibCheck
   283  q
@@ -296,15 +296,15 @@
   296  git push origin restruct-6-23
   297  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   298  sleep 5
-  299  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
+  299  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
   300  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  301  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  301  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   302  q
   303  npm run build
   304  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  305  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  305  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   306  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  307  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  307  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   308  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   309  npm run build
   310  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
@@ -368,7 +368,7 @@
   368  npm run build
   369  q
   370  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  371  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
+  371  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
   372  npm run build
   373  git add .
   374  npm run build
@@ -386,9 +386,9 @@
   386  npm run build
   387  q
   388  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  389  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
+  389  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
   390  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  391  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
+  391  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
   392  curl -s http://localhost:3000 | head -n 20
   393  q
   394  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
@@ -420,13 +420,13 @@
   420  q
   421  npm run build
   422  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  423  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
-  424  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && lsof -ti:3000,3001,3002,3003,3004
+  423  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
+  424  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && lsof -ti:3000,3001,3002,3003,3004
   425  q
   426  curl -s http://localhost:3005 | head -20
   427  q
   428  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  429  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  429  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   430  q
   431  npm run build
   432  q
@@ -448,7 +448,7 @@
   448  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   449  npm run dev
   450  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  451  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  451  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   452  q
   453  npm run build
   454  q
@@ -468,19 +468,19 @@
   468  q
   469  git restore .
   470  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  471  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  471  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   472  q
   473  npx tsc --noEmit src/components/BlogStack/ArticleDetailLayout.tsx src/components/BlogStack/SeriesDetailLayout.tsx src/components/BlogStack/BlogDetail.tsx
   474  q
   475  npx tsc --noEmit --skipLibCheck src/components/BlogStack/ArticleDetailLayout.tsx src/components/BlogStack/SeriesDetailLayout.tsx src/components/BlogStack/BlogDetail.tsx
   476  q
   477  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  478  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  478  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   479  q
   480  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   481  npm run dev
   482  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  483  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run build
+  483  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run build
   484  q
   485  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
   486  npm run build
@@ -498,7 +498,7 @@
   498  npx vite build
   499  q
   500  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
-  501  pkill -f "vite.*AIPro-Resume" && npm run dev
+  501  pkill -f "vite.*Silan-Personal-Website" && npm run dev
   502  sleep 5 && curl -s http://localhost:5173 | head -20
   503  q
   504  npm run dev
@@ -1052,7 +1052,7 @@
  1052  silan db-sync
  1053  cd ../
  1054  ls
- 1055  cd ~/Documents/GitHub/AIPro-Resume/
+ 1055  cd ~/Documents/GitHub/Silan-Personal-Website/
  1056  cd backend/hybrid-database-system
  1057  cd go-backend
  1058  ls
@@ -1064,7 +1064,7 @@
  1064  claude
  1065  /usr/bin/python3 /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/printEnvVariablesToFile.py /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/deactivate/zsh/envVars.txt
  1066  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
- 1067  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/simple-file-system && python build_backend.py
+ 1067  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/simple-file-system && python build_backend.py
  1068  q
  1069  ./silan/bin/silan-backend --help
  1070  q
@@ -1178,7 +1178,7 @@
  1178  git commit -m "push-lacks"
  1179  git add internel
  1180  git add /internel
- 1181  git add '/Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server'
+ 1181  git add '/Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server'
  1182  git commit -m "push-lacks"
  1183  claude
  1184  git reset head
@@ -1210,7 +1210,7 @@
  1210  npm run dev
  1211  claude
  1212  source "/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
- 1213  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && grep -r "OptimizedResumeComponent" src/ --include="*.tsx" --include="*.ts"
+ 1213  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && grep -r "OptimizedResumeComponent" src/ --include="*.tsx" --include="*.ts"
  1214  q
  1215  claude
  1216  cd backend/go-server
@@ -1267,7 +1267,7 @@
  1267  silan db-sync
  1268  cd ../../
  1269  ls
- 1270  cd AIPro-Resume/backend
+ 1270  cd Silan-Personal-Website/backend
  1271  cd go-server
  1272  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db\n
  1273  cd go-server
@@ -1294,12 +1294,12 @@
  1294  curl -s "http://localhost:5200/api/v1/projects" | head -c 200
  1295  curl -s "http://localhost:5200/api/v1/projects/48d72f8e-1775-4e01-a46e-82d86f63f117/detail" | head -c 300
  1296  curl -s "http://localhost:5200/api/v1/ideas/1" | head -c 200
- 1297  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm start
+ 1297  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm start
  1298  sleep 5 && curl -s "http://localhost:3000" | head -c 100
  1299  /usr/bin/python3 /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/printEnvVariablesToFile.py /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/deactivate/zsh/envVars.txt
- 1300  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && ls -la *.db
+ 1300  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && ls -la *.db
  1301  find . -name "*.db" -o -name "default*" | head -10
- 1302  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm run dev
+ 1302  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm run dev
  1303  sleep 5 && curl -s "http://localhost:5173" | head -c 100
  1304  curl -s "http://localhost:5200/api/v1/ideas" | jq -r '.ideas | length'
  1305  curl -s "http://localhost:5200/api/v1/projects" | jq -r '.projects | length'
@@ -1309,7 +1309,7 @@
  1309  sqlite3 portfolio.db "SELECT COUNT(*) FROM ideas;"
  1310  sqlite3 portfolio.db "SELECT id, title, is_public FROM ideas;"
  1311  sqlite3 portfolio.db "UPDATE ideas SET is_public = 1 WHERE id IN ('5e71afa3-1972-47e4-ba7f-1c50dfc98b53', 'bd2b0668-0a80-46c1-96d0-9efbb0cf6d33');"
- 1312  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && curl -s "http://localhost:5200/api/v1/ideas" | jq '.ideas | length'
+ 1312  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && curl -s "http://localhost:5200/api/v1/ideas" | jq '.ideas | length'
  1313  curl -s "http://localhost:5200/api/v1/ideas/bd2b0668-0a80-46c1-96d0-9efbb0cf6d33" | jq '.title'
  1314  curl -s "http://localhost:5173" | head -c 100
  1315  ps aux | grep -E "(vite|npm|node)" | grep -v grep
@@ -1328,7 +1328,7 @@
  1328  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts | length'
  1329  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[0]'
  1330  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
- 1331  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && goctl api go -api api/backend.api -dir .
+ 1331  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && goctl api go -api api/backend.api -dir .
  1332  touch internal/handler/blog/getblogpostbyidhandler.go
  1333  pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
  1334  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
@@ -1337,10 +1337,10 @@
  1337  goctl api go -api api/backend.api -dir . && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
  1338  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
  1339  curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
- 1340  pkill -f silan-backend && sleep 2 && cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && ./silan-backend -f etc/backend-api.yaml
+ 1340  pkill -f silan-backend && sleep 2 && cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && ./silan-backend -f etc/backend-api.yaml
  1341  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff" | jq '.title'
  1342  curl -s "http://localhost:5200/api/v1/blog/posts/id/18cc7a48-5b60-413f-8d4d-d13d2cb117ff"
- 1343  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "UPDATE blog_posts SET slug = 'code-refactoring-llm' WHERE title LIKE '%Code Refactoring%';"
+ 1343  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && sqlite3 portfolio.db "UPDATE blog_posts SET slug = 'code-refactoring-llm' WHERE title LIKE '%Code Refactoring%';"
  1344  sqlite3 portfolio.db "UPDATE blog_posts SET slug = 'scalable-ai-systems' WHERE title LIKE '%Scalable AI Systems%';"
  1345  sqlite3 portfolio.db "SELECT id, title, slug FROM blog_posts;"
  1346  curl -s "http://localhost:5200/api/v1/blog/posts/code-refactoring-llm" | jq '.title'
@@ -1358,9 +1358,9 @@
  1358  sqlite3 portfolio.db ".schema blog_posts"
  1359  sqlite3 portfolio.db < series_episode.sql
  1360  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{title, series_title, episode_number}'
- 1361  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
+ 1361  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
  1362  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{title, series_title, episode_number, total_episodes}'
- 1363  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "SELECT bp.title, bp.series_id, bs.title as series_title FROM blog_posts bp LEFT JOIN blog_series bs ON bp.series_id = bs.id WHERE bp.slug = 'neural-networks-foundation';"
+ 1363  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && sqlite3 portfolio.db "SELECT bp.title, bp.series_id, bs.title as series_title FROM blog_posts bp LEFT JOIN blog_series bs ON bp.series_id = bs.id WHERE bp.slug = 'neural-networks-foundation';"
  1364  sqlite3 portfolio.db "UPDATE blog_posts SET content_type = 'series' WHERE slug = 'neural-networks-foundation';"
  1365  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{title, type, series_title, episode_number, total_episodes}'
  1366  sqlite3 portfolio.db "SELECT title, series_order, content_type FROM blog_posts WHERE slug = 'neural-networks-foundation';"
@@ -1377,25 +1377,25 @@
  1377  curl -s "http://localhost:3001" | head -c 100
  1378  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
  1379  cd backend/go-server && goctl api go -api api/backend.api -dir .
- 1380  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && goctl api go -api api/backend.api -dir .
+ 1380  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && goctl api go -api api/backend.api -dir .
  1381  pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
  1382  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
- 1383  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug FROM blog_posts;"
+ 1383  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug FROM blog_posts;"
  1384  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '{id, title, slug, type}'
- 1385  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && go generate ./ent
+ 1385  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && go generate ./ent
  1386  sqlite3 portfolio.db "SELECT id, title, slug, LENGTH(slug) as slug_length, slug IS NULL as is_null FROM blog_posts WHERE id = '660e8400-e29b-41d4-a716-446655440001';"
- 1387  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db ".schema blog_posts"
+ 1387  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && sqlite3 portfolio.db ".schema blog_posts"
  1388  sqlite3 portfolio.db "SELECT id, title, slug, CASE WHEN slug IS NULL THEN 'NULL' ELSE 'HAS_VALUE' END as slug_status FROM blog_posts;"
  1389  go build backend.go
  1390  ps aux | grep silan-backend | grep -v grep
- 1391  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && ./silan-backend -f etc/backend-api.yaml
+ 1391  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && ./silan-backend -f etc/backend-api.yaml
  1392  sleep 3 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}' | head -20
  1393  curl -s "http://localhost:5200/api/v1/blog/posts"
  1394  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1395  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
+ 1395  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
  1396  sleep 5 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, slug, type}'
  1397  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1398  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && goctl api go -api api/backend.api -dir .
+ 1398  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && goctl api go -api api/backend.api -dir .
  1399  pkill -f silan-backend && sleep 2 && ./silan-backend -f etc/backend-api.yaml
  1400  sleep 5 && curl -X POST "http://localhost:5200/api/v1/blog/posts/660e8400-e29b-41d4-a716-446655440001/views" -H "Content-Type: application/json"
  1401  ps aux | grep silan-backend | grep -v grep
@@ -1419,9 +1419,9 @@
  1419  curl -s http://localhost:5200/api/v1/blog/posts | head -20
  1420  curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq .
  1421  curl -s "http://localhost:5200/api/v1/blog/series/550e8400-e29b-41d4-a716-446655440000" | jq .
- 1422  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && npm start
+ 1422  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && npm start
  1423  sleep 5 && curl -s "http://localhost:3000"
- 1424  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '.series_id'
+ 1424  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && curl -s "http://localhost:5200/api/v1/blog/posts/neural-networks-foundation" | jq '.series_id'
  1425  ps aux | grep -E "(npm|backend)" | grep -v grep
  1426  npm start
  1427  sleep 10 && curl -s "http://localhost:3000" | head -20
@@ -1453,7 +1453,7 @@
  1453  node test_markdown_parser.cjs
  1454  curl -s "http://localhost:3000/blog/660e8400-e29b-41d4-a716-446655440001" > /dev/null && echo "Frontend accessible"
  1455  node test_markdown_debug.cjs
- 1456  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && rm -rf node_modules/.vite && npm run dev
+ 1456  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && rm -rf node_modules/.vite && npm run dev
  1457  npm list uuid
  1458  ps aux | grep -E "(backend|vite|npm)" | grep -v grep
  1459  curl -X GET "http://localhost:5200/api/v1/blog/posts" | head -20
@@ -1552,7 +1552,7 @@
  1552  ls
  1553  cd api-test-portfolio
  1554  silan db-sync
- 1555  rm -rf /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio/content/plans
+ 1555  rm -rf /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio/content/plans
  1556  silan db-sync
  1557  /usr/bin/python3 /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/printEnvVariablesToFile.py /Users/macbook.silan.tech/.cursor/extensions/ms-python.python-2025.6.1-darwin-arm64/python_files/deactivate/zsh/envVars.txt
  1558  cd benchmarking/dataset/lmsys && wc -l lmsys_eng_1turn_selected.json
@@ -1987,12 +1987,12 @@
  1987  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {title, type, series_title, episode_number}' | head -15
  1988  pkill -f backend
  1989  ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db
- 1990  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug, description, episode_count FROM blog_series LIMIT 5;"
+ 1990  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && sqlite3 portfolio.db "SELECT id, title, slug, description, episode_count FROM blog_series LIMIT 5;"
  1991  sqlite3 portfolio.db "SELECT id, title, content_type, series_id, series_order FROM blog_posts WHERE series_id IS NOT NULL LIMIT 5;"
- 1992  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && ls -la
- 1993  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && sqlite3 portfolio.db "UPDATE blog_series SET episode_count = (SELECT COUNT(*) FROM blog_posts WHERE series_id = blog_series.id) WHERE id = 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42';"
+ 1992  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && ls -la
+ 1993  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && sqlite3 portfolio.db "UPDATE blog_series SET episode_count = (SELECT COUNT(*) FROM blog_posts WHERE series_id = blog_series.id) WHERE id = 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42';"
  1994  sqlite3 portfolio.db "SELECT id, title, episode_count FROM blog_series WHERE id = 'c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42';"
- 1995  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/go-server && chmod +x backend && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
+ 1995  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/go-server && chmod +x backend && ./backend -db-driver sqlite3 -db-source ../../api-test-portfolio/portfolio.db &
  1996  sleep 3 && curl -X GET "http://localhost:5200/api/v1/blog/series/c00b90c6-54fe-4d41-af7f-9c9fd9d4ad42" -H "Content-Type: application/json" | jq
  1997  curl -X GET "http://localhost:5200/api/v1/blog/posts" -H "Content-Type: application/json" | jq '.posts[] | select(.series_id != null)'
  1998  cd backend/go-server && chmod +x backend && ls -la backend
@@ -2026,7 +2026,7 @@
  2026  sleep 2 && curl -s "http://localhost:5200/api/v1/blog/posts" | jq '[.posts[] | select(.series_id != null) | {title, type, series_id, series_title, episode_number, total_episodes}]'
  2027  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '.posts[] | {id, title, type, series_id, series_title, episode_number}' | head -20
  2028  cd ../../.. && ls -la package.json
- 2029  cd GitHub/AIPro-Resume && ls -la package.json
+ 2029  cd GitHub/Silan-Personal-Website && ls -la package.json
  2030  npm run dev
  2031  curl -s "http://localhost:5200/api/v1/blog/posts" | jq '[.posts[] | {title: .title[0:50], type, series_id: (.series_id != null), series_title, episode_number}]'
  2032  cd backend/go-server && pkill -f "backend.*-db-driver" && sleep 2
@@ -2042,7 +2042,7 @@
  2042  sleep 3 && curl -X OPTIONS -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type" -i "http://localhost:5200/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
  2043  curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "lang=en" "http://localhost:5200/api/v1/blog/posts/87654321-8765-4321-dcba-210987654321/views"
  2044  cd ../../..
- 2045  cd AIPro-Resume
+ 2045  cd Silan-Personal-Website
  2046  ssh zhangsq@sigxgp2.d2.comp.nus.edu.sg
  2047  conda activate easy-notebook
  2048  conda create -n easy-notebook python=3.12
@@ -2260,7 +2260,7 @@
  2260  silan db-sync --create-tables
  2261  claude
  2262  silan db-sync --create-tables
- 2263  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume && python -m pylint --disable=all --enable=undefined-variable,no-member backend/file-system/silan/logic/database_sync_logic.py
+ 2263  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website && python -m pylint --disable=all --enable=undefined-variable,no-member backend/file-system/silan/logic/database_sync_logic.py
  2264  pip install .
  2265  silan db-sync --create-tables
  2266  cd backend/file-system && python -c "import sys; sys.path.append('.'); from silan.logic.database_sync_logic import DatabaseSyncLogic; print('✅ Import successful - no syntax errors')"
@@ -2356,18 +2356,18 @@
  2356  silan db-sync
  2357  pip install .
  2358  silan db-sync
- 2359  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/file-system && python -c "import ast; ast.parse(open('silan/logic/database_sync_logic.py').read())"
+ 2359  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/file-system && python -c "import ast; ast.parse(open('silan/logic/database_sync_logic.py').read())"
  2360  pip uninstall -y silan silan-database-tools silan_database_tools
  2361  pip install -e .
  2362  which silan
  2363  silan db-sync
  2364  find /Users/macbook.silan.tech -name "api-test-portfolio" -type d 2>/dev/null
- 2365  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && ls -la
+ 2365  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && ls -la
  2366  silan db-sync
- 2367  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/backend/file-system && python -c "\nfrom sqlalchemy import create_engine\nengine = create_engine('sqlite:///test.db')\nprint('Before:', getattr(engine.dialect, 'insertmanyvalues', 'not found'))\nengine = engine.execution_options(insertmanyvalues=False)\nprint('After:', getattr(engine.dialect, 'insertmanyvalues', 'not found'))\nprint('Has attribute?', hasattr(engine.dialect, 'insertmanyvalues'))\nprint('Engine type:', type(engine))\nprint('Dialect type:', type(engine.dialect))\n"
+ 2367  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/backend/file-system && python -c "\nfrom sqlalchemy import create_engine\nengine = create_engine('sqlite:///test.db')\nprint('Before:', getattr(engine.dialect, 'insertmanyvalues', 'not found'))\nengine = engine.execution_options(insertmanyvalues=False)\nprint('After:', getattr(engine.dialect, 'insertmanyvalues', 'not found'))\nprint('Has attribute?', hasattr(engine.dialect, 'insertmanyvalues'))\nprint('Engine type:', type(engine))\nprint('Dialect type:', type(engine.dialect))\n"
  2368  python -c "\nfrom sqlalchemy import create_engine\nengine = create_engine('sqlite:///test.db')\nprint('Engine options:', engine.options)\nengine = engine.execution_options(insertmanyvalues=False)\nprint('Engine options after:', engine.options)\nprint('Insertmanyvalues disabled?', engine.options.get('insertmanyvalues', 'not set'))\n"
- 2369  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && silan db-sync
- 2370  cd /Users/macbook.silan.tech/Documents/GitHub/AIPro-Resume/api-test-portfolio && timeout 30 silan db-sync | head -200
+ 2369  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && silan db-sync
+ 2370  cd /Users/macbook.silan.tech/Documents/GitHub/Silan-Personal-Website/api-test-portfolio && timeout 30 silan db-sync | head -200
  2371  silan db-sync 2>&1 | head -300
  2372  silan db-sync 2>&1 | grep -A 20 -B 5 "work_experience"
  2373  silan db-sync > sync_debug.log 2>&1 &

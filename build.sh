@@ -249,7 +249,7 @@ npm run dev
 
 ## Documentation
 
-For more information, visit: https://github.com/Qingbolan/AIPro-Resume
+For more information, visit: https://github.com/Qingbolan/Silan-Personal-Website
 EOF
 
     # Create version info

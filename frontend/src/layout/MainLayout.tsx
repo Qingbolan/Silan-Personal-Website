@@ -2,7 +2,7 @@ import React, { ReactNode, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import TopNavigation from './TopNavigation';
 import { useTheme } from '../components/ThemeContext';
-import SimpleBackground from '../components/NeuralBackground';
+import Background from '../components/Background';
 interface MainLayoutProps {
   children: ReactNode;
 }
@@ -29,7 +29,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Simple Clean Background */}
-      <SimpleBackground />
+      <Background />
       
       {/* Global Reading Progress Bar */}
       <div className="fixed top-0 left-0 z-50 w-full h-1">

@@ -5,7 +5,7 @@ A revolutionary full-stack personal website platform that transforms professiona
 ![Project Overview](assets/overview.png)
 
 **🌐 Live Demo**: [https://silan.tech](https://silan.tech)  
-**💻 Source Code**: [https://github.com/Qingbolan/AIPro-Resume](https://github.com/Qingbolan/AIPro-Resume)
+**💻 Source Code**: [https://github.com/Qingbolan/Silan-Personal-Website](https://github.com/Qingbolan/Silan-Personal-Website)
 
 ## 🚀 Project Overview
 
@@ -152,8 +152,8 @@ Silan-Personal-Website/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Qingbolan/AIPro-Resume.git
-cd AIPro-Resume
+git clone https://github.com/Qingbolan/Silan-Personal-Website.git
+cd Silan-Personal-Website
 ```
 
 ### 2. Frontend Setup

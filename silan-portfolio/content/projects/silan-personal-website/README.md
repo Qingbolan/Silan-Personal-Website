@@ -9,7 +9,7 @@ collaboration_needed: false
 funding_required: false
 estimated_duration: "ongoing"
 demo_url: "https://silan.tech"
-source_code: "https://github.com/Qingbolan/AIPro-Resume"
+source_code: "https://github.com/Qingbolan/Silan-Personal-Website"
 technologies: ["React", "TypeScript", "Go", "Python", "MySQL", "Redis", "Docker", "Tailwind CSS"]
 features: ["CLI Tools", "Content Management", "Multi-language", "SEO Optimized", "Responsive Design"]
 ---
@@ -19,7 +19,7 @@ features: ["CLI Tools", "Content Management", "Multi-language", "SEO Optimized",
 ## 🚀 Live Demo & Source Code
 
 **🌐 Live Website**: [https://silan.tech](https://silan.tech)  
-**💻 Source Code**: [https://github.com/Qingbolan/AIPro-Resume](https://github.com/Qingbolan/AIPro-Resume)
+**💻 Source Code**: [https://github.com/Qingbolan/Silan-Personal-Website](https://github.com/Qingbolan/Silan-Personal-Website)
 
 ## Project Overview
 
@@ -154,7 +154,7 @@ func (l *GetProjectsLogic) GetProjects(req *types.GetProjectsRequest) (*types.Ge
   - Multi-language support (English/Chinese)
 
 ### Technical Showcase
-- **GitHub Repository**: https://github.com/Qingbolan/AIPro-Resume
+- **GitHub Repository**: https://github.com/Qingbolan/Silan-Personal-Website
 - **Documentation**: Comprehensive setup and deployment guides
 - **Community**: Active development and community contributions
 
