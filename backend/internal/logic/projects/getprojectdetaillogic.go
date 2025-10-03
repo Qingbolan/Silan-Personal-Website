@@ -110,27 +110,25 @@ func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest
 
 	// Create detail information
 	var detailID string
-	var detailedDescription, goals, challenges, solutions, lessonsLearned, futureEnhancements, license, version string
+	var detailedDescription, release, dependencies, quickStart, license, version string
 	var licenseText string
 	var createdAt, updatedAt string
 	if proj.Edges.Details != nil {
 		detail := proj.Edges.Details
 		detailID = detail.ID.String()
-		detailedDescription = detail.DetailedDescription
-		goals = detail.Goals
-		challenges = detail.Challenges
-		solutions = detail.Solutions
-		lessonsLearned = detail.LessonsLearned
-		futureEnhancements = detail.FutureEnhancements
+		detailedDescription = detail.ProjectDetails
+		release = detail.ReleaseNotes
+		dependencies = detail.Dependencies
+		quickStart = detail.QuickStart
 		license = l.GetLicenseText(detail.LicenseText)
 		licenseText = detail.LicenseText
 		version = detail.Version
 		createdAt = detail.CreatedAt.Format("2006-01-02 15:04:05")
 		updatedAt = detail.UpdatedAt.Format("2006-01-02 15:04:05")
 	} else {
-		// Use project info as fallback
+		// No details found - return empty values
 		detailID = proj.ID.String()
-		detailedDescription = proj.Description
+		detailedDescription = ""
 		license = "MIT"
 		version = "1.0.0"
 		createdAt = proj.CreatedAt.Format("2006-01-02 15:04:05")
@@ -141,11 +139,9 @@ func (l *GetProjectDetailLogic) GetProjectDetail(req *types.ProjectDetailRequest
 		ID:                  detailID,
 		ProjectID:           proj.ID.String(),
 		DetailedDescription: detailedDescription,
-		Goals:               goals,
-		Challenges:          challenges,
-		Solutions:           solutions,
-		LessonsLearned:      lessonsLearned,
-		FutureEnhancements:  futureEnhancements,
+		Release:             release,
+		QuickStart:          quickStart,
+		Dependance:          dependencies,
 		License:             license,
 		LicenseText:         licenseText,
 		Version:             version,

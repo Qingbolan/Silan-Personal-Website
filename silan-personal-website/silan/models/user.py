@@ -31,6 +31,7 @@ class Language(Base):
     blog_post_translations: Mapped[List["BlogPostTranslation"]] = relationship(back_populates="language")
     blog_series_translations: Mapped[List["BlogSeriesTranslation"]] = relationship(back_populates="language")
     idea_translations: Mapped[List["IdeaTranslation"]] = relationship(back_populates="language")
+    idea_detail_translations: Mapped[List["IdeaDetailTranslation"]] = relationship(back_populates="language")
     research_project_translations: Mapped[List["ResearchProjectTranslation"]] = relationship(back_populates="language")
     research_project_detail_translations: Mapped[List["ResearchProjectDetailTranslation"]] = relationship(back_populates="language")
     publication_translations: Mapped[List["PublicationTranslation"]] = relationship(back_populates="language")

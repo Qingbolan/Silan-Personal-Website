@@ -10,6 +10,7 @@ import (
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
 	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/predicate"
@@ -31,6 +32,7 @@ type IdeaQuery struct {
 	predicates       []predicate.Idea
 	withUser         *UserQuery
 	withTranslations *IdeaTranslationQuery
+	withDetails      *IdeaDetailQuery
 	withBlogPosts    *BlogPostQuery
 	withComments     *CommentQuery
 	withTags         *IdeaTagQuery
@@ -107,6 +109,28 @@ func (iq *IdeaQuery) QueryTranslations() *IdeaTranslationQuery {
 			sqlgraph.From(idea.Table, idea.FieldID, selector),
 			sqlgraph.To(ideatranslation.Table, ideatranslation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, idea.TranslationsTable, idea.TranslationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDetails chains the current query on the "details" edge.
+func (iq *IdeaQuery) QueryDetails() *IdeaDetailQuery {
+	query := (&IdeaDetailClient{config: iq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := iq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := iq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(idea.Table, idea.FieldID, selector),
+			sqlgraph.To(ideadetail.Table, ideadetail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, idea.DetailsTable, idea.DetailsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
 		return fromU, nil
@@ -374,6 +398,7 @@ func (iq *IdeaQuery) Clone() *IdeaQuery {
 		predicates:       append([]predicate.Idea{}, iq.predicates...),
 		withUser:         iq.withUser.Clone(),
 		withTranslations: iq.withTranslations.Clone(),
+		withDetails:      iq.withDetails.Clone(),
 		withBlogPosts:    iq.withBlogPosts.Clone(),
 		withComments:     iq.withComments.Clone(),
 		withTags:         iq.withTags.Clone(),
@@ -402,6 +427,17 @@ func (iq *IdeaQuery) WithTranslations(opts ...func(*IdeaTranslationQuery)) *Idea
 		opt(query)
 	}
 	iq.withTranslations = query
+	return iq
+}
+
+// WithDetails tells the query-builder to eager-load the nodes that are connected to
+// the "details" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *IdeaQuery) WithDetails(opts ...func(*IdeaDetailQuery)) *IdeaQuery {
+	query := (&IdeaDetailClient{config: iq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	iq.withDetails = query
 	return iq
 }
 
@@ -516,9 +552,10 @@ func (iq *IdeaQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Idea, e
 	var (
 		nodes       = []*Idea{}
 		_spec       = iq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			iq.withUser != nil,
 			iq.withTranslations != nil,
+			iq.withDetails != nil,
 			iq.withBlogPosts != nil,
 			iq.withComments != nil,
 			iq.withTags != nil,
@@ -552,6 +589,12 @@ func (iq *IdeaQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Idea, e
 		if err := iq.loadTranslations(ctx, query, nodes,
 			func(n *Idea) { n.Edges.Translations = []*IdeaTranslation{} },
 			func(n *Idea, e *IdeaTranslation) { n.Edges.Translations = append(n.Edges.Translations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := iq.withDetails; query != nil {
+		if err := iq.loadDetails(ctx, query, nodes, nil,
+			func(n *Idea, e *IdeaDetail) { n.Edges.Details = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -623,6 +666,33 @@ func (iq *IdeaQuery) loadTranslations(ctx context.Context, query *IdeaTranslatio
 	}
 	query.Where(predicate.IdeaTranslation(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(idea.TranslationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.IdeaID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "idea_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (iq *IdeaQuery) loadDetails(ctx context.Context, query *IdeaDetailQuery, nodes []*Idea, init func(*Idea), assign func(*Idea, *IdeaDetail)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Idea)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(ideadetail.FieldIdeaID)
+	}
+	query.Where(predicate.IdeaDetail(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(idea.DetailsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

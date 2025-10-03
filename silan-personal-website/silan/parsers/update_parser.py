@@ -32,7 +32,16 @@ class UpdateParser(BaseParser):
         content = post.content
         
         # Extract main update data
-        update_data = self._extract_update_data(metadata, content, extracted.file_path)
+        source_path = extracted.source_path
+        if source_path is None:
+            fallback = metadata.get('file_path') or metadata.get('source_path')
+            source_path = Path(fallback) if fallback else None
+
+        update_data = self._extract_update_data(
+            metadata,
+            content,
+            str(source_path) if source_path else '',
+        )
         extracted.main_entity = update_data
         
         # Extract technologies mentioned
@@ -120,7 +129,7 @@ class UpdateParser(BaseParser):
             match = re.search(pattern, filename)
             if match:
                 try:
-                    if pattern.startswith('^(\d{4})'):  # YYYY-MM-DD
+                    if pattern.startswith(r'^(\d{4})'):  # YYYY-MM-DD
                         year, month, day = match.groups()
                         return date(int(year), int(month), int(day))
                     elif pattern == r'(\d{4})(\d{2})(\d{2})':  # YYYYMMDD

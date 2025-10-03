@@ -24,6 +24,8 @@ import (
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
+	"silan-backend/internal/ent/ideadetailtranslation"
 	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
@@ -137,6 +139,8 @@ func checkColumn(table, column string) error {
 			educationdetailtranslation.Table:       educationdetailtranslation.ValidColumn,
 			educationtranslation.Table:             educationtranslation.ValidColumn,
 			idea.Table:                             idea.ValidColumn,
+			ideadetail.Table:                       ideadetail.ValidColumn,
+			ideadetailtranslation.Table:            ideadetailtranslation.ValidColumn,
 			ideatag.Table:                          ideatag.ValidColumn,
 			ideatranslation.Table:                  ideatranslation.ValidColumn,
 			language.Table:                         language.ValidColumn,

@@ -81,22 +81,15 @@ class IdeaPriority(enum.Enum):
 
 class Idea(Base, TimestampMixin):
     __tablename__ = "ideas"
-    
+
     id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
     user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
     abstract: Mapped[Optional[str]] = mapped_column(Text)
-    motivation: Mapped[Optional[str]] = mapped_column(Text)
-    methodology: Mapped[Optional[str]] = mapped_column(Text)
-    expected_outcome: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[IdeaStatus] = mapped_column(Enum(IdeaStatus), default=IdeaStatus.DRAFT)
     priority: Mapped[IdeaPriority] = mapped_column(Enum(IdeaPriority), default=IdeaPriority.MEDIUM)
-    estimated_duration_months: Mapped[Optional[int]] = mapped_column(Integer)
-    required_resources: Mapped[Optional[str]] = mapped_column(Text)
-    collaboration_needed: Mapped[bool] = mapped_column(Boolean, default=False)
-    funding_required: Mapped[bool] = mapped_column(Boolean, default=False)
-    estimated_budget: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))  # Go uses float
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     like_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -105,6 +98,7 @@ class Idea(Base, TimestampMixin):
     # Relationships - matching Go schema edges
     user: Mapped["User"] = relationship(back_populates="ideas")
     translations: Mapped[List["IdeaTranslation"]] = relationship(back_populates="idea", cascade="all, delete-orphan")
+    details: Mapped[Optional["IdeaDetail"]] = relationship(back_populates="idea", cascade="all, delete-orphan", uselist=False)
     blog_posts: Mapped[List["BlogPost"]] = relationship(back_populates="ideas")
     tags: Mapped[List["IdeaTag"]] = relationship("IdeaTag", secondary="idea_tags_join", back_populates="ideas")
     comments: Mapped[List["Comment"]] = relationship(
@@ -115,7 +109,7 @@ class Idea(Base, TimestampMixin):
 
 class IdeaTranslation(Base):
     __tablename__ = "idea_translations"
-    
+
     id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
     idea_id: Mapped[str] = mapped_column(UUID, ForeignKey("ideas.id"), nullable=False)
     language_code: Mapped[str] = mapped_column(String(5), ForeignKey("languages.code"), nullable=False)
@@ -126,10 +120,46 @@ class IdeaTranslation(Base):
     expected_outcome: Mapped[Optional[str]] = mapped_column(Text)
     required_resources: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    
+
     # Relationships
     idea: Mapped["Idea"] = relationship(back_populates="translations")
     language: Mapped["Language"] = relationship(back_populates="idea_translations")
+
+
+class IdeaDetail(Base, TimestampMixin):
+    __tablename__ = "idea_details"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    idea_id: Mapped[str] = mapped_column(UUID, ForeignKey("ideas.id"), nullable=False)
+    progress: Mapped[Optional[str]] = mapped_column(Text)
+    results: Mapped[Optional[str]] = mapped_column(Text)
+    references: Mapped[Optional[str]] = mapped_column(Text)
+    estimated_duration_months: Mapped[Optional[int]] = mapped_column(Integer)
+    required_resources: Mapped[Optional[str]] = mapped_column(Text)
+    collaboration_needed: Mapped[bool] = mapped_column(Boolean, default=False)
+    funding_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    estimated_budget: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+
+    # Relationships - matching Go schema edges
+    idea: Mapped["Idea"] = relationship(back_populates="details")
+    translations: Mapped[List["IdeaDetailTranslation"]] = relationship(back_populates="idea_detail", cascade="all, delete-orphan")
+
+
+class IdeaDetailTranslation(Base):
+    __tablename__ = "idea_detail_translations"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
+    idea_detail_id: Mapped[str] = mapped_column(UUID, ForeignKey("idea_details.id"), nullable=False)
+    language_code: Mapped[str] = mapped_column(String(5), ForeignKey("languages.code"), nullable=False)
+    progress: Mapped[Optional[str]] = mapped_column(Text)
+    results: Mapped[Optional[str]] = mapped_column(Text)
+    references: Mapped[Optional[str]] = mapped_column(Text)
+    required_resources: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    idea_detail: Mapped["IdeaDetail"] = relationship(back_populates="translations")
+    language: Mapped["Language"] = relationship(back_populates="idea_detail_translations")
 
 
 class IdeaTag(Base, TimestampMixin):

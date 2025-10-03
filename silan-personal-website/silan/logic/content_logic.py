@@ -316,52 +316,19 @@ class ContentLogic(ContentLogger):
                     idea_id = item.name
                     idea_info = ideas_lookup.get(idea_id, {})
 
-                    # Check for idea project .silan-cache
-                    project_config_path = item / '.silan-cache'
-                    project_config = {}
-                    project_files = []
-
-                    if project_config_path.exists():
-                        try:
-                            import yaml
-                            with open(project_config_path, 'r', encoding='utf-8') as f:
-                                project_config = yaml.safe_load(f) or {}
-                            project_files = project_config.get('project_files', [])
-                        except Exception as e:
-                            print(f"Warning: Could not read project config {project_config_path}: {e}")
-
-                    # If project has file registry, handle them separately
-                    if project_files:
-                        # Multi-file idea project
-                        for file_info in project_files:
-                            file_path = item / file_info.get('file_path', '')
-                            if file_path.exists() and file_path.suffix == '.md':
-                                content_items.append({
-                                    'type': 'file',
-                                    'path': str(file_path),
-                                    'main_file': str(file_path),
-                                    'name': f"{idea_id}-{file_info.get('file_id', file_path.stem)}",
-                                    'idea_id': idea_id,
-                                    'file_type': file_info.get('file_type', ''),
-                                    'language': file_info.get('language', ''),
-                                    'project_config': project_config,
-                                    'file_info': file_info,
-                                    'idea_info': idea_info,
-                                    'sort_order': file_info.get('sort_order', 0)
-                                })
-                    else:
-                        # Check if this folder has a README.md file (main content)
-                        readme_path = item / 'README.md'
-                        if readme_path.exists():
-                            content_items.append({
-                                'type': 'folder',
-                                'path': str(item),
-                                'main_file': str(readme_path),
-                                'name': item.name,
-                                'idea_id': idea_id,
-                                'idea_info': idea_info,
-                                'sort_order': idea_info.get('sort_order', 0)
-                            })
+                    # For ideas, ALWAYS use folder parsing to get all files (README, NOTES, REFERENCES)
+                    # Check if this folder has a README.md file (main content)
+                    readme_path = item / 'README.md'
+                    if readme_path.exists():
+                        content_items.append({
+                            'type': 'folder',
+                            'path': str(item),
+                            'main_file': str(readme_path),
+                            'name': item.name,
+                            'idea_id': idea_id,
+                            'idea_info': idea_info,
+                            'sort_order': idea_info.get('sort_order', 0)
+                        })
                 elif item.is_file() and item.suffix == '.md':
                     # Direct .md files in the ideas directory
                     idea_id = item.stem
@@ -667,8 +634,8 @@ class ContentLogic(ContentLogger):
             
             # Parse content based on type
             if content_item['type'] == 'folder':
-                # For projects, use folder parsing to scan LICENSE files and other folder contents
-                if content_type == 'projects':
+                # For projects and ideas, use folder parsing to scan all files
+                if content_type in ['projects', 'ideas']:
                     folder_path = Path(content_item['path'])
                     extracted_content = parser.parse_folder(folder_path)
                 else:
@@ -797,6 +764,18 @@ class ContentLogic(ContentLogger):
                             parsed_data['license'] = details_meta.get('license')
                         if details_meta.get('version'):
                             parsed_data['version'] = details_meta.get('version')
+                except Exception:
+                    pass
+
+            # For ideas, flatten idea_detail from metadata
+            elif content_type == 'ideas':
+                try:
+                    idea_detail = extracted_content.metadata.get('idea_detail') if hasattr(extracted_content, 'metadata') else None
+                    if isinstance(idea_detail, dict):
+                        # Flatten idea_detail fields into parsed_data for sync
+                        for key, value in idea_detail.items():
+                            if value is not None:
+                                parsed_data[key] = value
                 except Exception:
                     pass
             

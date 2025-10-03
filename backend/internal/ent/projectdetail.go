@@ -21,18 +21,14 @@ type ProjectDetail struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// ProjectID holds the value of the "project_id" field.
 	ProjectID uuid.UUID `json:"project_id,omitempty"`
-	// DetailedDescription holds the value of the "detailed_description" field.
-	DetailedDescription string `json:"detailed_description,omitempty"`
-	// Goals holds the value of the "goals" field.
-	Goals string `json:"goals,omitempty"`
-	// Challenges holds the value of the "challenges" field.
-	Challenges string `json:"challenges,omitempty"`
-	// Solutions holds the value of the "solutions" field.
-	Solutions string `json:"solutions,omitempty"`
-	// LessonsLearned holds the value of the "lessons_learned" field.
-	LessonsLearned string `json:"lessons_learned,omitempty"`
-	// FutureEnhancements holds the value of the "future_enhancements" field.
-	FutureEnhancements string `json:"future_enhancements,omitempty"`
+	// ProjectDetails holds the value of the "project_details" field.
+	ProjectDetails string `json:"project_details,omitempty"`
+	// QuickStart holds the value of the "quick_start" field.
+	QuickStart string `json:"quick_start,omitempty"`
+	// ReleaseNotes holds the value of the "release_notes" field.
+	ReleaseNotes string `json:"release_notes,omitempty"`
+	// Dependencies holds the value of the "dependencies" field.
+	Dependencies string `json:"dependencies,omitempty"`
 	// License holds the value of the "license" field.
 	License string `json:"license,omitempty"`
 	// LicenseText holds the value of the "license_text" field.
@@ -85,7 +81,7 @@ func (*ProjectDetail) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case projectdetail.FieldDetailedDescription, projectdetail.FieldGoals, projectdetail.FieldChallenges, projectdetail.FieldSolutions, projectdetail.FieldLessonsLearned, projectdetail.FieldFutureEnhancements, projectdetail.FieldLicense, projectdetail.FieldLicenseText, projectdetail.FieldVersion:
+		case projectdetail.FieldProjectDetails, projectdetail.FieldQuickStart, projectdetail.FieldReleaseNotes, projectdetail.FieldDependencies, projectdetail.FieldLicense, projectdetail.FieldLicenseText, projectdetail.FieldVersion:
 			values[i] = new(sql.NullString)
 		case projectdetail.FieldCreatedAt, projectdetail.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -118,41 +114,29 @@ func (pd *ProjectDetail) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				pd.ProjectID = *value
 			}
-		case projectdetail.FieldDetailedDescription:
+		case projectdetail.FieldProjectDetails:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field detailed_description", values[i])
+				return fmt.Errorf("unexpected type %T for field project_details", values[i])
 			} else if value.Valid {
-				pd.DetailedDescription = value.String
+				pd.ProjectDetails = value.String
 			}
-		case projectdetail.FieldGoals:
+		case projectdetail.FieldQuickStart:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field goals", values[i])
+				return fmt.Errorf("unexpected type %T for field quick_start", values[i])
 			} else if value.Valid {
-				pd.Goals = value.String
+				pd.QuickStart = value.String
 			}
-		case projectdetail.FieldChallenges:
+		case projectdetail.FieldReleaseNotes:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field challenges", values[i])
+				return fmt.Errorf("unexpected type %T for field release_notes", values[i])
 			} else if value.Valid {
-				pd.Challenges = value.String
+				pd.ReleaseNotes = value.String
 			}
-		case projectdetail.FieldSolutions:
+		case projectdetail.FieldDependencies:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field solutions", values[i])
+				return fmt.Errorf("unexpected type %T for field dependencies", values[i])
 			} else if value.Valid {
-				pd.Solutions = value.String
-			}
-		case projectdetail.FieldLessonsLearned:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field lessons_learned", values[i])
-			} else if value.Valid {
-				pd.LessonsLearned = value.String
-			}
-		case projectdetail.FieldFutureEnhancements:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field future_enhancements", values[i])
-			} else if value.Valid {
-				pd.FutureEnhancements = value.String
+				pd.Dependencies = value.String
 			}
 		case projectdetail.FieldLicense:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -233,23 +217,17 @@ func (pd *ProjectDetail) String() string {
 	builder.WriteString("project_id=")
 	builder.WriteString(fmt.Sprintf("%v", pd.ProjectID))
 	builder.WriteString(", ")
-	builder.WriteString("detailed_description=")
-	builder.WriteString(pd.DetailedDescription)
+	builder.WriteString("project_details=")
+	builder.WriteString(pd.ProjectDetails)
 	builder.WriteString(", ")
-	builder.WriteString("goals=")
-	builder.WriteString(pd.Goals)
+	builder.WriteString("quick_start=")
+	builder.WriteString(pd.QuickStart)
 	builder.WriteString(", ")
-	builder.WriteString("challenges=")
-	builder.WriteString(pd.Challenges)
+	builder.WriteString("release_notes=")
+	builder.WriteString(pd.ReleaseNotes)
 	builder.WriteString(", ")
-	builder.WriteString("solutions=")
-	builder.WriteString(pd.Solutions)
-	builder.WriteString(", ")
-	builder.WriteString("lessons_learned=")
-	builder.WriteString(pd.LessonsLearned)
-	builder.WriteString(", ")
-	builder.WriteString("future_enhancements=")
-	builder.WriteString(pd.FutureEnhancements)
+	builder.WriteString("dependencies=")
+	builder.WriteString(pd.Dependencies)
 	builder.WriteString(", ")
 	builder.WriteString("license=")
 	builder.WriteString(pd.License)

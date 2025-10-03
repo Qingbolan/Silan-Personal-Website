@@ -22,28 +22,14 @@ const (
 	FieldTitle = "title"
 	// FieldSlug holds the string denoting the slug field in the database.
 	FieldSlug = "slug"
+	// FieldDescription holds the string denoting the description field in the database.
+	FieldDescription = "description"
 	// FieldAbstract holds the string denoting the abstract field in the database.
 	FieldAbstract = "abstract"
-	// FieldMotivation holds the string denoting the motivation field in the database.
-	FieldMotivation = "motivation"
-	// FieldMethodology holds the string denoting the methodology field in the database.
-	FieldMethodology = "methodology"
-	// FieldExpectedOutcome holds the string denoting the expected_outcome field in the database.
-	FieldExpectedOutcome = "expected_outcome"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldPriority holds the string denoting the priority field in the database.
 	FieldPriority = "priority"
-	// FieldEstimatedDurationMonths holds the string denoting the estimated_duration_months field in the database.
-	FieldEstimatedDurationMonths = "estimated_duration_months"
-	// FieldRequiredResources holds the string denoting the required_resources field in the database.
-	FieldRequiredResources = "required_resources"
-	// FieldCollaborationNeeded holds the string denoting the collaboration_needed field in the database.
-	FieldCollaborationNeeded = "collaboration_needed"
-	// FieldFundingRequired holds the string denoting the funding_required field in the database.
-	FieldFundingRequired = "funding_required"
-	// FieldEstimatedBudget holds the string denoting the estimated_budget field in the database.
-	FieldEstimatedBudget = "estimated_budget"
 	// FieldIsPublic holds the string denoting the is_public field in the database.
 	FieldIsPublic = "is_public"
 	// FieldViewCount holds the string denoting the view_count field in the database.
@@ -60,6 +46,8 @@ const (
 	EdgeUser = "user"
 	// EdgeTranslations holds the string denoting the translations edge name in mutations.
 	EdgeTranslations = "translations"
+	// EdgeDetails holds the string denoting the details edge name in mutations.
+	EdgeDetails = "details"
 	// EdgeBlogPosts holds the string denoting the blog_posts edge name in mutations.
 	EdgeBlogPosts = "blog_posts"
 	// EdgeComments holds the string denoting the comments edge name in mutations.
@@ -82,6 +70,13 @@ const (
 	TranslationsInverseTable = "idea_translations"
 	// TranslationsColumn is the table column denoting the translations relation/edge.
 	TranslationsColumn = "idea_id"
+	// DetailsTable is the table that holds the details relation/edge.
+	DetailsTable = "idea_details"
+	// DetailsInverseTable is the table name for the IdeaDetail entity.
+	// It exists in this package in order to avoid circular dependency with the "ideadetail" package.
+	DetailsInverseTable = "idea_details"
+	// DetailsColumn is the table column denoting the details relation/edge.
+	DetailsColumn = "idea_id"
 	// BlogPostsTable is the table that holds the blog_posts relation/edge.
 	BlogPostsTable = "blog_posts"
 	// BlogPostsInverseTable is the table name for the BlogPost entity.
@@ -109,17 +104,10 @@ var Columns = []string{
 	FieldUserID,
 	FieldTitle,
 	FieldSlug,
+	FieldDescription,
 	FieldAbstract,
-	FieldMotivation,
-	FieldMethodology,
-	FieldExpectedOutcome,
 	FieldStatus,
 	FieldPriority,
-	FieldEstimatedDurationMonths,
-	FieldRequiredResources,
-	FieldCollaborationNeeded,
-	FieldFundingRequired,
-	FieldEstimatedBudget,
 	FieldIsPublic,
 	FieldViewCount,
 	FieldLikeCount,
@@ -149,10 +137,6 @@ var (
 	TitleValidator func(string) error
 	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
 	SlugValidator func(string) error
-	// DefaultCollaborationNeeded holds the default value on creation for the "collaboration_needed" field.
-	DefaultCollaborationNeeded bool
-	// DefaultFundingRequired holds the default value on creation for the "funding_required" field.
-	DefaultFundingRequired bool
 	// DefaultIsPublic holds the default value on creation for the "is_public" field.
 	DefaultIsPublic bool
 	// DefaultViewCount holds the default value on creation for the "view_count" field.
@@ -254,24 +238,14 @@ func BySlug(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSlug, opts...).ToFunc()
 }
 
+// ByDescription orders the results by the description field.
+func ByDescription(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
 // ByAbstract orders the results by the abstract field.
 func ByAbstract(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAbstract, opts...).ToFunc()
-}
-
-// ByMotivation orders the results by the motivation field.
-func ByMotivation(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldMotivation, opts...).ToFunc()
-}
-
-// ByMethodology orders the results by the methodology field.
-func ByMethodology(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldMethodology, opts...).ToFunc()
-}
-
-// ByExpectedOutcome orders the results by the expected_outcome field.
-func ByExpectedOutcome(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldExpectedOutcome, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.
@@ -282,31 +256,6 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByPriority orders the results by the priority field.
 func ByPriority(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPriority, opts...).ToFunc()
-}
-
-// ByEstimatedDurationMonths orders the results by the estimated_duration_months field.
-func ByEstimatedDurationMonths(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEstimatedDurationMonths, opts...).ToFunc()
-}
-
-// ByRequiredResources orders the results by the required_resources field.
-func ByRequiredResources(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRequiredResources, opts...).ToFunc()
-}
-
-// ByCollaborationNeeded orders the results by the collaboration_needed field.
-func ByCollaborationNeeded(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCollaborationNeeded, opts...).ToFunc()
-}
-
-// ByFundingRequired orders the results by the funding_required field.
-func ByFundingRequired(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFundingRequired, opts...).ToFunc()
-}
-
-// ByEstimatedBudget orders the results by the estimated_budget field.
-func ByEstimatedBudget(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEstimatedBudget, opts...).ToFunc()
 }
 
 // ByIsPublic orders the results by the is_public field.
@@ -357,6 +306,13 @@ func ByTranslationsCount(opts ...sql.OrderTermOption) OrderOption {
 func ByTranslations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newTranslationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByDetailsField orders the results by details field.
+func ByDetailsField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDetailsStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -413,6 +369,13 @@ func newTranslationsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TranslationsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TranslationsTable, TranslationsColumn),
+	)
+}
+func newDetailsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DetailsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, DetailsTable, DetailsColumn),
 	)
 }
 func newBlogPostsStep() *sqlgraph.Step {

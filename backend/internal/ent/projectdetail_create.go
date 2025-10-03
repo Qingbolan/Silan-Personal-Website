@@ -29,86 +29,58 @@ func (pdc *ProjectDetailCreate) SetProjectID(u uuid.UUID) *ProjectDetailCreate {
 	return pdc
 }
 
-// SetDetailedDescription sets the "detailed_description" field.
-func (pdc *ProjectDetailCreate) SetDetailedDescription(s string) *ProjectDetailCreate {
-	pdc.mutation.SetDetailedDescription(s)
+// SetProjectDetails sets the "project_details" field.
+func (pdc *ProjectDetailCreate) SetProjectDetails(s string) *ProjectDetailCreate {
+	pdc.mutation.SetProjectDetails(s)
 	return pdc
 }
 
-// SetNillableDetailedDescription sets the "detailed_description" field if the given value is not nil.
-func (pdc *ProjectDetailCreate) SetNillableDetailedDescription(s *string) *ProjectDetailCreate {
+// SetNillableProjectDetails sets the "project_details" field if the given value is not nil.
+func (pdc *ProjectDetailCreate) SetNillableProjectDetails(s *string) *ProjectDetailCreate {
 	if s != nil {
-		pdc.SetDetailedDescription(*s)
+		pdc.SetProjectDetails(*s)
 	}
 	return pdc
 }
 
-// SetGoals sets the "goals" field.
-func (pdc *ProjectDetailCreate) SetGoals(s string) *ProjectDetailCreate {
-	pdc.mutation.SetGoals(s)
+// SetQuickStart sets the "quick_start" field.
+func (pdc *ProjectDetailCreate) SetQuickStart(s string) *ProjectDetailCreate {
+	pdc.mutation.SetQuickStart(s)
 	return pdc
 }
 
-// SetNillableGoals sets the "goals" field if the given value is not nil.
-func (pdc *ProjectDetailCreate) SetNillableGoals(s *string) *ProjectDetailCreate {
+// SetNillableQuickStart sets the "quick_start" field if the given value is not nil.
+func (pdc *ProjectDetailCreate) SetNillableQuickStart(s *string) *ProjectDetailCreate {
 	if s != nil {
-		pdc.SetGoals(*s)
+		pdc.SetQuickStart(*s)
 	}
 	return pdc
 }
 
-// SetChallenges sets the "challenges" field.
-func (pdc *ProjectDetailCreate) SetChallenges(s string) *ProjectDetailCreate {
-	pdc.mutation.SetChallenges(s)
+// SetReleaseNotes sets the "release_notes" field.
+func (pdc *ProjectDetailCreate) SetReleaseNotes(s string) *ProjectDetailCreate {
+	pdc.mutation.SetReleaseNotes(s)
 	return pdc
 }
 
-// SetNillableChallenges sets the "challenges" field if the given value is not nil.
-func (pdc *ProjectDetailCreate) SetNillableChallenges(s *string) *ProjectDetailCreate {
+// SetNillableReleaseNotes sets the "release_notes" field if the given value is not nil.
+func (pdc *ProjectDetailCreate) SetNillableReleaseNotes(s *string) *ProjectDetailCreate {
 	if s != nil {
-		pdc.SetChallenges(*s)
+		pdc.SetReleaseNotes(*s)
 	}
 	return pdc
 }
 
-// SetSolutions sets the "solutions" field.
-func (pdc *ProjectDetailCreate) SetSolutions(s string) *ProjectDetailCreate {
-	pdc.mutation.SetSolutions(s)
+// SetDependencies sets the "dependencies" field.
+func (pdc *ProjectDetailCreate) SetDependencies(s string) *ProjectDetailCreate {
+	pdc.mutation.SetDependencies(s)
 	return pdc
 }
 
-// SetNillableSolutions sets the "solutions" field if the given value is not nil.
-func (pdc *ProjectDetailCreate) SetNillableSolutions(s *string) *ProjectDetailCreate {
+// SetNillableDependencies sets the "dependencies" field if the given value is not nil.
+func (pdc *ProjectDetailCreate) SetNillableDependencies(s *string) *ProjectDetailCreate {
 	if s != nil {
-		pdc.SetSolutions(*s)
-	}
-	return pdc
-}
-
-// SetLessonsLearned sets the "lessons_learned" field.
-func (pdc *ProjectDetailCreate) SetLessonsLearned(s string) *ProjectDetailCreate {
-	pdc.mutation.SetLessonsLearned(s)
-	return pdc
-}
-
-// SetNillableLessonsLearned sets the "lessons_learned" field if the given value is not nil.
-func (pdc *ProjectDetailCreate) SetNillableLessonsLearned(s *string) *ProjectDetailCreate {
-	if s != nil {
-		pdc.SetLessonsLearned(*s)
-	}
-	return pdc
-}
-
-// SetFutureEnhancements sets the "future_enhancements" field.
-func (pdc *ProjectDetailCreate) SetFutureEnhancements(s string) *ProjectDetailCreate {
-	pdc.mutation.SetFutureEnhancements(s)
-	return pdc
-}
-
-// SetNillableFutureEnhancements sets the "future_enhancements" field if the given value is not nil.
-func (pdc *ProjectDetailCreate) SetNillableFutureEnhancements(s *string) *ProjectDetailCreate {
-	if s != nil {
-		pdc.SetFutureEnhancements(*s)
+		pdc.SetDependencies(*s)
 	}
 	return pdc
 }
@@ -325,29 +297,21 @@ func (pdc *ProjectDetailCreate) createSpec() (*ProjectDetail, *sqlgraph.CreateSp
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := pdc.mutation.DetailedDescription(); ok {
-		_spec.SetField(projectdetail.FieldDetailedDescription, field.TypeString, value)
-		_node.DetailedDescription = value
+	if value, ok := pdc.mutation.ProjectDetails(); ok {
+		_spec.SetField(projectdetail.FieldProjectDetails, field.TypeString, value)
+		_node.ProjectDetails = value
 	}
-	if value, ok := pdc.mutation.Goals(); ok {
-		_spec.SetField(projectdetail.FieldGoals, field.TypeString, value)
-		_node.Goals = value
+	if value, ok := pdc.mutation.QuickStart(); ok {
+		_spec.SetField(projectdetail.FieldQuickStart, field.TypeString, value)
+		_node.QuickStart = value
 	}
-	if value, ok := pdc.mutation.Challenges(); ok {
-		_spec.SetField(projectdetail.FieldChallenges, field.TypeString, value)
-		_node.Challenges = value
+	if value, ok := pdc.mutation.ReleaseNotes(); ok {
+		_spec.SetField(projectdetail.FieldReleaseNotes, field.TypeString, value)
+		_node.ReleaseNotes = value
 	}
-	if value, ok := pdc.mutation.Solutions(); ok {
-		_spec.SetField(projectdetail.FieldSolutions, field.TypeString, value)
-		_node.Solutions = value
-	}
-	if value, ok := pdc.mutation.LessonsLearned(); ok {
-		_spec.SetField(projectdetail.FieldLessonsLearned, field.TypeString, value)
-		_node.LessonsLearned = value
-	}
-	if value, ok := pdc.mutation.FutureEnhancements(); ok {
-		_spec.SetField(projectdetail.FieldFutureEnhancements, field.TypeString, value)
-		_node.FutureEnhancements = value
+	if value, ok := pdc.mutation.Dependencies(); ok {
+		_spec.SetField(projectdetail.FieldDependencies, field.TypeString, value)
+		_node.Dependencies = value
 	}
 	if value, ok := pdc.mutation.License(); ok {
 		_spec.SetField(projectdetail.FieldLicense, field.TypeString, value)

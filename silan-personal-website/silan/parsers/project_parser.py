@@ -84,9 +84,11 @@ class ProjectParser(BaseParser):
         if config_data:
             project_data = extracted.main_entity
 
-            # Handle nested config structure (.silan-cache may have 'project' key)
+            # Handle nested config structure (.silan-cache may have 'project' or 'project_info' key)
             if 'project' in config_data:
                 config_project_data = config_data['project']
+            elif 'project_info' in config_data:
+                config_project_data = config_data['project_info']
             else:
                 config_project_data = config_data
 
@@ -176,6 +178,52 @@ class ProjectParser(BaseParser):
         if assets_folder.exists():
             folder_images = self._scan_assets_folder(assets_folder)
             extracted.images.extend(folder_images)
+
+        # Read README.md for full description
+        readme_path = folder_path / 'README.md'
+        if readme_path.exists():
+            try:
+                with open(readme_path, 'r', encoding='utf-8') as f:
+                    readme_content = f.read()
+                    extracted.main_entity['detailed_description'] = readme_content.strip()
+            except Exception as e:
+                self.warning(f"Error reading README.md: {e}")
+
+        # Read RELEASES.md or CHANGELOG.md for release notes
+        for release_file in ['RELEASES.md', 'CHANGELOG.md', 'HISTORY.md']:
+            release_path = folder_path / release_file
+            if release_path.exists():
+                try:
+                    with open(release_path, 'r', encoding='utf-8') as f:
+                        release_content = f.read()
+                        extracted.main_entity['release_notes'] = release_content.strip()
+                    break
+                except Exception as e:
+                    self.warning(f"Error reading {release_file}: {e}")
+
+        # Read QUICKSTART.md or docs/QUICKSTART.md
+        for quickstart_file in ['QUICKSTART.md', 'docs/QUICKSTART.md', 'docs/quickstart.md']:
+            quickstart_path = folder_path / quickstart_file
+            if quickstart_path.exists():
+                try:
+                    with open(quickstart_path, 'r', encoding='utf-8') as f:
+                        quickstart_content = f.read()
+                        extracted.main_entity['quick_start'] = quickstart_content.strip()
+                    break
+                except Exception as e:
+                    self.warning(f"Error reading {quickstart_file}: {e}")
+
+        # Read DEPENDENCIES.md or requirements.txt for dependencies
+        for dep_file in ['DEPENDENCIES.md', 'requirements.txt', 'package.json', 'go.mod']:
+            dep_path = folder_path / dep_file
+            if dep_path.exists():
+                try:
+                    with open(dep_path, 'r', encoding='utf-8') as f:
+                        dep_content = f.read()
+                        extracted.main_entity['dependencies'] = dep_content.strip()
+                    break
+                except Exception as e:
+                    self.warning(f"Error reading {dep_file}: {e}")
 
         # Scan for additional documentation
         docs = self._scan_documentation_files(folder_path)

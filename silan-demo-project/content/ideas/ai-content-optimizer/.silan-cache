@@ -1,0 +1,67 @@
+content_files:
+- file_id: main
+  file_path: README.md
+  is_primary: true
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+- file_id: references
+  file_path: REFERENCES.md
+  is_primary: false
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+- file_id: notes
+  file_path: NOTES.md
+  is_primary: false
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+- file_id: timeline
+  file_path: TIMELINE.md
+  is_primary: false
+  language: en
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_hash: null
+idea_info:
+  title: AI Content Optimizer
+  description: An intelligent system to optimize content for better engagement
+  status: brainstorming
+  category: AI/ML
+  slug: ai-content-optimizer
+  difficulty: medium
+  research_field: Natural Language Processing
+  estimated_duration: 4 months
+  estimated_budget: $75k
+  target_audience: Content creators, marketers
+  tags:
+  - AI
+  - Content
+  - Optimization
+  - NLP
+  open_for_collaboration: true
+  seeking_collaborators: true
+  required_skills:
+  - NLP/ML
+  - Frontend Development
+  - Data Science
+  contact_method: Create issue in repository
+  success_metrics:
+  - Content engagement increase by 30%
+  - Time-to-optimize reduced by 80%
+  - User satisfaction > 85%
+sync_metadata:
+  content_type: idea
+  item_id: ai-content-optimizer
+  sync_enabled: true
+  last_hash: ef8ea3afe7b1fe75
+  last_sync_date: '2025-10-03T11:26:29.910215'
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  file_count: 4
+  total_size: 0
+  sync_status: completed

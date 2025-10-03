@@ -20,6 +20,8 @@ import (
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
+	"silan-backend/internal/ent/ideadetailtranslation"
 	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
@@ -835,38 +837,30 @@ func init() {
 			return nil
 		}
 	}()
-	// ideaDescCollaborationNeeded is the schema descriptor for collaboration_needed field.
-	ideaDescCollaborationNeeded := ideaFields[12].Descriptor()
-	// idea.DefaultCollaborationNeeded holds the default value on creation for the collaboration_needed field.
-	idea.DefaultCollaborationNeeded = ideaDescCollaborationNeeded.Default.(bool)
-	// ideaDescFundingRequired is the schema descriptor for funding_required field.
-	ideaDescFundingRequired := ideaFields[13].Descriptor()
-	// idea.DefaultFundingRequired holds the default value on creation for the funding_required field.
-	idea.DefaultFundingRequired = ideaDescFundingRequired.Default.(bool)
 	// ideaDescIsPublic is the schema descriptor for is_public field.
-	ideaDescIsPublic := ideaFields[15].Descriptor()
+	ideaDescIsPublic := ideaFields[8].Descriptor()
 	// idea.DefaultIsPublic holds the default value on creation for the is_public field.
 	idea.DefaultIsPublic = ideaDescIsPublic.Default.(bool)
 	// ideaDescViewCount is the schema descriptor for view_count field.
-	ideaDescViewCount := ideaFields[16].Descriptor()
+	ideaDescViewCount := ideaFields[9].Descriptor()
 	// idea.DefaultViewCount holds the default value on creation for the view_count field.
 	idea.DefaultViewCount = ideaDescViewCount.Default.(int)
 	// ideaDescLikeCount is the schema descriptor for like_count field.
-	ideaDescLikeCount := ideaFields[17].Descriptor()
+	ideaDescLikeCount := ideaFields[10].Descriptor()
 	// idea.DefaultLikeCount holds the default value on creation for the like_count field.
 	idea.DefaultLikeCount = ideaDescLikeCount.Default.(int)
 	// ideaDescCategory is the schema descriptor for category field.
-	ideaDescCategory := ideaFields[18].Descriptor()
+	ideaDescCategory := ideaFields[11].Descriptor()
 	// idea.DefaultCategory holds the default value on creation for the category field.
 	idea.DefaultCategory = ideaDescCategory.Default.(string)
 	// idea.CategoryValidator is a validator for the "category" field. It is called by the builders before save.
 	idea.CategoryValidator = ideaDescCategory.Validators[0].(func(string) error)
 	// ideaDescCreatedAt is the schema descriptor for created_at field.
-	ideaDescCreatedAt := ideaFields[19].Descriptor()
+	ideaDescCreatedAt := ideaFields[12].Descriptor()
 	// idea.DefaultCreatedAt holds the default value on creation for the created_at field.
 	idea.DefaultCreatedAt = ideaDescCreatedAt.Default.(func() time.Time)
 	// ideaDescUpdatedAt is the schema descriptor for updated_at field.
-	ideaDescUpdatedAt := ideaFields[20].Descriptor()
+	ideaDescUpdatedAt := ideaFields[13].Descriptor()
 	// idea.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	idea.DefaultUpdatedAt = ideaDescUpdatedAt.Default.(func() time.Time)
 	// idea.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -875,6 +869,44 @@ func init() {
 	ideaDescID := ideaFields[0].Descriptor()
 	// idea.DefaultID holds the default value on creation for the id field.
 	idea.DefaultID = ideaDescID.Default.(func() uuid.UUID)
+	ideadetailFields := schema.IdeaDetail{}.Fields()
+	_ = ideadetailFields
+	// ideadetailDescCollaborationNeeded is the schema descriptor for collaboration_needed field.
+	ideadetailDescCollaborationNeeded := ideadetailFields[7].Descriptor()
+	// ideadetail.DefaultCollaborationNeeded holds the default value on creation for the collaboration_needed field.
+	ideadetail.DefaultCollaborationNeeded = ideadetailDescCollaborationNeeded.Default.(bool)
+	// ideadetailDescFundingRequired is the schema descriptor for funding_required field.
+	ideadetailDescFundingRequired := ideadetailFields[8].Descriptor()
+	// ideadetail.DefaultFundingRequired holds the default value on creation for the funding_required field.
+	ideadetail.DefaultFundingRequired = ideadetailDescFundingRequired.Default.(bool)
+	// ideadetailDescCreatedAt is the schema descriptor for created_at field.
+	ideadetailDescCreatedAt := ideadetailFields[10].Descriptor()
+	// ideadetail.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ideadetail.DefaultCreatedAt = ideadetailDescCreatedAt.Default.(func() time.Time)
+	// ideadetailDescUpdatedAt is the schema descriptor for updated_at field.
+	ideadetailDescUpdatedAt := ideadetailFields[11].Descriptor()
+	// ideadetail.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ideadetail.DefaultUpdatedAt = ideadetailDescUpdatedAt.Default.(func() time.Time)
+	// ideadetail.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ideadetail.UpdateDefaultUpdatedAt = ideadetailDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ideadetailDescID is the schema descriptor for id field.
+	ideadetailDescID := ideadetailFields[0].Descriptor()
+	// ideadetail.DefaultID holds the default value on creation for the id field.
+	ideadetail.DefaultID = ideadetailDescID.Default.(func() uuid.UUID)
+	ideadetailtranslationFields := schema.IdeaDetailTranslation{}.Fields()
+	_ = ideadetailtranslationFields
+	// ideadetailtranslationDescLanguageCode is the schema descriptor for language_code field.
+	ideadetailtranslationDescLanguageCode := ideadetailtranslationFields[2].Descriptor()
+	// ideadetailtranslation.LanguageCodeValidator is a validator for the "language_code" field. It is called by the builders before save.
+	ideadetailtranslation.LanguageCodeValidator = ideadetailtranslationDescLanguageCode.Validators[0].(func(string) error)
+	// ideadetailtranslationDescCreatedAt is the schema descriptor for created_at field.
+	ideadetailtranslationDescCreatedAt := ideadetailtranslationFields[7].Descriptor()
+	// ideadetailtranslation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ideadetailtranslation.DefaultCreatedAt = ideadetailtranslationDescCreatedAt.Default.(func() time.Time)
+	// ideadetailtranslationDescID is the schema descriptor for id field.
+	ideadetailtranslationDescID := ideadetailtranslationFields[0].Descriptor()
+	// ideadetailtranslation.DefaultID holds the default value on creation for the id field.
+	ideadetailtranslation.DefaultID = ideadetailtranslationDescID.Default.(func() uuid.UUID)
 	ideatagFields := schema.IdeaTag{}.Fields()
 	_ = ideatagFields
 	// ideatagDescName is the schema descriptor for name field.
@@ -1236,19 +1268,19 @@ func init() {
 	projectdetailFields := schema.ProjectDetail{}.Fields()
 	_ = projectdetailFields
 	// projectdetailDescLicense is the schema descriptor for license field.
-	projectdetailDescLicense := projectdetailFields[8].Descriptor()
+	projectdetailDescLicense := projectdetailFields[6].Descriptor()
 	// projectdetail.LicenseValidator is a validator for the "license" field. It is called by the builders before save.
 	projectdetail.LicenseValidator = projectdetailDescLicense.Validators[0].(func(string) error)
 	// projectdetailDescVersion is the schema descriptor for version field.
-	projectdetailDescVersion := projectdetailFields[10].Descriptor()
+	projectdetailDescVersion := projectdetailFields[8].Descriptor()
 	// projectdetail.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	projectdetail.VersionValidator = projectdetailDescVersion.Validators[0].(func(string) error)
 	// projectdetailDescCreatedAt is the schema descriptor for created_at field.
-	projectdetailDescCreatedAt := projectdetailFields[11].Descriptor()
+	projectdetailDescCreatedAt := projectdetailFields[9].Descriptor()
 	// projectdetail.DefaultCreatedAt holds the default value on creation for the created_at field.
 	projectdetail.DefaultCreatedAt = projectdetailDescCreatedAt.Default.(func() time.Time)
 	// projectdetailDescUpdatedAt is the schema descriptor for updated_at field.
-	projectdetailDescUpdatedAt := projectdetailFields[12].Descriptor()
+	projectdetailDescUpdatedAt := projectdetailFields[10].Descriptor()
 	// projectdetail.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	projectdetail.DefaultUpdatedAt = projectdetailDescUpdatedAt.Default.(func() time.Time)
 	// projectdetail.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

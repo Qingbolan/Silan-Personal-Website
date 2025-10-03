@@ -45,123 +45,83 @@ func (pdu *ProjectDetailUpdate) SetNillableProjectID(u *uuid.UUID) *ProjectDetai
 	return pdu
 }
 
-// SetDetailedDescription sets the "detailed_description" field.
-func (pdu *ProjectDetailUpdate) SetDetailedDescription(s string) *ProjectDetailUpdate {
-	pdu.mutation.SetDetailedDescription(s)
+// SetProjectDetails sets the "project_details" field.
+func (pdu *ProjectDetailUpdate) SetProjectDetails(s string) *ProjectDetailUpdate {
+	pdu.mutation.SetProjectDetails(s)
 	return pdu
 }
 
-// SetNillableDetailedDescription sets the "detailed_description" field if the given value is not nil.
-func (pdu *ProjectDetailUpdate) SetNillableDetailedDescription(s *string) *ProjectDetailUpdate {
+// SetNillableProjectDetails sets the "project_details" field if the given value is not nil.
+func (pdu *ProjectDetailUpdate) SetNillableProjectDetails(s *string) *ProjectDetailUpdate {
 	if s != nil {
-		pdu.SetDetailedDescription(*s)
+		pdu.SetProjectDetails(*s)
 	}
 	return pdu
 }
 
-// ClearDetailedDescription clears the value of the "detailed_description" field.
-func (pdu *ProjectDetailUpdate) ClearDetailedDescription() *ProjectDetailUpdate {
-	pdu.mutation.ClearDetailedDescription()
+// ClearProjectDetails clears the value of the "project_details" field.
+func (pdu *ProjectDetailUpdate) ClearProjectDetails() *ProjectDetailUpdate {
+	pdu.mutation.ClearProjectDetails()
 	return pdu
 }
 
-// SetGoals sets the "goals" field.
-func (pdu *ProjectDetailUpdate) SetGoals(s string) *ProjectDetailUpdate {
-	pdu.mutation.SetGoals(s)
+// SetQuickStart sets the "quick_start" field.
+func (pdu *ProjectDetailUpdate) SetQuickStart(s string) *ProjectDetailUpdate {
+	pdu.mutation.SetQuickStart(s)
 	return pdu
 }
 
-// SetNillableGoals sets the "goals" field if the given value is not nil.
-func (pdu *ProjectDetailUpdate) SetNillableGoals(s *string) *ProjectDetailUpdate {
+// SetNillableQuickStart sets the "quick_start" field if the given value is not nil.
+func (pdu *ProjectDetailUpdate) SetNillableQuickStart(s *string) *ProjectDetailUpdate {
 	if s != nil {
-		pdu.SetGoals(*s)
+		pdu.SetQuickStart(*s)
 	}
 	return pdu
 }
 
-// ClearGoals clears the value of the "goals" field.
-func (pdu *ProjectDetailUpdate) ClearGoals() *ProjectDetailUpdate {
-	pdu.mutation.ClearGoals()
+// ClearQuickStart clears the value of the "quick_start" field.
+func (pdu *ProjectDetailUpdate) ClearQuickStart() *ProjectDetailUpdate {
+	pdu.mutation.ClearQuickStart()
 	return pdu
 }
 
-// SetChallenges sets the "challenges" field.
-func (pdu *ProjectDetailUpdate) SetChallenges(s string) *ProjectDetailUpdate {
-	pdu.mutation.SetChallenges(s)
+// SetReleaseNotes sets the "release_notes" field.
+func (pdu *ProjectDetailUpdate) SetReleaseNotes(s string) *ProjectDetailUpdate {
+	pdu.mutation.SetReleaseNotes(s)
 	return pdu
 }
 
-// SetNillableChallenges sets the "challenges" field if the given value is not nil.
-func (pdu *ProjectDetailUpdate) SetNillableChallenges(s *string) *ProjectDetailUpdate {
+// SetNillableReleaseNotes sets the "release_notes" field if the given value is not nil.
+func (pdu *ProjectDetailUpdate) SetNillableReleaseNotes(s *string) *ProjectDetailUpdate {
 	if s != nil {
-		pdu.SetChallenges(*s)
+		pdu.SetReleaseNotes(*s)
 	}
 	return pdu
 }
 
-// ClearChallenges clears the value of the "challenges" field.
-func (pdu *ProjectDetailUpdate) ClearChallenges() *ProjectDetailUpdate {
-	pdu.mutation.ClearChallenges()
+// ClearReleaseNotes clears the value of the "release_notes" field.
+func (pdu *ProjectDetailUpdate) ClearReleaseNotes() *ProjectDetailUpdate {
+	pdu.mutation.ClearReleaseNotes()
 	return pdu
 }
 
-// SetSolutions sets the "solutions" field.
-func (pdu *ProjectDetailUpdate) SetSolutions(s string) *ProjectDetailUpdate {
-	pdu.mutation.SetSolutions(s)
+// SetDependencies sets the "dependencies" field.
+func (pdu *ProjectDetailUpdate) SetDependencies(s string) *ProjectDetailUpdate {
+	pdu.mutation.SetDependencies(s)
 	return pdu
 }
 
-// SetNillableSolutions sets the "solutions" field if the given value is not nil.
-func (pdu *ProjectDetailUpdate) SetNillableSolutions(s *string) *ProjectDetailUpdate {
+// SetNillableDependencies sets the "dependencies" field if the given value is not nil.
+func (pdu *ProjectDetailUpdate) SetNillableDependencies(s *string) *ProjectDetailUpdate {
 	if s != nil {
-		pdu.SetSolutions(*s)
+		pdu.SetDependencies(*s)
 	}
 	return pdu
 }
 
-// ClearSolutions clears the value of the "solutions" field.
-func (pdu *ProjectDetailUpdate) ClearSolutions() *ProjectDetailUpdate {
-	pdu.mutation.ClearSolutions()
-	return pdu
-}
-
-// SetLessonsLearned sets the "lessons_learned" field.
-func (pdu *ProjectDetailUpdate) SetLessonsLearned(s string) *ProjectDetailUpdate {
-	pdu.mutation.SetLessonsLearned(s)
-	return pdu
-}
-
-// SetNillableLessonsLearned sets the "lessons_learned" field if the given value is not nil.
-func (pdu *ProjectDetailUpdate) SetNillableLessonsLearned(s *string) *ProjectDetailUpdate {
-	if s != nil {
-		pdu.SetLessonsLearned(*s)
-	}
-	return pdu
-}
-
-// ClearLessonsLearned clears the value of the "lessons_learned" field.
-func (pdu *ProjectDetailUpdate) ClearLessonsLearned() *ProjectDetailUpdate {
-	pdu.mutation.ClearLessonsLearned()
-	return pdu
-}
-
-// SetFutureEnhancements sets the "future_enhancements" field.
-func (pdu *ProjectDetailUpdate) SetFutureEnhancements(s string) *ProjectDetailUpdate {
-	pdu.mutation.SetFutureEnhancements(s)
-	return pdu
-}
-
-// SetNillableFutureEnhancements sets the "future_enhancements" field if the given value is not nil.
-func (pdu *ProjectDetailUpdate) SetNillableFutureEnhancements(s *string) *ProjectDetailUpdate {
-	if s != nil {
-		pdu.SetFutureEnhancements(*s)
-	}
-	return pdu
-}
-
-// ClearFutureEnhancements clears the value of the "future_enhancements" field.
-func (pdu *ProjectDetailUpdate) ClearFutureEnhancements() *ProjectDetailUpdate {
-	pdu.mutation.ClearFutureEnhancements()
+// ClearDependencies clears the value of the "dependencies" field.
+func (pdu *ProjectDetailUpdate) ClearDependencies() *ProjectDetailUpdate {
+	pdu.mutation.ClearDependencies()
 	return pdu
 }
 
@@ -349,41 +309,29 @@ func (pdu *ProjectDetailUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			}
 		}
 	}
-	if value, ok := pdu.mutation.DetailedDescription(); ok {
-		_spec.SetField(projectdetail.FieldDetailedDescription, field.TypeString, value)
+	if value, ok := pdu.mutation.ProjectDetails(); ok {
+		_spec.SetField(projectdetail.FieldProjectDetails, field.TypeString, value)
 	}
-	if pdu.mutation.DetailedDescriptionCleared() {
-		_spec.ClearField(projectdetail.FieldDetailedDescription, field.TypeString)
+	if pdu.mutation.ProjectDetailsCleared() {
+		_spec.ClearField(projectdetail.FieldProjectDetails, field.TypeString)
 	}
-	if value, ok := pdu.mutation.Goals(); ok {
-		_spec.SetField(projectdetail.FieldGoals, field.TypeString, value)
+	if value, ok := pdu.mutation.QuickStart(); ok {
+		_spec.SetField(projectdetail.FieldQuickStart, field.TypeString, value)
 	}
-	if pdu.mutation.GoalsCleared() {
-		_spec.ClearField(projectdetail.FieldGoals, field.TypeString)
+	if pdu.mutation.QuickStartCleared() {
+		_spec.ClearField(projectdetail.FieldQuickStart, field.TypeString)
 	}
-	if value, ok := pdu.mutation.Challenges(); ok {
-		_spec.SetField(projectdetail.FieldChallenges, field.TypeString, value)
+	if value, ok := pdu.mutation.ReleaseNotes(); ok {
+		_spec.SetField(projectdetail.FieldReleaseNotes, field.TypeString, value)
 	}
-	if pdu.mutation.ChallengesCleared() {
-		_spec.ClearField(projectdetail.FieldChallenges, field.TypeString)
+	if pdu.mutation.ReleaseNotesCleared() {
+		_spec.ClearField(projectdetail.FieldReleaseNotes, field.TypeString)
 	}
-	if value, ok := pdu.mutation.Solutions(); ok {
-		_spec.SetField(projectdetail.FieldSolutions, field.TypeString, value)
+	if value, ok := pdu.mutation.Dependencies(); ok {
+		_spec.SetField(projectdetail.FieldDependencies, field.TypeString, value)
 	}
-	if pdu.mutation.SolutionsCleared() {
-		_spec.ClearField(projectdetail.FieldSolutions, field.TypeString)
-	}
-	if value, ok := pdu.mutation.LessonsLearned(); ok {
-		_spec.SetField(projectdetail.FieldLessonsLearned, field.TypeString, value)
-	}
-	if pdu.mutation.LessonsLearnedCleared() {
-		_spec.ClearField(projectdetail.FieldLessonsLearned, field.TypeString)
-	}
-	if value, ok := pdu.mutation.FutureEnhancements(); ok {
-		_spec.SetField(projectdetail.FieldFutureEnhancements, field.TypeString, value)
-	}
-	if pdu.mutation.FutureEnhancementsCleared() {
-		_spec.ClearField(projectdetail.FieldFutureEnhancements, field.TypeString)
+	if pdu.mutation.DependenciesCleared() {
+		_spec.ClearField(projectdetail.FieldDependencies, field.TypeString)
 	}
 	if value, ok := pdu.mutation.License(); ok {
 		_spec.SetField(projectdetail.FieldLicense, field.TypeString, value)
@@ -514,123 +462,83 @@ func (pduo *ProjectDetailUpdateOne) SetNillableProjectID(u *uuid.UUID) *ProjectD
 	return pduo
 }
 
-// SetDetailedDescription sets the "detailed_description" field.
-func (pduo *ProjectDetailUpdateOne) SetDetailedDescription(s string) *ProjectDetailUpdateOne {
-	pduo.mutation.SetDetailedDescription(s)
+// SetProjectDetails sets the "project_details" field.
+func (pduo *ProjectDetailUpdateOne) SetProjectDetails(s string) *ProjectDetailUpdateOne {
+	pduo.mutation.SetProjectDetails(s)
 	return pduo
 }
 
-// SetNillableDetailedDescription sets the "detailed_description" field if the given value is not nil.
-func (pduo *ProjectDetailUpdateOne) SetNillableDetailedDescription(s *string) *ProjectDetailUpdateOne {
+// SetNillableProjectDetails sets the "project_details" field if the given value is not nil.
+func (pduo *ProjectDetailUpdateOne) SetNillableProjectDetails(s *string) *ProjectDetailUpdateOne {
 	if s != nil {
-		pduo.SetDetailedDescription(*s)
+		pduo.SetProjectDetails(*s)
 	}
 	return pduo
 }
 
-// ClearDetailedDescription clears the value of the "detailed_description" field.
-func (pduo *ProjectDetailUpdateOne) ClearDetailedDescription() *ProjectDetailUpdateOne {
-	pduo.mutation.ClearDetailedDescription()
+// ClearProjectDetails clears the value of the "project_details" field.
+func (pduo *ProjectDetailUpdateOne) ClearProjectDetails() *ProjectDetailUpdateOne {
+	pduo.mutation.ClearProjectDetails()
 	return pduo
 }
 
-// SetGoals sets the "goals" field.
-func (pduo *ProjectDetailUpdateOne) SetGoals(s string) *ProjectDetailUpdateOne {
-	pduo.mutation.SetGoals(s)
+// SetQuickStart sets the "quick_start" field.
+func (pduo *ProjectDetailUpdateOne) SetQuickStart(s string) *ProjectDetailUpdateOne {
+	pduo.mutation.SetQuickStart(s)
 	return pduo
 }
 
-// SetNillableGoals sets the "goals" field if the given value is not nil.
-func (pduo *ProjectDetailUpdateOne) SetNillableGoals(s *string) *ProjectDetailUpdateOne {
+// SetNillableQuickStart sets the "quick_start" field if the given value is not nil.
+func (pduo *ProjectDetailUpdateOne) SetNillableQuickStart(s *string) *ProjectDetailUpdateOne {
 	if s != nil {
-		pduo.SetGoals(*s)
+		pduo.SetQuickStart(*s)
 	}
 	return pduo
 }
 
-// ClearGoals clears the value of the "goals" field.
-func (pduo *ProjectDetailUpdateOne) ClearGoals() *ProjectDetailUpdateOne {
-	pduo.mutation.ClearGoals()
+// ClearQuickStart clears the value of the "quick_start" field.
+func (pduo *ProjectDetailUpdateOne) ClearQuickStart() *ProjectDetailUpdateOne {
+	pduo.mutation.ClearQuickStart()
 	return pduo
 }
 
-// SetChallenges sets the "challenges" field.
-func (pduo *ProjectDetailUpdateOne) SetChallenges(s string) *ProjectDetailUpdateOne {
-	pduo.mutation.SetChallenges(s)
+// SetReleaseNotes sets the "release_notes" field.
+func (pduo *ProjectDetailUpdateOne) SetReleaseNotes(s string) *ProjectDetailUpdateOne {
+	pduo.mutation.SetReleaseNotes(s)
 	return pduo
 }
 
-// SetNillableChallenges sets the "challenges" field if the given value is not nil.
-func (pduo *ProjectDetailUpdateOne) SetNillableChallenges(s *string) *ProjectDetailUpdateOne {
+// SetNillableReleaseNotes sets the "release_notes" field if the given value is not nil.
+func (pduo *ProjectDetailUpdateOne) SetNillableReleaseNotes(s *string) *ProjectDetailUpdateOne {
 	if s != nil {
-		pduo.SetChallenges(*s)
+		pduo.SetReleaseNotes(*s)
 	}
 	return pduo
 }
 
-// ClearChallenges clears the value of the "challenges" field.
-func (pduo *ProjectDetailUpdateOne) ClearChallenges() *ProjectDetailUpdateOne {
-	pduo.mutation.ClearChallenges()
+// ClearReleaseNotes clears the value of the "release_notes" field.
+func (pduo *ProjectDetailUpdateOne) ClearReleaseNotes() *ProjectDetailUpdateOne {
+	pduo.mutation.ClearReleaseNotes()
 	return pduo
 }
 
-// SetSolutions sets the "solutions" field.
-func (pduo *ProjectDetailUpdateOne) SetSolutions(s string) *ProjectDetailUpdateOne {
-	pduo.mutation.SetSolutions(s)
+// SetDependencies sets the "dependencies" field.
+func (pduo *ProjectDetailUpdateOne) SetDependencies(s string) *ProjectDetailUpdateOne {
+	pduo.mutation.SetDependencies(s)
 	return pduo
 }
 
-// SetNillableSolutions sets the "solutions" field if the given value is not nil.
-func (pduo *ProjectDetailUpdateOne) SetNillableSolutions(s *string) *ProjectDetailUpdateOne {
+// SetNillableDependencies sets the "dependencies" field if the given value is not nil.
+func (pduo *ProjectDetailUpdateOne) SetNillableDependencies(s *string) *ProjectDetailUpdateOne {
 	if s != nil {
-		pduo.SetSolutions(*s)
+		pduo.SetDependencies(*s)
 	}
 	return pduo
 }
 
-// ClearSolutions clears the value of the "solutions" field.
-func (pduo *ProjectDetailUpdateOne) ClearSolutions() *ProjectDetailUpdateOne {
-	pduo.mutation.ClearSolutions()
-	return pduo
-}
-
-// SetLessonsLearned sets the "lessons_learned" field.
-func (pduo *ProjectDetailUpdateOne) SetLessonsLearned(s string) *ProjectDetailUpdateOne {
-	pduo.mutation.SetLessonsLearned(s)
-	return pduo
-}
-
-// SetNillableLessonsLearned sets the "lessons_learned" field if the given value is not nil.
-func (pduo *ProjectDetailUpdateOne) SetNillableLessonsLearned(s *string) *ProjectDetailUpdateOne {
-	if s != nil {
-		pduo.SetLessonsLearned(*s)
-	}
-	return pduo
-}
-
-// ClearLessonsLearned clears the value of the "lessons_learned" field.
-func (pduo *ProjectDetailUpdateOne) ClearLessonsLearned() *ProjectDetailUpdateOne {
-	pduo.mutation.ClearLessonsLearned()
-	return pduo
-}
-
-// SetFutureEnhancements sets the "future_enhancements" field.
-func (pduo *ProjectDetailUpdateOne) SetFutureEnhancements(s string) *ProjectDetailUpdateOne {
-	pduo.mutation.SetFutureEnhancements(s)
-	return pduo
-}
-
-// SetNillableFutureEnhancements sets the "future_enhancements" field if the given value is not nil.
-func (pduo *ProjectDetailUpdateOne) SetNillableFutureEnhancements(s *string) *ProjectDetailUpdateOne {
-	if s != nil {
-		pduo.SetFutureEnhancements(*s)
-	}
-	return pduo
-}
-
-// ClearFutureEnhancements clears the value of the "future_enhancements" field.
-func (pduo *ProjectDetailUpdateOne) ClearFutureEnhancements() *ProjectDetailUpdateOne {
-	pduo.mutation.ClearFutureEnhancements()
+// ClearDependencies clears the value of the "dependencies" field.
+func (pduo *ProjectDetailUpdateOne) ClearDependencies() *ProjectDetailUpdateOne {
+	pduo.mutation.ClearDependencies()
 	return pduo
 }
 
@@ -848,41 +756,29 @@ func (pduo *ProjectDetailUpdateOne) sqlSave(ctx context.Context) (_node *Project
 			}
 		}
 	}
-	if value, ok := pduo.mutation.DetailedDescription(); ok {
-		_spec.SetField(projectdetail.FieldDetailedDescription, field.TypeString, value)
+	if value, ok := pduo.mutation.ProjectDetails(); ok {
+		_spec.SetField(projectdetail.FieldProjectDetails, field.TypeString, value)
 	}
-	if pduo.mutation.DetailedDescriptionCleared() {
-		_spec.ClearField(projectdetail.FieldDetailedDescription, field.TypeString)
+	if pduo.mutation.ProjectDetailsCleared() {
+		_spec.ClearField(projectdetail.FieldProjectDetails, field.TypeString)
 	}
-	if value, ok := pduo.mutation.Goals(); ok {
-		_spec.SetField(projectdetail.FieldGoals, field.TypeString, value)
+	if value, ok := pduo.mutation.QuickStart(); ok {
+		_spec.SetField(projectdetail.FieldQuickStart, field.TypeString, value)
 	}
-	if pduo.mutation.GoalsCleared() {
-		_spec.ClearField(projectdetail.FieldGoals, field.TypeString)
+	if pduo.mutation.QuickStartCleared() {
+		_spec.ClearField(projectdetail.FieldQuickStart, field.TypeString)
 	}
-	if value, ok := pduo.mutation.Challenges(); ok {
-		_spec.SetField(projectdetail.FieldChallenges, field.TypeString, value)
+	if value, ok := pduo.mutation.ReleaseNotes(); ok {
+		_spec.SetField(projectdetail.FieldReleaseNotes, field.TypeString, value)
 	}
-	if pduo.mutation.ChallengesCleared() {
-		_spec.ClearField(projectdetail.FieldChallenges, field.TypeString)
+	if pduo.mutation.ReleaseNotesCleared() {
+		_spec.ClearField(projectdetail.FieldReleaseNotes, field.TypeString)
 	}
-	if value, ok := pduo.mutation.Solutions(); ok {
-		_spec.SetField(projectdetail.FieldSolutions, field.TypeString, value)
+	if value, ok := pduo.mutation.Dependencies(); ok {
+		_spec.SetField(projectdetail.FieldDependencies, field.TypeString, value)
 	}
-	if pduo.mutation.SolutionsCleared() {
-		_spec.ClearField(projectdetail.FieldSolutions, field.TypeString)
-	}
-	if value, ok := pduo.mutation.LessonsLearned(); ok {
-		_spec.SetField(projectdetail.FieldLessonsLearned, field.TypeString, value)
-	}
-	if pduo.mutation.LessonsLearnedCleared() {
-		_spec.ClearField(projectdetail.FieldLessonsLearned, field.TypeString)
-	}
-	if value, ok := pduo.mutation.FutureEnhancements(); ok {
-		_spec.SetField(projectdetail.FieldFutureEnhancements, field.TypeString, value)
-	}
-	if pduo.mutation.FutureEnhancementsCleared() {
-		_spec.ClearField(projectdetail.FieldFutureEnhancements, field.TypeString)
+	if pduo.mutation.DependenciesCleared() {
+		_spec.ClearField(projectdetail.FieldDependencies, field.TypeString)
 	}
 	if value, ok := pduo.mutation.License(); ok {
 		_spec.SetField(projectdetail.FieldLicense, field.TypeString, value)

@@ -9,6 +9,7 @@ import (
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
 	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/predicate"
@@ -76,6 +77,26 @@ func (iu *IdeaUpdate) SetNillableSlug(s *string) *IdeaUpdate {
 	return iu
 }
 
+// SetDescription sets the "description" field.
+func (iu *IdeaUpdate) SetDescription(s string) *IdeaUpdate {
+	iu.mutation.SetDescription(s)
+	return iu
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (iu *IdeaUpdate) SetNillableDescription(s *string) *IdeaUpdate {
+	if s != nil {
+		iu.SetDescription(*s)
+	}
+	return iu
+}
+
+// ClearDescription clears the value of the "description" field.
+func (iu *IdeaUpdate) ClearDescription() *IdeaUpdate {
+	iu.mutation.ClearDescription()
+	return iu
+}
+
 // SetAbstract sets the "abstract" field.
 func (iu *IdeaUpdate) SetAbstract(s string) *IdeaUpdate {
 	iu.mutation.SetAbstract(s)
@@ -93,66 +114,6 @@ func (iu *IdeaUpdate) SetNillableAbstract(s *string) *IdeaUpdate {
 // ClearAbstract clears the value of the "abstract" field.
 func (iu *IdeaUpdate) ClearAbstract() *IdeaUpdate {
 	iu.mutation.ClearAbstract()
-	return iu
-}
-
-// SetMotivation sets the "motivation" field.
-func (iu *IdeaUpdate) SetMotivation(s string) *IdeaUpdate {
-	iu.mutation.SetMotivation(s)
-	return iu
-}
-
-// SetNillableMotivation sets the "motivation" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableMotivation(s *string) *IdeaUpdate {
-	if s != nil {
-		iu.SetMotivation(*s)
-	}
-	return iu
-}
-
-// ClearMotivation clears the value of the "motivation" field.
-func (iu *IdeaUpdate) ClearMotivation() *IdeaUpdate {
-	iu.mutation.ClearMotivation()
-	return iu
-}
-
-// SetMethodology sets the "methodology" field.
-func (iu *IdeaUpdate) SetMethodology(s string) *IdeaUpdate {
-	iu.mutation.SetMethodology(s)
-	return iu
-}
-
-// SetNillableMethodology sets the "methodology" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableMethodology(s *string) *IdeaUpdate {
-	if s != nil {
-		iu.SetMethodology(*s)
-	}
-	return iu
-}
-
-// ClearMethodology clears the value of the "methodology" field.
-func (iu *IdeaUpdate) ClearMethodology() *IdeaUpdate {
-	iu.mutation.ClearMethodology()
-	return iu
-}
-
-// SetExpectedOutcome sets the "expected_outcome" field.
-func (iu *IdeaUpdate) SetExpectedOutcome(s string) *IdeaUpdate {
-	iu.mutation.SetExpectedOutcome(s)
-	return iu
-}
-
-// SetNillableExpectedOutcome sets the "expected_outcome" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableExpectedOutcome(s *string) *IdeaUpdate {
-	if s != nil {
-		iu.SetExpectedOutcome(*s)
-	}
-	return iu
-}
-
-// ClearExpectedOutcome clears the value of the "expected_outcome" field.
-func (iu *IdeaUpdate) ClearExpectedOutcome() *IdeaUpdate {
-	iu.mutation.ClearExpectedOutcome()
 	return iu
 }
 
@@ -181,108 +142,6 @@ func (iu *IdeaUpdate) SetNillablePriority(i *idea.Priority) *IdeaUpdate {
 	if i != nil {
 		iu.SetPriority(*i)
 	}
-	return iu
-}
-
-// SetEstimatedDurationMonths sets the "estimated_duration_months" field.
-func (iu *IdeaUpdate) SetEstimatedDurationMonths(i int) *IdeaUpdate {
-	iu.mutation.ResetEstimatedDurationMonths()
-	iu.mutation.SetEstimatedDurationMonths(i)
-	return iu
-}
-
-// SetNillableEstimatedDurationMonths sets the "estimated_duration_months" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableEstimatedDurationMonths(i *int) *IdeaUpdate {
-	if i != nil {
-		iu.SetEstimatedDurationMonths(*i)
-	}
-	return iu
-}
-
-// AddEstimatedDurationMonths adds i to the "estimated_duration_months" field.
-func (iu *IdeaUpdate) AddEstimatedDurationMonths(i int) *IdeaUpdate {
-	iu.mutation.AddEstimatedDurationMonths(i)
-	return iu
-}
-
-// ClearEstimatedDurationMonths clears the value of the "estimated_duration_months" field.
-func (iu *IdeaUpdate) ClearEstimatedDurationMonths() *IdeaUpdate {
-	iu.mutation.ClearEstimatedDurationMonths()
-	return iu
-}
-
-// SetRequiredResources sets the "required_resources" field.
-func (iu *IdeaUpdate) SetRequiredResources(s string) *IdeaUpdate {
-	iu.mutation.SetRequiredResources(s)
-	return iu
-}
-
-// SetNillableRequiredResources sets the "required_resources" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableRequiredResources(s *string) *IdeaUpdate {
-	if s != nil {
-		iu.SetRequiredResources(*s)
-	}
-	return iu
-}
-
-// ClearRequiredResources clears the value of the "required_resources" field.
-func (iu *IdeaUpdate) ClearRequiredResources() *IdeaUpdate {
-	iu.mutation.ClearRequiredResources()
-	return iu
-}
-
-// SetCollaborationNeeded sets the "collaboration_needed" field.
-func (iu *IdeaUpdate) SetCollaborationNeeded(b bool) *IdeaUpdate {
-	iu.mutation.SetCollaborationNeeded(b)
-	return iu
-}
-
-// SetNillableCollaborationNeeded sets the "collaboration_needed" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableCollaborationNeeded(b *bool) *IdeaUpdate {
-	if b != nil {
-		iu.SetCollaborationNeeded(*b)
-	}
-	return iu
-}
-
-// SetFundingRequired sets the "funding_required" field.
-func (iu *IdeaUpdate) SetFundingRequired(b bool) *IdeaUpdate {
-	iu.mutation.SetFundingRequired(b)
-	return iu
-}
-
-// SetNillableFundingRequired sets the "funding_required" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableFundingRequired(b *bool) *IdeaUpdate {
-	if b != nil {
-		iu.SetFundingRequired(*b)
-	}
-	return iu
-}
-
-// SetEstimatedBudget sets the "estimated_budget" field.
-func (iu *IdeaUpdate) SetEstimatedBudget(f float64) *IdeaUpdate {
-	iu.mutation.ResetEstimatedBudget()
-	iu.mutation.SetEstimatedBudget(f)
-	return iu
-}
-
-// SetNillableEstimatedBudget sets the "estimated_budget" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillableEstimatedBudget(f *float64) *IdeaUpdate {
-	if f != nil {
-		iu.SetEstimatedBudget(*f)
-	}
-	return iu
-}
-
-// AddEstimatedBudget adds f to the "estimated_budget" field.
-func (iu *IdeaUpdate) AddEstimatedBudget(f float64) *IdeaUpdate {
-	iu.mutation.AddEstimatedBudget(f)
-	return iu
-}
-
-// ClearEstimatedBudget clears the value of the "estimated_budget" field.
-func (iu *IdeaUpdate) ClearEstimatedBudget() *IdeaUpdate {
-	iu.mutation.ClearEstimatedBudget()
 	return iu
 }
 
@@ -388,6 +247,25 @@ func (iu *IdeaUpdate) AddTranslations(i ...*IdeaTranslation) *IdeaUpdate {
 	return iu.AddTranslationIDs(ids...)
 }
 
+// SetDetailsID sets the "details" edge to the IdeaDetail entity by ID.
+func (iu *IdeaUpdate) SetDetailsID(id uuid.UUID) *IdeaUpdate {
+	iu.mutation.SetDetailsID(id)
+	return iu
+}
+
+// SetNillableDetailsID sets the "details" edge to the IdeaDetail entity by ID if the given value is not nil.
+func (iu *IdeaUpdate) SetNillableDetailsID(id *uuid.UUID) *IdeaUpdate {
+	if id != nil {
+		iu = iu.SetDetailsID(*id)
+	}
+	return iu
+}
+
+// SetDetails sets the "details" edge to the IdeaDetail entity.
+func (iu *IdeaUpdate) SetDetails(i *IdeaDetail) *IdeaUpdate {
+	return iu.SetDetailsID(i.ID)
+}
+
 // AddBlogPostIDs adds the "blog_posts" edge to the BlogPost entity by IDs.
 func (iu *IdeaUpdate) AddBlogPostIDs(ids ...uuid.UUID) *IdeaUpdate {
 	iu.mutation.AddBlogPostIDs(ids...)
@@ -463,6 +341,12 @@ func (iu *IdeaUpdate) RemoveTranslations(i ...*IdeaTranslation) *IdeaUpdate {
 		ids[j] = i[j].ID
 	}
 	return iu.RemoveTranslationIDs(ids...)
+}
+
+// ClearDetails clears the "details" edge to the IdeaDetail entity.
+func (iu *IdeaUpdate) ClearDetails() *IdeaUpdate {
+	iu.mutation.ClearDetails()
+	return iu
 }
 
 // ClearBlogPosts clears all "blog_posts" edges to the BlogPost entity.
@@ -615,65 +499,23 @@ func (iu *IdeaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := iu.mutation.Slug(); ok {
 		_spec.SetField(idea.FieldSlug, field.TypeString, value)
 	}
+	if value, ok := iu.mutation.Description(); ok {
+		_spec.SetField(idea.FieldDescription, field.TypeString, value)
+	}
+	if iu.mutation.DescriptionCleared() {
+		_spec.ClearField(idea.FieldDescription, field.TypeString)
+	}
 	if value, ok := iu.mutation.Abstract(); ok {
 		_spec.SetField(idea.FieldAbstract, field.TypeString, value)
 	}
 	if iu.mutation.AbstractCleared() {
 		_spec.ClearField(idea.FieldAbstract, field.TypeString)
 	}
-	if value, ok := iu.mutation.Motivation(); ok {
-		_spec.SetField(idea.FieldMotivation, field.TypeString, value)
-	}
-	if iu.mutation.MotivationCleared() {
-		_spec.ClearField(idea.FieldMotivation, field.TypeString)
-	}
-	if value, ok := iu.mutation.Methodology(); ok {
-		_spec.SetField(idea.FieldMethodology, field.TypeString, value)
-	}
-	if iu.mutation.MethodologyCleared() {
-		_spec.ClearField(idea.FieldMethodology, field.TypeString)
-	}
-	if value, ok := iu.mutation.ExpectedOutcome(); ok {
-		_spec.SetField(idea.FieldExpectedOutcome, field.TypeString, value)
-	}
-	if iu.mutation.ExpectedOutcomeCleared() {
-		_spec.ClearField(idea.FieldExpectedOutcome, field.TypeString)
-	}
 	if value, ok := iu.mutation.Status(); ok {
 		_spec.SetField(idea.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := iu.mutation.Priority(); ok {
 		_spec.SetField(idea.FieldPriority, field.TypeEnum, value)
-	}
-	if value, ok := iu.mutation.EstimatedDurationMonths(); ok {
-		_spec.SetField(idea.FieldEstimatedDurationMonths, field.TypeInt, value)
-	}
-	if value, ok := iu.mutation.AddedEstimatedDurationMonths(); ok {
-		_spec.AddField(idea.FieldEstimatedDurationMonths, field.TypeInt, value)
-	}
-	if iu.mutation.EstimatedDurationMonthsCleared() {
-		_spec.ClearField(idea.FieldEstimatedDurationMonths, field.TypeInt)
-	}
-	if value, ok := iu.mutation.RequiredResources(); ok {
-		_spec.SetField(idea.FieldRequiredResources, field.TypeString, value)
-	}
-	if iu.mutation.RequiredResourcesCleared() {
-		_spec.ClearField(idea.FieldRequiredResources, field.TypeString)
-	}
-	if value, ok := iu.mutation.CollaborationNeeded(); ok {
-		_spec.SetField(idea.FieldCollaborationNeeded, field.TypeBool, value)
-	}
-	if value, ok := iu.mutation.FundingRequired(); ok {
-		_spec.SetField(idea.FieldFundingRequired, field.TypeBool, value)
-	}
-	if value, ok := iu.mutation.EstimatedBudget(); ok {
-		_spec.SetField(idea.FieldEstimatedBudget, field.TypeFloat64, value)
-	}
-	if value, ok := iu.mutation.AddedEstimatedBudget(); ok {
-		_spec.AddField(idea.FieldEstimatedBudget, field.TypeFloat64, value)
-	}
-	if iu.mutation.EstimatedBudgetCleared() {
-		_spec.ClearField(idea.FieldEstimatedBudget, field.TypeFloat64)
 	}
 	if value, ok := iu.mutation.IsPublic(); ok {
 		_spec.SetField(idea.FieldIsPublic, field.TypeBool, value)
@@ -766,6 +608,35 @@ func (iu *IdeaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(ideatranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iu.mutation.DetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   idea.DetailsTable,
+			Columns: []string{idea.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.DetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   idea.DetailsTable,
+			Columns: []string{idea.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetail.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -970,6 +841,26 @@ func (iuo *IdeaUpdateOne) SetNillableSlug(s *string) *IdeaUpdateOne {
 	return iuo
 }
 
+// SetDescription sets the "description" field.
+func (iuo *IdeaUpdateOne) SetDescription(s string) *IdeaUpdateOne {
+	iuo.mutation.SetDescription(s)
+	return iuo
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (iuo *IdeaUpdateOne) SetNillableDescription(s *string) *IdeaUpdateOne {
+	if s != nil {
+		iuo.SetDescription(*s)
+	}
+	return iuo
+}
+
+// ClearDescription clears the value of the "description" field.
+func (iuo *IdeaUpdateOne) ClearDescription() *IdeaUpdateOne {
+	iuo.mutation.ClearDescription()
+	return iuo
+}
+
 // SetAbstract sets the "abstract" field.
 func (iuo *IdeaUpdateOne) SetAbstract(s string) *IdeaUpdateOne {
 	iuo.mutation.SetAbstract(s)
@@ -987,66 +878,6 @@ func (iuo *IdeaUpdateOne) SetNillableAbstract(s *string) *IdeaUpdateOne {
 // ClearAbstract clears the value of the "abstract" field.
 func (iuo *IdeaUpdateOne) ClearAbstract() *IdeaUpdateOne {
 	iuo.mutation.ClearAbstract()
-	return iuo
-}
-
-// SetMotivation sets the "motivation" field.
-func (iuo *IdeaUpdateOne) SetMotivation(s string) *IdeaUpdateOne {
-	iuo.mutation.SetMotivation(s)
-	return iuo
-}
-
-// SetNillableMotivation sets the "motivation" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableMotivation(s *string) *IdeaUpdateOne {
-	if s != nil {
-		iuo.SetMotivation(*s)
-	}
-	return iuo
-}
-
-// ClearMotivation clears the value of the "motivation" field.
-func (iuo *IdeaUpdateOne) ClearMotivation() *IdeaUpdateOne {
-	iuo.mutation.ClearMotivation()
-	return iuo
-}
-
-// SetMethodology sets the "methodology" field.
-func (iuo *IdeaUpdateOne) SetMethodology(s string) *IdeaUpdateOne {
-	iuo.mutation.SetMethodology(s)
-	return iuo
-}
-
-// SetNillableMethodology sets the "methodology" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableMethodology(s *string) *IdeaUpdateOne {
-	if s != nil {
-		iuo.SetMethodology(*s)
-	}
-	return iuo
-}
-
-// ClearMethodology clears the value of the "methodology" field.
-func (iuo *IdeaUpdateOne) ClearMethodology() *IdeaUpdateOne {
-	iuo.mutation.ClearMethodology()
-	return iuo
-}
-
-// SetExpectedOutcome sets the "expected_outcome" field.
-func (iuo *IdeaUpdateOne) SetExpectedOutcome(s string) *IdeaUpdateOne {
-	iuo.mutation.SetExpectedOutcome(s)
-	return iuo
-}
-
-// SetNillableExpectedOutcome sets the "expected_outcome" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableExpectedOutcome(s *string) *IdeaUpdateOne {
-	if s != nil {
-		iuo.SetExpectedOutcome(*s)
-	}
-	return iuo
-}
-
-// ClearExpectedOutcome clears the value of the "expected_outcome" field.
-func (iuo *IdeaUpdateOne) ClearExpectedOutcome() *IdeaUpdateOne {
-	iuo.mutation.ClearExpectedOutcome()
 	return iuo
 }
 
@@ -1075,108 +906,6 @@ func (iuo *IdeaUpdateOne) SetNillablePriority(i *idea.Priority) *IdeaUpdateOne {
 	if i != nil {
 		iuo.SetPriority(*i)
 	}
-	return iuo
-}
-
-// SetEstimatedDurationMonths sets the "estimated_duration_months" field.
-func (iuo *IdeaUpdateOne) SetEstimatedDurationMonths(i int) *IdeaUpdateOne {
-	iuo.mutation.ResetEstimatedDurationMonths()
-	iuo.mutation.SetEstimatedDurationMonths(i)
-	return iuo
-}
-
-// SetNillableEstimatedDurationMonths sets the "estimated_duration_months" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableEstimatedDurationMonths(i *int) *IdeaUpdateOne {
-	if i != nil {
-		iuo.SetEstimatedDurationMonths(*i)
-	}
-	return iuo
-}
-
-// AddEstimatedDurationMonths adds i to the "estimated_duration_months" field.
-func (iuo *IdeaUpdateOne) AddEstimatedDurationMonths(i int) *IdeaUpdateOne {
-	iuo.mutation.AddEstimatedDurationMonths(i)
-	return iuo
-}
-
-// ClearEstimatedDurationMonths clears the value of the "estimated_duration_months" field.
-func (iuo *IdeaUpdateOne) ClearEstimatedDurationMonths() *IdeaUpdateOne {
-	iuo.mutation.ClearEstimatedDurationMonths()
-	return iuo
-}
-
-// SetRequiredResources sets the "required_resources" field.
-func (iuo *IdeaUpdateOne) SetRequiredResources(s string) *IdeaUpdateOne {
-	iuo.mutation.SetRequiredResources(s)
-	return iuo
-}
-
-// SetNillableRequiredResources sets the "required_resources" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableRequiredResources(s *string) *IdeaUpdateOne {
-	if s != nil {
-		iuo.SetRequiredResources(*s)
-	}
-	return iuo
-}
-
-// ClearRequiredResources clears the value of the "required_resources" field.
-func (iuo *IdeaUpdateOne) ClearRequiredResources() *IdeaUpdateOne {
-	iuo.mutation.ClearRequiredResources()
-	return iuo
-}
-
-// SetCollaborationNeeded sets the "collaboration_needed" field.
-func (iuo *IdeaUpdateOne) SetCollaborationNeeded(b bool) *IdeaUpdateOne {
-	iuo.mutation.SetCollaborationNeeded(b)
-	return iuo
-}
-
-// SetNillableCollaborationNeeded sets the "collaboration_needed" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableCollaborationNeeded(b *bool) *IdeaUpdateOne {
-	if b != nil {
-		iuo.SetCollaborationNeeded(*b)
-	}
-	return iuo
-}
-
-// SetFundingRequired sets the "funding_required" field.
-func (iuo *IdeaUpdateOne) SetFundingRequired(b bool) *IdeaUpdateOne {
-	iuo.mutation.SetFundingRequired(b)
-	return iuo
-}
-
-// SetNillableFundingRequired sets the "funding_required" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableFundingRequired(b *bool) *IdeaUpdateOne {
-	if b != nil {
-		iuo.SetFundingRequired(*b)
-	}
-	return iuo
-}
-
-// SetEstimatedBudget sets the "estimated_budget" field.
-func (iuo *IdeaUpdateOne) SetEstimatedBudget(f float64) *IdeaUpdateOne {
-	iuo.mutation.ResetEstimatedBudget()
-	iuo.mutation.SetEstimatedBudget(f)
-	return iuo
-}
-
-// SetNillableEstimatedBudget sets the "estimated_budget" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillableEstimatedBudget(f *float64) *IdeaUpdateOne {
-	if f != nil {
-		iuo.SetEstimatedBudget(*f)
-	}
-	return iuo
-}
-
-// AddEstimatedBudget adds f to the "estimated_budget" field.
-func (iuo *IdeaUpdateOne) AddEstimatedBudget(f float64) *IdeaUpdateOne {
-	iuo.mutation.AddEstimatedBudget(f)
-	return iuo
-}
-
-// ClearEstimatedBudget clears the value of the "estimated_budget" field.
-func (iuo *IdeaUpdateOne) ClearEstimatedBudget() *IdeaUpdateOne {
-	iuo.mutation.ClearEstimatedBudget()
 	return iuo
 }
 
@@ -1282,6 +1011,25 @@ func (iuo *IdeaUpdateOne) AddTranslations(i ...*IdeaTranslation) *IdeaUpdateOne 
 	return iuo.AddTranslationIDs(ids...)
 }
 
+// SetDetailsID sets the "details" edge to the IdeaDetail entity by ID.
+func (iuo *IdeaUpdateOne) SetDetailsID(id uuid.UUID) *IdeaUpdateOne {
+	iuo.mutation.SetDetailsID(id)
+	return iuo
+}
+
+// SetNillableDetailsID sets the "details" edge to the IdeaDetail entity by ID if the given value is not nil.
+func (iuo *IdeaUpdateOne) SetNillableDetailsID(id *uuid.UUID) *IdeaUpdateOne {
+	if id != nil {
+		iuo = iuo.SetDetailsID(*id)
+	}
+	return iuo
+}
+
+// SetDetails sets the "details" edge to the IdeaDetail entity.
+func (iuo *IdeaUpdateOne) SetDetails(i *IdeaDetail) *IdeaUpdateOne {
+	return iuo.SetDetailsID(i.ID)
+}
+
 // AddBlogPostIDs adds the "blog_posts" edge to the BlogPost entity by IDs.
 func (iuo *IdeaUpdateOne) AddBlogPostIDs(ids ...uuid.UUID) *IdeaUpdateOne {
 	iuo.mutation.AddBlogPostIDs(ids...)
@@ -1357,6 +1105,12 @@ func (iuo *IdeaUpdateOne) RemoveTranslations(i ...*IdeaTranslation) *IdeaUpdateO
 		ids[j] = i[j].ID
 	}
 	return iuo.RemoveTranslationIDs(ids...)
+}
+
+// ClearDetails clears the "details" edge to the IdeaDetail entity.
+func (iuo *IdeaUpdateOne) ClearDetails() *IdeaUpdateOne {
+	iuo.mutation.ClearDetails()
+	return iuo
 }
 
 // ClearBlogPosts clears all "blog_posts" edges to the BlogPost entity.
@@ -1539,65 +1293,23 @@ func (iuo *IdeaUpdateOne) sqlSave(ctx context.Context) (_node *Idea, err error) 
 	if value, ok := iuo.mutation.Slug(); ok {
 		_spec.SetField(idea.FieldSlug, field.TypeString, value)
 	}
+	if value, ok := iuo.mutation.Description(); ok {
+		_spec.SetField(idea.FieldDescription, field.TypeString, value)
+	}
+	if iuo.mutation.DescriptionCleared() {
+		_spec.ClearField(idea.FieldDescription, field.TypeString)
+	}
 	if value, ok := iuo.mutation.Abstract(); ok {
 		_spec.SetField(idea.FieldAbstract, field.TypeString, value)
 	}
 	if iuo.mutation.AbstractCleared() {
 		_spec.ClearField(idea.FieldAbstract, field.TypeString)
 	}
-	if value, ok := iuo.mutation.Motivation(); ok {
-		_spec.SetField(idea.FieldMotivation, field.TypeString, value)
-	}
-	if iuo.mutation.MotivationCleared() {
-		_spec.ClearField(idea.FieldMotivation, field.TypeString)
-	}
-	if value, ok := iuo.mutation.Methodology(); ok {
-		_spec.SetField(idea.FieldMethodology, field.TypeString, value)
-	}
-	if iuo.mutation.MethodologyCleared() {
-		_spec.ClearField(idea.FieldMethodology, field.TypeString)
-	}
-	if value, ok := iuo.mutation.ExpectedOutcome(); ok {
-		_spec.SetField(idea.FieldExpectedOutcome, field.TypeString, value)
-	}
-	if iuo.mutation.ExpectedOutcomeCleared() {
-		_spec.ClearField(idea.FieldExpectedOutcome, field.TypeString)
-	}
 	if value, ok := iuo.mutation.Status(); ok {
 		_spec.SetField(idea.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := iuo.mutation.Priority(); ok {
 		_spec.SetField(idea.FieldPriority, field.TypeEnum, value)
-	}
-	if value, ok := iuo.mutation.EstimatedDurationMonths(); ok {
-		_spec.SetField(idea.FieldEstimatedDurationMonths, field.TypeInt, value)
-	}
-	if value, ok := iuo.mutation.AddedEstimatedDurationMonths(); ok {
-		_spec.AddField(idea.FieldEstimatedDurationMonths, field.TypeInt, value)
-	}
-	if iuo.mutation.EstimatedDurationMonthsCleared() {
-		_spec.ClearField(idea.FieldEstimatedDurationMonths, field.TypeInt)
-	}
-	if value, ok := iuo.mutation.RequiredResources(); ok {
-		_spec.SetField(idea.FieldRequiredResources, field.TypeString, value)
-	}
-	if iuo.mutation.RequiredResourcesCleared() {
-		_spec.ClearField(idea.FieldRequiredResources, field.TypeString)
-	}
-	if value, ok := iuo.mutation.CollaborationNeeded(); ok {
-		_spec.SetField(idea.FieldCollaborationNeeded, field.TypeBool, value)
-	}
-	if value, ok := iuo.mutation.FundingRequired(); ok {
-		_spec.SetField(idea.FieldFundingRequired, field.TypeBool, value)
-	}
-	if value, ok := iuo.mutation.EstimatedBudget(); ok {
-		_spec.SetField(idea.FieldEstimatedBudget, field.TypeFloat64, value)
-	}
-	if value, ok := iuo.mutation.AddedEstimatedBudget(); ok {
-		_spec.AddField(idea.FieldEstimatedBudget, field.TypeFloat64, value)
-	}
-	if iuo.mutation.EstimatedBudgetCleared() {
-		_spec.ClearField(idea.FieldEstimatedBudget, field.TypeFloat64)
 	}
 	if value, ok := iuo.mutation.IsPublic(); ok {
 		_spec.SetField(idea.FieldIsPublic, field.TypeBool, value)
@@ -1690,6 +1402,35 @@ func (iuo *IdeaUpdateOne) sqlSave(ctx context.Context) (_node *Idea, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(ideatranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iuo.mutation.DetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   idea.DetailsTable,
+			Columns: []string{idea.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.DetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   idea.DetailsTable,
+			Columns: []string{idea.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetail.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

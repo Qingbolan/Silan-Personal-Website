@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Card } from 'antd';
 import {
   ArrowLeft,
   Lightbulb,
@@ -22,6 +23,7 @@ import { Tabs, Space } from 'antd';
 import { useTheme } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import CommunityFeedback from './CommunityFeedback';
+import Markdown from '../ui/Markdown';
 import { IdeaData } from '../../types';
 import { fetchIdeaById } from '../../api/ideas/ideaApi';
 
@@ -91,13 +93,44 @@ const IdeaDetail: React.FC = () => {
     return new Date(dateString).toLocaleDateString(language === 'en' ? 'en-US' : 'zh-CN');
   };
 
-  const tabs = [
+  // Helper function to check if a tab has content
+  const hasContent = (tabId: string): boolean => {
+    if (!idea) return false;
+
+    switch (tabId) {
+      case 'abstract':
+        return !!(idea.abstract || idea.abstractZh);
+      case 'progress':
+        return !!(idea.progress || idea.progressZh || idea.methodology || idea.methodologyZh || idea.techStack || idea.experiments);
+      case 'results':
+        return !!(idea.results || idea.resultsZh || idea.preliminaryResults || idea.preliminaryResultsZh || idea.keyFindings || idea.keyFindingsZh || idea.limitations || idea.limitationsZh || idea.futureDirections || idea.futureDirectionsZh);
+      case 'references':
+        return !!(idea.reference || idea.reference_zh || (idea.relatedWorks && idea.relatedWorks.length > 0));
+      case 'discussion':
+        // Always show discussion tab
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const allTabs = [
     { id: 'abstract', label: language === 'en' ? 'Abstract' : '摘要', icon: <Lightbulb size={18} /> },
     { id: 'progress', label: language === 'en' ? 'Latest Progress' : '最新进展', icon: <Beaker size={18} /> },
     { id: 'results', label: language === 'en' ? 'Results' : '结果', icon: <BarChart3 size={18} /> },
     { id: 'references', label: language === 'en' ? 'References' : '参考文献', icon: <BookOpen size={18} /> },
     { id: 'discussion', label: language === 'en' ? 'Discussion' : '讨论', icon: <MessageSquare size={18} /> }
   ];
+
+  // Filter tabs to only show those with content (only when idea is loaded)
+  const tabs = idea ? allTabs.filter(tab => hasContent(tab.id)) : allTabs;
+
+  // Ensure active tab is valid, switch to first available tab if current is filtered out
+  useEffect(() => {
+    if (idea && tabs.length > 0 && !tabs.find(tab => tab.id === activeTab)) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [tabs, activeTab, idea]);
 
   if (loading) {
     return (
@@ -132,12 +165,13 @@ const IdeaDetail: React.FC = () => {
 
   const renderAbstract = () => (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-xl font-semibold mb-4" style={{ color: colors.textPrimary }}>{language === 'en' ? 'Abstract' : '摘要'}</h3>
-        <p className="leading-relaxed text-justify" style={{ color: colors.textSecondary }}>
-          {language === 'en' ? idea.abstract : idea.abstractZh || idea.abstract}
-        </p>
-      </div>
+      {/* <Card> */}
+        <div className="prose max-w-none">
+          <Markdown className="text-lg">
+            {language === 'en' ? idea.abstract : idea.abstractZh || idea.abstract}
+          </Markdown>
+        </div>
+      {/* </Card> */}
 
       {idea.hypothesis && (
         <div>
@@ -182,13 +216,14 @@ const IdeaDetail: React.FC = () => {
 
   const renderProgress = () => (
     <div className="space-y-6">
-      {idea.methodology ? (
-        <div>
-          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.textPrimary }}>{language === 'en' ? 'Latest Progress' : '最新进展'}</h3>
-          <p className="leading-relaxed" style={{ color: colors.textSecondary }}>
-            {language === 'en' ? idea.methodology : idea.methodologyZh || idea.methodology}
-          </p>
-        </div>
+      {(idea.progress || idea.methodology) ? (
+        // <Card>
+          <div className="prose max-w-none">
+            <Markdown className="text-lg">
+              {language === 'en' ? (idea.progress || idea.methodology) : (idea.progressZh || idea.methodologyZh || idea.progress || idea.methodology)}
+            </Markdown>
+          </div>
+        // </Card>
       ) : (
         <div className="text-center py-12" style={{ color: colors.textSecondary }}>
           <Beaker size={48} className="mx-auto mb-4 opacity-50" />
@@ -282,13 +317,14 @@ const IdeaDetail: React.FC = () => {
 
   const renderResults = () => (
     <div className="space-y-6">
-      {idea.preliminaryResults && (
-        <div>
-          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.textPrimary }}>{language === 'en' ? 'Preliminary Results' : '初步结果'}</h3>
-          <p className="leading-relaxed" style={{ color: colors.textSecondary }}>
-            {language === 'en' ? idea.preliminaryResults : idea.preliminaryResultsZh || idea.preliminaryResults}
-          </p>
-        </div>
+      {(idea.results || idea.preliminaryResults) && (
+        // <Card>
+          <div className="prose max-w-none">
+            <Markdown className="text-lg">
+              {language === 'en' ? (idea.results || idea.preliminaryResults) : (idea.resultsZh || idea.preliminaryResultsZh || idea.results || idea.preliminaryResults)}
+            </Markdown>
+          </div>
+        // </Card>
       )}
 
       {idea.keyFindings && (
@@ -344,30 +380,41 @@ const IdeaDetail: React.FC = () => {
 
   const renderReferences = () => (
     <div className="space-y-4">
-      {idea.relatedWorks && idea.relatedWorks.length > 0 ? (
-        idea.relatedWorks.map((ref) => (
-          <div key={ref.id} className="p-6 rounded-xl" style={{ backgroundColor: colors.cardBackground, boxShadow: colors.shadowSm }}>
-            <div className="flex items-start gap-4">
-              <div className="p-2 rounded-lg" style={{ backgroundColor: colors.surface }}>
-                <FileText size={16} />
+      {(idea.reference || idea.relatedWorks?.length) ? (
+        <>
+          {idea.reference && (
+            // <Card>
+              <div className="prose max-w-none">
+                <Markdown className="text-lg">
+                  {language === 'en' ? idea.reference : (idea.reference_zh || idea.reference)}
+                </Markdown>
               </div>
-              <div className="flex-1">
-                <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{ref.title}</h4>
-                <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>
-                  {ref.authors.join(', ')} ({ref.year}) - {ref.venue}
-                </p>
-                {ref.notes && <p className="text-sm mb-3" style={{ color: colors.textTertiary }}>{ref.notes}</p>}
-                {ref.url && (
-                  <a href={ref.url} target="_blank" rel="noopener noreferrer" 
-                     className="inline-flex items-center gap-2 text-sm" style={{ color: colors.accent }}>
-                    <ExternalLink size={14} />
-                    {language === 'en' ? 'View Paper' : '查看论文'}
-                  </a>
-                )}
+            // </Card>
+          )}
+          {idea.relatedWorks && idea.relatedWorks.length > 0 && idea.relatedWorks.map((ref) => (
+            <div key={ref.id} className="p-6 rounded-xl" style={{ backgroundColor: colors.cardBackground, boxShadow: colors.shadowSm }}>
+              <div className="flex items-start gap-4">
+                <div className="p-2 rounded-lg" style={{ backgroundColor: colors.surface }}>
+                  <FileText size={16} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{ref.title}</h4>
+                  <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>
+                    {ref.authors.join(', ')} ({ref.year}) - {ref.venue}
+                  </p>
+                  {ref.notes && <p className="text-sm mb-3" style={{ color: colors.textTertiary }}>{ref.notes}</p>}
+                  {ref.url && (
+                    <a href={ref.url} target="_blank" rel="noopener noreferrer"
+                       className="inline-flex items-center gap-2 text-sm" style={{ color: colors.accent }}>
+                      <ExternalLink size={14} />
+                      {language === 'en' ? 'View Paper' : '查看论文'}
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))
+          ))}
+        </>
       ) : (
         <div className="text-center py-12" style={{ color: colors.textSecondary }}>
           <BookOpen size={48} className="mx-auto mb-4 opacity-50" />

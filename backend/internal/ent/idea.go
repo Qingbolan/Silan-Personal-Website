@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
 	"silan-backend/internal/ent/user"
 	"strings"
 	"time"
@@ -25,28 +26,14 @@ type Idea struct {
 	Title string `json:"title,omitempty"`
 	// Slug holds the value of the "slug" field.
 	Slug string `json:"slug,omitempty"`
+	// Description holds the value of the "description" field.
+	Description string `json:"description,omitempty"`
 	// Abstract holds the value of the "abstract" field.
 	Abstract string `json:"abstract,omitempty"`
-	// Motivation holds the value of the "motivation" field.
-	Motivation string `json:"motivation,omitempty"`
-	// Methodology holds the value of the "methodology" field.
-	Methodology string `json:"methodology,omitempty"`
-	// ExpectedOutcome holds the value of the "expected_outcome" field.
-	ExpectedOutcome string `json:"expected_outcome,omitempty"`
 	// Status holds the value of the "status" field.
 	Status idea.Status `json:"status,omitempty"`
 	// Priority holds the value of the "priority" field.
 	Priority idea.Priority `json:"priority,omitempty"`
-	// EstimatedDurationMonths holds the value of the "estimated_duration_months" field.
-	EstimatedDurationMonths int `json:"estimated_duration_months,omitempty"`
-	// RequiredResources holds the value of the "required_resources" field.
-	RequiredResources string `json:"required_resources,omitempty"`
-	// CollaborationNeeded holds the value of the "collaboration_needed" field.
-	CollaborationNeeded bool `json:"collaboration_needed,omitempty"`
-	// FundingRequired holds the value of the "funding_required" field.
-	FundingRequired bool `json:"funding_required,omitempty"`
-	// EstimatedBudget holds the value of the "estimated_budget" field.
-	EstimatedBudget float64 `json:"estimated_budget,omitempty"`
 	// IsPublic holds the value of the "is_public" field.
 	IsPublic bool `json:"is_public,omitempty"`
 	// ViewCount holds the value of the "view_count" field.
@@ -71,6 +58,8 @@ type IdeaEdges struct {
 	User *User `json:"user,omitempty"`
 	// Translations holds the value of the translations edge.
 	Translations []*IdeaTranslation `json:"translations,omitempty"`
+	// Details holds the value of the details edge.
+	Details *IdeaDetail `json:"details,omitempty"`
 	// BlogPosts holds the value of the blog_posts edge.
 	BlogPosts []*BlogPost `json:"blog_posts,omitempty"`
 	// Comments holds the value of the comments edge.
@@ -79,7 +68,7 @@ type IdeaEdges struct {
 	Tags []*IdeaTag `json:"tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -102,10 +91,21 @@ func (e IdeaEdges) TranslationsOrErr() ([]*IdeaTranslation, error) {
 	return nil, &NotLoadedError{edge: "translations"}
 }
 
+// DetailsOrErr returns the Details value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e IdeaEdges) DetailsOrErr() (*IdeaDetail, error) {
+	if e.Details != nil {
+		return e.Details, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: ideadetail.Label}
+	}
+	return nil, &NotLoadedError{edge: "details"}
+}
+
 // BlogPostsOrErr returns the BlogPosts value or an error if the edge
 // was not loaded in eager-loading.
 func (e IdeaEdges) BlogPostsOrErr() ([]*BlogPost, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.BlogPosts, nil
 	}
 	return nil, &NotLoadedError{edge: "blog_posts"}
@@ -114,7 +114,7 @@ func (e IdeaEdges) BlogPostsOrErr() ([]*BlogPost, error) {
 // CommentsOrErr returns the Comments value or an error if the edge
 // was not loaded in eager-loading.
 func (e IdeaEdges) CommentsOrErr() ([]*Comment, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Comments, nil
 	}
 	return nil, &NotLoadedError{edge: "comments"}
@@ -123,7 +123,7 @@ func (e IdeaEdges) CommentsOrErr() ([]*Comment, error) {
 // TagsOrErr returns the Tags value or an error if the edge
 // was not loaded in eager-loading.
 func (e IdeaEdges) TagsOrErr() ([]*IdeaTag, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
@@ -134,13 +134,11 @@ func (*Idea) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case idea.FieldCollaborationNeeded, idea.FieldFundingRequired, idea.FieldIsPublic:
+		case idea.FieldIsPublic:
 			values[i] = new(sql.NullBool)
-		case idea.FieldEstimatedBudget:
-			values[i] = new(sql.NullFloat64)
-		case idea.FieldEstimatedDurationMonths, idea.FieldViewCount, idea.FieldLikeCount:
+		case idea.FieldViewCount, idea.FieldLikeCount:
 			values[i] = new(sql.NullInt64)
-		case idea.FieldTitle, idea.FieldSlug, idea.FieldAbstract, idea.FieldMotivation, idea.FieldMethodology, idea.FieldExpectedOutcome, idea.FieldStatus, idea.FieldPriority, idea.FieldRequiredResources, idea.FieldCategory:
+		case idea.FieldTitle, idea.FieldSlug, idea.FieldDescription, idea.FieldAbstract, idea.FieldStatus, idea.FieldPriority, idea.FieldCategory:
 			values[i] = new(sql.NullString)
 		case idea.FieldCreatedAt, idea.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -185,29 +183,17 @@ func (i *Idea) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				i.Slug = value.String
 			}
+		case idea.FieldDescription:
+			if value, ok := values[j].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field description", values[j])
+			} else if value.Valid {
+				i.Description = value.String
+			}
 		case idea.FieldAbstract:
 			if value, ok := values[j].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field abstract", values[j])
 			} else if value.Valid {
 				i.Abstract = value.String
-			}
-		case idea.FieldMotivation:
-			if value, ok := values[j].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field motivation", values[j])
-			} else if value.Valid {
-				i.Motivation = value.String
-			}
-		case idea.FieldMethodology:
-			if value, ok := values[j].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field methodology", values[j])
-			} else if value.Valid {
-				i.Methodology = value.String
-			}
-		case idea.FieldExpectedOutcome:
-			if value, ok := values[j].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field expected_outcome", values[j])
-			} else if value.Valid {
-				i.ExpectedOutcome = value.String
 			}
 		case idea.FieldStatus:
 			if value, ok := values[j].(*sql.NullString); !ok {
@@ -220,36 +206,6 @@ func (i *Idea) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field priority", values[j])
 			} else if value.Valid {
 				i.Priority = idea.Priority(value.String)
-			}
-		case idea.FieldEstimatedDurationMonths:
-			if value, ok := values[j].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field estimated_duration_months", values[j])
-			} else if value.Valid {
-				i.EstimatedDurationMonths = int(value.Int64)
-			}
-		case idea.FieldRequiredResources:
-			if value, ok := values[j].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field required_resources", values[j])
-			} else if value.Valid {
-				i.RequiredResources = value.String
-			}
-		case idea.FieldCollaborationNeeded:
-			if value, ok := values[j].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field collaboration_needed", values[j])
-			} else if value.Valid {
-				i.CollaborationNeeded = value.Bool
-			}
-		case idea.FieldFundingRequired:
-			if value, ok := values[j].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field funding_required", values[j])
-			} else if value.Valid {
-				i.FundingRequired = value.Bool
-			}
-		case idea.FieldEstimatedBudget:
-			if value, ok := values[j].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field estimated_budget", values[j])
-			} else if value.Valid {
-				i.EstimatedBudget = value.Float64
 			}
 		case idea.FieldIsPublic:
 			if value, ok := values[j].(*sql.NullBool); !ok {
@@ -310,6 +266,11 @@ func (i *Idea) QueryTranslations() *IdeaTranslationQuery {
 	return NewIdeaClient(i.config).QueryTranslations(i)
 }
 
+// QueryDetails queries the "details" edge of the Idea entity.
+func (i *Idea) QueryDetails() *IdeaDetailQuery {
+	return NewIdeaClient(i.config).QueryDetails(i)
+}
+
 // QueryBlogPosts queries the "blog_posts" edge of the Idea entity.
 func (i *Idea) QueryBlogPosts() *BlogPostQuery {
 	return NewIdeaClient(i.config).QueryBlogPosts(i)
@@ -357,38 +318,17 @@ func (i *Idea) String() string {
 	builder.WriteString("slug=")
 	builder.WriteString(i.Slug)
 	builder.WriteString(", ")
+	builder.WriteString("description=")
+	builder.WriteString(i.Description)
+	builder.WriteString(", ")
 	builder.WriteString("abstract=")
 	builder.WriteString(i.Abstract)
-	builder.WriteString(", ")
-	builder.WriteString("motivation=")
-	builder.WriteString(i.Motivation)
-	builder.WriteString(", ")
-	builder.WriteString("methodology=")
-	builder.WriteString(i.Methodology)
-	builder.WriteString(", ")
-	builder.WriteString("expected_outcome=")
-	builder.WriteString(i.ExpectedOutcome)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", i.Status))
 	builder.WriteString(", ")
 	builder.WriteString("priority=")
 	builder.WriteString(fmt.Sprintf("%v", i.Priority))
-	builder.WriteString(", ")
-	builder.WriteString("estimated_duration_months=")
-	builder.WriteString(fmt.Sprintf("%v", i.EstimatedDurationMonths))
-	builder.WriteString(", ")
-	builder.WriteString("required_resources=")
-	builder.WriteString(i.RequiredResources)
-	builder.WriteString(", ")
-	builder.WriteString("collaboration_needed=")
-	builder.WriteString(fmt.Sprintf("%v", i.CollaborationNeeded))
-	builder.WriteString(", ")
-	builder.WriteString("funding_required=")
-	builder.WriteString(fmt.Sprintf("%v", i.FundingRequired))
-	builder.WriteString(", ")
-	builder.WriteString("estimated_budget=")
-	builder.WriteString(fmt.Sprintf("%v", i.EstimatedBudget))
 	builder.WriteString(", ")
 	builder.WriteString("is_public=")
 	builder.WriteString(fmt.Sprintf("%v", i.IsPublic))

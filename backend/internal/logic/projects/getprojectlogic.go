@@ -51,13 +51,6 @@ func (l *GetProjectLogic) GetProject(req *types.ProjectRequest) (resp *types.Pro
 		technologies = append(technologies, tech.TechnologyName)
 	}
 
-	var features []string
-	var fullDescription string
-	if proj.Edges.Details != nil {
-		fullDescription = proj.Edges.Details.DetailedDescription
-		// Note: Features field might need to be properly handled based on the actual schema
-	}
-
 	// Handle description field (now non-nullable)
 	description := proj.Description
 
@@ -86,7 +79,6 @@ func (l *GetProjectLogic) GetProject(req *types.ProjectRequest) (resp *types.Pro
 		Title:            proj.Title,
 		Slug:             proj.Slug,
 		Description:      description,
-		FullDescription:  fullDescription,
 		ProjectType:      proj.ProjectType,
 		Status:           string(proj.Status),
 		StartDate:        startDate,
@@ -99,11 +91,9 @@ func (l *GetProjectLogic) GetProject(req *types.ProjectRequest) (resp *types.Pro
 		IsFeatured:       proj.IsFeatured,
 		IsPublic:         proj.IsPublic,
 		ViewCount:        int64(proj.ViewCount),
-		LikeCount:        int64(proj.LikeCount),
 		SortOrder:        proj.SortOrder,
 		Year:             year,
 		AnnualPlan:       annualPlan,
-		Features:         features,
 		CreatedAt:        proj.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt:        proj.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}, nil

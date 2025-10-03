@@ -12,6 +12,7 @@ import (
 	"silan-backend/internal/ent/blogseriestranslation"
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
+	"silan-backend/internal/ent/ideadetailtranslation"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
 	"silan-backend/internal/ent/personalinfotranslation"
@@ -262,6 +263,21 @@ func (lc *LanguageCreate) AddIdeaTranslations(i ...*IdeaTranslation) *LanguageCr
 		ids[j] = i[j].ID
 	}
 	return lc.AddIdeaTranslationIDs(ids...)
+}
+
+// AddIdeaDetailTranslationIDs adds the "idea_detail_translations" edge to the IdeaDetailTranslation entity by IDs.
+func (lc *LanguageCreate) AddIdeaDetailTranslationIDs(ids ...uuid.UUID) *LanguageCreate {
+	lc.mutation.AddIdeaDetailTranslationIDs(ids...)
+	return lc
+}
+
+// AddIdeaDetailTranslations adds the "idea_detail_translations" edges to the IdeaDetailTranslation entity.
+func (lc *LanguageCreate) AddIdeaDetailTranslations(i ...*IdeaDetailTranslation) *LanguageCreate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return lc.AddIdeaDetailTranslationIDs(ids...)
 }
 
 // AddResearchProjectTranslationIDs adds the "research_project_translations" edge to the ResearchProjectTranslation entity by IDs.
@@ -649,6 +665,22 @@ func (lc *LanguageCreate) createSpec() (*Language, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(ideatranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := lc.mutation.IdeaDetailTranslationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   language.IdeaDetailTranslationsTable,
+			Columns: []string{language.IdeaDetailTranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetailtranslation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

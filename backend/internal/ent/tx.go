@@ -46,6 +46,10 @@ type Tx struct {
 	EducationTranslation *EducationTranslationClient
 	// Idea is the client for interacting with the Idea builders.
 	Idea *IdeaClient
+	// IdeaDetail is the client for interacting with the IdeaDetail builders.
+	IdeaDetail *IdeaDetailClient
+	// IdeaDetailTranslation is the client for interacting with the IdeaDetailTranslation builders.
+	IdeaDetailTranslation *IdeaDetailTranslationClient
 	// IdeaTag is the client for interacting with the IdeaTag builders.
 	IdeaTag *IdeaTagClient
 	// IdeaTranslation is the client for interacting with the IdeaTranslation builders.
@@ -256,6 +260,8 @@ func (tx *Tx) init() {
 	tx.EducationDetailTranslation = NewEducationDetailTranslationClient(tx.config)
 	tx.EducationTranslation = NewEducationTranslationClient(tx.config)
 	tx.Idea = NewIdeaClient(tx.config)
+	tx.IdeaDetail = NewIdeaDetailClient(tx.config)
+	tx.IdeaDetailTranslation = NewIdeaDetailTranslationClient(tx.config)
 	tx.IdeaTag = NewIdeaTagClient(tx.config)
 	tx.IdeaTranslation = NewIdeaTranslationClient(tx.config)
 	tx.Language = NewLanguageClient(tx.config)

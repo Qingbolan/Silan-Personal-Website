@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, Space, Card, Tag } from 'antd';
 import { 
@@ -32,7 +32,39 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('readme');
 
-  const tabItems = [
+  // Helper function to check if a tab has content
+  const hasContent = (tabKey: string): boolean => {
+    switch (tabKey) {
+      case 'readme':
+        return !!(projectData.fullDescription || projectData.fullDescriptionZh);
+      case 'relatedblogs':
+        return !!(projectData.relatedBlogs && projectData.relatedBlogs.length > 0);
+      case 'releases':
+        // Check for markdown content or structured releases
+        const hasMarkdownReleases = projectData.versions?.releases?.[0]?.notes;
+        const hasStructuredReleases = projectData.versions?.releases && projectData.versions.releases.length > 0;
+        return !!(hasMarkdownReleases || hasStructuredReleases);
+      case 'quickstart':
+        // Check for markdown content or structured quickstart
+        const hasMarkdownQuickstart = projectData.quickStart?.basicUsage;
+        return !!hasMarkdownQuickstart;
+      case 'dependencies':
+        // Check for markdown content or structured dependencies
+        const hasMarkdownDeps = projectData.dependencies?.raw;
+        const hasStructuredDeps = projectData.dependencies?.production || projectData.dependencies?.development;
+        return !!(hasMarkdownDeps || hasStructuredDeps);
+      case 'license':
+        return !!(projectData.licenseInfo || projectData.status?.license);
+      case 'community':
+      case 'issues':
+        // Always show community and issues tabs (they handle empty states internally)
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const allTabItems = [
     {
       key: 'readme',
       label: (
@@ -107,87 +139,135 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
     },
   ];
 
+  // Filter tabs to only show those with content
+  const tabItems = allTabItems.filter(tab => hasContent(tab.key));
+
+  // Ensure active tab is valid, switch to first available tab if current is filtered out
+  useEffect(() => {
+    if (tabItems.length > 0 && !tabItems.find(tab => tab.key === activeTab)) {
+      setActiveTab(tabItems[0].key);
+    }
+  }, [tabItems, activeTab]);
+
   const renderReadme = () => (
-    <Card>
-      <div className="prose max-w-none">   
+    // <Card>
+      <div className="prose max-w-none">
       <Markdown className="text-lg mb-6">
         {language === 'zh' && projectData.fullDescriptionZh ? projectData.fullDescriptionZh : projectData.fullDescription}
       </Markdown>
     </div>
-    </Card>
+    // </Card>
   );
 
-  const renderQuickStart = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-3 text-theme-primary flex items-center gap-2">
-          <Terminal size={20} />
-          {t('projects.installation')}
-        </h3>
-        <div className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
-          <pre className="text-sm">
-            {projectData.quickStart?.installation?.join('\n') || 'npm install project-name'}
-          </pre>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-semibold mb-3 text-theme-primary">
-          {t('projects.basicUsage')}
-        </h3>
-        <div className="bg-gray-900 text-white p-4 rounded-lg overflow-x-auto">
-          <pre className="text-sm">
-            {projectData.quickStart?.basicUsage || 'import project;\nproject.run();'}
-          </pre>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-semibold mb-3 text-theme-primary">
-          {t('projects.requirements')}
-        </h3>
-        <ul className="space-y-2">
-          {projectData.quickStart?.requirements?.map((req: string, index: number) => (
-            <li key={index} className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-theme-500 rounded-full"></span>
-              <span className="text-theme-secondary">{req}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
+  const renderQuickStart = () => {
+    // Check if we have markdown content (new backend format)
+    const hasMarkdownContent = projectData.quickStart?.basicUsage && typeof projectData.quickStart.basicUsage === 'string' && projectData.quickStart.basicUsage.includes('#');
 
-  const renderReleases = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-theme-primary">
-          {t('projects.latestRelease')}: v{projectData.versions?.latest || '1.0.0'}
-        </h3>
-      </div>
-      
-      {projectData.versions?.releases?.map((release: any, index: number) => (
-        <div key={index} className="border border-theme-border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold text-theme-primary">v{release.version}</h4>
-            <span className="text-sm text-theme-secondary">{release.date}</span>
+    if (hasMarkdownContent) {
+      // Render markdown content directly
+      return (
+        // <Card>
+          <div className="prose max-w-none">
+            <Markdown className="text-lg">
+              {projectData.quickStart.basicUsage}
+            </Markdown>
           </div>
-          <p className="text-theme-secondary mb-3">{release.description}</p>
-          <div className="flex items-center gap-4 text-sm text-theme-secondary">
-            <span>↓ {release.downloadCount} {t('projects.downloads')}</span>
-            {release.assets?.map((asset: any, assetIndex: number) => (
-              <button 
-                key={assetIndex}
-                className="text-theme-600 hover:underline"
-              >
-                {asset.name} ({asset.size})
-              </button>
+        // </Card>
+      );
+    }
+
+    // Legacy format with structured data
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-3 text-theme-primary flex items-center gap-2">
+            <Terminal size={20} />
+            {t('projects.installation')}
+          </h3>
+          <div className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+            <pre className="text-sm">
+              {projectData.quickStart?.installation?.join('\n') || 'npm install project-name'}
+            </pre>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-3 text-theme-primary">
+            {t('projects.basicUsage')}
+          </h3>
+          <div className="bg-gray-900 text-white p-4 rounded-lg overflow-x-auto">
+            <pre className="text-sm">
+              {projectData.quickStart?.basicUsage || 'import project;\nproject.run();'}
+            </pre>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-3 text-theme-primary">
+            {t('projects.requirements')}
+          </h3>
+          <ul className="space-y-2">
+            {projectData.quickStart?.requirements?.map((req: string, index: number) => (
+              <li key={index} className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-theme-500 rounded-full"></span>
+                <span className="text-theme-secondary">{req}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-      ))}
-    </div>
-  );
+      </div>
+    );
+  };
+
+  const renderReleases = () => {
+    // Check if we have markdown content (new backend format)
+    const hasMarkdownContent = projectData.versions?.releases?.[0]?.notes && typeof projectData.versions.releases[0].notes === 'string';
+
+    if (hasMarkdownContent) {
+      // Render markdown content directly
+      return (
+        // <Card>
+          <div className="prose max-w-none">
+            <Markdown className="text-lg">
+              {projectData.versions.releases[0].notes}
+            </Markdown>
+          </div>
+        // </Card>
+      );
+    }
+
+    // Legacy format with structured data
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-theme-primary">
+            {t('projects.latestRelease')}: v{projectData.versions?.latest || '1.0.0'}
+          </h3>
+        </div>
+
+        {projectData.versions?.releases?.map((release: any, index: number) => (
+          <div key={index} className="border border-theme-border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-theme-primary">v{release.version}</h4>
+              <span className="text-sm text-theme-secondary">{release.date}</span>
+            </div>
+            <p className="text-theme-secondary mb-3">{release.description}</p>
+            <div className="flex items-center gap-4 text-sm text-theme-secondary">
+              <span>↓ {release.downloadCount} {t('projects.downloads')}</span>
+              {release.assets?.map((asset: any, assetIndex: number) => (
+                <button
+                  key={assetIndex}
+                  className="text-theme-600 hover:underline"
+                >
+                  {asset.name} ({asset.size})
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderCommunity = () => {
     // Use project ID from URL params
@@ -205,46 +285,65 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
     return <ProjectIssuesList projectId={projectId} />;
   };
 
-  const renderDependencies = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-3 text-theme-primary">
-          {t('projects.productionDependencies')}
-        </h3>
-        <div className="space-y-2">
-          {projectData.dependencies?.production?.map((dep: any, index: number) => (
-            <div key={index} className="flex items-center justify-between p-2 border border-theme-border rounded">
-              <span className="font-medium">{dep.name}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-theme-secondary">{dep.version}</span>
-                <span className="text-xs px-2 py-1 bg-gray-100 rounded">{dep.license}</span>
-                {dep.vulnerabilities > 0 && (
-                  <AlertTriangle size={16} className="text-yellow-500" />
-                )}
+  const renderDependencies = () => {
+    // Check if we have markdown content (new backend format)
+    const hasMarkdownContent = projectData.dependencies?.raw && typeof projectData.dependencies.raw === 'string';
+
+    if (hasMarkdownContent) {
+      // Render markdown content directly
+      return (
+        // <Card>
+          <div className="prose max-w-none">
+            <Markdown className="text-lg">
+              {projectData.dependencies.raw}
+            </Markdown>
+          </div>
+        // </Card>
+      );
+    }
+
+    // Legacy format with structured data
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-3 text-theme-primary">
+            {t('projects.productionDependencies')}
+          </h3>
+          <div className="space-y-2">
+            {projectData.dependencies?.production?.map((dep: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-2 border border-theme-border rounded">
+                <span className="font-medium">{dep.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-theme-secondary">{dep.version}</span>
+                  <span className="text-xs px-2 py-1 bg-gray-100 rounded">{dep.license}</span>
+                  {dep.vulnerabilities > 0 && (
+                    <AlertTriangle size={16} className="text-yellow-500" />
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-3 text-theme-primary">
+            {t('projects.developmentDependencies')}
+          </h3>
+          <div className="space-y-2">
+            {projectData.dependencies?.development?.map((dep: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-2 border border-theme-border rounded">
+                <span className="font-medium">{dep.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-theme-secondary">{dep.version}</span>
+                  <span className="text-xs px-2 py-1 bg-gray-100 rounded">{dep.license}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      
-      <div>
-        <h3 className="text-lg font-semibold mb-3 text-theme-primary">
-          {t('projects.developmentDependencies')}
-        </h3>
-        <div className="space-y-2">
-          {projectData.dependencies?.development?.map((dep: any, index: number) => (
-            <div key={index} className="flex items-center justify-between p-2 border border-theme-border rounded">
-              <span className="font-medium">{dep.name}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-theme-secondary">{dep.version}</span>
-                <span className="text-xs px-2 py-1 bg-gray-100 rounded">{dep.license}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderRelatedBlogs = () => (
     <div className="space-y-4">

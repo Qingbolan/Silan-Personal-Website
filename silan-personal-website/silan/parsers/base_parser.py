@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, date
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 import frontmatter
 
@@ -20,11 +20,15 @@ try:
 except ImportError:
     _config_available = False
 
-@dataclass
+PipelineStep = Tuple[str, Callable[[], Optional[bool]]]
+
+
+@dataclass(slots=True)
 class ExtractedContent:
     """Base container for extracted content data"""
     content_type: str
-    file_path: str
+    source_path: Optional[Path] = None
+    folder_path: Optional[Path] = None
     language: str = 'en'
     
     # Main entity data
@@ -40,12 +44,20 @@ class ExtractedContent:
     # Content metadata
     metadata: Dict[str, Any] = field(default_factory=dict)
     content_hash: str = ""
+    raw_content: str = ""
     parsed_at: datetime = field(default_factory=datetime.now)
     
     # Quality metrics
     extraction_quality: float = 0.0
     validation_errors: List[str] = field(default_factory=list)
     validation_warnings: List[str] = field(default_factory=list)
+    extras: Dict[str, Any] = field(default_factory=dict)
+
+    def add_error(self, message: str) -> None:
+        self.validation_errors.append(message)
+
+    def add_warning(self, message: str) -> None:
+        self.validation_warnings.append(message)
 
 class BaseParser(ABC, ModernLogger):
     """
@@ -61,11 +73,11 @@ class BaseParser(ABC, ModernLogger):
         self.content_dir = content_dir
         self.file_ops = FileOperations(logger=self)
         
-        # Technology categorization mapping
+        # Technology categorization mapping reused by specialized parsers
         self.tech_categories = {
             'programming_languages': [
-                'python', 'javascript', 'typescript', 'java', 'c++', 'c#', 'c', 'go', 
-                'rust', 'php', 'ruby', 'swift', 'kotlin', 'scala', 'r', 'matlab', 
+                'python', 'javascript', 'typescript', 'java', 'c++', 'c#', 'c', 'go',
+                'rust', 'php', 'ruby', 'swift', 'kotlin', 'scala', 'r', 'matlab',
                 'julia', 'dart', 'perl', 'lua', 'haskell', 'clojure', 'erlang', 'elixir'
             ],
             'web_frameworks': [
@@ -109,57 +121,84 @@ class BaseParser(ABC, ModernLogger):
         }
         
     def parse_file(self, file_path: Path, metadata: Optional[Dict[str, Any]] = None) -> Optional[ExtractedContent]:
-        """
-        Parse a single markdown file and extract structured content.
-        
-        Args:
-            file_path: Path to the markdown file
-            metadata: Optional additional metadata from content discovery
-            
-        Returns:
-            ExtractedContent object with parsed data or None if parsing fails
-        """
-        try:
-            # Read file with frontmatter
-            with open(file_path, 'r', encoding='utf-8') as f:
-                post = frontmatter.load(f)
-            
-            # Calculate content hash for change detection
-            content_hash = self._calculate_content_hash(post)
-            
-            # Extract basic metadata and merge with passed metadata
-            post_metadata = post.metadata
+        """Parse a markdown file into structured ``ExtractedContent``."""
+
+        post: Optional[frontmatter.Post] = None
+        extracted: Optional[ExtractedContent] = None
+
+        def _load_post() -> bool:
+            nonlocal post
+            post = self._load_post(file_path)
+            return post is not None
+
+        def _prepare_metadata() -> bool:
+            assert post is not None
+            post_metadata = dict(post.metadata or {})
             if metadata:
                 post_metadata.update(metadata)
-            # Update the post object with merged metadata
             post.metadata = post_metadata
-            content = post.content
-            
-            # Create base extracted content
+            return True
+
+        def _create_container() -> bool:
+            nonlocal extracted
+            assert post is not None
+            post_metadata = post.metadata or {}
+            content_hash = self._calculate_content_hash(post)
+
+            tags_value = post_metadata.get('tags', []) or []
+            if isinstance(tags_value, str):
+                tags_list = [tag.strip() for tag in tags_value.split(',') if tag.strip()]
+            else:
+                tags_list = list(tags_value)
+
+            categories_value = post_metadata.get('categories', []) or []
+            if isinstance(categories_value, str):
+                categories_list = [cat.strip() for cat in categories_value.split(',') if cat.strip()]
+            else:
+                categories_list = list(categories_value)
+
             extracted = ExtractedContent(
                 content_type=self._get_content_type(),
-                file_path=str(file_path),
+                source_path=file_path,
+                folder_path=file_path.parent,
                 language=post_metadata.get('language', 'en'),
-                content_hash=content_hash,
                 metadata=post_metadata,
-                tags=post_metadata.get('tags', []),
-                categories=post_metadata.get('categories', [])
+                content_hash=content_hash,
+                raw_content=post.content or '',
+                tags=tags_list,
+                categories=categories_list,
             )
-            
-            # Parse content using specialized parser
+            return True
+
+        def _parse_specific() -> bool:
+            assert post is not None and extracted is not None
             self._parse_content(post, extracted)
-            
-            # Validate extracted content
+            return True
+
+        def _validate() -> bool:
+            assert extracted is not None
             self._validate_content(extracted)
-            
-            # Calculate extraction quality
+            return True
+
+        def _finalise() -> bool:
+            assert extracted is not None
             extracted.extraction_quality = self._calculate_quality(extracted)
-            
-            return extracted
-            
-        except Exception as e:
-            self.error(f"Error parsing {file_path}: {e}")
+            self._after_parse(post, extracted)
+            return True
+
+        steps: Iterable[PipelineStep] = (
+            ("load frontmatter", _load_post),
+            ("merge metadata", _prepare_metadata),
+            ("build extracted content", _create_container),
+            ("parse content", _parse_specific),
+            ("validate", _validate),
+            ("finalise", _finalise),
+        )
+
+        if not self._run_pipeline(steps, file_path):
             return None
+
+        return extracted
     
     @abstractmethod
     def _get_content_type(self) -> str:
@@ -171,72 +210,79 @@ class BaseParser(ABC, ModernLogger):
         """Parse the specific content type and populate the extracted data"""
         pass
     
-    @abstractmethod
-    def _validate_content(self, extracted: ExtractedContent):
-        """Validate the extracted content and add any errors/warnings"""
-        pass
-    
+    def _validate_content(self, extracted: ExtractedContent) -> None:
+        """Hook for subclasses to add validation logic."""
+
+    def _after_parse(self, post: Optional[frontmatter.Post], extracted: ExtractedContent) -> None:
+        """Optional hook executed after parsing completes."""
+
     def _calculate_content_hash(self, post: frontmatter.Post) -> str:
         """Calculate hash of content for change detection"""
         content_str = json.dumps(post.metadata, sort_keys=True) + post.content
         return hashlib.md5(content_str.encode()).hexdigest()
-    
+
     def _calculate_quality(self, extracted: ExtractedContent) -> float:
-        """Calculate extraction quality score (0.0-1.0)"""
-        score = 1.0
-        
-        # Penalize for validation errors
-        score -= len(extracted.validation_errors) * 0.1
-        score -= len(extracted.validation_warnings) * 0.05
-        
-        # Reward for rich content
-        if extracted.main_entity:
-            score += 0.1
-        if extracted.technologies:
-            score += 0.1
-        if extracted.images:
-            score += 0.05
-        
-        return max(0.0, min(1.0, score))
-    
+        """Basic quality score derived from collected validation messages."""
+        penalties = len(extracted.validation_errors) * 0.25 + len(extracted.validation_warnings) * 0.1
+        return max(0.0, 1.0 - min(penalties, 1.0))
+
     def _categorize_technology(self, tech: str) -> str:
-        """Categorize a technology into its appropriate category"""
+        """Categorize a technology into one of the known buckets."""
         tech_lower = tech.lower()
-        
         for category, techs in self.tech_categories.items():
             if tech_lower in techs:
                 return category
-        
         return 'other'
-    
-    def _parse_technologies(self, tech_list: List[str]) -> List[Dict[str, Any]]:
-        """Parse technology list into structured technology objects"""
-        technologies = []
-        
-        for i, tech in enumerate(tech_list):
-            if not tech or not tech.strip():
+
+    def _parse_technologies(self, tech_list: Iterable[str]) -> List[Dict[str, Any]]:
+        """Convert a string iterable into structured technology entries."""
+        technologies: List[Dict[str, Any]] = []
+        for idx, raw in enumerate(tech_list):
+            if not raw:
                 continue
-                
-            tech_name = tech.strip()
-            category = self._categorize_technology(tech_name)
-            
+            tech_name = raw.strip()
+            if not tech_name:
+                continue
             technologies.append({
                 'technology_name': tech_name,
-                'technology_type': category,
+                'technology_type': self._categorize_technology(tech_name),
                 'proficiency_level': self._estimate_proficiency(tech_name),
-                'sort_order': i,
-                'is_primary': i < 5  # First 5 are considered primary
+                'sort_order': idx,
+                'is_primary': idx < 5,
             })
-        
         return technologies
-    
+
     def _estimate_proficiency(self, tech: str) -> str:
-        """Estimate proficiency level based on technology"""
-        # This is a simple heuristic - could be enhanced with ML
-        common_techs = ['python', 'javascript', 'html', 'css', 'git']
-        if tech.lower() in common_techs:
-            return 'advanced'
-        return 'intermediate'
+        """Rudimentary proficiency estimation used by resume/project parsers."""
+        return 'advanced' if tech.lower() in {'python', 'javascript', 'html', 'css', 'git'} else 'intermediate'
+
+    def _run_pipeline(self, steps: Iterable[PipelineStep], file_path: Path) -> bool:
+        """Execute pipeline steps sequentially with consistent logging."""
+
+        for step_name, callback in steps:
+            self.debug(f"[{file_path.name}] running step: {step_name}")
+            try:
+                outcome = callback()
+            except Exception as exc:  # noqa: BLE001 - report and stop pipeline
+                self.error(f"{step_name.capitalize()} failed for {file_path}: {exc}")
+                return False
+
+            if isinstance(outcome, bool) and not outcome:
+                self.error(f"Step '{step_name}' did not complete successfully for {file_path}")
+                return False
+
+        return True
+
+    def _load_post(self, file_path: Path) -> Optional[frontmatter.Post]:
+        """Load a frontmatter-aware post from disk."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file_obj:
+                return frontmatter.load(file_obj)
+        except FileNotFoundError:
+            self.error(f"Content file not found: {file_path}")
+        except Exception as exc:  # noqa: BLE001
+            self.error(f"Failed to load {file_path}: {exc}")
+        return None
     
     def _parse_date(self, date_str: Union[str, None]) -> Optional[date]:
         """Parse various date formats into date object"""
@@ -418,12 +464,12 @@ class BaseParser(ABC, ModernLogger):
         # Remove markdown formatting
         text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # Bold
         text = re.sub(r'\*([^*]+)\*', r'\1', text)      # Italic
-        text = re.sub(r'`([^`]+)`', r'\1', text)        # Code
+        text = re.sub(r'`([^`]+)`', r'\1', text)          # Code
         
         return text.strip()
 
     def _find_first_existing(self, base_dir: Path, candidates: Iterable[Union[str, Path]]) -> Optional[Path]:
-        """Return the first existing path under ``base_dir`` from the candidates."""
+        """Return the first existing path beneath ``base_dir`` from the candidates."""
         if not base_dir:
             return None
 
@@ -581,199 +627,162 @@ class BaseParser(ABC, ModernLogger):
         extracted: ExtractedContent,
         folder_path: Path,
         file_pattern: str,
-        processor_config: Dict[str, Any]
+        processor_config: Dict[str, Any],
     ) -> None:
-        """Process a specific special file pattern"""
+        """Process an individual special file according to configuration."""
         file_path = folder_path / file_pattern
-
         if not file_path.exists():
             return
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            with open(file_path, 'r', encoding='utf-8') as file_obj:
+                content = file_obj.read()
 
-            # Store raw content
             content_key = processor_config.get('content_key')
             if content_key:
                 extracted.metadata[content_key] = content
 
-            # Store file info
             file_key = processor_config.get('file_key')
             if file_key:
                 extracted.metadata[file_key] = self._build_file_record(file_path, relative_to=folder_path)
 
-            # Process structured data
             processor_name = processor_config.get('processor')
             metadata_key = processor_config.get('metadata_key')
 
             if processor_name and metadata_key:
-                structured_data = self._extract_structured_data(content, processor_name, file_path)
-                if structured_data:
-                    # Apply post-processing if specified
+                structured = self._extract_structured_data(content, processor_name, file_path)
+                if structured:
                     post_processor = processor_config.get('post_process')
                     if post_processor:
-                        structured_data = self._apply_post_processing(structured_data, post_processor, metadata_key, extracted)
-
-                    extracted.metadata[metadata_key] = structured_data
-
-        except Exception as e:
-            self.warning(f"Error processing special file {file_pattern}: {e}")
+                        structured = self._apply_post_processing(structured, post_processor, metadata_key, extracted)
+                    extracted.metadata[metadata_key] = structured
+        except Exception as exc:  # noqa: BLE001
+            self.warning(f"Error processing special file {file_pattern}: {exc}")
 
     def _apply_post_processing(
         self,
         structured_data: Any,
         post_processor: str,
         metadata_key: str,
-        extracted: ExtractedContent
+        extracted: ExtractedContent,
     ) -> Any:
-        """Apply post-processing to structured data. Can be overridden by subclasses."""
-        # Default implementation does nothing - subclasses can override
+        """Default no-op post-processing hook for structured data."""
         return structured_data
 
     def _extract_structured_data(self, content: str, processor_name: str, file_path: Path) -> Any:
-        """Extract structured data from file content based on processor type"""
+        """Dispatch to structured data extractors based on config."""
         try:
             if processor_name == 'references':
                 return self._extract_references_from_content(content)
-            elif processor_name == 'timeline':
+            if processor_name == 'timeline':
                 return self._extract_timeline_from_content(content)
-            elif processor_name == 'notes':
+            if processor_name == 'notes':
                 return self._extract_notes_from_content(content, file_path)
-            elif processor_name == 'todo':
+            if processor_name == 'todo':
                 return self._extract_todo_from_content(content)
-            elif processor_name == 'changelog':
+            if processor_name == 'changelog':
                 return self._extract_changelog_from_content(content)
-            else:
-                self.debug(f"Unknown processor: {processor_name}")
-                return None
-        except Exception as e:
-            self.warning(f"Error in {processor_name} processor: {e}")
+            self.debug(f"Unknown processor '{processor_name}' for {file_path.name}")
+            return None
+        except Exception as exc:  # noqa: BLE001
+            self.warning(f"Error running {processor_name} processor on {file_path.name}: {exc}")
             return None
 
     def _extract_references_from_content(self, content: str) -> List[Dict[str, Any]]:
-        """Extract structured references from content (can be overridden by subclasses)"""
-        references = []
-        import re
-
-        # Look for standard markdown links
+        """Extract references from markdown content."""
+        references: List[Dict[str, Any]] = []
         link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
-        links = re.findall(link_pattern, content)
-
-        for title, url in links:
+        for title, url in re.findall(link_pattern, content):
             references.append(self._create_reference_entry(title, url))
 
-        # Look for "URL:" format references
         url_pattern = r'^\s*-\s*URL:\s*([^\s]+)'
         title_pattern = r'^\d+\.\s*\*\*"?([^"*]+)"?\*\*'
 
-        lines = content.split('\n')
-        current_title = None
-
-        for line in lines:
-            line = line.strip()
-
-            # Check for title line
-            title_match = re.match(title_pattern, line)
+        current_title: Optional[str] = None
+        for line in content.split('\n'):
+            stripped = line.strip()
+            title_match = re.match(title_pattern, stripped)
             if title_match:
                 current_title = title_match.group(1).strip()
                 continue
 
-            # Check for URL line
-            url_match = re.match(url_pattern, line)
+            url_match = re.match(url_pattern, stripped)
             if url_match and current_title:
-                url = url_match.group(1).strip()
-                references.append(self._create_reference_entry(current_title, url))
+                references.append(self._create_reference_entry(current_title, url_match.group(1).strip()))
                 current_title = None
 
         return references
 
     def _create_reference_entry(self, title: str, url: str) -> Dict[str, Any]:
-        """Create a reference entry with type classification"""
+        """Create a reference entry and infer its type."""
         ref_type = 'website'
         if 'arxiv.org' in url or 'doi.org' in url:
             ref_type = 'paper'
         elif 'github.com' in url:
             ref_type = 'tool'
-        elif any(ext in url for ext in ['.pdf', '.doc']):
+        elif any(ext in url for ext in ('.pdf', '.doc', '.docx')):
             ref_type = 'document'
 
         return {
             'title': title.strip(),
             'url': url.strip(),
-            'type': ref_type
+            'type': ref_type,
         }
 
     def _extract_timeline_from_content(self, content: str) -> Dict[str, Any]:
-        """Extract structured timeline from content (can be overridden by subclasses)"""
-        timeline = {
-            'phases': [],
-            'milestones': [],
-            'total_duration': None
-        }
+        """Extract a lightweight timeline structure from markdown content."""
+        timeline = {'phases': [], 'milestones': [], 'total_duration': None}
+        current_phase: Optional[Dict[str, Any]] = None
 
-        import re
-        lines = content.split('\n')
-        current_phase = None
-
-        for line in lines:
-            line = line.strip()
+        for raw_line in content.split('\n'):
+            line = raw_line.strip()
             if not line:
                 continue
 
-            # Check for phase headers (## or ###)
             if re.match(r'^#{2,3}\s+', line):
                 phase_title = re.sub(r'^#+\s*', '', line)
                 current_phase = {
                     'title': phase_title,
                     'tasks': [],
                     'start_date': None,
-                    'end_date': None
+                    'end_date': None,
                 }
                 timeline['phases'].append(current_phase)
+                continue
 
-            # Look for task items (- [ ] or - [x])
-            elif current_phase and re.match(r'^\s*-\s*\[[x ]\]', line):
+            if current_phase and re.match(r'^\s*-\s*\[[x ]\]', line):
                 task_text = re.sub(r'^\s*-\s*\[[x ]\]\s*', '', line)
-                is_completed = '[x]' in line
                 current_phase['tasks'].append({
                     'task': task_text,
-                    'completed': is_completed
+                    'completed': '[x]' in line,
                 })
 
         return timeline
 
     def _extract_notes_from_content(self, content: str, file_path: Path) -> Dict[str, Any]:
-        """Extract structured notes from content"""
+        """Summarise a notes markdown file."""
         word_count = len(content.split()) if content else 0
-
         return {
             'file_name': file_path.name,
             'file_path': str(file_path),
             'type': 'general_notes',
             'content_preview': content[:500] if content else '',
             'word_count': word_count,
-            'created': datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+            'created': datetime.fromtimestamp(file_path.stat().st_mtime).isoformat(),
         }
 
     def _extract_todo_from_content(self, content: str) -> List[Dict[str, Any]]:
-        """Extract structured todo items from content"""
-        import re
-        todos = []
-        lines = content.split('\n')
-
-        for line in lines:
-            line = line.strip()
-            # Match todo items like - [ ] Task or - [x] Completed task
-            todo_match = re.match(r'^\s*-\s*\[([x ])\]\s*(.+)', line)
-            if todo_match:
-                is_completed = todo_match.group(1) == 'x'
-                task = todo_match.group(2).strip()
-                todos.append({
-                    'task': task,
-                    'completed': is_completed
-                })
-
+        """Extract todo items from markdown checklists."""
+        todos: List[Dict[str, Any]] = []
+        for raw_line in content.split('\n'):
+            line = raw_line.strip()
+            match = re.match(r'^\s*-\s*\[([x ])\]\s*(.+)', line)
+            if not match:
+                continue
+            todos.append({
+                'task': match.group(2).strip(),
+                'completed': match.group(1) == 'x',
+            })
         return todos
 
     def _extract_changelog_from_content(self, content: str) -> Dict[str, Any]:
@@ -808,3 +817,10 @@ class BaseParser(ABC, ModernLogger):
                 current_version['changes'].append(change)
 
         return changelog
+    
+    def _scan_markdown(self, folder_path: Path, filename: str) -> Optional[ExtractedContent]:
+        """Parse a markdown file in ``folder_path`` if it exists."""
+        file_path = folder_path / filename
+        if file_path.exists():
+            return self.parse_file(file_path)
+        return None

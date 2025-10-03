@@ -23,6 +23,8 @@ import (
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
+	"silan-backend/internal/ent/ideadetailtranslation"
 	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
@@ -89,6 +91,8 @@ const (
 	TypeEducationDetailTranslation       = "EducationDetailTranslation"
 	TypeEducationTranslation             = "EducationTranslation"
 	TypeIdea                             = "Idea"
+	TypeIdeaDetail                       = "IdeaDetail"
+	TypeIdeaDetailTranslation            = "IdeaDetailTranslation"
 	TypeIdeaTag                          = "IdeaTag"
 	TypeIdeaTranslation                  = "IdeaTranslation"
 	TypeLanguage                         = "Language"
@@ -15127,50 +15131,43 @@ func (m *EducationTranslationMutation) ResetEdge(name string) error {
 // IdeaMutation represents an operation that mutates the Idea nodes in the graph.
 type IdeaMutation struct {
 	config
-	op                           Op
-	typ                          string
-	id                           *uuid.UUID
-	title                        *string
-	slug                         *string
-	abstract                     *string
-	motivation                   *string
-	methodology                  *string
-	expected_outcome             *string
-	status                       *idea.Status
-	priority                     *idea.Priority
-	estimated_duration_months    *int
-	addestimated_duration_months *int
-	required_resources           *string
-	collaboration_needed         *bool
-	funding_required             *bool
-	estimated_budget             *float64
-	addestimated_budget          *float64
-	is_public                    *bool
-	view_count                   *int
-	addview_count                *int
-	like_count                   *int
-	addlike_count                *int
-	category                     *string
-	created_at                   *time.Time
-	updated_at                   *time.Time
-	clearedFields                map[string]struct{}
-	user                         *uuid.UUID
-	cleareduser                  bool
-	translations                 map[uuid.UUID]struct{}
-	removedtranslations          map[uuid.UUID]struct{}
-	clearedtranslations          bool
-	blog_posts                   map[uuid.UUID]struct{}
-	removedblog_posts            map[uuid.UUID]struct{}
-	clearedblog_posts            bool
-	comments                     map[uuid.UUID]struct{}
-	removedcomments              map[uuid.UUID]struct{}
-	clearedcomments              bool
-	tags                         map[uuid.UUID]struct{}
-	removedtags                  map[uuid.UUID]struct{}
-	clearedtags                  bool
-	done                         bool
-	oldValue                     func(context.Context) (*Idea, error)
-	predicates                   []predicate.Idea
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	title               *string
+	slug                *string
+	description         *string
+	abstract            *string
+	status              *idea.Status
+	priority            *idea.Priority
+	is_public           *bool
+	view_count          *int
+	addview_count       *int
+	like_count          *int
+	addlike_count       *int
+	category            *string
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	user                *uuid.UUID
+	cleareduser         bool
+	translations        map[uuid.UUID]struct{}
+	removedtranslations map[uuid.UUID]struct{}
+	clearedtranslations bool
+	details             *uuid.UUID
+	cleareddetails      bool
+	blog_posts          map[uuid.UUID]struct{}
+	removedblog_posts   map[uuid.UUID]struct{}
+	clearedblog_posts   bool
+	comments            map[uuid.UUID]struct{}
+	removedcomments     map[uuid.UUID]struct{}
+	clearedcomments     bool
+	tags                map[uuid.UUID]struct{}
+	removedtags         map[uuid.UUID]struct{}
+	clearedtags         bool
+	done                bool
+	oldValue            func(context.Context) (*Idea, error)
+	predicates          []predicate.Idea
 }
 
 var _ ent.Mutation = (*IdeaMutation)(nil)
@@ -15385,6 +15382,55 @@ func (m *IdeaMutation) ResetSlug() {
 	m.slug = nil
 }
 
+// SetDescription sets the "description" field.
+func (m *IdeaMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *IdeaMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the Idea entity.
+// If the Idea object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *IdeaMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[idea.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *IdeaMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[idea.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *IdeaMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, idea.FieldDescription)
+}
+
 // SetAbstract sets the "abstract" field.
 func (m *IdeaMutation) SetAbstract(s string) {
 	m.abstract = &s
@@ -15432,153 +15478,6 @@ func (m *IdeaMutation) AbstractCleared() bool {
 func (m *IdeaMutation) ResetAbstract() {
 	m.abstract = nil
 	delete(m.clearedFields, idea.FieldAbstract)
-}
-
-// SetMotivation sets the "motivation" field.
-func (m *IdeaMutation) SetMotivation(s string) {
-	m.motivation = &s
-}
-
-// Motivation returns the value of the "motivation" field in the mutation.
-func (m *IdeaMutation) Motivation() (r string, exists bool) {
-	v := m.motivation
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMotivation returns the old "motivation" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldMotivation(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMotivation is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMotivation requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMotivation: %w", err)
-	}
-	return oldValue.Motivation, nil
-}
-
-// ClearMotivation clears the value of the "motivation" field.
-func (m *IdeaMutation) ClearMotivation() {
-	m.motivation = nil
-	m.clearedFields[idea.FieldMotivation] = struct{}{}
-}
-
-// MotivationCleared returns if the "motivation" field was cleared in this mutation.
-func (m *IdeaMutation) MotivationCleared() bool {
-	_, ok := m.clearedFields[idea.FieldMotivation]
-	return ok
-}
-
-// ResetMotivation resets all changes to the "motivation" field.
-func (m *IdeaMutation) ResetMotivation() {
-	m.motivation = nil
-	delete(m.clearedFields, idea.FieldMotivation)
-}
-
-// SetMethodology sets the "methodology" field.
-func (m *IdeaMutation) SetMethodology(s string) {
-	m.methodology = &s
-}
-
-// Methodology returns the value of the "methodology" field in the mutation.
-func (m *IdeaMutation) Methodology() (r string, exists bool) {
-	v := m.methodology
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMethodology returns the old "methodology" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldMethodology(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMethodology is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMethodology requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMethodology: %w", err)
-	}
-	return oldValue.Methodology, nil
-}
-
-// ClearMethodology clears the value of the "methodology" field.
-func (m *IdeaMutation) ClearMethodology() {
-	m.methodology = nil
-	m.clearedFields[idea.FieldMethodology] = struct{}{}
-}
-
-// MethodologyCleared returns if the "methodology" field was cleared in this mutation.
-func (m *IdeaMutation) MethodologyCleared() bool {
-	_, ok := m.clearedFields[idea.FieldMethodology]
-	return ok
-}
-
-// ResetMethodology resets all changes to the "methodology" field.
-func (m *IdeaMutation) ResetMethodology() {
-	m.methodology = nil
-	delete(m.clearedFields, idea.FieldMethodology)
-}
-
-// SetExpectedOutcome sets the "expected_outcome" field.
-func (m *IdeaMutation) SetExpectedOutcome(s string) {
-	m.expected_outcome = &s
-}
-
-// ExpectedOutcome returns the value of the "expected_outcome" field in the mutation.
-func (m *IdeaMutation) ExpectedOutcome() (r string, exists bool) {
-	v := m.expected_outcome
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldExpectedOutcome returns the old "expected_outcome" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldExpectedOutcome(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldExpectedOutcome is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldExpectedOutcome requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldExpectedOutcome: %w", err)
-	}
-	return oldValue.ExpectedOutcome, nil
-}
-
-// ClearExpectedOutcome clears the value of the "expected_outcome" field.
-func (m *IdeaMutation) ClearExpectedOutcome() {
-	m.expected_outcome = nil
-	m.clearedFields[idea.FieldExpectedOutcome] = struct{}{}
-}
-
-// ExpectedOutcomeCleared returns if the "expected_outcome" field was cleared in this mutation.
-func (m *IdeaMutation) ExpectedOutcomeCleared() bool {
-	_, ok := m.clearedFields[idea.FieldExpectedOutcome]
-	return ok
-}
-
-// ResetExpectedOutcome resets all changes to the "expected_outcome" field.
-func (m *IdeaMutation) ResetExpectedOutcome() {
-	m.expected_outcome = nil
-	delete(m.clearedFields, idea.FieldExpectedOutcome)
 }
 
 // SetStatus sets the "status" field.
@@ -15651,267 +15550,6 @@ func (m *IdeaMutation) OldPriority(ctx context.Context) (v idea.Priority, err er
 // ResetPriority resets all changes to the "priority" field.
 func (m *IdeaMutation) ResetPriority() {
 	m.priority = nil
-}
-
-// SetEstimatedDurationMonths sets the "estimated_duration_months" field.
-func (m *IdeaMutation) SetEstimatedDurationMonths(i int) {
-	m.estimated_duration_months = &i
-	m.addestimated_duration_months = nil
-}
-
-// EstimatedDurationMonths returns the value of the "estimated_duration_months" field in the mutation.
-func (m *IdeaMutation) EstimatedDurationMonths() (r int, exists bool) {
-	v := m.estimated_duration_months
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldEstimatedDurationMonths returns the old "estimated_duration_months" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldEstimatedDurationMonths(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEstimatedDurationMonths is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEstimatedDurationMonths requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEstimatedDurationMonths: %w", err)
-	}
-	return oldValue.EstimatedDurationMonths, nil
-}
-
-// AddEstimatedDurationMonths adds i to the "estimated_duration_months" field.
-func (m *IdeaMutation) AddEstimatedDurationMonths(i int) {
-	if m.addestimated_duration_months != nil {
-		*m.addestimated_duration_months += i
-	} else {
-		m.addestimated_duration_months = &i
-	}
-}
-
-// AddedEstimatedDurationMonths returns the value that was added to the "estimated_duration_months" field in this mutation.
-func (m *IdeaMutation) AddedEstimatedDurationMonths() (r int, exists bool) {
-	v := m.addestimated_duration_months
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearEstimatedDurationMonths clears the value of the "estimated_duration_months" field.
-func (m *IdeaMutation) ClearEstimatedDurationMonths() {
-	m.estimated_duration_months = nil
-	m.addestimated_duration_months = nil
-	m.clearedFields[idea.FieldEstimatedDurationMonths] = struct{}{}
-}
-
-// EstimatedDurationMonthsCleared returns if the "estimated_duration_months" field was cleared in this mutation.
-func (m *IdeaMutation) EstimatedDurationMonthsCleared() bool {
-	_, ok := m.clearedFields[idea.FieldEstimatedDurationMonths]
-	return ok
-}
-
-// ResetEstimatedDurationMonths resets all changes to the "estimated_duration_months" field.
-func (m *IdeaMutation) ResetEstimatedDurationMonths() {
-	m.estimated_duration_months = nil
-	m.addestimated_duration_months = nil
-	delete(m.clearedFields, idea.FieldEstimatedDurationMonths)
-}
-
-// SetRequiredResources sets the "required_resources" field.
-func (m *IdeaMutation) SetRequiredResources(s string) {
-	m.required_resources = &s
-}
-
-// RequiredResources returns the value of the "required_resources" field in the mutation.
-func (m *IdeaMutation) RequiredResources() (r string, exists bool) {
-	v := m.required_resources
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRequiredResources returns the old "required_resources" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldRequiredResources(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRequiredResources is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRequiredResources requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRequiredResources: %w", err)
-	}
-	return oldValue.RequiredResources, nil
-}
-
-// ClearRequiredResources clears the value of the "required_resources" field.
-func (m *IdeaMutation) ClearRequiredResources() {
-	m.required_resources = nil
-	m.clearedFields[idea.FieldRequiredResources] = struct{}{}
-}
-
-// RequiredResourcesCleared returns if the "required_resources" field was cleared in this mutation.
-func (m *IdeaMutation) RequiredResourcesCleared() bool {
-	_, ok := m.clearedFields[idea.FieldRequiredResources]
-	return ok
-}
-
-// ResetRequiredResources resets all changes to the "required_resources" field.
-func (m *IdeaMutation) ResetRequiredResources() {
-	m.required_resources = nil
-	delete(m.clearedFields, idea.FieldRequiredResources)
-}
-
-// SetCollaborationNeeded sets the "collaboration_needed" field.
-func (m *IdeaMutation) SetCollaborationNeeded(b bool) {
-	m.collaboration_needed = &b
-}
-
-// CollaborationNeeded returns the value of the "collaboration_needed" field in the mutation.
-func (m *IdeaMutation) CollaborationNeeded() (r bool, exists bool) {
-	v := m.collaboration_needed
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCollaborationNeeded returns the old "collaboration_needed" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldCollaborationNeeded(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCollaborationNeeded is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCollaborationNeeded requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCollaborationNeeded: %w", err)
-	}
-	return oldValue.CollaborationNeeded, nil
-}
-
-// ResetCollaborationNeeded resets all changes to the "collaboration_needed" field.
-func (m *IdeaMutation) ResetCollaborationNeeded() {
-	m.collaboration_needed = nil
-}
-
-// SetFundingRequired sets the "funding_required" field.
-func (m *IdeaMutation) SetFundingRequired(b bool) {
-	m.funding_required = &b
-}
-
-// FundingRequired returns the value of the "funding_required" field in the mutation.
-func (m *IdeaMutation) FundingRequired() (r bool, exists bool) {
-	v := m.funding_required
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFundingRequired returns the old "funding_required" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldFundingRequired(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFundingRequired is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFundingRequired requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFundingRequired: %w", err)
-	}
-	return oldValue.FundingRequired, nil
-}
-
-// ResetFundingRequired resets all changes to the "funding_required" field.
-func (m *IdeaMutation) ResetFundingRequired() {
-	m.funding_required = nil
-}
-
-// SetEstimatedBudget sets the "estimated_budget" field.
-func (m *IdeaMutation) SetEstimatedBudget(f float64) {
-	m.estimated_budget = &f
-	m.addestimated_budget = nil
-}
-
-// EstimatedBudget returns the value of the "estimated_budget" field in the mutation.
-func (m *IdeaMutation) EstimatedBudget() (r float64, exists bool) {
-	v := m.estimated_budget
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldEstimatedBudget returns the old "estimated_budget" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldEstimatedBudget(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEstimatedBudget is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEstimatedBudget requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEstimatedBudget: %w", err)
-	}
-	return oldValue.EstimatedBudget, nil
-}
-
-// AddEstimatedBudget adds f to the "estimated_budget" field.
-func (m *IdeaMutation) AddEstimatedBudget(f float64) {
-	if m.addestimated_budget != nil {
-		*m.addestimated_budget += f
-	} else {
-		m.addestimated_budget = &f
-	}
-}
-
-// AddedEstimatedBudget returns the value that was added to the "estimated_budget" field in this mutation.
-func (m *IdeaMutation) AddedEstimatedBudget() (r float64, exists bool) {
-	v := m.addestimated_budget
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearEstimatedBudget clears the value of the "estimated_budget" field.
-func (m *IdeaMutation) ClearEstimatedBudget() {
-	m.estimated_budget = nil
-	m.addestimated_budget = nil
-	m.clearedFields[idea.FieldEstimatedBudget] = struct{}{}
-}
-
-// EstimatedBudgetCleared returns if the "estimated_budget" field was cleared in this mutation.
-func (m *IdeaMutation) EstimatedBudgetCleared() bool {
-	_, ok := m.clearedFields[idea.FieldEstimatedBudget]
-	return ok
-}
-
-// ResetEstimatedBudget resets all changes to the "estimated_budget" field.
-func (m *IdeaMutation) ResetEstimatedBudget() {
-	m.estimated_budget = nil
-	m.addestimated_budget = nil
-	delete(m.clearedFields, idea.FieldEstimatedBudget)
 }
 
 // SetIsPublic sets the "is_public" field.
@@ -16264,6 +15902,45 @@ func (m *IdeaMutation) ResetTranslations() {
 	m.removedtranslations = nil
 }
 
+// SetDetailsID sets the "details" edge to the IdeaDetail entity by id.
+func (m *IdeaMutation) SetDetailsID(id uuid.UUID) {
+	m.details = &id
+}
+
+// ClearDetails clears the "details" edge to the IdeaDetail entity.
+func (m *IdeaMutation) ClearDetails() {
+	m.cleareddetails = true
+}
+
+// DetailsCleared reports if the "details" edge to the IdeaDetail entity was cleared.
+func (m *IdeaMutation) DetailsCleared() bool {
+	return m.cleareddetails
+}
+
+// DetailsID returns the "details" edge ID in the mutation.
+func (m *IdeaMutation) DetailsID() (id uuid.UUID, exists bool) {
+	if m.details != nil {
+		return *m.details, true
+	}
+	return
+}
+
+// DetailsIDs returns the "details" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DetailsID instead. It exists only for internal usage by the builders.
+func (m *IdeaMutation) DetailsIDs() (ids []uuid.UUID) {
+	if id := m.details; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDetails resets all changes to the "details" edge.
+func (m *IdeaMutation) ResetDetails() {
+	m.details = nil
+	m.cleareddetails = false
+}
+
 // AddBlogPostIDs adds the "blog_posts" edge to the BlogPost entity by ids.
 func (m *IdeaMutation) AddBlogPostIDs(ids ...uuid.UUID) {
 	if m.blog_posts == nil {
@@ -16460,7 +16137,7 @@ func (m *IdeaMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IdeaMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 13)
 	if m.user != nil {
 		fields = append(fields, idea.FieldUserID)
 	}
@@ -16470,38 +16147,17 @@ func (m *IdeaMutation) Fields() []string {
 	if m.slug != nil {
 		fields = append(fields, idea.FieldSlug)
 	}
+	if m.description != nil {
+		fields = append(fields, idea.FieldDescription)
+	}
 	if m.abstract != nil {
 		fields = append(fields, idea.FieldAbstract)
-	}
-	if m.motivation != nil {
-		fields = append(fields, idea.FieldMotivation)
-	}
-	if m.methodology != nil {
-		fields = append(fields, idea.FieldMethodology)
-	}
-	if m.expected_outcome != nil {
-		fields = append(fields, idea.FieldExpectedOutcome)
 	}
 	if m.status != nil {
 		fields = append(fields, idea.FieldStatus)
 	}
 	if m.priority != nil {
 		fields = append(fields, idea.FieldPriority)
-	}
-	if m.estimated_duration_months != nil {
-		fields = append(fields, idea.FieldEstimatedDurationMonths)
-	}
-	if m.required_resources != nil {
-		fields = append(fields, idea.FieldRequiredResources)
-	}
-	if m.collaboration_needed != nil {
-		fields = append(fields, idea.FieldCollaborationNeeded)
-	}
-	if m.funding_required != nil {
-		fields = append(fields, idea.FieldFundingRequired)
-	}
-	if m.estimated_budget != nil {
-		fields = append(fields, idea.FieldEstimatedBudget)
 	}
 	if m.is_public != nil {
 		fields = append(fields, idea.FieldIsPublic)
@@ -16535,28 +16191,14 @@ func (m *IdeaMutation) Field(name string) (ent.Value, bool) {
 		return m.Title()
 	case idea.FieldSlug:
 		return m.Slug()
+	case idea.FieldDescription:
+		return m.Description()
 	case idea.FieldAbstract:
 		return m.Abstract()
-	case idea.FieldMotivation:
-		return m.Motivation()
-	case idea.FieldMethodology:
-		return m.Methodology()
-	case idea.FieldExpectedOutcome:
-		return m.ExpectedOutcome()
 	case idea.FieldStatus:
 		return m.Status()
 	case idea.FieldPriority:
 		return m.Priority()
-	case idea.FieldEstimatedDurationMonths:
-		return m.EstimatedDurationMonths()
-	case idea.FieldRequiredResources:
-		return m.RequiredResources()
-	case idea.FieldCollaborationNeeded:
-		return m.CollaborationNeeded()
-	case idea.FieldFundingRequired:
-		return m.FundingRequired()
-	case idea.FieldEstimatedBudget:
-		return m.EstimatedBudget()
 	case idea.FieldIsPublic:
 		return m.IsPublic()
 	case idea.FieldViewCount:
@@ -16584,28 +16226,14 @@ func (m *IdeaMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTitle(ctx)
 	case idea.FieldSlug:
 		return m.OldSlug(ctx)
+	case idea.FieldDescription:
+		return m.OldDescription(ctx)
 	case idea.FieldAbstract:
 		return m.OldAbstract(ctx)
-	case idea.FieldMotivation:
-		return m.OldMotivation(ctx)
-	case idea.FieldMethodology:
-		return m.OldMethodology(ctx)
-	case idea.FieldExpectedOutcome:
-		return m.OldExpectedOutcome(ctx)
 	case idea.FieldStatus:
 		return m.OldStatus(ctx)
 	case idea.FieldPriority:
 		return m.OldPriority(ctx)
-	case idea.FieldEstimatedDurationMonths:
-		return m.OldEstimatedDurationMonths(ctx)
-	case idea.FieldRequiredResources:
-		return m.OldRequiredResources(ctx)
-	case idea.FieldCollaborationNeeded:
-		return m.OldCollaborationNeeded(ctx)
-	case idea.FieldFundingRequired:
-		return m.OldFundingRequired(ctx)
-	case idea.FieldEstimatedBudget:
-		return m.OldEstimatedBudget(ctx)
 	case idea.FieldIsPublic:
 		return m.OldIsPublic(ctx)
 	case idea.FieldViewCount:
@@ -16648,33 +16276,19 @@ func (m *IdeaMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSlug(v)
 		return nil
+	case idea.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
 	case idea.FieldAbstract:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAbstract(v)
-		return nil
-	case idea.FieldMotivation:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMotivation(v)
-		return nil
-	case idea.FieldMethodology:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMethodology(v)
-		return nil
-	case idea.FieldExpectedOutcome:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetExpectedOutcome(v)
 		return nil
 	case idea.FieldStatus:
 		v, ok := value.(idea.Status)
@@ -16689,41 +16303,6 @@ func (m *IdeaMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPriority(v)
-		return nil
-	case idea.FieldEstimatedDurationMonths:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetEstimatedDurationMonths(v)
-		return nil
-	case idea.FieldRequiredResources:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRequiredResources(v)
-		return nil
-	case idea.FieldCollaborationNeeded:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCollaborationNeeded(v)
-		return nil
-	case idea.FieldFundingRequired:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFundingRequired(v)
-		return nil
-	case idea.FieldEstimatedBudget:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetEstimatedBudget(v)
 		return nil
 	case idea.FieldIsPublic:
 		v, ok := value.(bool)
@@ -16775,12 +16354,6 @@ func (m *IdeaMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *IdeaMutation) AddedFields() []string {
 	var fields []string
-	if m.addestimated_duration_months != nil {
-		fields = append(fields, idea.FieldEstimatedDurationMonths)
-	}
-	if m.addestimated_budget != nil {
-		fields = append(fields, idea.FieldEstimatedBudget)
-	}
 	if m.addview_count != nil {
 		fields = append(fields, idea.FieldViewCount)
 	}
@@ -16795,10 +16368,6 @@ func (m *IdeaMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *IdeaMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case idea.FieldEstimatedDurationMonths:
-		return m.AddedEstimatedDurationMonths()
-	case idea.FieldEstimatedBudget:
-		return m.AddedEstimatedBudget()
 	case idea.FieldViewCount:
 		return m.AddedViewCount()
 	case idea.FieldLikeCount:
@@ -16812,20 +16381,6 @@ func (m *IdeaMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *IdeaMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case idea.FieldEstimatedDurationMonths:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddEstimatedDurationMonths(v)
-		return nil
-	case idea.FieldEstimatedBudget:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddEstimatedBudget(v)
-		return nil
 	case idea.FieldViewCount:
 		v, ok := value.(int)
 		if !ok {
@@ -16848,26 +16403,11 @@ func (m *IdeaMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *IdeaMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(idea.FieldDescription) {
+		fields = append(fields, idea.FieldDescription)
+	}
 	if m.FieldCleared(idea.FieldAbstract) {
 		fields = append(fields, idea.FieldAbstract)
-	}
-	if m.FieldCleared(idea.FieldMotivation) {
-		fields = append(fields, idea.FieldMotivation)
-	}
-	if m.FieldCleared(idea.FieldMethodology) {
-		fields = append(fields, idea.FieldMethodology)
-	}
-	if m.FieldCleared(idea.FieldExpectedOutcome) {
-		fields = append(fields, idea.FieldExpectedOutcome)
-	}
-	if m.FieldCleared(idea.FieldEstimatedDurationMonths) {
-		fields = append(fields, idea.FieldEstimatedDurationMonths)
-	}
-	if m.FieldCleared(idea.FieldRequiredResources) {
-		fields = append(fields, idea.FieldRequiredResources)
-	}
-	if m.FieldCleared(idea.FieldEstimatedBudget) {
-		fields = append(fields, idea.FieldEstimatedBudget)
 	}
 	if m.FieldCleared(idea.FieldCategory) {
 		fields = append(fields, idea.FieldCategory)
@@ -16886,26 +16426,11 @@ func (m *IdeaMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *IdeaMutation) ClearField(name string) error {
 	switch name {
+	case idea.FieldDescription:
+		m.ClearDescription()
+		return nil
 	case idea.FieldAbstract:
 		m.ClearAbstract()
-		return nil
-	case idea.FieldMotivation:
-		m.ClearMotivation()
-		return nil
-	case idea.FieldMethodology:
-		m.ClearMethodology()
-		return nil
-	case idea.FieldExpectedOutcome:
-		m.ClearExpectedOutcome()
-		return nil
-	case idea.FieldEstimatedDurationMonths:
-		m.ClearEstimatedDurationMonths()
-		return nil
-	case idea.FieldRequiredResources:
-		m.ClearRequiredResources()
-		return nil
-	case idea.FieldEstimatedBudget:
-		m.ClearEstimatedBudget()
 		return nil
 	case idea.FieldCategory:
 		m.ClearCategory()
@@ -16927,38 +16452,17 @@ func (m *IdeaMutation) ResetField(name string) error {
 	case idea.FieldSlug:
 		m.ResetSlug()
 		return nil
+	case idea.FieldDescription:
+		m.ResetDescription()
+		return nil
 	case idea.FieldAbstract:
 		m.ResetAbstract()
-		return nil
-	case idea.FieldMotivation:
-		m.ResetMotivation()
-		return nil
-	case idea.FieldMethodology:
-		m.ResetMethodology()
-		return nil
-	case idea.FieldExpectedOutcome:
-		m.ResetExpectedOutcome()
 		return nil
 	case idea.FieldStatus:
 		m.ResetStatus()
 		return nil
 	case idea.FieldPriority:
 		m.ResetPriority()
-		return nil
-	case idea.FieldEstimatedDurationMonths:
-		m.ResetEstimatedDurationMonths()
-		return nil
-	case idea.FieldRequiredResources:
-		m.ResetRequiredResources()
-		return nil
-	case idea.FieldCollaborationNeeded:
-		m.ResetCollaborationNeeded()
-		return nil
-	case idea.FieldFundingRequired:
-		m.ResetFundingRequired()
-		return nil
-	case idea.FieldEstimatedBudget:
-		m.ResetEstimatedBudget()
 		return nil
 	case idea.FieldIsPublic:
 		m.ResetIsPublic()
@@ -16984,12 +16488,15 @@ func (m *IdeaMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *IdeaMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.user != nil {
 		edges = append(edges, idea.EdgeUser)
 	}
 	if m.translations != nil {
 		edges = append(edges, idea.EdgeTranslations)
+	}
+	if m.details != nil {
+		edges = append(edges, idea.EdgeDetails)
 	}
 	if m.blog_posts != nil {
 		edges = append(edges, idea.EdgeBlogPosts)
@@ -17017,6 +16524,10 @@ func (m *IdeaMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case idea.EdgeDetails:
+		if id := m.details; id != nil {
+			return []ent.Value{*id}
+		}
 	case idea.EdgeBlogPosts:
 		ids := make([]ent.Value, 0, len(m.blog_posts))
 		for id := range m.blog_posts {
@@ -17041,7 +16552,7 @@ func (m *IdeaMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *IdeaMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedtranslations != nil {
 		edges = append(edges, idea.EdgeTranslations)
 	}
@@ -17091,12 +16602,15 @@ func (m *IdeaMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *IdeaMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.cleareduser {
 		edges = append(edges, idea.EdgeUser)
 	}
 	if m.clearedtranslations {
 		edges = append(edges, idea.EdgeTranslations)
+	}
+	if m.cleareddetails {
+		edges = append(edges, idea.EdgeDetails)
 	}
 	if m.clearedblog_posts {
 		edges = append(edges, idea.EdgeBlogPosts)
@@ -17118,6 +16632,8 @@ func (m *IdeaMutation) EdgeCleared(name string) bool {
 		return m.cleareduser
 	case idea.EdgeTranslations:
 		return m.clearedtranslations
+	case idea.EdgeDetails:
+		return m.cleareddetails
 	case idea.EdgeBlogPosts:
 		return m.clearedblog_posts
 	case idea.EdgeComments:
@@ -17135,6 +16651,9 @@ func (m *IdeaMutation) ClearEdge(name string) error {
 	case idea.EdgeUser:
 		m.ClearUser()
 		return nil
+	case idea.EdgeDetails:
+		m.ClearDetails()
+		return nil
 	}
 	return fmt.Errorf("unknown Idea unique edge %s", name)
 }
@@ -17149,6 +16668,9 @@ func (m *IdeaMutation) ResetEdge(name string) error {
 	case idea.EdgeTranslations:
 		m.ResetTranslations()
 		return nil
+	case idea.EdgeDetails:
+		m.ResetDetails()
+		return nil
 	case idea.EdgeBlogPosts:
 		m.ResetBlogPosts()
 		return nil
@@ -17160,6 +16682,2053 @@ func (m *IdeaMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Idea edge %s", name)
+}
+
+// IdeaDetailMutation represents an operation that mutates the IdeaDetail nodes in the graph.
+type IdeaDetailMutation struct {
+	config
+	op                           Op
+	typ                          string
+	id                           *uuid.UUID
+	progress                     *string
+	results                      *string
+	references                   *string
+	estimated_duration_months    *int
+	addestimated_duration_months *int
+	required_resources           *string
+	collaboration_needed         *bool
+	funding_required             *bool
+	estimated_budget             *float64
+	addestimated_budget          *float64
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	clearedFields                map[string]struct{}
+	idea                         *uuid.UUID
+	clearedidea                  bool
+	translations                 map[uuid.UUID]struct{}
+	removedtranslations          map[uuid.UUID]struct{}
+	clearedtranslations          bool
+	done                         bool
+	oldValue                     func(context.Context) (*IdeaDetail, error)
+	predicates                   []predicate.IdeaDetail
+}
+
+var _ ent.Mutation = (*IdeaDetailMutation)(nil)
+
+// ideadetailOption allows management of the mutation configuration using functional options.
+type ideadetailOption func(*IdeaDetailMutation)
+
+// newIdeaDetailMutation creates new mutation for the IdeaDetail entity.
+func newIdeaDetailMutation(c config, op Op, opts ...ideadetailOption) *IdeaDetailMutation {
+	m := &IdeaDetailMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeIdeaDetail,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withIdeaDetailID sets the ID field of the mutation.
+func withIdeaDetailID(id uuid.UUID) ideadetailOption {
+	return func(m *IdeaDetailMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *IdeaDetail
+		)
+		m.oldValue = func(ctx context.Context) (*IdeaDetail, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().IdeaDetail.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withIdeaDetail sets the old IdeaDetail of the mutation.
+func withIdeaDetail(node *IdeaDetail) ideadetailOption {
+	return func(m *IdeaDetailMutation) {
+		m.oldValue = func(context.Context) (*IdeaDetail, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m IdeaDetailMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m IdeaDetailMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of IdeaDetail entities.
+func (m *IdeaDetailMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *IdeaDetailMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *IdeaDetailMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().IdeaDetail.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetIdeaID sets the "idea_id" field.
+func (m *IdeaDetailMutation) SetIdeaID(u uuid.UUID) {
+	m.idea = &u
+}
+
+// IdeaID returns the value of the "idea_id" field in the mutation.
+func (m *IdeaDetailMutation) IdeaID() (r uuid.UUID, exists bool) {
+	v := m.idea
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdeaID returns the old "idea_id" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldIdeaID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdeaID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdeaID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdeaID: %w", err)
+	}
+	return oldValue.IdeaID, nil
+}
+
+// ResetIdeaID resets all changes to the "idea_id" field.
+func (m *IdeaDetailMutation) ResetIdeaID() {
+	m.idea = nil
+}
+
+// SetProgress sets the "progress" field.
+func (m *IdeaDetailMutation) SetProgress(s string) {
+	m.progress = &s
+}
+
+// Progress returns the value of the "progress" field in the mutation.
+func (m *IdeaDetailMutation) Progress() (r string, exists bool) {
+	v := m.progress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProgress returns the old "progress" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldProgress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProgress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProgress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProgress: %w", err)
+	}
+	return oldValue.Progress, nil
+}
+
+// ClearProgress clears the value of the "progress" field.
+func (m *IdeaDetailMutation) ClearProgress() {
+	m.progress = nil
+	m.clearedFields[ideadetail.FieldProgress] = struct{}{}
+}
+
+// ProgressCleared returns if the "progress" field was cleared in this mutation.
+func (m *IdeaDetailMutation) ProgressCleared() bool {
+	_, ok := m.clearedFields[ideadetail.FieldProgress]
+	return ok
+}
+
+// ResetProgress resets all changes to the "progress" field.
+func (m *IdeaDetailMutation) ResetProgress() {
+	m.progress = nil
+	delete(m.clearedFields, ideadetail.FieldProgress)
+}
+
+// SetResults sets the "results" field.
+func (m *IdeaDetailMutation) SetResults(s string) {
+	m.results = &s
+}
+
+// Results returns the value of the "results" field in the mutation.
+func (m *IdeaDetailMutation) Results() (r string, exists bool) {
+	v := m.results
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResults returns the old "results" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldResults(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResults is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResults requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResults: %w", err)
+	}
+	return oldValue.Results, nil
+}
+
+// ClearResults clears the value of the "results" field.
+func (m *IdeaDetailMutation) ClearResults() {
+	m.results = nil
+	m.clearedFields[ideadetail.FieldResults] = struct{}{}
+}
+
+// ResultsCleared returns if the "results" field was cleared in this mutation.
+func (m *IdeaDetailMutation) ResultsCleared() bool {
+	_, ok := m.clearedFields[ideadetail.FieldResults]
+	return ok
+}
+
+// ResetResults resets all changes to the "results" field.
+func (m *IdeaDetailMutation) ResetResults() {
+	m.results = nil
+	delete(m.clearedFields, ideadetail.FieldResults)
+}
+
+// SetReferences sets the "references" field.
+func (m *IdeaDetailMutation) SetReferences(s string) {
+	m.references = &s
+}
+
+// References returns the value of the "references" field in the mutation.
+func (m *IdeaDetailMutation) References() (r string, exists bool) {
+	v := m.references
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferences returns the old "references" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldReferences(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferences is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferences requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferences: %w", err)
+	}
+	return oldValue.References, nil
+}
+
+// ClearReferences clears the value of the "references" field.
+func (m *IdeaDetailMutation) ClearReferences() {
+	m.references = nil
+	m.clearedFields[ideadetail.FieldReferences] = struct{}{}
+}
+
+// ReferencesCleared returns if the "references" field was cleared in this mutation.
+func (m *IdeaDetailMutation) ReferencesCleared() bool {
+	_, ok := m.clearedFields[ideadetail.FieldReferences]
+	return ok
+}
+
+// ResetReferences resets all changes to the "references" field.
+func (m *IdeaDetailMutation) ResetReferences() {
+	m.references = nil
+	delete(m.clearedFields, ideadetail.FieldReferences)
+}
+
+// SetEstimatedDurationMonths sets the "estimated_duration_months" field.
+func (m *IdeaDetailMutation) SetEstimatedDurationMonths(i int) {
+	m.estimated_duration_months = &i
+	m.addestimated_duration_months = nil
+}
+
+// EstimatedDurationMonths returns the value of the "estimated_duration_months" field in the mutation.
+func (m *IdeaDetailMutation) EstimatedDurationMonths() (r int, exists bool) {
+	v := m.estimated_duration_months
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEstimatedDurationMonths returns the old "estimated_duration_months" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldEstimatedDurationMonths(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEstimatedDurationMonths is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEstimatedDurationMonths requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEstimatedDurationMonths: %w", err)
+	}
+	return oldValue.EstimatedDurationMonths, nil
+}
+
+// AddEstimatedDurationMonths adds i to the "estimated_duration_months" field.
+func (m *IdeaDetailMutation) AddEstimatedDurationMonths(i int) {
+	if m.addestimated_duration_months != nil {
+		*m.addestimated_duration_months += i
+	} else {
+		m.addestimated_duration_months = &i
+	}
+}
+
+// AddedEstimatedDurationMonths returns the value that was added to the "estimated_duration_months" field in this mutation.
+func (m *IdeaDetailMutation) AddedEstimatedDurationMonths() (r int, exists bool) {
+	v := m.addestimated_duration_months
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearEstimatedDurationMonths clears the value of the "estimated_duration_months" field.
+func (m *IdeaDetailMutation) ClearEstimatedDurationMonths() {
+	m.estimated_duration_months = nil
+	m.addestimated_duration_months = nil
+	m.clearedFields[ideadetail.FieldEstimatedDurationMonths] = struct{}{}
+}
+
+// EstimatedDurationMonthsCleared returns if the "estimated_duration_months" field was cleared in this mutation.
+func (m *IdeaDetailMutation) EstimatedDurationMonthsCleared() bool {
+	_, ok := m.clearedFields[ideadetail.FieldEstimatedDurationMonths]
+	return ok
+}
+
+// ResetEstimatedDurationMonths resets all changes to the "estimated_duration_months" field.
+func (m *IdeaDetailMutation) ResetEstimatedDurationMonths() {
+	m.estimated_duration_months = nil
+	m.addestimated_duration_months = nil
+	delete(m.clearedFields, ideadetail.FieldEstimatedDurationMonths)
+}
+
+// SetRequiredResources sets the "required_resources" field.
+func (m *IdeaDetailMutation) SetRequiredResources(s string) {
+	m.required_resources = &s
+}
+
+// RequiredResources returns the value of the "required_resources" field in the mutation.
+func (m *IdeaDetailMutation) RequiredResources() (r string, exists bool) {
+	v := m.required_resources
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequiredResources returns the old "required_resources" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldRequiredResources(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequiredResources is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequiredResources requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequiredResources: %w", err)
+	}
+	return oldValue.RequiredResources, nil
+}
+
+// ClearRequiredResources clears the value of the "required_resources" field.
+func (m *IdeaDetailMutation) ClearRequiredResources() {
+	m.required_resources = nil
+	m.clearedFields[ideadetail.FieldRequiredResources] = struct{}{}
+}
+
+// RequiredResourcesCleared returns if the "required_resources" field was cleared in this mutation.
+func (m *IdeaDetailMutation) RequiredResourcesCleared() bool {
+	_, ok := m.clearedFields[ideadetail.FieldRequiredResources]
+	return ok
+}
+
+// ResetRequiredResources resets all changes to the "required_resources" field.
+func (m *IdeaDetailMutation) ResetRequiredResources() {
+	m.required_resources = nil
+	delete(m.clearedFields, ideadetail.FieldRequiredResources)
+}
+
+// SetCollaborationNeeded sets the "collaboration_needed" field.
+func (m *IdeaDetailMutation) SetCollaborationNeeded(b bool) {
+	m.collaboration_needed = &b
+}
+
+// CollaborationNeeded returns the value of the "collaboration_needed" field in the mutation.
+func (m *IdeaDetailMutation) CollaborationNeeded() (r bool, exists bool) {
+	v := m.collaboration_needed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCollaborationNeeded returns the old "collaboration_needed" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldCollaborationNeeded(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCollaborationNeeded is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCollaborationNeeded requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCollaborationNeeded: %w", err)
+	}
+	return oldValue.CollaborationNeeded, nil
+}
+
+// ResetCollaborationNeeded resets all changes to the "collaboration_needed" field.
+func (m *IdeaDetailMutation) ResetCollaborationNeeded() {
+	m.collaboration_needed = nil
+}
+
+// SetFundingRequired sets the "funding_required" field.
+func (m *IdeaDetailMutation) SetFundingRequired(b bool) {
+	m.funding_required = &b
+}
+
+// FundingRequired returns the value of the "funding_required" field in the mutation.
+func (m *IdeaDetailMutation) FundingRequired() (r bool, exists bool) {
+	v := m.funding_required
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFundingRequired returns the old "funding_required" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldFundingRequired(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFundingRequired is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFundingRequired requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFundingRequired: %w", err)
+	}
+	return oldValue.FundingRequired, nil
+}
+
+// ResetFundingRequired resets all changes to the "funding_required" field.
+func (m *IdeaDetailMutation) ResetFundingRequired() {
+	m.funding_required = nil
+}
+
+// SetEstimatedBudget sets the "estimated_budget" field.
+func (m *IdeaDetailMutation) SetEstimatedBudget(f float64) {
+	m.estimated_budget = &f
+	m.addestimated_budget = nil
+}
+
+// EstimatedBudget returns the value of the "estimated_budget" field in the mutation.
+func (m *IdeaDetailMutation) EstimatedBudget() (r float64, exists bool) {
+	v := m.estimated_budget
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEstimatedBudget returns the old "estimated_budget" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldEstimatedBudget(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEstimatedBudget is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEstimatedBudget requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEstimatedBudget: %w", err)
+	}
+	return oldValue.EstimatedBudget, nil
+}
+
+// AddEstimatedBudget adds f to the "estimated_budget" field.
+func (m *IdeaDetailMutation) AddEstimatedBudget(f float64) {
+	if m.addestimated_budget != nil {
+		*m.addestimated_budget += f
+	} else {
+		m.addestimated_budget = &f
+	}
+}
+
+// AddedEstimatedBudget returns the value that was added to the "estimated_budget" field in this mutation.
+func (m *IdeaDetailMutation) AddedEstimatedBudget() (r float64, exists bool) {
+	v := m.addestimated_budget
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearEstimatedBudget clears the value of the "estimated_budget" field.
+func (m *IdeaDetailMutation) ClearEstimatedBudget() {
+	m.estimated_budget = nil
+	m.addestimated_budget = nil
+	m.clearedFields[ideadetail.FieldEstimatedBudget] = struct{}{}
+}
+
+// EstimatedBudgetCleared returns if the "estimated_budget" field was cleared in this mutation.
+func (m *IdeaDetailMutation) EstimatedBudgetCleared() bool {
+	_, ok := m.clearedFields[ideadetail.FieldEstimatedBudget]
+	return ok
+}
+
+// ResetEstimatedBudget resets all changes to the "estimated_budget" field.
+func (m *IdeaDetailMutation) ResetEstimatedBudget() {
+	m.estimated_budget = nil
+	m.addestimated_budget = nil
+	delete(m.clearedFields, ideadetail.FieldEstimatedBudget)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *IdeaDetailMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *IdeaDetailMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *IdeaDetailMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *IdeaDetailMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *IdeaDetailMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the IdeaDetail entity.
+// If the IdeaDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *IdeaDetailMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearIdea clears the "idea" edge to the Idea entity.
+func (m *IdeaDetailMutation) ClearIdea() {
+	m.clearedidea = true
+	m.clearedFields[ideadetail.FieldIdeaID] = struct{}{}
+}
+
+// IdeaCleared reports if the "idea" edge to the Idea entity was cleared.
+func (m *IdeaDetailMutation) IdeaCleared() bool {
+	return m.clearedidea
+}
+
+// IdeaIDs returns the "idea" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// IdeaID instead. It exists only for internal usage by the builders.
+func (m *IdeaDetailMutation) IdeaIDs() (ids []uuid.UUID) {
+	if id := m.idea; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetIdea resets all changes to the "idea" edge.
+func (m *IdeaDetailMutation) ResetIdea() {
+	m.idea = nil
+	m.clearedidea = false
+}
+
+// AddTranslationIDs adds the "translations" edge to the IdeaDetailTranslation entity by ids.
+func (m *IdeaDetailMutation) AddTranslationIDs(ids ...uuid.UUID) {
+	if m.translations == nil {
+		m.translations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.translations[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTranslations clears the "translations" edge to the IdeaDetailTranslation entity.
+func (m *IdeaDetailMutation) ClearTranslations() {
+	m.clearedtranslations = true
+}
+
+// TranslationsCleared reports if the "translations" edge to the IdeaDetailTranslation entity was cleared.
+func (m *IdeaDetailMutation) TranslationsCleared() bool {
+	return m.clearedtranslations
+}
+
+// RemoveTranslationIDs removes the "translations" edge to the IdeaDetailTranslation entity by IDs.
+func (m *IdeaDetailMutation) RemoveTranslationIDs(ids ...uuid.UUID) {
+	if m.removedtranslations == nil {
+		m.removedtranslations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.translations, ids[i])
+		m.removedtranslations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTranslations returns the removed IDs of the "translations" edge to the IdeaDetailTranslation entity.
+func (m *IdeaDetailMutation) RemovedTranslationsIDs() (ids []uuid.UUID) {
+	for id := range m.removedtranslations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TranslationsIDs returns the "translations" edge IDs in the mutation.
+func (m *IdeaDetailMutation) TranslationsIDs() (ids []uuid.UUID) {
+	for id := range m.translations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTranslations resets all changes to the "translations" edge.
+func (m *IdeaDetailMutation) ResetTranslations() {
+	m.translations = nil
+	m.clearedtranslations = false
+	m.removedtranslations = nil
+}
+
+// Where appends a list predicates to the IdeaDetailMutation builder.
+func (m *IdeaDetailMutation) Where(ps ...predicate.IdeaDetail) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the IdeaDetailMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *IdeaDetailMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.IdeaDetail, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *IdeaDetailMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *IdeaDetailMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (IdeaDetail).
+func (m *IdeaDetailMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *IdeaDetailMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.idea != nil {
+		fields = append(fields, ideadetail.FieldIdeaID)
+	}
+	if m.progress != nil {
+		fields = append(fields, ideadetail.FieldProgress)
+	}
+	if m.results != nil {
+		fields = append(fields, ideadetail.FieldResults)
+	}
+	if m.references != nil {
+		fields = append(fields, ideadetail.FieldReferences)
+	}
+	if m.estimated_duration_months != nil {
+		fields = append(fields, ideadetail.FieldEstimatedDurationMonths)
+	}
+	if m.required_resources != nil {
+		fields = append(fields, ideadetail.FieldRequiredResources)
+	}
+	if m.collaboration_needed != nil {
+		fields = append(fields, ideadetail.FieldCollaborationNeeded)
+	}
+	if m.funding_required != nil {
+		fields = append(fields, ideadetail.FieldFundingRequired)
+	}
+	if m.estimated_budget != nil {
+		fields = append(fields, ideadetail.FieldEstimatedBudget)
+	}
+	if m.created_at != nil {
+		fields = append(fields, ideadetail.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ideadetail.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *IdeaDetailMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ideadetail.FieldIdeaID:
+		return m.IdeaID()
+	case ideadetail.FieldProgress:
+		return m.Progress()
+	case ideadetail.FieldResults:
+		return m.Results()
+	case ideadetail.FieldReferences:
+		return m.References()
+	case ideadetail.FieldEstimatedDurationMonths:
+		return m.EstimatedDurationMonths()
+	case ideadetail.FieldRequiredResources:
+		return m.RequiredResources()
+	case ideadetail.FieldCollaborationNeeded:
+		return m.CollaborationNeeded()
+	case ideadetail.FieldFundingRequired:
+		return m.FundingRequired()
+	case ideadetail.FieldEstimatedBudget:
+		return m.EstimatedBudget()
+	case ideadetail.FieldCreatedAt:
+		return m.CreatedAt()
+	case ideadetail.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *IdeaDetailMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ideadetail.FieldIdeaID:
+		return m.OldIdeaID(ctx)
+	case ideadetail.FieldProgress:
+		return m.OldProgress(ctx)
+	case ideadetail.FieldResults:
+		return m.OldResults(ctx)
+	case ideadetail.FieldReferences:
+		return m.OldReferences(ctx)
+	case ideadetail.FieldEstimatedDurationMonths:
+		return m.OldEstimatedDurationMonths(ctx)
+	case ideadetail.FieldRequiredResources:
+		return m.OldRequiredResources(ctx)
+	case ideadetail.FieldCollaborationNeeded:
+		return m.OldCollaborationNeeded(ctx)
+	case ideadetail.FieldFundingRequired:
+		return m.OldFundingRequired(ctx)
+	case ideadetail.FieldEstimatedBudget:
+		return m.OldEstimatedBudget(ctx)
+	case ideadetail.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ideadetail.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown IdeaDetail field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *IdeaDetailMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ideadetail.FieldIdeaID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdeaID(v)
+		return nil
+	case ideadetail.FieldProgress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProgress(v)
+		return nil
+	case ideadetail.FieldResults:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResults(v)
+		return nil
+	case ideadetail.FieldReferences:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferences(v)
+		return nil
+	case ideadetail.FieldEstimatedDurationMonths:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEstimatedDurationMonths(v)
+		return nil
+	case ideadetail.FieldRequiredResources:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequiredResources(v)
+		return nil
+	case ideadetail.FieldCollaborationNeeded:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCollaborationNeeded(v)
+		return nil
+	case ideadetail.FieldFundingRequired:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFundingRequired(v)
+		return nil
+	case ideadetail.FieldEstimatedBudget:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEstimatedBudget(v)
+		return nil
+	case ideadetail.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ideadetail.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetail field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *IdeaDetailMutation) AddedFields() []string {
+	var fields []string
+	if m.addestimated_duration_months != nil {
+		fields = append(fields, ideadetail.FieldEstimatedDurationMonths)
+	}
+	if m.addestimated_budget != nil {
+		fields = append(fields, ideadetail.FieldEstimatedBudget)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *IdeaDetailMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ideadetail.FieldEstimatedDurationMonths:
+		return m.AddedEstimatedDurationMonths()
+	case ideadetail.FieldEstimatedBudget:
+		return m.AddedEstimatedBudget()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *IdeaDetailMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ideadetail.FieldEstimatedDurationMonths:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddEstimatedDurationMonths(v)
+		return nil
+	case ideadetail.FieldEstimatedBudget:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddEstimatedBudget(v)
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetail numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *IdeaDetailMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ideadetail.FieldProgress) {
+		fields = append(fields, ideadetail.FieldProgress)
+	}
+	if m.FieldCleared(ideadetail.FieldResults) {
+		fields = append(fields, ideadetail.FieldResults)
+	}
+	if m.FieldCleared(ideadetail.FieldReferences) {
+		fields = append(fields, ideadetail.FieldReferences)
+	}
+	if m.FieldCleared(ideadetail.FieldEstimatedDurationMonths) {
+		fields = append(fields, ideadetail.FieldEstimatedDurationMonths)
+	}
+	if m.FieldCleared(ideadetail.FieldRequiredResources) {
+		fields = append(fields, ideadetail.FieldRequiredResources)
+	}
+	if m.FieldCleared(ideadetail.FieldEstimatedBudget) {
+		fields = append(fields, ideadetail.FieldEstimatedBudget)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *IdeaDetailMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *IdeaDetailMutation) ClearField(name string) error {
+	switch name {
+	case ideadetail.FieldProgress:
+		m.ClearProgress()
+		return nil
+	case ideadetail.FieldResults:
+		m.ClearResults()
+		return nil
+	case ideadetail.FieldReferences:
+		m.ClearReferences()
+		return nil
+	case ideadetail.FieldEstimatedDurationMonths:
+		m.ClearEstimatedDurationMonths()
+		return nil
+	case ideadetail.FieldRequiredResources:
+		m.ClearRequiredResources()
+		return nil
+	case ideadetail.FieldEstimatedBudget:
+		m.ClearEstimatedBudget()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetail nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *IdeaDetailMutation) ResetField(name string) error {
+	switch name {
+	case ideadetail.FieldIdeaID:
+		m.ResetIdeaID()
+		return nil
+	case ideadetail.FieldProgress:
+		m.ResetProgress()
+		return nil
+	case ideadetail.FieldResults:
+		m.ResetResults()
+		return nil
+	case ideadetail.FieldReferences:
+		m.ResetReferences()
+		return nil
+	case ideadetail.FieldEstimatedDurationMonths:
+		m.ResetEstimatedDurationMonths()
+		return nil
+	case ideadetail.FieldRequiredResources:
+		m.ResetRequiredResources()
+		return nil
+	case ideadetail.FieldCollaborationNeeded:
+		m.ResetCollaborationNeeded()
+		return nil
+	case ideadetail.FieldFundingRequired:
+		m.ResetFundingRequired()
+		return nil
+	case ideadetail.FieldEstimatedBudget:
+		m.ResetEstimatedBudget()
+		return nil
+	case ideadetail.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ideadetail.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetail field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *IdeaDetailMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.idea != nil {
+		edges = append(edges, ideadetail.EdgeIdea)
+	}
+	if m.translations != nil {
+		edges = append(edges, ideadetail.EdgeTranslations)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *IdeaDetailMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case ideadetail.EdgeIdea:
+		if id := m.idea; id != nil {
+			return []ent.Value{*id}
+		}
+	case ideadetail.EdgeTranslations:
+		ids := make([]ent.Value, 0, len(m.translations))
+		for id := range m.translations {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *IdeaDetailMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedtranslations != nil {
+		edges = append(edges, ideadetail.EdgeTranslations)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *IdeaDetailMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case ideadetail.EdgeTranslations:
+		ids := make([]ent.Value, 0, len(m.removedtranslations))
+		for id := range m.removedtranslations {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *IdeaDetailMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedidea {
+		edges = append(edges, ideadetail.EdgeIdea)
+	}
+	if m.clearedtranslations {
+		edges = append(edges, ideadetail.EdgeTranslations)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *IdeaDetailMutation) EdgeCleared(name string) bool {
+	switch name {
+	case ideadetail.EdgeIdea:
+		return m.clearedidea
+	case ideadetail.EdgeTranslations:
+		return m.clearedtranslations
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *IdeaDetailMutation) ClearEdge(name string) error {
+	switch name {
+	case ideadetail.EdgeIdea:
+		m.ClearIdea()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetail unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *IdeaDetailMutation) ResetEdge(name string) error {
+	switch name {
+	case ideadetail.EdgeIdea:
+		m.ResetIdea()
+		return nil
+	case ideadetail.EdgeTranslations:
+		m.ResetTranslations()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetail edge %s", name)
+}
+
+// IdeaDetailTranslationMutation represents an operation that mutates the IdeaDetailTranslation nodes in the graph.
+type IdeaDetailTranslationMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	progress           *string
+	results            *string
+	references         *string
+	required_resources *string
+	created_at         *time.Time
+	clearedFields      map[string]struct{}
+	idea_detail        *uuid.UUID
+	clearedidea_detail bool
+	language           *string
+	clearedlanguage    bool
+	done               bool
+	oldValue           func(context.Context) (*IdeaDetailTranslation, error)
+	predicates         []predicate.IdeaDetailTranslation
+}
+
+var _ ent.Mutation = (*IdeaDetailTranslationMutation)(nil)
+
+// ideadetailtranslationOption allows management of the mutation configuration using functional options.
+type ideadetailtranslationOption func(*IdeaDetailTranslationMutation)
+
+// newIdeaDetailTranslationMutation creates new mutation for the IdeaDetailTranslation entity.
+func newIdeaDetailTranslationMutation(c config, op Op, opts ...ideadetailtranslationOption) *IdeaDetailTranslationMutation {
+	m := &IdeaDetailTranslationMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeIdeaDetailTranslation,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withIdeaDetailTranslationID sets the ID field of the mutation.
+func withIdeaDetailTranslationID(id uuid.UUID) ideadetailtranslationOption {
+	return func(m *IdeaDetailTranslationMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *IdeaDetailTranslation
+		)
+		m.oldValue = func(ctx context.Context) (*IdeaDetailTranslation, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().IdeaDetailTranslation.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withIdeaDetailTranslation sets the old IdeaDetailTranslation of the mutation.
+func withIdeaDetailTranslation(node *IdeaDetailTranslation) ideadetailtranslationOption {
+	return func(m *IdeaDetailTranslationMutation) {
+		m.oldValue = func(context.Context) (*IdeaDetailTranslation, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m IdeaDetailTranslationMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m IdeaDetailTranslationMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of IdeaDetailTranslation entities.
+func (m *IdeaDetailTranslationMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *IdeaDetailTranslationMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *IdeaDetailTranslationMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().IdeaDetailTranslation.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetIdeaDetailID sets the "idea_detail_id" field.
+func (m *IdeaDetailTranslationMutation) SetIdeaDetailID(u uuid.UUID) {
+	m.idea_detail = &u
+}
+
+// IdeaDetailID returns the value of the "idea_detail_id" field in the mutation.
+func (m *IdeaDetailTranslationMutation) IdeaDetailID() (r uuid.UUID, exists bool) {
+	v := m.idea_detail
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdeaDetailID returns the old "idea_detail_id" field's value of the IdeaDetailTranslation entity.
+// If the IdeaDetailTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailTranslationMutation) OldIdeaDetailID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdeaDetailID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdeaDetailID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdeaDetailID: %w", err)
+	}
+	return oldValue.IdeaDetailID, nil
+}
+
+// ResetIdeaDetailID resets all changes to the "idea_detail_id" field.
+func (m *IdeaDetailTranslationMutation) ResetIdeaDetailID() {
+	m.idea_detail = nil
+}
+
+// SetLanguageCode sets the "language_code" field.
+func (m *IdeaDetailTranslationMutation) SetLanguageCode(s string) {
+	m.language = &s
+}
+
+// LanguageCode returns the value of the "language_code" field in the mutation.
+func (m *IdeaDetailTranslationMutation) LanguageCode() (r string, exists bool) {
+	v := m.language
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLanguageCode returns the old "language_code" field's value of the IdeaDetailTranslation entity.
+// If the IdeaDetailTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailTranslationMutation) OldLanguageCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLanguageCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLanguageCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLanguageCode: %w", err)
+	}
+	return oldValue.LanguageCode, nil
+}
+
+// ResetLanguageCode resets all changes to the "language_code" field.
+func (m *IdeaDetailTranslationMutation) ResetLanguageCode() {
+	m.language = nil
+}
+
+// SetProgress sets the "progress" field.
+func (m *IdeaDetailTranslationMutation) SetProgress(s string) {
+	m.progress = &s
+}
+
+// Progress returns the value of the "progress" field in the mutation.
+func (m *IdeaDetailTranslationMutation) Progress() (r string, exists bool) {
+	v := m.progress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProgress returns the old "progress" field's value of the IdeaDetailTranslation entity.
+// If the IdeaDetailTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailTranslationMutation) OldProgress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProgress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProgress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProgress: %w", err)
+	}
+	return oldValue.Progress, nil
+}
+
+// ClearProgress clears the value of the "progress" field.
+func (m *IdeaDetailTranslationMutation) ClearProgress() {
+	m.progress = nil
+	m.clearedFields[ideadetailtranslation.FieldProgress] = struct{}{}
+}
+
+// ProgressCleared returns if the "progress" field was cleared in this mutation.
+func (m *IdeaDetailTranslationMutation) ProgressCleared() bool {
+	_, ok := m.clearedFields[ideadetailtranslation.FieldProgress]
+	return ok
+}
+
+// ResetProgress resets all changes to the "progress" field.
+func (m *IdeaDetailTranslationMutation) ResetProgress() {
+	m.progress = nil
+	delete(m.clearedFields, ideadetailtranslation.FieldProgress)
+}
+
+// SetResults sets the "results" field.
+func (m *IdeaDetailTranslationMutation) SetResults(s string) {
+	m.results = &s
+}
+
+// Results returns the value of the "results" field in the mutation.
+func (m *IdeaDetailTranslationMutation) Results() (r string, exists bool) {
+	v := m.results
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResults returns the old "results" field's value of the IdeaDetailTranslation entity.
+// If the IdeaDetailTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailTranslationMutation) OldResults(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResults is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResults requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResults: %w", err)
+	}
+	return oldValue.Results, nil
+}
+
+// ClearResults clears the value of the "results" field.
+func (m *IdeaDetailTranslationMutation) ClearResults() {
+	m.results = nil
+	m.clearedFields[ideadetailtranslation.FieldResults] = struct{}{}
+}
+
+// ResultsCleared returns if the "results" field was cleared in this mutation.
+func (m *IdeaDetailTranslationMutation) ResultsCleared() bool {
+	_, ok := m.clearedFields[ideadetailtranslation.FieldResults]
+	return ok
+}
+
+// ResetResults resets all changes to the "results" field.
+func (m *IdeaDetailTranslationMutation) ResetResults() {
+	m.results = nil
+	delete(m.clearedFields, ideadetailtranslation.FieldResults)
+}
+
+// SetReferences sets the "references" field.
+func (m *IdeaDetailTranslationMutation) SetReferences(s string) {
+	m.references = &s
+}
+
+// References returns the value of the "references" field in the mutation.
+func (m *IdeaDetailTranslationMutation) References() (r string, exists bool) {
+	v := m.references
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferences returns the old "references" field's value of the IdeaDetailTranslation entity.
+// If the IdeaDetailTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailTranslationMutation) OldReferences(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferences is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferences requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferences: %w", err)
+	}
+	return oldValue.References, nil
+}
+
+// ClearReferences clears the value of the "references" field.
+func (m *IdeaDetailTranslationMutation) ClearReferences() {
+	m.references = nil
+	m.clearedFields[ideadetailtranslation.FieldReferences] = struct{}{}
+}
+
+// ReferencesCleared returns if the "references" field was cleared in this mutation.
+func (m *IdeaDetailTranslationMutation) ReferencesCleared() bool {
+	_, ok := m.clearedFields[ideadetailtranslation.FieldReferences]
+	return ok
+}
+
+// ResetReferences resets all changes to the "references" field.
+func (m *IdeaDetailTranslationMutation) ResetReferences() {
+	m.references = nil
+	delete(m.clearedFields, ideadetailtranslation.FieldReferences)
+}
+
+// SetRequiredResources sets the "required_resources" field.
+func (m *IdeaDetailTranslationMutation) SetRequiredResources(s string) {
+	m.required_resources = &s
+}
+
+// RequiredResources returns the value of the "required_resources" field in the mutation.
+func (m *IdeaDetailTranslationMutation) RequiredResources() (r string, exists bool) {
+	v := m.required_resources
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequiredResources returns the old "required_resources" field's value of the IdeaDetailTranslation entity.
+// If the IdeaDetailTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailTranslationMutation) OldRequiredResources(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequiredResources is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequiredResources requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequiredResources: %w", err)
+	}
+	return oldValue.RequiredResources, nil
+}
+
+// ClearRequiredResources clears the value of the "required_resources" field.
+func (m *IdeaDetailTranslationMutation) ClearRequiredResources() {
+	m.required_resources = nil
+	m.clearedFields[ideadetailtranslation.FieldRequiredResources] = struct{}{}
+}
+
+// RequiredResourcesCleared returns if the "required_resources" field was cleared in this mutation.
+func (m *IdeaDetailTranslationMutation) RequiredResourcesCleared() bool {
+	_, ok := m.clearedFields[ideadetailtranslation.FieldRequiredResources]
+	return ok
+}
+
+// ResetRequiredResources resets all changes to the "required_resources" field.
+func (m *IdeaDetailTranslationMutation) ResetRequiredResources() {
+	m.required_resources = nil
+	delete(m.clearedFields, ideadetailtranslation.FieldRequiredResources)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *IdeaDetailTranslationMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *IdeaDetailTranslationMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the IdeaDetailTranslation entity.
+// If the IdeaDetailTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IdeaDetailTranslationMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *IdeaDetailTranslationMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearIdeaDetail clears the "idea_detail" edge to the IdeaDetail entity.
+func (m *IdeaDetailTranslationMutation) ClearIdeaDetail() {
+	m.clearedidea_detail = true
+	m.clearedFields[ideadetailtranslation.FieldIdeaDetailID] = struct{}{}
+}
+
+// IdeaDetailCleared reports if the "idea_detail" edge to the IdeaDetail entity was cleared.
+func (m *IdeaDetailTranslationMutation) IdeaDetailCleared() bool {
+	return m.clearedidea_detail
+}
+
+// IdeaDetailIDs returns the "idea_detail" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// IdeaDetailID instead. It exists only for internal usage by the builders.
+func (m *IdeaDetailTranslationMutation) IdeaDetailIDs() (ids []uuid.UUID) {
+	if id := m.idea_detail; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetIdeaDetail resets all changes to the "idea_detail" edge.
+func (m *IdeaDetailTranslationMutation) ResetIdeaDetail() {
+	m.idea_detail = nil
+	m.clearedidea_detail = false
+}
+
+// SetLanguageID sets the "language" edge to the Language entity by id.
+func (m *IdeaDetailTranslationMutation) SetLanguageID(id string) {
+	m.language = &id
+}
+
+// ClearLanguage clears the "language" edge to the Language entity.
+func (m *IdeaDetailTranslationMutation) ClearLanguage() {
+	m.clearedlanguage = true
+	m.clearedFields[ideadetailtranslation.FieldLanguageCode] = struct{}{}
+}
+
+// LanguageCleared reports if the "language" edge to the Language entity was cleared.
+func (m *IdeaDetailTranslationMutation) LanguageCleared() bool {
+	return m.clearedlanguage
+}
+
+// LanguageID returns the "language" edge ID in the mutation.
+func (m *IdeaDetailTranslationMutation) LanguageID() (id string, exists bool) {
+	if m.language != nil {
+		return *m.language, true
+	}
+	return
+}
+
+// LanguageIDs returns the "language" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// LanguageID instead. It exists only for internal usage by the builders.
+func (m *IdeaDetailTranslationMutation) LanguageIDs() (ids []string) {
+	if id := m.language; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetLanguage resets all changes to the "language" edge.
+func (m *IdeaDetailTranslationMutation) ResetLanguage() {
+	m.language = nil
+	m.clearedlanguage = false
+}
+
+// Where appends a list predicates to the IdeaDetailTranslationMutation builder.
+func (m *IdeaDetailTranslationMutation) Where(ps ...predicate.IdeaDetailTranslation) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the IdeaDetailTranslationMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *IdeaDetailTranslationMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.IdeaDetailTranslation, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *IdeaDetailTranslationMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *IdeaDetailTranslationMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (IdeaDetailTranslation).
+func (m *IdeaDetailTranslationMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *IdeaDetailTranslationMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.idea_detail != nil {
+		fields = append(fields, ideadetailtranslation.FieldIdeaDetailID)
+	}
+	if m.language != nil {
+		fields = append(fields, ideadetailtranslation.FieldLanguageCode)
+	}
+	if m.progress != nil {
+		fields = append(fields, ideadetailtranslation.FieldProgress)
+	}
+	if m.results != nil {
+		fields = append(fields, ideadetailtranslation.FieldResults)
+	}
+	if m.references != nil {
+		fields = append(fields, ideadetailtranslation.FieldReferences)
+	}
+	if m.required_resources != nil {
+		fields = append(fields, ideadetailtranslation.FieldRequiredResources)
+	}
+	if m.created_at != nil {
+		fields = append(fields, ideadetailtranslation.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *IdeaDetailTranslationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ideadetailtranslation.FieldIdeaDetailID:
+		return m.IdeaDetailID()
+	case ideadetailtranslation.FieldLanguageCode:
+		return m.LanguageCode()
+	case ideadetailtranslation.FieldProgress:
+		return m.Progress()
+	case ideadetailtranslation.FieldResults:
+		return m.Results()
+	case ideadetailtranslation.FieldReferences:
+		return m.References()
+	case ideadetailtranslation.FieldRequiredResources:
+		return m.RequiredResources()
+	case ideadetailtranslation.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *IdeaDetailTranslationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ideadetailtranslation.FieldIdeaDetailID:
+		return m.OldIdeaDetailID(ctx)
+	case ideadetailtranslation.FieldLanguageCode:
+		return m.OldLanguageCode(ctx)
+	case ideadetailtranslation.FieldProgress:
+		return m.OldProgress(ctx)
+	case ideadetailtranslation.FieldResults:
+		return m.OldResults(ctx)
+	case ideadetailtranslation.FieldReferences:
+		return m.OldReferences(ctx)
+	case ideadetailtranslation.FieldRequiredResources:
+		return m.OldRequiredResources(ctx)
+	case ideadetailtranslation.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown IdeaDetailTranslation field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *IdeaDetailTranslationMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ideadetailtranslation.FieldIdeaDetailID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdeaDetailID(v)
+		return nil
+	case ideadetailtranslation.FieldLanguageCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLanguageCode(v)
+		return nil
+	case ideadetailtranslation.FieldProgress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProgress(v)
+		return nil
+	case ideadetailtranslation.FieldResults:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResults(v)
+		return nil
+	case ideadetailtranslation.FieldReferences:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferences(v)
+		return nil
+	case ideadetailtranslation.FieldRequiredResources:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequiredResources(v)
+		return nil
+	case ideadetailtranslation.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetailTranslation field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *IdeaDetailTranslationMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *IdeaDetailTranslationMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *IdeaDetailTranslationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown IdeaDetailTranslation numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *IdeaDetailTranslationMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ideadetailtranslation.FieldProgress) {
+		fields = append(fields, ideadetailtranslation.FieldProgress)
+	}
+	if m.FieldCleared(ideadetailtranslation.FieldResults) {
+		fields = append(fields, ideadetailtranslation.FieldResults)
+	}
+	if m.FieldCleared(ideadetailtranslation.FieldReferences) {
+		fields = append(fields, ideadetailtranslation.FieldReferences)
+	}
+	if m.FieldCleared(ideadetailtranslation.FieldRequiredResources) {
+		fields = append(fields, ideadetailtranslation.FieldRequiredResources)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *IdeaDetailTranslationMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *IdeaDetailTranslationMutation) ClearField(name string) error {
+	switch name {
+	case ideadetailtranslation.FieldProgress:
+		m.ClearProgress()
+		return nil
+	case ideadetailtranslation.FieldResults:
+		m.ClearResults()
+		return nil
+	case ideadetailtranslation.FieldReferences:
+		m.ClearReferences()
+		return nil
+	case ideadetailtranslation.FieldRequiredResources:
+		m.ClearRequiredResources()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetailTranslation nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *IdeaDetailTranslationMutation) ResetField(name string) error {
+	switch name {
+	case ideadetailtranslation.FieldIdeaDetailID:
+		m.ResetIdeaDetailID()
+		return nil
+	case ideadetailtranslation.FieldLanguageCode:
+		m.ResetLanguageCode()
+		return nil
+	case ideadetailtranslation.FieldProgress:
+		m.ResetProgress()
+		return nil
+	case ideadetailtranslation.FieldResults:
+		m.ResetResults()
+		return nil
+	case ideadetailtranslation.FieldReferences:
+		m.ResetReferences()
+		return nil
+	case ideadetailtranslation.FieldRequiredResources:
+		m.ResetRequiredResources()
+		return nil
+	case ideadetailtranslation.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetailTranslation field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *IdeaDetailTranslationMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.idea_detail != nil {
+		edges = append(edges, ideadetailtranslation.EdgeIdeaDetail)
+	}
+	if m.language != nil {
+		edges = append(edges, ideadetailtranslation.EdgeLanguage)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *IdeaDetailTranslationMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case ideadetailtranslation.EdgeIdeaDetail:
+		if id := m.idea_detail; id != nil {
+			return []ent.Value{*id}
+		}
+	case ideadetailtranslation.EdgeLanguage:
+		if id := m.language; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *IdeaDetailTranslationMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *IdeaDetailTranslationMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *IdeaDetailTranslationMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedidea_detail {
+		edges = append(edges, ideadetailtranslation.EdgeIdeaDetail)
+	}
+	if m.clearedlanguage {
+		edges = append(edges, ideadetailtranslation.EdgeLanguage)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *IdeaDetailTranslationMutation) EdgeCleared(name string) bool {
+	switch name {
+	case ideadetailtranslation.EdgeIdeaDetail:
+		return m.clearedidea_detail
+	case ideadetailtranslation.EdgeLanguage:
+		return m.clearedlanguage
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *IdeaDetailTranslationMutation) ClearEdge(name string) error {
+	switch name {
+	case ideadetailtranslation.EdgeIdeaDetail:
+		m.ClearIdeaDetail()
+		return nil
+	case ideadetailtranslation.EdgeLanguage:
+		m.ClearLanguage()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetailTranslation unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *IdeaDetailTranslationMutation) ResetEdge(name string) error {
+	switch name {
+	case ideadetailtranslation.EdgeIdeaDetail:
+		m.ResetIdeaDetail()
+		return nil
+	case ideadetailtranslation.EdgeLanguage:
+		m.ResetLanguage()
+		return nil
+	}
+	return fmt.Errorf("unknown IdeaDetailTranslation edge %s", name)
 }
 
 // IdeaTagMutation represents an operation that mutates the IdeaTag nodes in the graph.
@@ -18771,6 +20340,9 @@ type LanguageMutation struct {
 	idea_translations                           map[uuid.UUID]struct{}
 	removedidea_translations                    map[uuid.UUID]struct{}
 	clearedidea_translations                    bool
+	idea_detail_translations                    map[uuid.UUID]struct{}
+	removedidea_detail_translations             map[uuid.UUID]struct{}
+	clearedidea_detail_translations             bool
 	research_project_translations               map[uuid.UUID]struct{}
 	removedresearch_project_translations        map[uuid.UUID]struct{}
 	clearedresearch_project_translations        bool
@@ -19687,6 +21259,60 @@ func (m *LanguageMutation) ResetIdeaTranslations() {
 	m.removedidea_translations = nil
 }
 
+// AddIdeaDetailTranslationIDs adds the "idea_detail_translations" edge to the IdeaDetailTranslation entity by ids.
+func (m *LanguageMutation) AddIdeaDetailTranslationIDs(ids ...uuid.UUID) {
+	if m.idea_detail_translations == nil {
+		m.idea_detail_translations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.idea_detail_translations[ids[i]] = struct{}{}
+	}
+}
+
+// ClearIdeaDetailTranslations clears the "idea_detail_translations" edge to the IdeaDetailTranslation entity.
+func (m *LanguageMutation) ClearIdeaDetailTranslations() {
+	m.clearedidea_detail_translations = true
+}
+
+// IdeaDetailTranslationsCleared reports if the "idea_detail_translations" edge to the IdeaDetailTranslation entity was cleared.
+func (m *LanguageMutation) IdeaDetailTranslationsCleared() bool {
+	return m.clearedidea_detail_translations
+}
+
+// RemoveIdeaDetailTranslationIDs removes the "idea_detail_translations" edge to the IdeaDetailTranslation entity by IDs.
+func (m *LanguageMutation) RemoveIdeaDetailTranslationIDs(ids ...uuid.UUID) {
+	if m.removedidea_detail_translations == nil {
+		m.removedidea_detail_translations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.idea_detail_translations, ids[i])
+		m.removedidea_detail_translations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedIdeaDetailTranslations returns the removed IDs of the "idea_detail_translations" edge to the IdeaDetailTranslation entity.
+func (m *LanguageMutation) RemovedIdeaDetailTranslationsIDs() (ids []uuid.UUID) {
+	for id := range m.removedidea_detail_translations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// IdeaDetailTranslationsIDs returns the "idea_detail_translations" edge IDs in the mutation.
+func (m *LanguageMutation) IdeaDetailTranslationsIDs() (ids []uuid.UUID) {
+	for id := range m.idea_detail_translations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetIdeaDetailTranslations resets all changes to the "idea_detail_translations" edge.
+func (m *LanguageMutation) ResetIdeaDetailTranslations() {
+	m.idea_detail_translations = nil
+	m.clearedidea_detail_translations = false
+	m.removedidea_detail_translations = nil
+}
+
 // AddResearchProjectTranslationIDs adds the "research_project_translations" edge to the ResearchProjectTranslation entity by ids.
 func (m *LanguageMutation) AddResearchProjectTranslationIDs(ids ...uuid.UUID) {
 	if m.research_project_translations == nil {
@@ -20141,7 +21767,7 @@ func (m *LanguageMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *LanguageMutation) AddedEdges() []string {
-	edges := make([]string, 0, 17)
+	edges := make([]string, 0, 18)
 	if m.personal_info_translations != nil {
 		edges = append(edges, language.EdgePersonalInfoTranslations)
 	}
@@ -20177,6 +21803,9 @@ func (m *LanguageMutation) AddedEdges() []string {
 	}
 	if m.idea_translations != nil {
 		edges = append(edges, language.EdgeIdeaTranslations)
+	}
+	if m.idea_detail_translations != nil {
+		edges = append(edges, language.EdgeIdeaDetailTranslations)
 	}
 	if m.research_project_translations != nil {
 		edges = append(edges, language.EdgeResearchProjectTranslations)
@@ -20272,6 +21901,12 @@ func (m *LanguageMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case language.EdgeIdeaDetailTranslations:
+		ids := make([]ent.Value, 0, len(m.idea_detail_translations))
+		for id := range m.idea_detail_translations {
+			ids = append(ids, id)
+		}
+		return ids
 	case language.EdgeResearchProjectTranslations:
 		ids := make([]ent.Value, 0, len(m.research_project_translations))
 		for id := range m.research_project_translations {
@@ -20308,7 +21943,7 @@ func (m *LanguageMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *LanguageMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 17)
+	edges := make([]string, 0, 18)
 	if m.removedpersonal_info_translations != nil {
 		edges = append(edges, language.EdgePersonalInfoTranslations)
 	}
@@ -20344,6 +21979,9 @@ func (m *LanguageMutation) RemovedEdges() []string {
 	}
 	if m.removedidea_translations != nil {
 		edges = append(edges, language.EdgeIdeaTranslations)
+	}
+	if m.removedidea_detail_translations != nil {
+		edges = append(edges, language.EdgeIdeaDetailTranslations)
 	}
 	if m.removedresearch_project_translations != nil {
 		edges = append(edges, language.EdgeResearchProjectTranslations)
@@ -20439,6 +22077,12 @@ func (m *LanguageMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case language.EdgeIdeaDetailTranslations:
+		ids := make([]ent.Value, 0, len(m.removedidea_detail_translations))
+		for id := range m.removedidea_detail_translations {
+			ids = append(ids, id)
+		}
+		return ids
 	case language.EdgeResearchProjectTranslations:
 		ids := make([]ent.Value, 0, len(m.removedresearch_project_translations))
 		for id := range m.removedresearch_project_translations {
@@ -20475,7 +22119,7 @@ func (m *LanguageMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *LanguageMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 17)
+	edges := make([]string, 0, 18)
 	if m.clearedpersonal_info_translations {
 		edges = append(edges, language.EdgePersonalInfoTranslations)
 	}
@@ -20511,6 +22155,9 @@ func (m *LanguageMutation) ClearedEdges() []string {
 	}
 	if m.clearedidea_translations {
 		edges = append(edges, language.EdgeIdeaTranslations)
+	}
+	if m.clearedidea_detail_translations {
+		edges = append(edges, language.EdgeIdeaDetailTranslations)
 	}
 	if m.clearedresearch_project_translations {
 		edges = append(edges, language.EdgeResearchProjectTranslations)
@@ -20558,6 +22205,8 @@ func (m *LanguageMutation) EdgeCleared(name string) bool {
 		return m.clearedblog_series_translations
 	case language.EdgeIdeaTranslations:
 		return m.clearedidea_translations
+	case language.EdgeIdeaDetailTranslations:
+		return m.clearedidea_detail_translations
 	case language.EdgeResearchProjectTranslations:
 		return m.clearedresearch_project_translations
 	case language.EdgeResearchProjectDetailTranslations:
@@ -20619,6 +22268,9 @@ func (m *LanguageMutation) ResetEdge(name string) error {
 		return nil
 	case language.EdgeIdeaTranslations:
 		m.ResetIdeaTranslations()
+		return nil
+	case language.EdgeIdeaDetailTranslations:
+		m.ResetIdeaDetailTranslations()
 		return nil
 	case language.EdgeResearchProjectTranslations:
 		m.ResetResearchProjectTranslations()
@@ -24993,29 +26645,27 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 // ProjectDetailMutation represents an operation that mutates the ProjectDetail nodes in the graph.
 type ProjectDetailMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	detailed_description *string
-	goals                *string
-	challenges           *string
-	solutions            *string
-	lessons_learned      *string
-	future_enhancements  *string
-	license              *string
-	license_text         *string
-	version              *string
-	created_at           *time.Time
-	updated_at           *time.Time
-	clearedFields        map[string]struct{}
-	project              *uuid.UUID
-	clearedproject       bool
-	translations         map[uuid.UUID]struct{}
-	removedtranslations  map[uuid.UUID]struct{}
-	clearedtranslations  bool
-	done                 bool
-	oldValue             func(context.Context) (*ProjectDetail, error)
-	predicates           []predicate.ProjectDetail
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	project_details     *string
+	quick_start         *string
+	release_notes       *string
+	dependencies        *string
+	license             *string
+	license_text        *string
+	version             *string
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	project             *uuid.UUID
+	clearedproject      bool
+	translations        map[uuid.UUID]struct{}
+	removedtranslations map[uuid.UUID]struct{}
+	clearedtranslations bool
+	done                bool
+	oldValue            func(context.Context) (*ProjectDetail, error)
+	predicates          []predicate.ProjectDetail
 }
 
 var _ ent.Mutation = (*ProjectDetailMutation)(nil)
@@ -25158,298 +26808,200 @@ func (m *ProjectDetailMutation) ResetProjectID() {
 	m.project = nil
 }
 
-// SetDetailedDescription sets the "detailed_description" field.
-func (m *ProjectDetailMutation) SetDetailedDescription(s string) {
-	m.detailed_description = &s
+// SetProjectDetails sets the "project_details" field.
+func (m *ProjectDetailMutation) SetProjectDetails(s string) {
+	m.project_details = &s
 }
 
-// DetailedDescription returns the value of the "detailed_description" field in the mutation.
-func (m *ProjectDetailMutation) DetailedDescription() (r string, exists bool) {
-	v := m.detailed_description
+// ProjectDetails returns the value of the "project_details" field in the mutation.
+func (m *ProjectDetailMutation) ProjectDetails() (r string, exists bool) {
+	v := m.project_details
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDetailedDescription returns the old "detailed_description" field's value of the ProjectDetail entity.
+// OldProjectDetails returns the old "project_details" field's value of the ProjectDetail entity.
 // If the ProjectDetail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProjectDetailMutation) OldDetailedDescription(ctx context.Context) (v string, err error) {
+func (m *ProjectDetailMutation) OldProjectDetails(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDetailedDescription is only allowed on UpdateOne operations")
+		return v, errors.New("OldProjectDetails is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDetailedDescription requires an ID field in the mutation")
+		return v, errors.New("OldProjectDetails requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDetailedDescription: %w", err)
+		return v, fmt.Errorf("querying old value for OldProjectDetails: %w", err)
 	}
-	return oldValue.DetailedDescription, nil
+	return oldValue.ProjectDetails, nil
 }
 
-// ClearDetailedDescription clears the value of the "detailed_description" field.
-func (m *ProjectDetailMutation) ClearDetailedDescription() {
-	m.detailed_description = nil
-	m.clearedFields[projectdetail.FieldDetailedDescription] = struct{}{}
+// ClearProjectDetails clears the value of the "project_details" field.
+func (m *ProjectDetailMutation) ClearProjectDetails() {
+	m.project_details = nil
+	m.clearedFields[projectdetail.FieldProjectDetails] = struct{}{}
 }
 
-// DetailedDescriptionCleared returns if the "detailed_description" field was cleared in this mutation.
-func (m *ProjectDetailMutation) DetailedDescriptionCleared() bool {
-	_, ok := m.clearedFields[projectdetail.FieldDetailedDescription]
+// ProjectDetailsCleared returns if the "project_details" field was cleared in this mutation.
+func (m *ProjectDetailMutation) ProjectDetailsCleared() bool {
+	_, ok := m.clearedFields[projectdetail.FieldProjectDetails]
 	return ok
 }
 
-// ResetDetailedDescription resets all changes to the "detailed_description" field.
-func (m *ProjectDetailMutation) ResetDetailedDescription() {
-	m.detailed_description = nil
-	delete(m.clearedFields, projectdetail.FieldDetailedDescription)
+// ResetProjectDetails resets all changes to the "project_details" field.
+func (m *ProjectDetailMutation) ResetProjectDetails() {
+	m.project_details = nil
+	delete(m.clearedFields, projectdetail.FieldProjectDetails)
 }
 
-// SetGoals sets the "goals" field.
-func (m *ProjectDetailMutation) SetGoals(s string) {
-	m.goals = &s
+// SetQuickStart sets the "quick_start" field.
+func (m *ProjectDetailMutation) SetQuickStart(s string) {
+	m.quick_start = &s
 }
 
-// Goals returns the value of the "goals" field in the mutation.
-func (m *ProjectDetailMutation) Goals() (r string, exists bool) {
-	v := m.goals
+// QuickStart returns the value of the "quick_start" field in the mutation.
+func (m *ProjectDetailMutation) QuickStart() (r string, exists bool) {
+	v := m.quick_start
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldGoals returns the old "goals" field's value of the ProjectDetail entity.
+// OldQuickStart returns the old "quick_start" field's value of the ProjectDetail entity.
 // If the ProjectDetail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProjectDetailMutation) OldGoals(ctx context.Context) (v string, err error) {
+func (m *ProjectDetailMutation) OldQuickStart(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldGoals is only allowed on UpdateOne operations")
+		return v, errors.New("OldQuickStart is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldGoals requires an ID field in the mutation")
+		return v, errors.New("OldQuickStart requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldGoals: %w", err)
+		return v, fmt.Errorf("querying old value for OldQuickStart: %w", err)
 	}
-	return oldValue.Goals, nil
+	return oldValue.QuickStart, nil
 }
 
-// ClearGoals clears the value of the "goals" field.
-func (m *ProjectDetailMutation) ClearGoals() {
-	m.goals = nil
-	m.clearedFields[projectdetail.FieldGoals] = struct{}{}
+// ClearQuickStart clears the value of the "quick_start" field.
+func (m *ProjectDetailMutation) ClearQuickStart() {
+	m.quick_start = nil
+	m.clearedFields[projectdetail.FieldQuickStart] = struct{}{}
 }
 
-// GoalsCleared returns if the "goals" field was cleared in this mutation.
-func (m *ProjectDetailMutation) GoalsCleared() bool {
-	_, ok := m.clearedFields[projectdetail.FieldGoals]
+// QuickStartCleared returns if the "quick_start" field was cleared in this mutation.
+func (m *ProjectDetailMutation) QuickStartCleared() bool {
+	_, ok := m.clearedFields[projectdetail.FieldQuickStart]
 	return ok
 }
 
-// ResetGoals resets all changes to the "goals" field.
-func (m *ProjectDetailMutation) ResetGoals() {
-	m.goals = nil
-	delete(m.clearedFields, projectdetail.FieldGoals)
+// ResetQuickStart resets all changes to the "quick_start" field.
+func (m *ProjectDetailMutation) ResetQuickStart() {
+	m.quick_start = nil
+	delete(m.clearedFields, projectdetail.FieldQuickStart)
 }
 
-// SetChallenges sets the "challenges" field.
-func (m *ProjectDetailMutation) SetChallenges(s string) {
-	m.challenges = &s
+// SetReleaseNotes sets the "release_notes" field.
+func (m *ProjectDetailMutation) SetReleaseNotes(s string) {
+	m.release_notes = &s
 }
 
-// Challenges returns the value of the "challenges" field in the mutation.
-func (m *ProjectDetailMutation) Challenges() (r string, exists bool) {
-	v := m.challenges
+// ReleaseNotes returns the value of the "release_notes" field in the mutation.
+func (m *ProjectDetailMutation) ReleaseNotes() (r string, exists bool) {
+	v := m.release_notes
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldChallenges returns the old "challenges" field's value of the ProjectDetail entity.
+// OldReleaseNotes returns the old "release_notes" field's value of the ProjectDetail entity.
 // If the ProjectDetail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProjectDetailMutation) OldChallenges(ctx context.Context) (v string, err error) {
+func (m *ProjectDetailMutation) OldReleaseNotes(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldChallenges is only allowed on UpdateOne operations")
+		return v, errors.New("OldReleaseNotes is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldChallenges requires an ID field in the mutation")
+		return v, errors.New("OldReleaseNotes requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldChallenges: %w", err)
+		return v, fmt.Errorf("querying old value for OldReleaseNotes: %w", err)
 	}
-	return oldValue.Challenges, nil
+	return oldValue.ReleaseNotes, nil
 }
 
-// ClearChallenges clears the value of the "challenges" field.
-func (m *ProjectDetailMutation) ClearChallenges() {
-	m.challenges = nil
-	m.clearedFields[projectdetail.FieldChallenges] = struct{}{}
+// ClearReleaseNotes clears the value of the "release_notes" field.
+func (m *ProjectDetailMutation) ClearReleaseNotes() {
+	m.release_notes = nil
+	m.clearedFields[projectdetail.FieldReleaseNotes] = struct{}{}
 }
 
-// ChallengesCleared returns if the "challenges" field was cleared in this mutation.
-func (m *ProjectDetailMutation) ChallengesCleared() bool {
-	_, ok := m.clearedFields[projectdetail.FieldChallenges]
+// ReleaseNotesCleared returns if the "release_notes" field was cleared in this mutation.
+func (m *ProjectDetailMutation) ReleaseNotesCleared() bool {
+	_, ok := m.clearedFields[projectdetail.FieldReleaseNotes]
 	return ok
 }
 
-// ResetChallenges resets all changes to the "challenges" field.
-func (m *ProjectDetailMutation) ResetChallenges() {
-	m.challenges = nil
-	delete(m.clearedFields, projectdetail.FieldChallenges)
+// ResetReleaseNotes resets all changes to the "release_notes" field.
+func (m *ProjectDetailMutation) ResetReleaseNotes() {
+	m.release_notes = nil
+	delete(m.clearedFields, projectdetail.FieldReleaseNotes)
 }
 
-// SetSolutions sets the "solutions" field.
-func (m *ProjectDetailMutation) SetSolutions(s string) {
-	m.solutions = &s
+// SetDependencies sets the "dependencies" field.
+func (m *ProjectDetailMutation) SetDependencies(s string) {
+	m.dependencies = &s
 }
 
-// Solutions returns the value of the "solutions" field in the mutation.
-func (m *ProjectDetailMutation) Solutions() (r string, exists bool) {
-	v := m.solutions
+// Dependencies returns the value of the "dependencies" field in the mutation.
+func (m *ProjectDetailMutation) Dependencies() (r string, exists bool) {
+	v := m.dependencies
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldSolutions returns the old "solutions" field's value of the ProjectDetail entity.
+// OldDependencies returns the old "dependencies" field's value of the ProjectDetail entity.
 // If the ProjectDetail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProjectDetailMutation) OldSolutions(ctx context.Context) (v string, err error) {
+func (m *ProjectDetailMutation) OldDependencies(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSolutions is only allowed on UpdateOne operations")
+		return v, errors.New("OldDependencies is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSolutions requires an ID field in the mutation")
+		return v, errors.New("OldDependencies requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSolutions: %w", err)
+		return v, fmt.Errorf("querying old value for OldDependencies: %w", err)
 	}
-	return oldValue.Solutions, nil
+	return oldValue.Dependencies, nil
 }
 
-// ClearSolutions clears the value of the "solutions" field.
-func (m *ProjectDetailMutation) ClearSolutions() {
-	m.solutions = nil
-	m.clearedFields[projectdetail.FieldSolutions] = struct{}{}
+// ClearDependencies clears the value of the "dependencies" field.
+func (m *ProjectDetailMutation) ClearDependencies() {
+	m.dependencies = nil
+	m.clearedFields[projectdetail.FieldDependencies] = struct{}{}
 }
 
-// SolutionsCleared returns if the "solutions" field was cleared in this mutation.
-func (m *ProjectDetailMutation) SolutionsCleared() bool {
-	_, ok := m.clearedFields[projectdetail.FieldSolutions]
+// DependenciesCleared returns if the "dependencies" field was cleared in this mutation.
+func (m *ProjectDetailMutation) DependenciesCleared() bool {
+	_, ok := m.clearedFields[projectdetail.FieldDependencies]
 	return ok
 }
 
-// ResetSolutions resets all changes to the "solutions" field.
-func (m *ProjectDetailMutation) ResetSolutions() {
-	m.solutions = nil
-	delete(m.clearedFields, projectdetail.FieldSolutions)
-}
-
-// SetLessonsLearned sets the "lessons_learned" field.
-func (m *ProjectDetailMutation) SetLessonsLearned(s string) {
-	m.lessons_learned = &s
-}
-
-// LessonsLearned returns the value of the "lessons_learned" field in the mutation.
-func (m *ProjectDetailMutation) LessonsLearned() (r string, exists bool) {
-	v := m.lessons_learned
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLessonsLearned returns the old "lessons_learned" field's value of the ProjectDetail entity.
-// If the ProjectDetail object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProjectDetailMutation) OldLessonsLearned(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLessonsLearned is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLessonsLearned requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLessonsLearned: %w", err)
-	}
-	return oldValue.LessonsLearned, nil
-}
-
-// ClearLessonsLearned clears the value of the "lessons_learned" field.
-func (m *ProjectDetailMutation) ClearLessonsLearned() {
-	m.lessons_learned = nil
-	m.clearedFields[projectdetail.FieldLessonsLearned] = struct{}{}
-}
-
-// LessonsLearnedCleared returns if the "lessons_learned" field was cleared in this mutation.
-func (m *ProjectDetailMutation) LessonsLearnedCleared() bool {
-	_, ok := m.clearedFields[projectdetail.FieldLessonsLearned]
-	return ok
-}
-
-// ResetLessonsLearned resets all changes to the "lessons_learned" field.
-func (m *ProjectDetailMutation) ResetLessonsLearned() {
-	m.lessons_learned = nil
-	delete(m.clearedFields, projectdetail.FieldLessonsLearned)
-}
-
-// SetFutureEnhancements sets the "future_enhancements" field.
-func (m *ProjectDetailMutation) SetFutureEnhancements(s string) {
-	m.future_enhancements = &s
-}
-
-// FutureEnhancements returns the value of the "future_enhancements" field in the mutation.
-func (m *ProjectDetailMutation) FutureEnhancements() (r string, exists bool) {
-	v := m.future_enhancements
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFutureEnhancements returns the old "future_enhancements" field's value of the ProjectDetail entity.
-// If the ProjectDetail object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProjectDetailMutation) OldFutureEnhancements(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFutureEnhancements is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFutureEnhancements requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFutureEnhancements: %w", err)
-	}
-	return oldValue.FutureEnhancements, nil
-}
-
-// ClearFutureEnhancements clears the value of the "future_enhancements" field.
-func (m *ProjectDetailMutation) ClearFutureEnhancements() {
-	m.future_enhancements = nil
-	m.clearedFields[projectdetail.FieldFutureEnhancements] = struct{}{}
-}
-
-// FutureEnhancementsCleared returns if the "future_enhancements" field was cleared in this mutation.
-func (m *ProjectDetailMutation) FutureEnhancementsCleared() bool {
-	_, ok := m.clearedFields[projectdetail.FieldFutureEnhancements]
-	return ok
-}
-
-// ResetFutureEnhancements resets all changes to the "future_enhancements" field.
-func (m *ProjectDetailMutation) ResetFutureEnhancements() {
-	m.future_enhancements = nil
-	delete(m.clearedFields, projectdetail.FieldFutureEnhancements)
+// ResetDependencies resets all changes to the "dependencies" field.
+func (m *ProjectDetailMutation) ResetDependencies() {
+	m.dependencies = nil
+	delete(m.clearedFields, projectdetail.FieldDependencies)
 }
 
 // SetLicense sets the "license" field.
@@ -25786,27 +27338,21 @@ func (m *ProjectDetailMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProjectDetailMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 10)
 	if m.project != nil {
 		fields = append(fields, projectdetail.FieldProjectID)
 	}
-	if m.detailed_description != nil {
-		fields = append(fields, projectdetail.FieldDetailedDescription)
+	if m.project_details != nil {
+		fields = append(fields, projectdetail.FieldProjectDetails)
 	}
-	if m.goals != nil {
-		fields = append(fields, projectdetail.FieldGoals)
+	if m.quick_start != nil {
+		fields = append(fields, projectdetail.FieldQuickStart)
 	}
-	if m.challenges != nil {
-		fields = append(fields, projectdetail.FieldChallenges)
+	if m.release_notes != nil {
+		fields = append(fields, projectdetail.FieldReleaseNotes)
 	}
-	if m.solutions != nil {
-		fields = append(fields, projectdetail.FieldSolutions)
-	}
-	if m.lessons_learned != nil {
-		fields = append(fields, projectdetail.FieldLessonsLearned)
-	}
-	if m.future_enhancements != nil {
-		fields = append(fields, projectdetail.FieldFutureEnhancements)
+	if m.dependencies != nil {
+		fields = append(fields, projectdetail.FieldDependencies)
 	}
 	if m.license != nil {
 		fields = append(fields, projectdetail.FieldLicense)
@@ -25833,18 +27379,14 @@ func (m *ProjectDetailMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case projectdetail.FieldProjectID:
 		return m.ProjectID()
-	case projectdetail.FieldDetailedDescription:
-		return m.DetailedDescription()
-	case projectdetail.FieldGoals:
-		return m.Goals()
-	case projectdetail.FieldChallenges:
-		return m.Challenges()
-	case projectdetail.FieldSolutions:
-		return m.Solutions()
-	case projectdetail.FieldLessonsLearned:
-		return m.LessonsLearned()
-	case projectdetail.FieldFutureEnhancements:
-		return m.FutureEnhancements()
+	case projectdetail.FieldProjectDetails:
+		return m.ProjectDetails()
+	case projectdetail.FieldQuickStart:
+		return m.QuickStart()
+	case projectdetail.FieldReleaseNotes:
+		return m.ReleaseNotes()
+	case projectdetail.FieldDependencies:
+		return m.Dependencies()
 	case projectdetail.FieldLicense:
 		return m.License()
 	case projectdetail.FieldLicenseText:
@@ -25866,18 +27408,14 @@ func (m *ProjectDetailMutation) OldField(ctx context.Context, name string) (ent.
 	switch name {
 	case projectdetail.FieldProjectID:
 		return m.OldProjectID(ctx)
-	case projectdetail.FieldDetailedDescription:
-		return m.OldDetailedDescription(ctx)
-	case projectdetail.FieldGoals:
-		return m.OldGoals(ctx)
-	case projectdetail.FieldChallenges:
-		return m.OldChallenges(ctx)
-	case projectdetail.FieldSolutions:
-		return m.OldSolutions(ctx)
-	case projectdetail.FieldLessonsLearned:
-		return m.OldLessonsLearned(ctx)
-	case projectdetail.FieldFutureEnhancements:
-		return m.OldFutureEnhancements(ctx)
+	case projectdetail.FieldProjectDetails:
+		return m.OldProjectDetails(ctx)
+	case projectdetail.FieldQuickStart:
+		return m.OldQuickStart(ctx)
+	case projectdetail.FieldReleaseNotes:
+		return m.OldReleaseNotes(ctx)
+	case projectdetail.FieldDependencies:
+		return m.OldDependencies(ctx)
 	case projectdetail.FieldLicense:
 		return m.OldLicense(ctx)
 	case projectdetail.FieldLicenseText:
@@ -25904,47 +27442,33 @@ func (m *ProjectDetailMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProjectID(v)
 		return nil
-	case projectdetail.FieldDetailedDescription:
+	case projectdetail.FieldProjectDetails:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDetailedDescription(v)
+		m.SetProjectDetails(v)
 		return nil
-	case projectdetail.FieldGoals:
+	case projectdetail.FieldQuickStart:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetGoals(v)
+		m.SetQuickStart(v)
 		return nil
-	case projectdetail.FieldChallenges:
+	case projectdetail.FieldReleaseNotes:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetChallenges(v)
+		m.SetReleaseNotes(v)
 		return nil
-	case projectdetail.FieldSolutions:
+	case projectdetail.FieldDependencies:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetSolutions(v)
-		return nil
-	case projectdetail.FieldLessonsLearned:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLessonsLearned(v)
-		return nil
-	case projectdetail.FieldFutureEnhancements:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFutureEnhancements(v)
+		m.SetDependencies(v)
 		return nil
 	case projectdetail.FieldLicense:
 		v, ok := value.(string)
@@ -26011,23 +27535,17 @@ func (m *ProjectDetailMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ProjectDetailMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(projectdetail.FieldDetailedDescription) {
-		fields = append(fields, projectdetail.FieldDetailedDescription)
+	if m.FieldCleared(projectdetail.FieldProjectDetails) {
+		fields = append(fields, projectdetail.FieldProjectDetails)
 	}
-	if m.FieldCleared(projectdetail.FieldGoals) {
-		fields = append(fields, projectdetail.FieldGoals)
+	if m.FieldCleared(projectdetail.FieldQuickStart) {
+		fields = append(fields, projectdetail.FieldQuickStart)
 	}
-	if m.FieldCleared(projectdetail.FieldChallenges) {
-		fields = append(fields, projectdetail.FieldChallenges)
+	if m.FieldCleared(projectdetail.FieldReleaseNotes) {
+		fields = append(fields, projectdetail.FieldReleaseNotes)
 	}
-	if m.FieldCleared(projectdetail.FieldSolutions) {
-		fields = append(fields, projectdetail.FieldSolutions)
-	}
-	if m.FieldCleared(projectdetail.FieldLessonsLearned) {
-		fields = append(fields, projectdetail.FieldLessonsLearned)
-	}
-	if m.FieldCleared(projectdetail.FieldFutureEnhancements) {
-		fields = append(fields, projectdetail.FieldFutureEnhancements)
+	if m.FieldCleared(projectdetail.FieldDependencies) {
+		fields = append(fields, projectdetail.FieldDependencies)
 	}
 	if m.FieldCleared(projectdetail.FieldLicense) {
 		fields = append(fields, projectdetail.FieldLicense)
@@ -26052,23 +27570,17 @@ func (m *ProjectDetailMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ProjectDetailMutation) ClearField(name string) error {
 	switch name {
-	case projectdetail.FieldDetailedDescription:
-		m.ClearDetailedDescription()
+	case projectdetail.FieldProjectDetails:
+		m.ClearProjectDetails()
 		return nil
-	case projectdetail.FieldGoals:
-		m.ClearGoals()
+	case projectdetail.FieldQuickStart:
+		m.ClearQuickStart()
 		return nil
-	case projectdetail.FieldChallenges:
-		m.ClearChallenges()
+	case projectdetail.FieldReleaseNotes:
+		m.ClearReleaseNotes()
 		return nil
-	case projectdetail.FieldSolutions:
-		m.ClearSolutions()
-		return nil
-	case projectdetail.FieldLessonsLearned:
-		m.ClearLessonsLearned()
-		return nil
-	case projectdetail.FieldFutureEnhancements:
-		m.ClearFutureEnhancements()
+	case projectdetail.FieldDependencies:
+		m.ClearDependencies()
 		return nil
 	case projectdetail.FieldLicense:
 		m.ClearLicense()
@@ -26090,23 +27602,17 @@ func (m *ProjectDetailMutation) ResetField(name string) error {
 	case projectdetail.FieldProjectID:
 		m.ResetProjectID()
 		return nil
-	case projectdetail.FieldDetailedDescription:
-		m.ResetDetailedDescription()
+	case projectdetail.FieldProjectDetails:
+		m.ResetProjectDetails()
 		return nil
-	case projectdetail.FieldGoals:
-		m.ResetGoals()
+	case projectdetail.FieldQuickStart:
+		m.ResetQuickStart()
 		return nil
-	case projectdetail.FieldChallenges:
-		m.ResetChallenges()
+	case projectdetail.FieldReleaseNotes:
+		m.ResetReleaseNotes()
 		return nil
-	case projectdetail.FieldSolutions:
-		m.ResetSolutions()
-		return nil
-	case projectdetail.FieldLessonsLearned:
-		m.ResetLessonsLearned()
-		return nil
-	case projectdetail.FieldFutureEnhancements:
-		m.ResetFutureEnhancements()
+	case projectdetail.FieldDependencies:
+		m.ResetDependencies()
 		return nil
 	case projectdetail.FieldLicense:
 		m.ResetLicense()

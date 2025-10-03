@@ -38,11 +38,8 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 	if req.Query != "" {
 		query = query.Where(idea.Or(
 			idea.TitleContains(req.Query),
+			idea.DescriptionContains(req.Query),
 			idea.AbstractContains(req.Query),
-			idea.MotivationContains(req.Query),
-			idea.MethodologyContains(req.Query),
-			idea.ExpectedOutcomeContains(req.Query),
-			idea.RequiredResourcesContains(req.Query),
 		))
 	}
 
@@ -79,6 +76,8 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 	// Apply pagination
 	offset := (req.Page - 1) * req.Size
 	ideas, err := query.
+		WithDetails().
+		WithTags().
 		Order(ent.Desc(idea.FieldUpdatedAt)).
 		Limit(req.Size).
 		Offset(offset).
@@ -91,20 +90,36 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 	for _, ideaEntity := range ideas {
 		// Handle non-nullable fields
 		abstract := ideaEntity.Abstract
-		motivation := ideaEntity.Motivation
-		methodology := ideaEntity.Methodology
-		expectedOutcome := ideaEntity.ExpectedOutcome
-		requiredResources := ideaEntity.RequiredResources
+		description := ideaEntity.Description
 
+		// Get detail fields from IdeaDetail edge
+		var progress, results, references, requiredResources string
+		var collaborationNeeded bool
 		var estimatedDuration string
-		if ideaEntity.EstimatedDurationMonths > 0 {
-			estimatedDuration = fmt.Sprintf("%d months", ideaEntity.EstimatedDurationMonths)
+
+		if ideaEntity.Edges.Details != nil {
+			detail := ideaEntity.Edges.Details
+			progress = detail.Progress
+			results = detail.Results
+			references = detail.References
+			requiredResources = detail.RequiredResources
+			collaborationNeeded = detail.CollaborationNeeded
+
+			if detail.EstimatedDurationMonths > 0 {
+				estimatedDuration = fmt.Sprintf("%d months", detail.EstimatedDurationMonths)
+			}
 		}
 
-		// For now, we'll use empty slices for tags and categories
-		// These would need to be implemented when the schema is updated
+		// Tags from M2M edge (IdeaTag)
 		tags := []string{}
-		category := ""
+		if len(ideaEntity.Edges.Tags) > 0 {
+			for _, t := range ideaEntity.Edges.Tags {
+				if t.Name != "" {
+					tags = append(tags, t.Name)
+				}
+			}
+		}
+		category := ideaEntity.Category
 
 		// Create empty slices for complex fields
 		var futureDirections []string
@@ -132,10 +147,7 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 			limitations = []string{}
 		}
 
-		var collaborators []types.Collaborator
-		if len(collaborators) == 0 {
-			collaborators = []types.Collaborator{}
-		}
+		collaborators := []types.Collaborator{}
 
 		var experiments []types.Experiment
 		if len(experiments) == 0 {
@@ -170,29 +182,26 @@ func (l *SearchIdeasLogic) SearchIdeas(req *types.IdeaSearchRequest) (resp *type
 		result = append(result, types.IdeaData{
 			ID:                   ideaEntity.ID.String(),
 			Title:                ideaEntity.Title,
-			Description:          abstract,
+			Description:          description,
 			Category:             category,
 			Tags:                 tags,
 			Status:               strings.ToLower(string(ideaEntity.Status)),
 			CreatedAt:            ideaEntity.CreatedAt.Format("2006-01-02T15:04:05Z"),
 			LastUpdated:          ideaEntity.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 			Abstract:             abstract,
-			Motivation:           motivation,
-			Methodology:          methodology,
-			Experiments:          experiments,
-			PreliminaryResults:   expectedOutcome,
-			RelatedWorks:         relatedWorks,
-			Citations:            citations,
-			FutureDirections:     futureDirections,
+			AbstractZh:           abstract,
+			Progress:             progress,
+			ProgressZh:           progress,
+			Results:              results,
+			ResultsZh:            results,
+			Reference:            references,
+			Reference_Zh:         references,
 			TechStack:            techStack,
 			Collaborators:        collaborators,
-			OpenForCollaboration: ideaEntity.CollaborationNeeded,
+			OpenForCollaboration: collaborationNeeded,
 			FeedbackRequested:    feedbackRequested,
 			Publications:         publications,
 			Conferences:          conferences,
-			KeyFindings:          keyFindings,
-			Limitations:          limitations,
-			Difficulty:           strings.ToLower(string(ideaEntity.Priority)),
 			Keywords:             keywords,
 			EstimatedDuration:    estimatedDuration,
 			FundingStatus:        requiredResources,

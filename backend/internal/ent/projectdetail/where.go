@@ -61,34 +61,24 @@ func ProjectID(v uuid.UUID) predicate.ProjectDetail {
 	return predicate.ProjectDetail(sql.FieldEQ(FieldProjectID, v))
 }
 
-// DetailedDescription applies equality check predicate on the "detailed_description" field. It's identical to DetailedDescriptionEQ.
-func DetailedDescription(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldDetailedDescription, v))
+// ProjectDetails applies equality check predicate on the "project_details" field. It's identical to ProjectDetailsEQ.
+func ProjectDetails(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldProjectDetails, v))
 }
 
-// Goals applies equality check predicate on the "goals" field. It's identical to GoalsEQ.
-func Goals(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldGoals, v))
+// QuickStart applies equality check predicate on the "quick_start" field. It's identical to QuickStartEQ.
+func QuickStart(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldQuickStart, v))
 }
 
-// Challenges applies equality check predicate on the "challenges" field. It's identical to ChallengesEQ.
-func Challenges(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldChallenges, v))
+// ReleaseNotes applies equality check predicate on the "release_notes" field. It's identical to ReleaseNotesEQ.
+func ReleaseNotes(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldReleaseNotes, v))
 }
 
-// Solutions applies equality check predicate on the "solutions" field. It's identical to SolutionsEQ.
-func Solutions(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldSolutions, v))
-}
-
-// LessonsLearned applies equality check predicate on the "lessons_learned" field. It's identical to LessonsLearnedEQ.
-func LessonsLearned(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldLessonsLearned, v))
-}
-
-// FutureEnhancements applies equality check predicate on the "future_enhancements" field. It's identical to FutureEnhancementsEQ.
-func FutureEnhancements(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldFutureEnhancements, v))
+// Dependencies applies equality check predicate on the "dependencies" field. It's identical to DependenciesEQ.
+func Dependencies(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldDependencies, v))
 }
 
 // License applies equality check predicate on the "license" field. It's identical to LicenseEQ.
@@ -136,454 +126,304 @@ func ProjectIDNotIn(vs ...uuid.UUID) predicate.ProjectDetail {
 	return predicate.ProjectDetail(sql.FieldNotIn(FieldProjectID, vs...))
 }
 
-// DetailedDescriptionEQ applies the EQ predicate on the "detailed_description" field.
-func DetailedDescriptionEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldDetailedDescription, v))
+// ProjectDetailsEQ applies the EQ predicate on the "project_details" field.
+func ProjectDetailsEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionNEQ applies the NEQ predicate on the "detailed_description" field.
-func DetailedDescriptionNEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNEQ(FieldDetailedDescription, v))
+// ProjectDetailsNEQ applies the NEQ predicate on the "project_details" field.
+func ProjectDetailsNEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNEQ(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionIn applies the In predicate on the "detailed_description" field.
-func DetailedDescriptionIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIn(FieldDetailedDescription, vs...))
+// ProjectDetailsIn applies the In predicate on the "project_details" field.
+func ProjectDetailsIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIn(FieldProjectDetails, vs...))
 }
 
-// DetailedDescriptionNotIn applies the NotIn predicate on the "detailed_description" field.
-func DetailedDescriptionNotIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotIn(FieldDetailedDescription, vs...))
+// ProjectDetailsNotIn applies the NotIn predicate on the "project_details" field.
+func ProjectDetailsNotIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotIn(FieldProjectDetails, vs...))
 }
 
-// DetailedDescriptionGT applies the GT predicate on the "detailed_description" field.
-func DetailedDescriptionGT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGT(FieldDetailedDescription, v))
+// ProjectDetailsGT applies the GT predicate on the "project_details" field.
+func ProjectDetailsGT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGT(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionGTE applies the GTE predicate on the "detailed_description" field.
-func DetailedDescriptionGTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGTE(FieldDetailedDescription, v))
+// ProjectDetailsGTE applies the GTE predicate on the "project_details" field.
+func ProjectDetailsGTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGTE(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionLT applies the LT predicate on the "detailed_description" field.
-func DetailedDescriptionLT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLT(FieldDetailedDescription, v))
+// ProjectDetailsLT applies the LT predicate on the "project_details" field.
+func ProjectDetailsLT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLT(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionLTE applies the LTE predicate on the "detailed_description" field.
-func DetailedDescriptionLTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLTE(FieldDetailedDescription, v))
+// ProjectDetailsLTE applies the LTE predicate on the "project_details" field.
+func ProjectDetailsLTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLTE(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionContains applies the Contains predicate on the "detailed_description" field.
-func DetailedDescriptionContains(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContains(FieldDetailedDescription, v))
+// ProjectDetailsContains applies the Contains predicate on the "project_details" field.
+func ProjectDetailsContains(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContains(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionHasPrefix applies the HasPrefix predicate on the "detailed_description" field.
-func DetailedDescriptionHasPrefix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldDetailedDescription, v))
+// ProjectDetailsHasPrefix applies the HasPrefix predicate on the "project_details" field.
+func ProjectDetailsHasPrefix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionHasSuffix applies the HasSuffix predicate on the "detailed_description" field.
-func DetailedDescriptionHasSuffix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldDetailedDescription, v))
+// ProjectDetailsHasSuffix applies the HasSuffix predicate on the "project_details" field.
+func ProjectDetailsHasSuffix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionIsNil applies the IsNil predicate on the "detailed_description" field.
-func DetailedDescriptionIsNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIsNull(FieldDetailedDescription))
+// ProjectDetailsIsNil applies the IsNil predicate on the "project_details" field.
+func ProjectDetailsIsNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIsNull(FieldProjectDetails))
 }
 
-// DetailedDescriptionNotNil applies the NotNil predicate on the "detailed_description" field.
-func DetailedDescriptionNotNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotNull(FieldDetailedDescription))
+// ProjectDetailsNotNil applies the NotNil predicate on the "project_details" field.
+func ProjectDetailsNotNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotNull(FieldProjectDetails))
 }
 
-// DetailedDescriptionEqualFold applies the EqualFold predicate on the "detailed_description" field.
-func DetailedDescriptionEqualFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEqualFold(FieldDetailedDescription, v))
+// ProjectDetailsEqualFold applies the EqualFold predicate on the "project_details" field.
+func ProjectDetailsEqualFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEqualFold(FieldProjectDetails, v))
 }
 
-// DetailedDescriptionContainsFold applies the ContainsFold predicate on the "detailed_description" field.
-func DetailedDescriptionContainsFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContainsFold(FieldDetailedDescription, v))
+// ProjectDetailsContainsFold applies the ContainsFold predicate on the "project_details" field.
+func ProjectDetailsContainsFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContainsFold(FieldProjectDetails, v))
 }
 
-// GoalsEQ applies the EQ predicate on the "goals" field.
-func GoalsEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldGoals, v))
+// QuickStartEQ applies the EQ predicate on the "quick_start" field.
+func QuickStartEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldQuickStart, v))
 }
 
-// GoalsNEQ applies the NEQ predicate on the "goals" field.
-func GoalsNEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNEQ(FieldGoals, v))
+// QuickStartNEQ applies the NEQ predicate on the "quick_start" field.
+func QuickStartNEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNEQ(FieldQuickStart, v))
 }
 
-// GoalsIn applies the In predicate on the "goals" field.
-func GoalsIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIn(FieldGoals, vs...))
+// QuickStartIn applies the In predicate on the "quick_start" field.
+func QuickStartIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIn(FieldQuickStart, vs...))
 }
 
-// GoalsNotIn applies the NotIn predicate on the "goals" field.
-func GoalsNotIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotIn(FieldGoals, vs...))
+// QuickStartNotIn applies the NotIn predicate on the "quick_start" field.
+func QuickStartNotIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotIn(FieldQuickStart, vs...))
 }
 
-// GoalsGT applies the GT predicate on the "goals" field.
-func GoalsGT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGT(FieldGoals, v))
+// QuickStartGT applies the GT predicate on the "quick_start" field.
+func QuickStartGT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGT(FieldQuickStart, v))
 }
 
-// GoalsGTE applies the GTE predicate on the "goals" field.
-func GoalsGTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGTE(FieldGoals, v))
+// QuickStartGTE applies the GTE predicate on the "quick_start" field.
+func QuickStartGTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGTE(FieldQuickStart, v))
 }
 
-// GoalsLT applies the LT predicate on the "goals" field.
-func GoalsLT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLT(FieldGoals, v))
+// QuickStartLT applies the LT predicate on the "quick_start" field.
+func QuickStartLT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLT(FieldQuickStart, v))
 }
 
-// GoalsLTE applies the LTE predicate on the "goals" field.
-func GoalsLTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLTE(FieldGoals, v))
+// QuickStartLTE applies the LTE predicate on the "quick_start" field.
+func QuickStartLTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLTE(FieldQuickStart, v))
 }
 
-// GoalsContains applies the Contains predicate on the "goals" field.
-func GoalsContains(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContains(FieldGoals, v))
+// QuickStartContains applies the Contains predicate on the "quick_start" field.
+func QuickStartContains(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContains(FieldQuickStart, v))
 }
 
-// GoalsHasPrefix applies the HasPrefix predicate on the "goals" field.
-func GoalsHasPrefix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldGoals, v))
+// QuickStartHasPrefix applies the HasPrefix predicate on the "quick_start" field.
+func QuickStartHasPrefix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldQuickStart, v))
 }
 
-// GoalsHasSuffix applies the HasSuffix predicate on the "goals" field.
-func GoalsHasSuffix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldGoals, v))
+// QuickStartHasSuffix applies the HasSuffix predicate on the "quick_start" field.
+func QuickStartHasSuffix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldQuickStart, v))
 }
 
-// GoalsIsNil applies the IsNil predicate on the "goals" field.
-func GoalsIsNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIsNull(FieldGoals))
+// QuickStartIsNil applies the IsNil predicate on the "quick_start" field.
+func QuickStartIsNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIsNull(FieldQuickStart))
 }
 
-// GoalsNotNil applies the NotNil predicate on the "goals" field.
-func GoalsNotNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotNull(FieldGoals))
+// QuickStartNotNil applies the NotNil predicate on the "quick_start" field.
+func QuickStartNotNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotNull(FieldQuickStart))
 }
 
-// GoalsEqualFold applies the EqualFold predicate on the "goals" field.
-func GoalsEqualFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEqualFold(FieldGoals, v))
+// QuickStartEqualFold applies the EqualFold predicate on the "quick_start" field.
+func QuickStartEqualFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEqualFold(FieldQuickStart, v))
 }
 
-// GoalsContainsFold applies the ContainsFold predicate on the "goals" field.
-func GoalsContainsFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContainsFold(FieldGoals, v))
+// QuickStartContainsFold applies the ContainsFold predicate on the "quick_start" field.
+func QuickStartContainsFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContainsFold(FieldQuickStart, v))
 }
 
-// ChallengesEQ applies the EQ predicate on the "challenges" field.
-func ChallengesEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldChallenges, v))
+// ReleaseNotesEQ applies the EQ predicate on the "release_notes" field.
+func ReleaseNotesEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldReleaseNotes, v))
 }
 
-// ChallengesNEQ applies the NEQ predicate on the "challenges" field.
-func ChallengesNEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNEQ(FieldChallenges, v))
+// ReleaseNotesNEQ applies the NEQ predicate on the "release_notes" field.
+func ReleaseNotesNEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNEQ(FieldReleaseNotes, v))
 }
 
-// ChallengesIn applies the In predicate on the "challenges" field.
-func ChallengesIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIn(FieldChallenges, vs...))
+// ReleaseNotesIn applies the In predicate on the "release_notes" field.
+func ReleaseNotesIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIn(FieldReleaseNotes, vs...))
 }
 
-// ChallengesNotIn applies the NotIn predicate on the "challenges" field.
-func ChallengesNotIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotIn(FieldChallenges, vs...))
+// ReleaseNotesNotIn applies the NotIn predicate on the "release_notes" field.
+func ReleaseNotesNotIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotIn(FieldReleaseNotes, vs...))
 }
 
-// ChallengesGT applies the GT predicate on the "challenges" field.
-func ChallengesGT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGT(FieldChallenges, v))
+// ReleaseNotesGT applies the GT predicate on the "release_notes" field.
+func ReleaseNotesGT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGT(FieldReleaseNotes, v))
 }
 
-// ChallengesGTE applies the GTE predicate on the "challenges" field.
-func ChallengesGTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGTE(FieldChallenges, v))
+// ReleaseNotesGTE applies the GTE predicate on the "release_notes" field.
+func ReleaseNotesGTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGTE(FieldReleaseNotes, v))
 }
 
-// ChallengesLT applies the LT predicate on the "challenges" field.
-func ChallengesLT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLT(FieldChallenges, v))
+// ReleaseNotesLT applies the LT predicate on the "release_notes" field.
+func ReleaseNotesLT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLT(FieldReleaseNotes, v))
 }
 
-// ChallengesLTE applies the LTE predicate on the "challenges" field.
-func ChallengesLTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLTE(FieldChallenges, v))
+// ReleaseNotesLTE applies the LTE predicate on the "release_notes" field.
+func ReleaseNotesLTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLTE(FieldReleaseNotes, v))
 }
 
-// ChallengesContains applies the Contains predicate on the "challenges" field.
-func ChallengesContains(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContains(FieldChallenges, v))
+// ReleaseNotesContains applies the Contains predicate on the "release_notes" field.
+func ReleaseNotesContains(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContains(FieldReleaseNotes, v))
 }
 
-// ChallengesHasPrefix applies the HasPrefix predicate on the "challenges" field.
-func ChallengesHasPrefix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldChallenges, v))
+// ReleaseNotesHasPrefix applies the HasPrefix predicate on the "release_notes" field.
+func ReleaseNotesHasPrefix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldReleaseNotes, v))
 }
 
-// ChallengesHasSuffix applies the HasSuffix predicate on the "challenges" field.
-func ChallengesHasSuffix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldChallenges, v))
+// ReleaseNotesHasSuffix applies the HasSuffix predicate on the "release_notes" field.
+func ReleaseNotesHasSuffix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldReleaseNotes, v))
 }
 
-// ChallengesIsNil applies the IsNil predicate on the "challenges" field.
-func ChallengesIsNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIsNull(FieldChallenges))
+// ReleaseNotesIsNil applies the IsNil predicate on the "release_notes" field.
+func ReleaseNotesIsNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIsNull(FieldReleaseNotes))
 }
 
-// ChallengesNotNil applies the NotNil predicate on the "challenges" field.
-func ChallengesNotNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotNull(FieldChallenges))
+// ReleaseNotesNotNil applies the NotNil predicate on the "release_notes" field.
+func ReleaseNotesNotNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotNull(FieldReleaseNotes))
 }
 
-// ChallengesEqualFold applies the EqualFold predicate on the "challenges" field.
-func ChallengesEqualFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEqualFold(FieldChallenges, v))
+// ReleaseNotesEqualFold applies the EqualFold predicate on the "release_notes" field.
+func ReleaseNotesEqualFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEqualFold(FieldReleaseNotes, v))
 }
 
-// ChallengesContainsFold applies the ContainsFold predicate on the "challenges" field.
-func ChallengesContainsFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContainsFold(FieldChallenges, v))
+// ReleaseNotesContainsFold applies the ContainsFold predicate on the "release_notes" field.
+func ReleaseNotesContainsFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContainsFold(FieldReleaseNotes, v))
 }
 
-// SolutionsEQ applies the EQ predicate on the "solutions" field.
-func SolutionsEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldSolutions, v))
+// DependenciesEQ applies the EQ predicate on the "dependencies" field.
+func DependenciesEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEQ(FieldDependencies, v))
 }
 
-// SolutionsNEQ applies the NEQ predicate on the "solutions" field.
-func SolutionsNEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNEQ(FieldSolutions, v))
+// DependenciesNEQ applies the NEQ predicate on the "dependencies" field.
+func DependenciesNEQ(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNEQ(FieldDependencies, v))
 }
 
-// SolutionsIn applies the In predicate on the "solutions" field.
-func SolutionsIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIn(FieldSolutions, vs...))
+// DependenciesIn applies the In predicate on the "dependencies" field.
+func DependenciesIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIn(FieldDependencies, vs...))
 }
 
-// SolutionsNotIn applies the NotIn predicate on the "solutions" field.
-func SolutionsNotIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotIn(FieldSolutions, vs...))
+// DependenciesNotIn applies the NotIn predicate on the "dependencies" field.
+func DependenciesNotIn(vs ...string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotIn(FieldDependencies, vs...))
 }
 
-// SolutionsGT applies the GT predicate on the "solutions" field.
-func SolutionsGT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGT(FieldSolutions, v))
+// DependenciesGT applies the GT predicate on the "dependencies" field.
+func DependenciesGT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGT(FieldDependencies, v))
 }
 
-// SolutionsGTE applies the GTE predicate on the "solutions" field.
-func SolutionsGTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGTE(FieldSolutions, v))
+// DependenciesGTE applies the GTE predicate on the "dependencies" field.
+func DependenciesGTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldGTE(FieldDependencies, v))
 }
 
-// SolutionsLT applies the LT predicate on the "solutions" field.
-func SolutionsLT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLT(FieldSolutions, v))
+// DependenciesLT applies the LT predicate on the "dependencies" field.
+func DependenciesLT(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLT(FieldDependencies, v))
 }
 
-// SolutionsLTE applies the LTE predicate on the "solutions" field.
-func SolutionsLTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLTE(FieldSolutions, v))
+// DependenciesLTE applies the LTE predicate on the "dependencies" field.
+func DependenciesLTE(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldLTE(FieldDependencies, v))
 }
 
-// SolutionsContains applies the Contains predicate on the "solutions" field.
-func SolutionsContains(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContains(FieldSolutions, v))
+// DependenciesContains applies the Contains predicate on the "dependencies" field.
+func DependenciesContains(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContains(FieldDependencies, v))
 }
 
-// SolutionsHasPrefix applies the HasPrefix predicate on the "solutions" field.
-func SolutionsHasPrefix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldSolutions, v))
+// DependenciesHasPrefix applies the HasPrefix predicate on the "dependencies" field.
+func DependenciesHasPrefix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldDependencies, v))
 }
 
-// SolutionsHasSuffix applies the HasSuffix predicate on the "solutions" field.
-func SolutionsHasSuffix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldSolutions, v))
+// DependenciesHasSuffix applies the HasSuffix predicate on the "dependencies" field.
+func DependenciesHasSuffix(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldDependencies, v))
 }
 
-// SolutionsIsNil applies the IsNil predicate on the "solutions" field.
-func SolutionsIsNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIsNull(FieldSolutions))
+// DependenciesIsNil applies the IsNil predicate on the "dependencies" field.
+func DependenciesIsNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldIsNull(FieldDependencies))
 }
 
-// SolutionsNotNil applies the NotNil predicate on the "solutions" field.
-func SolutionsNotNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotNull(FieldSolutions))
+// DependenciesNotNil applies the NotNil predicate on the "dependencies" field.
+func DependenciesNotNil() predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldNotNull(FieldDependencies))
 }
 
-// SolutionsEqualFold applies the EqualFold predicate on the "solutions" field.
-func SolutionsEqualFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEqualFold(FieldSolutions, v))
+// DependenciesEqualFold applies the EqualFold predicate on the "dependencies" field.
+func DependenciesEqualFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldEqualFold(FieldDependencies, v))
 }
 
-// SolutionsContainsFold applies the ContainsFold predicate on the "solutions" field.
-func SolutionsContainsFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContainsFold(FieldSolutions, v))
-}
-
-// LessonsLearnedEQ applies the EQ predicate on the "lessons_learned" field.
-func LessonsLearnedEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedNEQ applies the NEQ predicate on the "lessons_learned" field.
-func LessonsLearnedNEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNEQ(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedIn applies the In predicate on the "lessons_learned" field.
-func LessonsLearnedIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIn(FieldLessonsLearned, vs...))
-}
-
-// LessonsLearnedNotIn applies the NotIn predicate on the "lessons_learned" field.
-func LessonsLearnedNotIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotIn(FieldLessonsLearned, vs...))
-}
-
-// LessonsLearnedGT applies the GT predicate on the "lessons_learned" field.
-func LessonsLearnedGT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGT(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedGTE applies the GTE predicate on the "lessons_learned" field.
-func LessonsLearnedGTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGTE(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedLT applies the LT predicate on the "lessons_learned" field.
-func LessonsLearnedLT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLT(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedLTE applies the LTE predicate on the "lessons_learned" field.
-func LessonsLearnedLTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLTE(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedContains applies the Contains predicate on the "lessons_learned" field.
-func LessonsLearnedContains(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContains(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedHasPrefix applies the HasPrefix predicate on the "lessons_learned" field.
-func LessonsLearnedHasPrefix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedHasSuffix applies the HasSuffix predicate on the "lessons_learned" field.
-func LessonsLearnedHasSuffix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedIsNil applies the IsNil predicate on the "lessons_learned" field.
-func LessonsLearnedIsNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIsNull(FieldLessonsLearned))
-}
-
-// LessonsLearnedNotNil applies the NotNil predicate on the "lessons_learned" field.
-func LessonsLearnedNotNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotNull(FieldLessonsLearned))
-}
-
-// LessonsLearnedEqualFold applies the EqualFold predicate on the "lessons_learned" field.
-func LessonsLearnedEqualFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEqualFold(FieldLessonsLearned, v))
-}
-
-// LessonsLearnedContainsFold applies the ContainsFold predicate on the "lessons_learned" field.
-func LessonsLearnedContainsFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContainsFold(FieldLessonsLearned, v))
-}
-
-// FutureEnhancementsEQ applies the EQ predicate on the "future_enhancements" field.
-func FutureEnhancementsEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEQ(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsNEQ applies the NEQ predicate on the "future_enhancements" field.
-func FutureEnhancementsNEQ(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNEQ(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsIn applies the In predicate on the "future_enhancements" field.
-func FutureEnhancementsIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIn(FieldFutureEnhancements, vs...))
-}
-
-// FutureEnhancementsNotIn applies the NotIn predicate on the "future_enhancements" field.
-func FutureEnhancementsNotIn(vs ...string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotIn(FieldFutureEnhancements, vs...))
-}
-
-// FutureEnhancementsGT applies the GT predicate on the "future_enhancements" field.
-func FutureEnhancementsGT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGT(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsGTE applies the GTE predicate on the "future_enhancements" field.
-func FutureEnhancementsGTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldGTE(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsLT applies the LT predicate on the "future_enhancements" field.
-func FutureEnhancementsLT(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLT(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsLTE applies the LTE predicate on the "future_enhancements" field.
-func FutureEnhancementsLTE(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldLTE(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsContains applies the Contains predicate on the "future_enhancements" field.
-func FutureEnhancementsContains(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContains(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsHasPrefix applies the HasPrefix predicate on the "future_enhancements" field.
-func FutureEnhancementsHasPrefix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasPrefix(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsHasSuffix applies the HasSuffix predicate on the "future_enhancements" field.
-func FutureEnhancementsHasSuffix(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldHasSuffix(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsIsNil applies the IsNil predicate on the "future_enhancements" field.
-func FutureEnhancementsIsNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldIsNull(FieldFutureEnhancements))
-}
-
-// FutureEnhancementsNotNil applies the NotNil predicate on the "future_enhancements" field.
-func FutureEnhancementsNotNil() predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldNotNull(FieldFutureEnhancements))
-}
-
-// FutureEnhancementsEqualFold applies the EqualFold predicate on the "future_enhancements" field.
-func FutureEnhancementsEqualFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldEqualFold(FieldFutureEnhancements, v))
-}
-
-// FutureEnhancementsContainsFold applies the ContainsFold predicate on the "future_enhancements" field.
-func FutureEnhancementsContainsFold(v string) predicate.ProjectDetail {
-	return predicate.ProjectDetail(sql.FieldContainsFold(FieldFutureEnhancements, v))
+// DependenciesContainsFold applies the ContainsFold predicate on the "dependencies" field.
+func DependenciesContainsFold(v string) predicate.ProjectDetail {
+	return predicate.ProjectDetail(sql.FieldContainsFold(FieldDependencies, v))
 }
 
 // LicenseEQ applies the EQ predicate on the "license" field.

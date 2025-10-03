@@ -14,73 +14,86 @@ interface IdeaCardProps {
   onView?: (idea: IdeaData) => void;
 }
 
+type IdeaStatus =
+  | "published"
+  | "validating"
+  | "experimenting"
+  | "hypothesis"
+  | "concluded"
+  | "draft"
+  | string;
+
 const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
   const { language } = useLanguage();
 
-  // Guard against null/undefined idea
-  if (!idea) {
-    return null;
-  }
+  if (!idea) return null;
 
-  // arXiv-style idea number, consistent with BlogStack pattern
-  const generateIdeaNumber = useCallback(() => {
-    const date = new Date(idea.createdAt || Date.now());
+  // arXiv 风格编号
+  const ideaNumber = useMemo(() => {
+    const date = new Date(idea.createdAt ?? Date.now());
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hash = (idea.title + idea.id).split('').reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 0);
-    const n = String(Math.abs(hash) % 10000).padStart(4, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const base = String(idea.title ?? "") + String(idea.id ?? "");
+    const hash = base.split("").reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 0);
+    const n = String(Math.abs(hash) % 10000).padStart(4, "0");
     return `idea.${year}${month}${day}.${n}`;
   }, [idea.createdAt, idea.title, idea.id]);
 
-  const getStatusText = useCallback((status: string) => {
-    if (language === 'en') {
-      switch (status) {
-        case 'published':
-          return 'Published';
-        case 'validating':
-          return 'Validating';
-        case 'experimenting':
-          return 'Experimenting';
-        case 'hypothesis':
-          return 'Hypothesis';
-        case 'concluded':
-          return 'Concluded';
-        default:
-          return 'Draft';
+  const getStatusText = useCallback(
+    (status: IdeaStatus) => {
+      if (language === "en") {
+        switch (status) {
+          case "published":
+            return "Published";
+          case "validating":
+            return "Validating";
+          case "experimenting":
+            return "Experimenting";
+          case "hypothesis":
+            return "Hypothesis";
+          case "concluded":
+            return "Concluded";
+          case "draft":
+          default:
+            return "Draft";
+        }
+      } else {
+        switch (status) {
+          case "published":
+            return "已发表";
+          case "validating":
+            return "验证中";
+          case "experimenting":
+            return "实验中";
+          case "hypothesis":
+            return "假设";
+          case "concluded":
+            return "已结论";
+          case "draft":
+          default:
+            return "草案";
+        }
       }
-    } else {
-      switch (status) {
-        case 'published':
-          return '已发表';
-        case 'validating':
-          return '验证中';
-        case 'experimenting':
-          return '实验中';
-        case 'hypothesis':
-          return '假设';
-        case 'concluded':
-          return '已结论';
-        default:
-          return '草案';
-      }
-    }
-  }, [language]);
+    },
+    [language]
+  );
 
-  const getStatusClass = useCallback((status: string) => {
+  // 返回的是“文字色 + 背景色”组合，既当徽章也当小图标底色
+  const getStatusClass = useCallback((status: IdeaStatus) => {
     switch (status) {
-      case 'published':
-        return 'text-theme-success bg-theme-success-20';
-      case 'validating':
-        return 'text-theme-600 bg-theme-100';
-      case 'experimenting':
-        return 'text-purple-600 bg-purple-100';
-      case 'hypothesis':
-        return 'text-theme-warning bg-theme-warning-20';
-      case 'concluded':
-        return 'text-gray-600 bg-gray-100';
+      case "published":
+        return "text-theme-success bg-theme-success-20";
+      case "validating":
+        return "text-theme-600 bg-theme-100";
+      case "experimenting":
+        return "text-purple-600 bg-purple-100";
+      case "hypothesis":
+        return "text-theme-warning bg-theme-warning-20";
+      case "concluded":
+        return "text-gray-600 bg-gray-100";
       default:
-        return 'text-theme-accent bg-theme-primary-20';
+        return "text-theme-accent bg-theme-primary-20";
     }
   }, []);
 
@@ -88,12 +101,15 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
     onView?.(idea);
   }, [onView, idea]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleClick();
-    }
-  }, [handleClick]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleClick();
+      }
+    },
+    [handleClick]
+  );
 
   return (
     <motion.div
@@ -110,32 +126,38 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
     >
       {/* Cover */}
       <div className="relative w-full h-40 sm:h-48 overflow-hidden bg-gradient-project">
-        {/* Center watermark number and initial letter */}
+        {/* 中心水印编号 + 首字母 */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="relative">
             <div
               className="font-mono text-theme-primary opacity-15 text-xl sm:text-2xl text-center"
-              style={{ letterSpacing: '0.25em' }}
+              style={{ letterSpacing: "0.25em" }}
             >
-              {generateIdeaNumber()}
+              {ideaNumber}
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-6xl sm:text-7xl font-extrabold text-theme-primary opacity-25">
-                {idea.title.charAt(0).toUpperCase()}
+                {idea.title?.charAt(0).toUpperCase?.() ?? "I"}
               </span>
             </div>
           </div>
         </div>
-        {/* Idea number badge */}
+
+        {/* 左上编号徽章 */}
         <div className="absolute top-2 left-2 z-10">
           <div className="text-xs font-mono text-white bg-black/50 px-2 py-1 rounded backdrop-blur-sm">
-            {generateIdeaNumber()}
+            {ideaNumber}
           </div>
         </div>
-        {/* Category/status badges */}
+
+        {/* 右上状态徽章 */}
         <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
           <span className="w-2 h-2 rounded-full bg-theme-primary/90" aria-hidden />
-          <span className={`px-2 py-1 rounded-full text-[10px] font-semibold backdrop-blur-sm ${getStatusClass(idea.status)}`}>
+          <span
+            className={`px-2 py-1 rounded-full text-[10px] font-semibold backdrop-blur-sm ${getStatusClass(
+              idea.status
+            )}`}
+          >
             {getStatusText(idea.status)}
           </span>
         </div>
@@ -143,69 +165,54 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
 
       {/* Body */}
       <div className="p-6">
-        {/* Header */}
+        {/* Header 行 */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${getStatusClass(idea.status)}`}>
-              <Lightbulb size={20} className={
-                idea.status === 'published' ? 'text-theme-success' :
-                idea.status === 'validating' ? 'text-theme-600' :
-                idea.status === 'experimenting' ? 'text-purple-600' :
-                idea.status === 'hypothesis' ? 'text-theme-warning' :
-                idea.status === 'concluded' ? 'text-gray-600' :
-                'text-theme-accent'
-              } />
+            <div className={`p-2 rounded-lg ${getStatusClass(idea.status)}`} aria-hidden>
+              <Lightbulb
+                size={20}
+                className={
+                  idea.status === "published"
+                    ? "text-theme-success"
+                    : idea.status === "validating"
+                    ? "text-theme-600"
+                    : idea.status === "experimenting"
+                    ? "text-purple-600"
+                    : idea.status === "hypothesis"
+                    ? "text-theme-warning"
+                    : idea.status === "concluded"
+                    ? "text-gray-600"
+                    : "text-theme-accent"
+                }
+              />
             </div>
-            <h3 className="text-lg font-semibold text-theme-primary">
-              {idea.title}
-            </h3>
+            <h3 className="text-lg font-semibold text-theme-primary">{idea.title}</h3>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(idea.status)}`}>
             {getStatusText(idea.status)}
           </span>
         </div>
-        <p className="text-sm text-theme-tertiary mb-3">{idea.description}</p>
 
-      {/* Description */}
-      <p className="text-sm leading-relaxed mb-4 text-theme-secondary">
-        {idea.description}
-      </p>
+        {/* 描述：保留一份就够了 */}
+        {idea.description ? (
+          <p className="text-sm text-theme-tertiary mb-4">{idea.description}</p>
+        ) : null}
 
-      {/* Tags */}
-      {idea.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {idea.tags.map((tag, tagIndex) => (
-            <motion.span
-              key={tagIndex}
-              className="px-2 py-1 text-xs rounded-lg font-medium tag-default whitespace-nowrap"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
-            >
-              {tag}
-            </motion.span>
-          ))}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center space-x-1 text-theme-tertiary">
-          <Clock size={12} />
-          <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
-        </div>
-        <motion.button
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1 rounded focus:opacity-100 focus:outline-none focus:ring-1 ring-theme-primary text-theme-accent"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleClick();
-          }}
-          aria-label={`View details for ${idea.title}`}
-        >
-          <Plus size={16} />
-        </motion.button>
-      </div>
+        {/* Tags */}
+        {(idea.tags?.length ?? 0) > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {idea.tags!.map((tag, tagIndex) => (
+              <motion.span
+                key={`${tag}-${tagIndex}`}
+                className="px-3 py-1 text-xs rounded-full font-medium tag-default"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              >
+                {tag}
+              </motion.span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </motion.div>
   );

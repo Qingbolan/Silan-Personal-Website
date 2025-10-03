@@ -176,22 +176,25 @@ export const fetchProjectDetailById = async (
     // Merge basic project info with detail info to create a complete ProjectDetail
     const licenseName = projectDetail?.license || 'MIT';
     const licenseText: string | undefined = projectDetail?.license_text;
+    const releaseNotes: string | undefined = projectDetail?.release || projectDetail?.release_notes;
+    const quickStartGuide: string | undefined = projectDetail?.quick_start;
+    const dependenciesDoc: string | undefined = projectDetail?.dependance || projectDetail?.dependencies;
 
     const mergedDetail: ProjectDetail = {
       id: basicProject.id,
       title: basicProject.name,
       description: basicProject.description,
-      fullDescription: projectDetail?.detailed_description || basicProject.description,
+      fullDescription: projectDetail?.detailed_description || projectDetail?.project_details || basicProject.description,
       tags: basicProject.tags || [],
       year: basicProject.year,
-      
+
       // Timeline from detail or defaults
       timeline: projectDetail?.timeline || {
         start: '',
         end: '',
         duration: ''
       },
-      
+
       // Metrics from detail or defaults
       metrics: projectDetail?.metrics || {
         linesOfCode: 0,
@@ -199,16 +202,16 @@ export const fetchProjectDetailById = async (
         stars: 0,
         downloads: 0
       },
-      
+
       // Related blogs
       relatedBlogs: projectDetail?.related_blogs || [],
-      
-      // Default version info
+
+      // Version info with release notes
       versions: {
         latest: projectDetail?.version || '1.0.0',
-        releases: []
+        releases: releaseNotes ? [{ version: projectDetail?.version || '1.0.0', notes: releaseNotes }] : []
       },
-      
+
       // Default status info
       status: {
         buildStatus: 'unknown' as const,
@@ -219,14 +222,18 @@ export const fetchProjectDetailById = async (
         language: 'Multiple',
         size: 'Medium'
       },
-      
-      // Default quick start info
-      quickStart: {
+
+      // Quick start info from database or defaults
+      quickStart: quickStartGuide ? {
+        installation: [],
+        basicUsage: quickStartGuide,
+        requirements: []
+      } : {
         installation: ['Clone the repository', 'Install dependencies', 'Run the application'],
         basicUsage: 'Follow the README instructions to get started',
         requirements: ['Node.js', 'Git']
       },
-      
+
       // Default community info
       community: {
         contributors: 1,
@@ -239,13 +246,17 @@ export const fetchProjectDetailById = async (
         },
         discussions: []
       },
-      
-      // Default dependencies
-      dependencies: {
+
+      // Dependencies from database or defaults
+      dependencies: dependenciesDoc ? {
+        production: [],
+        development: [],
+        raw: dependenciesDoc
+      } : {
         production: [],
         development: []
       },
-      
+
       // Default performance
       performance: {
         benchmarks: [],
@@ -254,13 +265,13 @@ export const fetchProjectDetailById = async (
           usage: []
         }
       },
-      
+
       // Additional fields
       features: [],
       teamSize: 1,
       myRole: 'Developer',
       planId: basicProject.annualPlan,
-      
+
       // URLs (these might not be in the basic project, so we use defaults)
       github: '', // These would need to be added to the basic project type
       demo: ''    // or fetched from somewhere else

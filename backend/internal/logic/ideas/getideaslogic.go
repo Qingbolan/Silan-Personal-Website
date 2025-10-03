@@ -8,6 +8,7 @@ import (
 
 	"silan-backend/internal/ent"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -44,23 +45,22 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 	}
 
 	if req.Collaboration {
-		query = query.Where(idea.CollaborationNeeded(true))
+		query = query.Where(idea.HasDetailsWith(ideadetail.CollaborationNeeded(true)))
 	}
 
 	if req.Funding != "" {
 		if req.Funding == "required" {
-			query = query.Where(idea.FundingRequired(true))
+			query = query.Where(idea.HasDetailsWith(ideadetail.FundingRequired(true)))
 		} else if req.Funding == "not_required" {
-			query = query.Where(idea.FundingRequired(false))
+			query = query.Where(idea.HasDetailsWith(ideadetail.FundingRequired(false)))
 		}
 	}
 
 	if req.Search != "" {
 		query = query.Where(idea.Or(
 			idea.TitleContains(req.Search),
+			idea.DescriptionContains(req.Search),
 			idea.AbstractContains(req.Search),
-			idea.MotivationContains(req.Search),
-			idea.MethodologyContains(req.Search),
 		))
 	}
 
@@ -74,6 +74,7 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 	offset := (req.Page - 1) * req.Size
 	ideas, err := query.
 		WithTags().
+		WithDetails().
 		Order(ent.Desc(idea.FieldUpdatedAt)).
 		Limit(req.Size).
 		Offset(offset).
@@ -88,21 +89,29 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 	for _, ideaEntity := range ideas {
 		// Handle non-nullable fields
 		abstract := ideaEntity.Abstract
-		motivation := ideaEntity.Motivation
-		methodology := ideaEntity.Methodology
+		description := ideaEntity.Description
 
-		// Handle non-nullable fields
-		expectedOutcome := ideaEntity.ExpectedOutcome
-		requiredResources := ideaEntity.RequiredResources
-
+		// Get detail fields from IdeaDetail edge
+		var progress, results, references, requiredResources string
+		var collaborationNeeded bool
 		var estimatedDuration string
-		if ideaEntity.EstimatedDurationMonths > 0 {
-			estimatedDuration = fmt.Sprintf("%d months", ideaEntity.EstimatedDurationMonths)
+
+		if ideaEntity.Edges.Details != nil {
+			detail := ideaEntity.Edges.Details
+			progress = detail.Progress
+			results = detail.Results
+			references = detail.References
+			requiredResources = detail.RequiredResources
+			collaborationNeeded = detail.CollaborationNeeded
+
+			if detail.EstimatedDurationMonths > 0 {
+				estimatedDuration = fmt.Sprintf("%d months", detail.EstimatedDurationMonths)
+			}
 		}
 
 		// Tags from M2M edge (IdeaTag)
 		tags := []string{}
-		if ideaEntity.Edges.Tags != nil && len(ideaEntity.Edges.Tags) > 0 {
+		if len(ideaEntity.Edges.Tags) > 0 {
 			for _, t := range ideaEntity.Edges.Tags {
 				if t.Name != "" {
 					tags = append(tags, t.Name)
@@ -111,23 +120,45 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 		}
 		category := ideaEntity.Category
 
+		// Initialize missing variables
+		var codeRepository string
+		var demoURL string
+		var techStack []string
+		var collaborators []types.Collaborator
+		var feedbackRequested []types.FeedbackType
+		var publications []types.IdeaPublicationRef
+		var conferences []string
+		var keywords []string
+
 		result = append(result, types.IdeaData{
 			ID:                   ideaEntity.ID.String(),
 			Title:                ideaEntity.Title,
-			Description:          abstract,
+			Description:          description,
 			Category:             category,
 			Tags:                 tags,
 			Status:               strings.ToLower(string(ideaEntity.Status)),
 			CreatedAt:            ideaEntity.CreatedAt.Format("2006-01-02T15:04:05Z"),
 			LastUpdated:          ideaEntity.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 			Abstract:             abstract,
-			Motivation:           motivation,
-			Methodology:          methodology,
-			PreliminaryResults:   expectedOutcome,
-			OpenForCollaboration: ideaEntity.CollaborationNeeded,
+			AbstractZh:           abstract,
+			Progress:             progress,
+			ProgressZh:           progress,
+			Results:              results,
+			ResultsZh:            results,
+			Reference:            references,
+			Reference_Zh:         references,
+			TechStack:            techStack,
+			CodeRepository:       codeRepository,
+			DemoURL:              demoURL,
+			Collaborators:        collaborators,
+			OpenForCollaboration: collaborationNeeded,
+			FeedbackRequested:    feedbackRequested,
+			Publications:         publications,
+			Conferences:          conferences,
+			ResearchField:        category,
+			Keywords:             keywords,
 			EstimatedDuration:    estimatedDuration,
 			FundingStatus:        requiredResources,
-			Difficulty:           strings.ToLower(string(ideaEntity.Priority)),
 		})
 	}
 

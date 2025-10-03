@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"silan-backend/internal/ent/project"
@@ -39,12 +40,11 @@ func (l *SearchProjectDetailsLogic) SearchProjectDetails(req *types.ProjectSearc
 	if req.Query != "" {
 		query = query.Where(
 			projectdetail.Or(
-				projectdetail.DetailedDescriptionContains(req.Query),
-				projectdetail.GoalsContains(req.Query),
-				projectdetail.ChallengesContains(req.Query),
-				projectdetail.SolutionsContains(req.Query),
-				projectdetail.LessonsLearnedContains(req.Query),
-				projectdetail.FutureEnhancementsContains(req.Query),
+				projectdetail.ReleaseNotesContains(req.Query),
+				projectdetail.QuickStartContains(req.Query),
+				projectdetail.DependenciesContains(req.Query),
+				projectdetail.LicenseTextContains(req.Query),
+				projectdetail.VersionContains(req.Query),
 				projectdetail.HasProjectWith(
 					project.Or(
 						project.TitleContains(req.Query),
@@ -107,23 +107,46 @@ func (l *SearchProjectDetailsLogic) SearchProjectDetails(req *types.ProjectSearc
 			if !proj.EndDate.IsZero() {
 				timeline.End = proj.EndDate.Format("2006-01-02")
 			}
+
+			// Calculate duration if both dates are available
+			if !proj.StartDate.IsZero() && !proj.EndDate.IsZero() {
+				duration := proj.EndDate.Sub(proj.StartDate)
+				days := int(duration.Hours() / 24)
+				if days > 0 {
+					timeline.Duration = fmt.Sprintf("%d days", days)
+				}
+			}
+
 			metrics.Stars = proj.LikeCount
 		}
 		
+		// Get values from project detail entity (these are strings, not pointers)
+		releaseNotes := pd.ReleaseNotes
+		quickStart := pd.QuickStart
+		dependencies := pd.Dependencies
+		license := pd.License
+		licenseText := pd.LicenseText
+		version := pd.Version
+
+		// Get detailed description from related project if available
+		var detailedDescription string
+		if pd.Edges.Project != nil {
+			detailedDescription = pd.Edges.Project.Description
+		}
+
 		result = append(result, types.ProjectDetail{
 			ID:                  pd.ID.String(),
 			ProjectID:           pd.ProjectID.String(),
-			DetailedDescription: pd.DetailedDescription,
-			Goals:               pd.Goals,
-			Challenges:          pd.Challenges,
-			Solutions:           pd.Solutions,
-			LessonsLearned:      pd.LessonsLearned,
-			FutureEnhancements:  pd.FutureEnhancements,
-			License:             pd.License,
-			Version:             pd.Version,
+			DetailedDescription: detailedDescription,
+			Release:             releaseNotes,
+			QuickStart:          quickStart,
+			Dependance:          dependencies,
+			LicenseText:         licenseText,
+			License:             license,
+			Version:             version,
 			Timeline:            timeline,
 			Metrics:             metrics,
-			RelatedBlogs:        []types.ProjectBlogRef{}, // TODO: implement related blogs
+			RelatedBlogs:        []types.ProjectBlogRef{},
 			CreatedAt:           pd.CreatedAt.Format("2006-01-02 15:04:05"),
 			UpdatedAt:           pd.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
