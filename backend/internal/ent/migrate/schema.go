@@ -511,7 +511,6 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "abstract", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "hypothesis", "experimenting", "validating", "published", "concluded"}, Default: "draft"},
-		{Name: "priority", Type: field.TypeEnum, Enums: []string{"low", "medium", "high", "urgent"}, Default: "medium"},
 		{Name: "is_public", Type: field.TypeBool, Default: false},
 		{Name: "view_count", Type: field.TypeInt, Default: 0},
 		{Name: "like_count", Type: field.TypeInt, Default: 0},
@@ -528,7 +527,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "ideas_users_ideas",
-				Columns:    []*schema.Column{IdeasColumns[13]},
+				Columns:    []*schema.Column{IdeasColumns[12]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

@@ -15139,7 +15139,6 @@ type IdeaMutation struct {
 	description         *string
 	abstract            *string
 	status              *idea.Status
-	priority            *idea.Priority
 	is_public           *bool
 	view_count          *int
 	addview_count       *int
@@ -15514,42 +15513,6 @@ func (m *IdeaMutation) OldStatus(ctx context.Context) (v idea.Status, err error)
 // ResetStatus resets all changes to the "status" field.
 func (m *IdeaMutation) ResetStatus() {
 	m.status = nil
-}
-
-// SetPriority sets the "priority" field.
-func (m *IdeaMutation) SetPriority(i idea.Priority) {
-	m.priority = &i
-}
-
-// Priority returns the value of the "priority" field in the mutation.
-func (m *IdeaMutation) Priority() (r idea.Priority, exists bool) {
-	v := m.priority
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPriority returns the old "priority" field's value of the Idea entity.
-// If the Idea object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IdeaMutation) OldPriority(ctx context.Context) (v idea.Priority, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPriority is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPriority requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPriority: %w", err)
-	}
-	return oldValue.Priority, nil
-}
-
-// ResetPriority resets all changes to the "priority" field.
-func (m *IdeaMutation) ResetPriority() {
-	m.priority = nil
 }
 
 // SetIsPublic sets the "is_public" field.
@@ -16137,7 +16100,7 @@ func (m *IdeaMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IdeaMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 12)
 	if m.user != nil {
 		fields = append(fields, idea.FieldUserID)
 	}
@@ -16155,9 +16118,6 @@ func (m *IdeaMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, idea.FieldStatus)
-	}
-	if m.priority != nil {
-		fields = append(fields, idea.FieldPriority)
 	}
 	if m.is_public != nil {
 		fields = append(fields, idea.FieldIsPublic)
@@ -16197,8 +16157,6 @@ func (m *IdeaMutation) Field(name string) (ent.Value, bool) {
 		return m.Abstract()
 	case idea.FieldStatus:
 		return m.Status()
-	case idea.FieldPriority:
-		return m.Priority()
 	case idea.FieldIsPublic:
 		return m.IsPublic()
 	case idea.FieldViewCount:
@@ -16232,8 +16190,6 @@ func (m *IdeaMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldAbstract(ctx)
 	case idea.FieldStatus:
 		return m.OldStatus(ctx)
-	case idea.FieldPriority:
-		return m.OldPriority(ctx)
 	case idea.FieldIsPublic:
 		return m.OldIsPublic(ctx)
 	case idea.FieldViewCount:
@@ -16296,13 +16252,6 @@ func (m *IdeaMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
-		return nil
-	case idea.FieldPriority:
-		v, ok := value.(idea.Priority)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPriority(v)
 		return nil
 	case idea.FieldIsPublic:
 		v, ok := value.(bool)
@@ -16460,9 +16409,6 @@ func (m *IdeaMutation) ResetField(name string) error {
 		return nil
 	case idea.FieldStatus:
 		m.ResetStatus()
-		return nil
-	case idea.FieldPriority:
-		m.ResetPriority()
 		return nil
 	case idea.FieldIsPublic:
 		m.ResetIsPublic()

@@ -33,7 +33,6 @@ idea_info:
   status: HYPOTHESIS
   category: AI/ML
   slug: ai-content-optimizer
-  difficulty: medium
   research_field: Natural Language Processing
   estimated_duration: 4 months
   estimated_budget: $75k
@@ -59,7 +58,7 @@ sync_metadata:
   item_id: ai-content-optimizer
   sync_enabled: true
   last_hash: ef8ea3afe7b1fe75
-  last_sync_date: '2025-10-04T12:52:24.482067'
+  last_sync_date: '2025-10-04T14:39:42.953293'
   created: '2025-09-23'
   last_modified: '2025-09-23'
   file_count: 4

@@ -28,8 +28,6 @@ const (
 	FieldAbstract = "abstract"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldPriority holds the string denoting the priority field in the database.
-	FieldPriority = "priority"
 	// FieldIsPublic holds the string denoting the is_public field in the database.
 	FieldIsPublic = "is_public"
 	// FieldViewCount holds the string denoting the view_count field in the database.
@@ -107,7 +105,6 @@ var Columns = []string{
 	FieldDescription,
 	FieldAbstract,
 	FieldStatus,
-	FieldPriority,
 	FieldIsPublic,
 	FieldViewCount,
 	FieldLikeCount,
@@ -187,34 +184,6 @@ func StatusValidator(s Status) error {
 	}
 }
 
-// Priority defines the type for the "priority" enum field.
-type Priority string
-
-// PriorityMedium is the default value of the Priority enum.
-const DefaultPriority = PriorityMedium
-
-// Priority values.
-const (
-	PriorityLow    Priority = "low"
-	PriorityMedium Priority = "medium"
-	PriorityHigh   Priority = "high"
-	PriorityUrgent Priority = "urgent"
-)
-
-func (pr Priority) String() string {
-	return string(pr)
-}
-
-// PriorityValidator is a validator for the "priority" field enum values. It is called by the builders before save.
-func PriorityValidator(pr Priority) error {
-	switch pr {
-	case PriorityLow, PriorityMedium, PriorityHigh, PriorityUrgent:
-		return nil
-	default:
-		return fmt.Errorf("idea: invalid enum value for priority field: %q", pr)
-	}
-}
-
 // OrderOption defines the ordering options for the Idea queries.
 type OrderOption func(*sql.Selector)
 
@@ -251,11 +220,6 @@ func ByAbstract(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
-}
-
-// ByPriority orders the results by the priority field.
-func ByPriority(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPriority, opts...).ToFunc()
 }
 
 // ByIsPublic orders the results by the is_public field.

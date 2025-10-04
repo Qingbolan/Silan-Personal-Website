@@ -131,20 +131,6 @@ func (iu *IdeaUpdate) SetNillableStatus(i *idea.Status) *IdeaUpdate {
 	return iu
 }
 
-// SetPriority sets the "priority" field.
-func (iu *IdeaUpdate) SetPriority(i idea.Priority) *IdeaUpdate {
-	iu.mutation.SetPriority(i)
-	return iu
-}
-
-// SetNillablePriority sets the "priority" field if the given value is not nil.
-func (iu *IdeaUpdate) SetNillablePriority(i *idea.Priority) *IdeaUpdate {
-	if i != nil {
-		iu.SetPriority(*i)
-	}
-	return iu
-}
-
 // SetIsPublic sets the "is_public" field.
 func (iu *IdeaUpdate) SetIsPublic(b bool) *IdeaUpdate {
 	iu.mutation.SetIsPublic(b)
@@ -465,11 +451,6 @@ func (iu *IdeaUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Idea.status": %w`, err)}
 		}
 	}
-	if v, ok := iu.mutation.Priority(); ok {
-		if err := idea.PriorityValidator(v); err != nil {
-			return &ValidationError{Name: "priority", err: fmt.Errorf(`ent: validator failed for field "Idea.priority": %w`, err)}
-		}
-	}
 	if v, ok := iu.mutation.Category(); ok {
 		if err := idea.CategoryValidator(v); err != nil {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "Idea.category": %w`, err)}
@@ -513,9 +494,6 @@ func (iu *IdeaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := iu.mutation.Status(); ok {
 		_spec.SetField(idea.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := iu.mutation.Priority(); ok {
-		_spec.SetField(idea.FieldPriority, field.TypeEnum, value)
 	}
 	if value, ok := iu.mutation.IsPublic(); ok {
 		_spec.SetField(idea.FieldIsPublic, field.TypeBool, value)
@@ -895,20 +873,6 @@ func (iuo *IdeaUpdateOne) SetNillableStatus(i *idea.Status) *IdeaUpdateOne {
 	return iuo
 }
 
-// SetPriority sets the "priority" field.
-func (iuo *IdeaUpdateOne) SetPriority(i idea.Priority) *IdeaUpdateOne {
-	iuo.mutation.SetPriority(i)
-	return iuo
-}
-
-// SetNillablePriority sets the "priority" field if the given value is not nil.
-func (iuo *IdeaUpdateOne) SetNillablePriority(i *idea.Priority) *IdeaUpdateOne {
-	if i != nil {
-		iuo.SetPriority(*i)
-	}
-	return iuo
-}
-
 // SetIsPublic sets the "is_public" field.
 func (iuo *IdeaUpdateOne) SetIsPublic(b bool) *IdeaUpdateOne {
 	iuo.mutation.SetIsPublic(b)
@@ -1242,11 +1206,6 @@ func (iuo *IdeaUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Idea.status": %w`, err)}
 		}
 	}
-	if v, ok := iuo.mutation.Priority(); ok {
-		if err := idea.PriorityValidator(v); err != nil {
-			return &ValidationError{Name: "priority", err: fmt.Errorf(`ent: validator failed for field "Idea.priority": %w`, err)}
-		}
-	}
 	if v, ok := iuo.mutation.Category(); ok {
 		if err := idea.CategoryValidator(v); err != nil {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "Idea.category": %w`, err)}
@@ -1307,9 +1266,6 @@ func (iuo *IdeaUpdateOne) sqlSave(ctx context.Context) (_node *Idea, err error) 
 	}
 	if value, ok := iuo.mutation.Status(); ok {
 		_spec.SetField(idea.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := iuo.mutation.Priority(); ok {
-		_spec.SetField(idea.FieldPriority, field.TypeEnum, value)
 	}
 	if value, ok := iuo.mutation.IsPublic(); ok {
 		_spec.SetField(idea.FieldIsPublic, field.TypeBool, value)

@@ -44,7 +44,7 @@ language: "en"
 
 title: AI Researcher & Full Stack Developer
 
-status: Currently looking for PhD, internships and research opportunities
+status: Building the GEM community. Preparing for admission to NUS PhD in January 2026.
 
 ## Contact Information
 
@@ -81,13 +81,13 @@ status: Currently looking for PhD, internships and research opportunities
 ## Work Experience
 
 ### NUS Computing
+
 *Logo*: nus_computing
 *Website*: https://www.comp.nus.edu.sg
 
 **Research Assistant**
 *Aug 2025 - Now*
 *Singapore*
-
 
 ### HPC-AI Tech
 

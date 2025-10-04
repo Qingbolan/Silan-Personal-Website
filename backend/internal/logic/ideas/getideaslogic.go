@@ -40,10 +40,6 @@ func (l *GetIdeasLogic) GetIdeas(req *types.IdeaListRequest) (resp *types.IdeaLi
 		query = query.Where(idea.StatusEQ(idea.Status(req.Status)))
 	}
 
-	if req.Difficulty != "" {
-		query = query.Where(idea.PriorityEQ(idea.Priority(req.Difficulty)))
-	}
-
 	if req.Collaboration {
 		query = query.Where(idea.HasDetailsWith(ideadetail.CollaborationNeeded(true)))
 	}

@@ -32,8 +32,6 @@ type Idea struct {
 	Abstract string `json:"abstract,omitempty"`
 	// Status holds the value of the "status" field.
 	Status idea.Status `json:"status,omitempty"`
-	// Priority holds the value of the "priority" field.
-	Priority idea.Priority `json:"priority,omitempty"`
 	// IsPublic holds the value of the "is_public" field.
 	IsPublic bool `json:"is_public,omitempty"`
 	// ViewCount holds the value of the "view_count" field.
@@ -138,7 +136,7 @@ func (*Idea) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case idea.FieldViewCount, idea.FieldLikeCount:
 			values[i] = new(sql.NullInt64)
-		case idea.FieldTitle, idea.FieldSlug, idea.FieldDescription, idea.FieldAbstract, idea.FieldStatus, idea.FieldPriority, idea.FieldCategory:
+		case idea.FieldTitle, idea.FieldSlug, idea.FieldDescription, idea.FieldAbstract, idea.FieldStatus, idea.FieldCategory:
 			values[i] = new(sql.NullString)
 		case idea.FieldCreatedAt, idea.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -200,12 +198,6 @@ func (i *Idea) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[j])
 			} else if value.Valid {
 				i.Status = idea.Status(value.String)
-			}
-		case idea.FieldPriority:
-			if value, ok := values[j].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field priority", values[j])
-			} else if value.Valid {
-				i.Priority = idea.Priority(value.String)
 			}
 		case idea.FieldIsPublic:
 			if value, ok := values[j].(*sql.NullBool); !ok {
@@ -326,9 +318,6 @@ func (i *Idea) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", i.Status))
-	builder.WriteString(", ")
-	builder.WriteString("priority=")
-	builder.WriteString(fmt.Sprintf("%v", i.Priority))
 	builder.WriteString(", ")
 	builder.WriteString("is_public=")
 	builder.WriteString(fmt.Sprintf("%v", i.IsPublic))

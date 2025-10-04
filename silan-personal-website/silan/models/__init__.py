@@ -21,7 +21,7 @@ from .blog import (
 )
 from .ideas import (
     Idea, IdeaTranslation, IdeaDetail, IdeaDetailTranslation,
-    IdeaTag, Comment, CommentLike, IdeaStatus, IdeaPriority
+    IdeaTag, Comment, CommentLike, IdeaStatus
 )
 from .research import (
     ResearchProject, ResearchProjectTranslation, ResearchProjectDetail,
@@ -55,7 +55,7 @@ __all__ = [
 
     # Ideas & Comments
     'Idea', 'IdeaTranslation', 'IdeaDetail', 'IdeaDetailTranslation',
-    'IdeaTag', 'Comment', 'CommentLike', 'IdeaStatus', 'IdeaPriority',
+    'IdeaTag', 'Comment', 'CommentLike', 'IdeaStatus',
     
     # Research
     'ResearchProject', 'ResearchProjectTranslation', 'ResearchProjectDetail',

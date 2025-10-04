@@ -32,12 +32,6 @@ def _get_ideas_config_values():
                 'validating': 'validating',
                 'published': 'published',
                 'concluded': 'concluded'
-            }),
-            'priority': ideas_config.get('priority', {
-                'low': 'low',
-                'medium': 'medium',
-                'high': 'high',
-                'urgent': 'urgent'
             })
         }
     else:
@@ -49,12 +43,6 @@ def _get_ideas_config_values():
                 'validating': 'validating',
                 'published': 'published',
                 'concluded': 'concluded'
-            },
-            'priority': {
-                'low': 'low',
-                'medium': 'medium',
-                'high': 'high',
-                'urgent': 'urgent'
             }
         }
 
@@ -71,14 +59,6 @@ class IdeaStatus(enum.Enum):
     CONCLUDED = _ideas_config['status']['concluded']
 
 
-class IdeaPriority(enum.Enum):
-    """Idea priority enumeration - values loaded from configuration"""
-    LOW = _ideas_config['priority']['low']
-    MEDIUM = _ideas_config['priority']['medium']
-    HIGH = _ideas_config['priority']['high']
-    URGENT = _ideas_config['priority']['urgent']
-
-
 class Idea(Base, TimestampMixin):
     __tablename__ = "ideas"
 
@@ -89,7 +69,6 @@ class Idea(Base, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(Text)
     abstract: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[IdeaStatus] = mapped_column(Enum(IdeaStatus), default=IdeaStatus.DRAFT)
-    priority: Mapped[IdeaPriority] = mapped_column(Enum(IdeaPriority), default=IdeaPriority.MEDIUM)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     like_count: Mapped[int] = mapped_column(Integer, default=0)

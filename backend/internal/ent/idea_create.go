@@ -87,20 +87,6 @@ func (ic *IdeaCreate) SetNillableStatus(i *idea.Status) *IdeaCreate {
 	return ic
 }
 
-// SetPriority sets the "priority" field.
-func (ic *IdeaCreate) SetPriority(i idea.Priority) *IdeaCreate {
-	ic.mutation.SetPriority(i)
-	return ic
-}
-
-// SetNillablePriority sets the "priority" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillablePriority(i *idea.Priority) *IdeaCreate {
-	if i != nil {
-		ic.SetPriority(*i)
-	}
-	return ic
-}
-
 // SetIsPublic sets the "is_public" field.
 func (ic *IdeaCreate) SetIsPublic(b bool) *IdeaCreate {
 	ic.mutation.SetIsPublic(b)
@@ -322,10 +308,6 @@ func (ic *IdeaCreate) defaults() {
 		v := idea.DefaultStatus
 		ic.mutation.SetStatus(v)
 	}
-	if _, ok := ic.mutation.Priority(); !ok {
-		v := idea.DefaultPriority
-		ic.mutation.SetPriority(v)
-	}
 	if _, ok := ic.mutation.IsPublic(); !ok {
 		v := idea.DefaultIsPublic
 		ic.mutation.SetIsPublic(v)
@@ -383,14 +365,6 @@ func (ic *IdeaCreate) check() error {
 	if v, ok := ic.mutation.Status(); ok {
 		if err := idea.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Idea.status": %w`, err)}
-		}
-	}
-	if _, ok := ic.mutation.Priority(); !ok {
-		return &ValidationError{Name: "priority", err: errors.New(`ent: missing required field "Idea.priority"`)}
-	}
-	if v, ok := ic.mutation.Priority(); ok {
-		if err := idea.PriorityValidator(v); err != nil {
-			return &ValidationError{Name: "priority", err: fmt.Errorf(`ent: validator failed for field "Idea.priority": %w`, err)}
 		}
 	}
 	if _, ok := ic.mutation.IsPublic(); !ok {
@@ -470,10 +444,6 @@ func (ic *IdeaCreate) createSpec() (*Idea, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.Status(); ok {
 		_spec.SetField(idea.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
-	}
-	if value, ok := ic.mutation.Priority(); ok {
-		_spec.SetField(idea.FieldPriority, field.TypeEnum, value)
-		_node.Priority = value
 	}
 	if value, ok := ic.mutation.IsPublic(); ok {
 		_spec.SetField(idea.FieldIsPublic, field.TypeBool, value)

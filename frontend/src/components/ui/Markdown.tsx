@@ -13,6 +13,7 @@ const Markdown: React.FC<MarkdownProps> = ({ children, className }) => {
     <div className={`markdown-body ${className || ''}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        unwrapDisallowed={true}
         components={{
           h1: ({ node, ...props }) => (
             <h1 className="text-theme-primary font-bold mt-6 mb-4 text-3xl" {...props} />
@@ -24,7 +25,7 @@ const Markdown: React.FC<MarkdownProps> = ({ children, className }) => {
             <h3 className="text-theme-primary font-semibold mt-4 mb-2 text-xl" {...props} />
           ),
           p: ({ node, ...props }) => (
-            <p className="text-theme-secondary my-2 leading-relaxed" {...props} />
+            <div className="text-theme-secondary my-2 leading-relaxed" {...props} />
           ),
           a: ({ node, href, children, ...props }) => {
             if (!href) {

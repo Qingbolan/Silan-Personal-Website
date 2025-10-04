@@ -838,29 +838,29 @@ func init() {
 		}
 	}()
 	// ideaDescIsPublic is the schema descriptor for is_public field.
-	ideaDescIsPublic := ideaFields[8].Descriptor()
+	ideaDescIsPublic := ideaFields[7].Descriptor()
 	// idea.DefaultIsPublic holds the default value on creation for the is_public field.
 	idea.DefaultIsPublic = ideaDescIsPublic.Default.(bool)
 	// ideaDescViewCount is the schema descriptor for view_count field.
-	ideaDescViewCount := ideaFields[9].Descriptor()
+	ideaDescViewCount := ideaFields[8].Descriptor()
 	// idea.DefaultViewCount holds the default value on creation for the view_count field.
 	idea.DefaultViewCount = ideaDescViewCount.Default.(int)
 	// ideaDescLikeCount is the schema descriptor for like_count field.
-	ideaDescLikeCount := ideaFields[10].Descriptor()
+	ideaDescLikeCount := ideaFields[9].Descriptor()
 	// idea.DefaultLikeCount holds the default value on creation for the like_count field.
 	idea.DefaultLikeCount = ideaDescLikeCount.Default.(int)
 	// ideaDescCategory is the schema descriptor for category field.
-	ideaDescCategory := ideaFields[11].Descriptor()
+	ideaDescCategory := ideaFields[10].Descriptor()
 	// idea.DefaultCategory holds the default value on creation for the category field.
 	idea.DefaultCategory = ideaDescCategory.Default.(string)
 	// idea.CategoryValidator is a validator for the "category" field. It is called by the builders before save.
 	idea.CategoryValidator = ideaDescCategory.Validators[0].(func(string) error)
 	// ideaDescCreatedAt is the schema descriptor for created_at field.
-	ideaDescCreatedAt := ideaFields[12].Descriptor()
+	ideaDescCreatedAt := ideaFields[11].Descriptor()
 	// idea.DefaultCreatedAt holds the default value on creation for the created_at field.
 	idea.DefaultCreatedAt = ideaDescCreatedAt.Default.(func() time.Time)
 	// ideaDescUpdatedAt is the schema descriptor for updated_at field.
-	ideaDescUpdatedAt := ideaFields[13].Descriptor()
+	ideaDescUpdatedAt := ideaFields[12].Descriptor()
 	// idea.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	idea.DefaultUpdatedAt = ideaDescUpdatedAt.Default.(func() time.Time)
 	// idea.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

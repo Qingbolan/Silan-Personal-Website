@@ -41,7 +41,7 @@ sync_metadata:
   item_id: sample-project
   sync_enabled: true
   last_hash: f784f9b278ccaf04
-  last_sync_date: '2025-10-04T12:52:24.482067'
+  last_sync_date: '2025-10-04T14:39:42.953293'
   created: '2025-09-23'
   last_modified: '2025-09-23'
   file_count: 3

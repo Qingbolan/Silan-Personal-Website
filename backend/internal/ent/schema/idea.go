@@ -45,9 +45,6 @@ func (Idea) Fields() []ent.Field {
 		field.Enum("status").
 			Values("draft", "hypothesis", "experimenting", "validating", "published", "concluded").
 			Default("draft"),
-		field.Enum("priority").
-			Values("low", "medium", "high", "urgent").
-			Default("medium"),
 		field.Bool("is_public").
 			Default(false),
 		field.Int("view_count").

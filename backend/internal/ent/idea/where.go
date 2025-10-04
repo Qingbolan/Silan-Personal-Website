@@ -431,26 +431,6 @@ func StatusNotIn(vs ...Status) predicate.Idea {
 	return predicate.Idea(sql.FieldNotIn(FieldStatus, vs...))
 }
 
-// PriorityEQ applies the EQ predicate on the "priority" field.
-func PriorityEQ(v Priority) predicate.Idea {
-	return predicate.Idea(sql.FieldEQ(FieldPriority, v))
-}
-
-// PriorityNEQ applies the NEQ predicate on the "priority" field.
-func PriorityNEQ(v Priority) predicate.Idea {
-	return predicate.Idea(sql.FieldNEQ(FieldPriority, v))
-}
-
-// PriorityIn applies the In predicate on the "priority" field.
-func PriorityIn(vs ...Priority) predicate.Idea {
-	return predicate.Idea(sql.FieldIn(FieldPriority, vs...))
-}
-
-// PriorityNotIn applies the NotIn predicate on the "priority" field.
-func PriorityNotIn(vs ...Priority) predicate.Idea {
-	return predicate.Idea(sql.FieldNotIn(FieldPriority, vs...))
-}
-
 // IsPublicEQ applies the EQ predicate on the "is_public" field.
 func IsPublicEQ(v bool) predicate.Idea {
 	return predicate.Idea(sql.FieldEQ(FieldIsPublic, v))
