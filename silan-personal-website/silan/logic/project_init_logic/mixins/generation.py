@@ -968,7 +968,7 @@ This document describes the structure of this project folder.
         return f"""---
 title: "AI Content Optimizer"
 description: "An intelligent system to optimize content for better engagement"
-status: "brainstorming"
+status: "HYPOTHESIS"
 category: "AI/ML"
 tags:
   - "AI"
@@ -1064,7 +1064,7 @@ content_files:
 idea_info:
   title: "AI Content Optimizer"
   description: "An intelligent system to optimize content for better engagement"
-  status: "brainstorming"
+  status: "HYPOTHESIS"
   category: "AI/ML"
   slug: "ai-content-optimizer"
   difficulty: "medium"
