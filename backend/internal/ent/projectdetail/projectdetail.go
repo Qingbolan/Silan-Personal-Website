@@ -17,18 +17,14 @@ const (
 	FieldID = "id"
 	// FieldProjectID holds the string denoting the project_id field in the database.
 	FieldProjectID = "project_id"
-	// FieldDetailedDescription holds the string denoting the detailed_description field in the database.
-	FieldDetailedDescription = "detailed_description"
-	// FieldGoals holds the string denoting the goals field in the database.
-	FieldGoals = "goals"
-	// FieldChallenges holds the string denoting the challenges field in the database.
-	FieldChallenges = "challenges"
-	// FieldSolutions holds the string denoting the solutions field in the database.
-	FieldSolutions = "solutions"
-	// FieldLessonsLearned holds the string denoting the lessons_learned field in the database.
-	FieldLessonsLearned = "lessons_learned"
-	// FieldFutureEnhancements holds the string denoting the future_enhancements field in the database.
-	FieldFutureEnhancements = "future_enhancements"
+	// FieldProjectDetails holds the string denoting the project_details field in the database.
+	FieldProjectDetails = "project_details"
+	// FieldQuickStart holds the string denoting the quick_start field in the database.
+	FieldQuickStart = "quick_start"
+	// FieldReleaseNotes holds the string denoting the release_notes field in the database.
+	FieldReleaseNotes = "release_notes"
+	// FieldDependencies holds the string denoting the dependencies field in the database.
+	FieldDependencies = "dependencies"
 	// FieldLicense holds the string denoting the license field in the database.
 	FieldLicense = "license"
 	// FieldLicenseText holds the string denoting the license_text field in the database.
@@ -65,12 +61,10 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldProjectID,
-	FieldDetailedDescription,
-	FieldGoals,
-	FieldChallenges,
-	FieldSolutions,
-	FieldLessonsLearned,
-	FieldFutureEnhancements,
+	FieldProjectDetails,
+	FieldQuickStart,
+	FieldReleaseNotes,
+	FieldDependencies,
 	FieldLicense,
 	FieldLicenseText,
 	FieldVersion,
@@ -116,34 +110,24 @@ func ByProjectID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProjectID, opts...).ToFunc()
 }
 
-// ByDetailedDescription orders the results by the detailed_description field.
-func ByDetailedDescription(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDetailedDescription, opts...).ToFunc()
+// ByProjectDetails orders the results by the project_details field.
+func ByProjectDetails(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProjectDetails, opts...).ToFunc()
 }
 
-// ByGoals orders the results by the goals field.
-func ByGoals(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldGoals, opts...).ToFunc()
+// ByQuickStart orders the results by the quick_start field.
+func ByQuickStart(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuickStart, opts...).ToFunc()
 }
 
-// ByChallenges orders the results by the challenges field.
-func ByChallenges(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldChallenges, opts...).ToFunc()
+// ByReleaseNotes orders the results by the release_notes field.
+func ByReleaseNotes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReleaseNotes, opts...).ToFunc()
 }
 
-// BySolutions orders the results by the solutions field.
-func BySolutions(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSolutions, opts...).ToFunc()
-}
-
-// ByLessonsLearned orders the results by the lessons_learned field.
-func ByLessonsLearned(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLessonsLearned, opts...).ToFunc()
-}
-
-// ByFutureEnhancements orders the results by the future_enhancements field.
-func ByFutureEnhancements(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFutureEnhancements, opts...).ToFunc()
+// ByDependencies orders the results by the dependencies field.
+func ByDependencies(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDependencies, opts...).ToFunc()
 }
 
 // ByLicense orders the results by the license field.

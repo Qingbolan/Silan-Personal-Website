@@ -212,6 +212,30 @@ func (f IdeaFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IdeaMutation", m)
 }
 
+// The IdeaDetailFunc type is an adapter to allow the use of ordinary
+// function as IdeaDetail mutator.
+type IdeaDetailFunc func(context.Context, *ent.IdeaDetailMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IdeaDetailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IdeaDetailMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IdeaDetailMutation", m)
+}
+
+// The IdeaDetailTranslationFunc type is an adapter to allow the use of ordinary
+// function as IdeaDetailTranslation mutator.
+type IdeaDetailTranslationFunc func(context.Context, *ent.IdeaDetailTranslationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IdeaDetailTranslationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IdeaDetailTranslationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IdeaDetailTranslationMutation", m)
+}
+
 // The IdeaTagFunc type is an adapter to allow the use of ordinary
 // function as IdeaTag mutator.
 type IdeaTagFunc func(context.Context, *ent.IdeaTagMutation) (ent.Value, error)

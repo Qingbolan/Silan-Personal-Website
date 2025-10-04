@@ -508,17 +508,10 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "title", Type: field.TypeString, Size: 300},
 		{Name: "slug", Type: field.TypeString, Unique: true, Size: 200},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "abstract", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "motivation", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "methodology", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "expected_outcome", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "hypothesis", "experimenting", "validating", "published", "concluded"}, Default: "draft"},
 		{Name: "priority", Type: field.TypeEnum, Enums: []string{"low", "medium", "high", "urgent"}, Default: "medium"},
-		{Name: "estimated_duration_months", Type: field.TypeInt, Nullable: true},
-		{Name: "required_resources", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "collaboration_needed", Type: field.TypeBool, Default: false},
-		{Name: "funding_required", Type: field.TypeBool, Default: false},
-		{Name: "estimated_budget", Type: field.TypeFloat64, Nullable: true},
 		{Name: "is_public", Type: field.TypeBool, Default: false},
 		{Name: "view_count", Type: field.TypeInt, Default: 0},
 		{Name: "like_count", Type: field.TypeInt, Default: 0},
@@ -535,8 +528,68 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "ideas_users_ideas",
-				Columns:    []*schema.Column{IdeasColumns[20]},
+				Columns:    []*schema.Column{IdeasColumns[13]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// IdeaDetailsColumns holds the columns for the "idea_details" table.
+	IdeaDetailsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "progress", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "results", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "references", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "estimated_duration_months", Type: field.TypeInt, Nullable: true},
+		{Name: "required_resources", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "collaboration_needed", Type: field.TypeBool, Default: false},
+		{Name: "funding_required", Type: field.TypeBool, Default: false},
+		{Name: "estimated_budget", Type: field.TypeFloat64, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "idea_id", Type: field.TypeUUID, Unique: true},
+	}
+	// IdeaDetailsTable holds the schema information for the "idea_details" table.
+	IdeaDetailsTable = &schema.Table{
+		Name:       "idea_details",
+		Columns:    IdeaDetailsColumns,
+		PrimaryKey: []*schema.Column{IdeaDetailsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "idea_details_ideas_details",
+				Columns:    []*schema.Column{IdeaDetailsColumns[11]},
+				RefColumns: []*schema.Column{IdeasColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// IdeaDetailTranslationsColumns holds the columns for the "idea_detail_translations" table.
+	IdeaDetailTranslationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "progress", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "results", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "references", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "required_resources", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "idea_detail_id", Type: field.TypeUUID},
+		{Name: "language_code", Type: field.TypeString, Size: 5},
+	}
+	// IdeaDetailTranslationsTable holds the schema information for the "idea_detail_translations" table.
+	IdeaDetailTranslationsTable = &schema.Table{
+		Name:       "idea_detail_translations",
+		Columns:    IdeaDetailTranslationsColumns,
+		PrimaryKey: []*schema.Column{IdeaDetailTranslationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "idea_detail_translations_idea_details_translations",
+				Columns:    []*schema.Column{IdeaDetailTranslationsColumns[6]},
+				RefColumns: []*schema.Column{IdeaDetailsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "idea_detail_translations_languages_idea_detail_translations",
+				Columns:    []*schema.Column{IdeaDetailTranslationsColumns[7]},
+				RefColumns: []*schema.Column{LanguagesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -703,12 +756,10 @@ var (
 	// ProjectDetailsColumns holds the columns for the "project_details" table.
 	ProjectDetailsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "detailed_description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "goals", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "challenges", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "solutions", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "lessons_learned", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "future_enhancements", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "project_details", Type: field.TypeString, Nullable: true},
+		{Name: "quick_start", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "release_notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "dependencies", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "license", Type: field.TypeString, Nullable: true, Size: 50},
 		{Name: "license_text", Type: field.TypeString, Nullable: true},
 		{Name: "version", Type: field.TypeString, Nullable: true, Size: 20},
@@ -724,7 +775,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "project_details_projects_details",
-				Columns:    []*schema.Column{ProjectDetailsColumns[12]},
+				Columns:    []*schema.Column{ProjectDetailsColumns[10]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1526,6 +1577,8 @@ var (
 		EducationDetailTranslationsTable,
 		EducationTranslationsTable,
 		IdeasTable,
+		IdeaDetailsTable,
+		IdeaDetailTranslationsTable,
 		IdeaTagsTable,
 		IdeaTranslationsTable,
 		LanguagesTable,
@@ -1639,6 +1692,15 @@ func init() {
 	IdeasTable.ForeignKeys[0].RefTable = UsersTable
 	IdeasTable.Annotation = &entsql.Annotation{
 		Table: "ideas",
+	}
+	IdeaDetailsTable.ForeignKeys[0].RefTable = IdeasTable
+	IdeaDetailsTable.Annotation = &entsql.Annotation{
+		Table: "idea_details",
+	}
+	IdeaDetailTranslationsTable.ForeignKeys[0].RefTable = IdeaDetailsTable
+	IdeaDetailTranslationsTable.ForeignKeys[1].RefTable = LanguagesTable
+	IdeaDetailTranslationsTable.Annotation = &entsql.Annotation{
+		Table: "idea_detail_translations",
 	}
 	IdeaTagsTable.Annotation = &entsql.Annotation{
 		Table: "idea_tags",

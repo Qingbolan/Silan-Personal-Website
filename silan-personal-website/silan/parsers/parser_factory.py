@@ -380,7 +380,7 @@ class ParsedContentCollection:
         for content_type, content_list in self.content_data.items():
             summary['content_overview'][content_type] = [
                 {
-                    'file_path': content.file_path,
+                    'file_path': str(content.source_path) if content.source_path else '',
                     'title': content.main_entity.get('title', 'Untitled'),
                     'quality_score': content.extraction_quality,
                     'has_errors': len(content.validation_errors) > 0

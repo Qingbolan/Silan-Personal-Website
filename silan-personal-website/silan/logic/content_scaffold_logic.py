@@ -80,6 +80,66 @@ class ContentScaffoldLogic(ModernLogger):
             self.file_ops.write_file(readme_path, content)
             self.debug(f"Created README: {readme_path}")
 
+        # Create NOTES.md for progress tracking
+        notes_path = idea_root / "NOTES.md"
+        if not notes_path.exists():
+            notes_content = f"""# Progress Notes - {title}
+
+## Current Status
+
+[Document your current progress here]
+
+## Timeline
+
+- **Started**: {datetime.date.today().isoformat()}
+- **Last Updated**: {datetime.date.today().isoformat()}
+
+## Progress Log
+
+### Recent Updates
+- [Add your progress updates here]
+
+## Next Steps
+1. [List your next steps]
+"""
+            self.file_ops.write_file(notes_path, notes_content)
+            self.debug(f"Created NOTES: {notes_path}")
+
+        # Create REFERENCES.md for references
+        references_path = idea_root / "REFERENCES.md"
+        if not references_path.exists():
+            references_content = f"""# References - {title}
+
+## Academic Papers
+- [Add academic papers here]
+
+## Industry Reports
+- [Add industry reports here]
+
+## Tools & Platforms
+- [Add relevant tools and platforms here]
+
+## Similar Projects
+- [Add similar projects or solutions here]
+
+## Technical Resources
+- [Add technical documentation and resources here]
+"""
+            self.file_ops.write_file(references_path, references_content)
+            self.debug(f"Created REFERENCES: {references_path}")
+
+        # Create results.md (optional, only if needed)
+        # Uncomment if you want to create it by default
+        # results_path = idea_root / "results.md"
+        # if not results_path.exists():
+        #     results_content = f"""# Results - {title}
+        #
+        # ## Findings
+        # [Document your findings here]
+        # """
+        #     self.file_ops.write_file(results_path, results_content)
+        #     self.debug(f"Created results: {results_path}")
+
         # Save .silan-cache (non-destructive)
         config_path = idea_root / ".silan-cache"
         if not config_path.exists():

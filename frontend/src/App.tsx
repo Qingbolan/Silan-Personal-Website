@@ -12,6 +12,7 @@ import IdeaDetail from './components/IdeaPage/IdeaDetail';
 import BlogStack from './views/BlogStack';
 import BlogDetail from './components/BlogStack/BlogDetail';
 import PlansPage from './views/PlansPage';
+import SearchResults from './views/SearchResults';
 import { ThemeProvider } from './components/ThemeContext';
 import { LanguageProvider } from './components/LanguageContext';
 
@@ -32,6 +33,7 @@ const App: React.FC = () => {
               <Route path="/ideas/:id" element={<IdeaDetail />} />
               <Route path="/blog" element={<BlogStack />} />
               <Route path="/blog/:id" element={<BlogDetail />} />
+              <Route path="/search" element={<SearchResults />} />
             </Routes>
           </MainLayout>
         </Router>

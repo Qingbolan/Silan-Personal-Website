@@ -57,6 +57,12 @@ type EducationTranslation func(*sql.Selector)
 // Idea is the predicate function for idea builders.
 type Idea func(*sql.Selector)
 
+// IdeaDetail is the predicate function for ideadetail builders.
+type IdeaDetail func(*sql.Selector)
+
+// IdeaDetailTranslation is the predicate function for ideadetailtranslation builders.
+type IdeaDetailTranslation func(*sql.Selector)
+
 // IdeaTag is the predicate function for ideatag builders.
 type IdeaTag func(*sql.Selector)
 

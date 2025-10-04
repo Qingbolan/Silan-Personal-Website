@@ -70,7 +70,21 @@ export const fetchIdeaById = async (id: string, language: 'en' | 'zh' = 'en'): P
     ...response,
     tags: response.tags || [],
     createdAt: response.created_at || response.createdAt,
-    lastUpdated: response.last_updated || response.lastUpdated
+    lastUpdated: response.last_updated || response.lastUpdated,
+    abstractZh: response.abstract_zh || response.abstractZh,
+    hypothesisZh: response.hypothesis_zh || response.hypothesisZh,
+    motivationZh: response.motivation_zh || response.motivationZh,
+    progress: response.progress || response.methodology, // fallback if backend uses progress or methodology
+    progressZh: response.progress_zh || response.progressZh || response.methodology_zh,
+    methodologyZh: response.methodology_zh || response.methodologyZh,
+    preliminaryResultsZh: response.preliminary_results_zh || response.preliminaryResultsZh,
+    results: response.results || response.preliminary_results || response.preliminaryResults,
+    resultsZh: response.results_zh || response.preliminary_results_zh || response.preliminaryResultsZh,
+    futureDirections: response.future_directions || response.futureDirections,
+    futureDirectionsZh: response.future_directions_zh || response.futureDirectionsZh,
+    reference: response.reference || response.references,
+    referenceZh: response.reference_zh || response.referenceZh,
+    relatedWorks: response.related_works || response.relatedWorks
   };
 };
 

@@ -28,6 +28,8 @@ import (
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
+	"silan-backend/internal/ent/ideadetailtranslation"
 	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
@@ -106,6 +108,10 @@ type Client struct {
 	EducationTranslation *EducationTranslationClient
 	// Idea is the client for interacting with the Idea builders.
 	Idea *IdeaClient
+	// IdeaDetail is the client for interacting with the IdeaDetail builders.
+	IdeaDetail *IdeaDetailClient
+	// IdeaDetailTranslation is the client for interacting with the IdeaDetailTranslation builders.
+	IdeaDetailTranslation *IdeaDetailTranslationClient
 	// IdeaTag is the client for interacting with the IdeaTag builders.
 	IdeaTag *IdeaTagClient
 	// IdeaTranslation is the client for interacting with the IdeaTranslation builders.
@@ -196,6 +202,8 @@ func (c *Client) init() {
 	c.EducationDetailTranslation = NewEducationDetailTranslationClient(c.config)
 	c.EducationTranslation = NewEducationTranslationClient(c.config)
 	c.Idea = NewIdeaClient(c.config)
+	c.IdeaDetail = NewIdeaDetailClient(c.config)
+	c.IdeaDetailTranslation = NewIdeaDetailTranslationClient(c.config)
 	c.IdeaTag = NewIdeaTagClient(c.config)
 	c.IdeaTranslation = NewIdeaTranslationClient(c.config)
 	c.Language = NewLanguageClient(c.config)
@@ -336,6 +344,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EducationDetailTranslation:       NewEducationDetailTranslationClient(cfg),
 		EducationTranslation:             NewEducationTranslationClient(cfg),
 		Idea:                             NewIdeaClient(cfg),
+		IdeaDetail:                       NewIdeaDetailClient(cfg),
+		IdeaDetailTranslation:            NewIdeaDetailTranslationClient(cfg),
 		IdeaTag:                          NewIdeaTagClient(cfg),
 		IdeaTranslation:                  NewIdeaTranslationClient(cfg),
 		Language:                         NewLanguageClient(cfg),
@@ -403,6 +413,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EducationDetailTranslation:       NewEducationDetailTranslationClient(cfg),
 		EducationTranslation:             NewEducationTranslationClient(cfg),
 		Idea:                             NewIdeaClient(cfg),
+		IdeaDetail:                       NewIdeaDetailClient(cfg),
+		IdeaDetailTranslation:            NewIdeaDetailTranslationClient(cfg),
 		IdeaTag:                          NewIdeaTagClient(cfg),
 		IdeaTranslation:                  NewIdeaTranslationClient(cfg),
 		Language:                         NewLanguageClient(cfg),
@@ -467,16 +479,16 @@ func (c *Client) Use(hooks ...Hook) {
 		c.BlogPost, c.BlogPostTag, c.BlogPostTranslation, c.BlogSeries,
 		c.BlogSeriesTranslation, c.BlogTag, c.Comment, c.CommentLike, c.Education,
 		c.EducationDetail, c.EducationDetailTranslation, c.EducationTranslation,
-		c.Idea, c.IdeaTag, c.IdeaTranslation, c.Language, c.PersonalInfo,
-		c.PersonalInfoTranslation, c.Project, c.ProjectDetail,
-		c.ProjectDetailTranslation, c.ProjectImage, c.ProjectImageTranslation,
-		c.ProjectLike, c.ProjectRelationship, c.ProjectTechnology,
-		c.ProjectTranslation, c.ProjectView, c.Publication, c.PublicationAuthor,
-		c.PublicationTranslation, c.RecentUpdate, c.RecentUpdateTranslation,
-		c.ResearchProject, c.ResearchProjectDetail, c.ResearchProjectDetailTranslation,
-		c.ResearchProjectTranslation, c.SocialLink, c.User, c.UserIdentity,
-		c.WorkExperience, c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
-		c.WorkExperienceTranslation,
+		c.Idea, c.IdeaDetail, c.IdeaDetailTranslation, c.IdeaTag, c.IdeaTranslation,
+		c.Language, c.PersonalInfo, c.PersonalInfoTranslation, c.Project,
+		c.ProjectDetail, c.ProjectDetailTranslation, c.ProjectImage,
+		c.ProjectImageTranslation, c.ProjectLike, c.ProjectRelationship,
+		c.ProjectTechnology, c.ProjectTranslation, c.ProjectView, c.Publication,
+		c.PublicationAuthor, c.PublicationTranslation, c.RecentUpdate,
+		c.RecentUpdateTranslation, c.ResearchProject, c.ResearchProjectDetail,
+		c.ResearchProjectDetailTranslation, c.ResearchProjectTranslation, c.SocialLink,
+		c.User, c.UserIdentity, c.WorkExperience, c.WorkExperienceDetail,
+		c.WorkExperienceDetailTranslation, c.WorkExperienceTranslation,
 	} {
 		n.Use(hooks...)
 	}
@@ -490,16 +502,16 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.BlogPost, c.BlogPostTag, c.BlogPostTranslation, c.BlogSeries,
 		c.BlogSeriesTranslation, c.BlogTag, c.Comment, c.CommentLike, c.Education,
 		c.EducationDetail, c.EducationDetailTranslation, c.EducationTranslation,
-		c.Idea, c.IdeaTag, c.IdeaTranslation, c.Language, c.PersonalInfo,
-		c.PersonalInfoTranslation, c.Project, c.ProjectDetail,
-		c.ProjectDetailTranslation, c.ProjectImage, c.ProjectImageTranslation,
-		c.ProjectLike, c.ProjectRelationship, c.ProjectTechnology,
-		c.ProjectTranslation, c.ProjectView, c.Publication, c.PublicationAuthor,
-		c.PublicationTranslation, c.RecentUpdate, c.RecentUpdateTranslation,
-		c.ResearchProject, c.ResearchProjectDetail, c.ResearchProjectDetailTranslation,
-		c.ResearchProjectTranslation, c.SocialLink, c.User, c.UserIdentity,
-		c.WorkExperience, c.WorkExperienceDetail, c.WorkExperienceDetailTranslation,
-		c.WorkExperienceTranslation,
+		c.Idea, c.IdeaDetail, c.IdeaDetailTranslation, c.IdeaTag, c.IdeaTranslation,
+		c.Language, c.PersonalInfo, c.PersonalInfoTranslation, c.Project,
+		c.ProjectDetail, c.ProjectDetailTranslation, c.ProjectImage,
+		c.ProjectImageTranslation, c.ProjectLike, c.ProjectRelationship,
+		c.ProjectTechnology, c.ProjectTranslation, c.ProjectView, c.Publication,
+		c.PublicationAuthor, c.PublicationTranslation, c.RecentUpdate,
+		c.RecentUpdateTranslation, c.ResearchProject, c.ResearchProjectDetail,
+		c.ResearchProjectDetailTranslation, c.ResearchProjectTranslation, c.SocialLink,
+		c.User, c.UserIdentity, c.WorkExperience, c.WorkExperienceDetail,
+		c.WorkExperienceDetailTranslation, c.WorkExperienceTranslation,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -542,6 +554,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EducationTranslation.mutate(ctx, m)
 	case *IdeaMutation:
 		return c.Idea.mutate(ctx, m)
+	case *IdeaDetailMutation:
+		return c.IdeaDetail.mutate(ctx, m)
+	case *IdeaDetailTranslationMutation:
+		return c.IdeaDetailTranslation.mutate(ctx, m)
 	case *IdeaTagMutation:
 		return c.IdeaTag.mutate(ctx, m)
 	case *IdeaTranslationMutation:
@@ -3452,6 +3468,22 @@ func (c *IdeaClient) QueryTranslations(i *Idea) *IdeaTranslationQuery {
 	return query
 }
 
+// QueryDetails queries the details edge of a Idea.
+func (c *IdeaClient) QueryDetails(i *Idea) *IdeaDetailQuery {
+	query := (&IdeaDetailClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(idea.Table, idea.FieldID, id),
+			sqlgraph.To(ideadetail.Table, ideadetail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, idea.DetailsTable, idea.DetailsColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBlogPosts queries the blog_posts edge of a Idea.
 func (c *IdeaClient) QueryBlogPosts(i *Idea) *BlogPostQuery {
 	query := (&BlogPostClient{config: c.config}).Query()
@@ -3522,6 +3554,336 @@ func (c *IdeaClient) mutate(ctx context.Context, m *IdeaMutation) (Value, error)
 		return (&IdeaDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Idea mutation op: %q", m.Op())
+	}
+}
+
+// IdeaDetailClient is a client for the IdeaDetail schema.
+type IdeaDetailClient struct {
+	config
+}
+
+// NewIdeaDetailClient returns a client for the IdeaDetail from the given config.
+func NewIdeaDetailClient(c config) *IdeaDetailClient {
+	return &IdeaDetailClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ideadetail.Hooks(f(g(h())))`.
+func (c *IdeaDetailClient) Use(hooks ...Hook) {
+	c.hooks.IdeaDetail = append(c.hooks.IdeaDetail, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ideadetail.Intercept(f(g(h())))`.
+func (c *IdeaDetailClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IdeaDetail = append(c.inters.IdeaDetail, interceptors...)
+}
+
+// Create returns a builder for creating a IdeaDetail entity.
+func (c *IdeaDetailClient) Create() *IdeaDetailCreate {
+	mutation := newIdeaDetailMutation(c.config, OpCreate)
+	return &IdeaDetailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IdeaDetail entities.
+func (c *IdeaDetailClient) CreateBulk(builders ...*IdeaDetailCreate) *IdeaDetailCreateBulk {
+	return &IdeaDetailCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IdeaDetailClient) MapCreateBulk(slice any, setFunc func(*IdeaDetailCreate, int)) *IdeaDetailCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IdeaDetailCreateBulk{err: fmt.Errorf("calling to IdeaDetailClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IdeaDetailCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IdeaDetailCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IdeaDetail.
+func (c *IdeaDetailClient) Update() *IdeaDetailUpdate {
+	mutation := newIdeaDetailMutation(c.config, OpUpdate)
+	return &IdeaDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IdeaDetailClient) UpdateOne(id *IdeaDetail) *IdeaDetailUpdateOne {
+	mutation := newIdeaDetailMutation(c.config, OpUpdateOne, withIdeaDetail(id))
+	return &IdeaDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IdeaDetailClient) UpdateOneID(id uuid.UUID) *IdeaDetailUpdateOne {
+	mutation := newIdeaDetailMutation(c.config, OpUpdateOne, withIdeaDetailID(id))
+	return &IdeaDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IdeaDetail.
+func (c *IdeaDetailClient) Delete() *IdeaDetailDelete {
+	mutation := newIdeaDetailMutation(c.config, OpDelete)
+	return &IdeaDetailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IdeaDetailClient) DeleteOne(id *IdeaDetail) *IdeaDetailDeleteOne {
+	return c.DeleteOneID(id.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IdeaDetailClient) DeleteOneID(id uuid.UUID) *IdeaDetailDeleteOne {
+	builder := c.Delete().Where(ideadetail.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IdeaDetailDeleteOne{builder}
+}
+
+// Query returns a query builder for IdeaDetail.
+func (c *IdeaDetailClient) Query() *IdeaDetailQuery {
+	return &IdeaDetailQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIdeaDetail},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IdeaDetail entity by its id.
+func (c *IdeaDetailClient) Get(ctx context.Context, id uuid.UUID) (*IdeaDetail, error) {
+	return c.Query().Where(ideadetail.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IdeaDetailClient) GetX(ctx context.Context, id uuid.UUID) *IdeaDetail {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryIdea queries the idea edge of a IdeaDetail.
+func (c *IdeaDetailClient) QueryIdea(node *IdeaDetail) *IdeaQuery {
+	query := (&IdeaClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := node.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ideadetail.Table, ideadetail.FieldID, id),
+			sqlgraph.To(idea.Table, idea.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, ideadetail.IdeaTable, ideadetail.IdeaColumn),
+		)
+		fromV = sqlgraph.Neighbors(node.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTranslations queries the translations edge of a IdeaDetail.
+func (c *IdeaDetailClient) QueryTranslations(node *IdeaDetail) *IdeaDetailTranslationQuery {
+	query := (&IdeaDetailTranslationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := node.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ideadetail.Table, ideadetail.FieldID, id),
+			sqlgraph.To(ideadetailtranslation.Table, ideadetailtranslation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ideadetail.TranslationsTable, ideadetail.TranslationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(node.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IdeaDetailClient) Hooks() []Hook {
+	return c.hooks.IdeaDetail
+}
+
+// Interceptors returns the client interceptors.
+func (c *IdeaDetailClient) Interceptors() []Interceptor {
+	return c.inters.IdeaDetail
+}
+
+func (c *IdeaDetailClient) mutate(ctx context.Context, m *IdeaDetailMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IdeaDetailCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IdeaDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IdeaDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IdeaDetailDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IdeaDetail mutation op: %q", m.Op())
+	}
+}
+
+// IdeaDetailTranslationClient is a client for the IdeaDetailTranslation schema.
+type IdeaDetailTranslationClient struct {
+	config
+}
+
+// NewIdeaDetailTranslationClient returns a client for the IdeaDetailTranslation from the given config.
+func NewIdeaDetailTranslationClient(c config) *IdeaDetailTranslationClient {
+	return &IdeaDetailTranslationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ideadetailtranslation.Hooks(f(g(h())))`.
+func (c *IdeaDetailTranslationClient) Use(hooks ...Hook) {
+	c.hooks.IdeaDetailTranslation = append(c.hooks.IdeaDetailTranslation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ideadetailtranslation.Intercept(f(g(h())))`.
+func (c *IdeaDetailTranslationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IdeaDetailTranslation = append(c.inters.IdeaDetailTranslation, interceptors...)
+}
+
+// Create returns a builder for creating a IdeaDetailTranslation entity.
+func (c *IdeaDetailTranslationClient) Create() *IdeaDetailTranslationCreate {
+	mutation := newIdeaDetailTranslationMutation(c.config, OpCreate)
+	return &IdeaDetailTranslationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IdeaDetailTranslation entities.
+func (c *IdeaDetailTranslationClient) CreateBulk(builders ...*IdeaDetailTranslationCreate) *IdeaDetailTranslationCreateBulk {
+	return &IdeaDetailTranslationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IdeaDetailTranslationClient) MapCreateBulk(slice any, setFunc func(*IdeaDetailTranslationCreate, int)) *IdeaDetailTranslationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IdeaDetailTranslationCreateBulk{err: fmt.Errorf("calling to IdeaDetailTranslationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IdeaDetailTranslationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IdeaDetailTranslationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IdeaDetailTranslation.
+func (c *IdeaDetailTranslationClient) Update() *IdeaDetailTranslationUpdate {
+	mutation := newIdeaDetailTranslationMutation(c.config, OpUpdate)
+	return &IdeaDetailTranslationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IdeaDetailTranslationClient) UpdateOne(idt *IdeaDetailTranslation) *IdeaDetailTranslationUpdateOne {
+	mutation := newIdeaDetailTranslationMutation(c.config, OpUpdateOne, withIdeaDetailTranslation(idt))
+	return &IdeaDetailTranslationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IdeaDetailTranslationClient) UpdateOneID(id uuid.UUID) *IdeaDetailTranslationUpdateOne {
+	mutation := newIdeaDetailTranslationMutation(c.config, OpUpdateOne, withIdeaDetailTranslationID(id))
+	return &IdeaDetailTranslationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IdeaDetailTranslation.
+func (c *IdeaDetailTranslationClient) Delete() *IdeaDetailTranslationDelete {
+	mutation := newIdeaDetailTranslationMutation(c.config, OpDelete)
+	return &IdeaDetailTranslationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IdeaDetailTranslationClient) DeleteOne(idt *IdeaDetailTranslation) *IdeaDetailTranslationDeleteOne {
+	return c.DeleteOneID(idt.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IdeaDetailTranslationClient) DeleteOneID(id uuid.UUID) *IdeaDetailTranslationDeleteOne {
+	builder := c.Delete().Where(ideadetailtranslation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IdeaDetailTranslationDeleteOne{builder}
+}
+
+// Query returns a query builder for IdeaDetailTranslation.
+func (c *IdeaDetailTranslationClient) Query() *IdeaDetailTranslationQuery {
+	return &IdeaDetailTranslationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIdeaDetailTranslation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IdeaDetailTranslation entity by its id.
+func (c *IdeaDetailTranslationClient) Get(ctx context.Context, id uuid.UUID) (*IdeaDetailTranslation, error) {
+	return c.Query().Where(ideadetailtranslation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IdeaDetailTranslationClient) GetX(ctx context.Context, id uuid.UUID) *IdeaDetailTranslation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryIdeaDetail queries the idea_detail edge of a IdeaDetailTranslation.
+func (c *IdeaDetailTranslationClient) QueryIdeaDetail(idt *IdeaDetailTranslation) *IdeaDetailQuery {
+	query := (&IdeaDetailClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := idt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ideadetailtranslation.Table, ideadetailtranslation.FieldID, id),
+			sqlgraph.To(ideadetail.Table, ideadetail.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ideadetailtranslation.IdeaDetailTable, ideadetailtranslation.IdeaDetailColumn),
+		)
+		fromV = sqlgraph.Neighbors(idt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLanguage queries the language edge of a IdeaDetailTranslation.
+func (c *IdeaDetailTranslationClient) QueryLanguage(idt *IdeaDetailTranslation) *LanguageQuery {
+	query := (&LanguageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := idt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ideadetailtranslation.Table, ideadetailtranslation.FieldID, id),
+			sqlgraph.To(language.Table, language.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ideadetailtranslation.LanguageTable, ideadetailtranslation.LanguageColumn),
+		)
+		fromV = sqlgraph.Neighbors(idt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IdeaDetailTranslationClient) Hooks() []Hook {
+	return c.hooks.IdeaDetailTranslation
+}
+
+// Interceptors returns the client interceptors.
+func (c *IdeaDetailTranslationClient) Interceptors() []Interceptor {
+	return c.inters.IdeaDetailTranslation
+}
+
+func (c *IdeaDetailTranslationClient) mutate(ctx context.Context, m *IdeaDetailTranslationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IdeaDetailTranslationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IdeaDetailTranslationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IdeaDetailTranslationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IdeaDetailTranslationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IdeaDetailTranslation mutation op: %q", m.Op())
 	}
 }
 
@@ -4132,6 +4494,22 @@ func (c *LanguageClient) QueryIdeaTranslations(l *Language) *IdeaTranslationQuer
 			sqlgraph.From(language.Table, language.FieldID, id),
 			sqlgraph.To(ideatranslation.Table, ideatranslation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, language.IdeaTranslationsTable, language.IdeaTranslationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(l.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIdeaDetailTranslations queries the idea_detail_translations edge of a Language.
+func (c *LanguageClient) QueryIdeaDetailTranslations(l *Language) *IdeaDetailTranslationQuery {
+	query := (&IdeaDetailTranslationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := l.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(language.Table, language.FieldID, id),
+			sqlgraph.To(ideadetailtranslation.Table, ideadetailtranslation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, language.IdeaDetailTranslationsTable, language.IdeaDetailTranslationsColumn),
 		)
 		fromV = sqlgraph.Neighbors(l.driver.Dialect(), step)
 		return fromV, nil
@@ -9094,12 +9472,12 @@ type (
 		Award, AwardTranslation, BlogCategory, BlogCategoryTranslation, BlogPost,
 		BlogPostTag, BlogPostTranslation, BlogSeries, BlogSeriesTranslation, BlogTag,
 		Comment, CommentLike, Education, EducationDetail, EducationDetailTranslation,
-		EducationTranslation, Idea, IdeaTag, IdeaTranslation, Language, PersonalInfo,
-		PersonalInfoTranslation, Project, ProjectDetail, ProjectDetailTranslation,
-		ProjectImage, ProjectImageTranslation, ProjectLike, ProjectRelationship,
-		ProjectTechnology, ProjectTranslation, ProjectView, Publication,
-		PublicationAuthor, PublicationTranslation, RecentUpdate,
-		RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
+		EducationTranslation, Idea, IdeaDetail, IdeaDetailTranslation, IdeaTag,
+		IdeaTranslation, Language, PersonalInfo, PersonalInfoTranslation, Project,
+		ProjectDetail, ProjectDetailTranslation, ProjectImage, ProjectImageTranslation,
+		ProjectLike, ProjectRelationship, ProjectTechnology, ProjectTranslation,
+		ProjectView, Publication, PublicationAuthor, PublicationTranslation,
+		RecentUpdate, RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
 		ResearchProjectDetailTranslation, ResearchProjectTranslation, SocialLink, User,
 		UserIdentity, WorkExperience, WorkExperienceDetail,
 		WorkExperienceDetailTranslation, WorkExperienceTranslation []ent.Hook
@@ -9108,12 +9486,12 @@ type (
 		Award, AwardTranslation, BlogCategory, BlogCategoryTranslation, BlogPost,
 		BlogPostTag, BlogPostTranslation, BlogSeries, BlogSeriesTranslation, BlogTag,
 		Comment, CommentLike, Education, EducationDetail, EducationDetailTranslation,
-		EducationTranslation, Idea, IdeaTag, IdeaTranslation, Language, PersonalInfo,
-		PersonalInfoTranslation, Project, ProjectDetail, ProjectDetailTranslation,
-		ProjectImage, ProjectImageTranslation, ProjectLike, ProjectRelationship,
-		ProjectTechnology, ProjectTranslation, ProjectView, Publication,
-		PublicationAuthor, PublicationTranslation, RecentUpdate,
-		RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
+		EducationTranslation, Idea, IdeaDetail, IdeaDetailTranslation, IdeaTag,
+		IdeaTranslation, Language, PersonalInfo, PersonalInfoTranslation, Project,
+		ProjectDetail, ProjectDetailTranslation, ProjectImage, ProjectImageTranslation,
+		ProjectLike, ProjectRelationship, ProjectTechnology, ProjectTranslation,
+		ProjectView, Publication, PublicationAuthor, PublicationTranslation,
+		RecentUpdate, RecentUpdateTranslation, ResearchProject, ResearchProjectDetail,
 		ResearchProjectDetailTranslation, ResearchProjectTranslation, SocialLink, User,
 		UserIdentity, WorkExperience, WorkExperienceDetail,
 		WorkExperienceDetailTranslation, WorkExperienceTranslation []ent.Interceptor

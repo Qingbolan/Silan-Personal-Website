@@ -29,12 +29,8 @@ class BlogParser(BaseParser):
         content = post.content
 
         # Add filename to metadata for prefix detection
-        if hasattr(extracted, 'source_file') and extracted.source_file:
-            filename = extracted.source_file.name
-            metadata['filename'] = filename
-
-            # folder_prefix should now be available from passed metadata
-            # No need to manually detect from parent folder
+        if extracted.source_path:
+            metadata['filename'] = extracted.source_path.name
 
         # Get blog collection configuration from metadata
         blog_id = metadata.get('blog_id', '')

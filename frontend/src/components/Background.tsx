@@ -1,7 +1,8 @@
 import React from 'react';
 import { useTheme } from './ThemeContext';
 import LiquidEther from './ui/background/LiquidEther';
-import DarkVeil from './ui/background/darkveil-canvas';
+// import Aurora from './ui/background/Aurora';
+import DarkVeil from './ui/background/Darkveil-canvas';
 
 const Background: React.FC = () => {
   const { colors, isDarkMode } = useTheme();

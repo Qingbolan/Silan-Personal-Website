@@ -35,11 +35,12 @@ func (l *GetIdeaLogic) GetIdea(req *types.IdeaRequest) (resp *types.IdeaData, er
 		return nil, fmt.Errorf("invalid idea ID: %w", err)
 	}
 
-	// Query the idea
+	// Query the idea with details
 	ideaEntity, err := l.svcCtx.DB.Idea.Query().
 		Where(idea.ID(ideaID)).
 		WithUser().
 		WithTags().
+		WithDetails().
 		First(l.ctx)
 	if err != nil {
 		return nil, err
@@ -50,21 +51,29 @@ func (l *GetIdeaLogic) GetIdea(req *types.IdeaRequest) (resp *types.IdeaData, er
 
 	// Handle non-nullable fields
 	abstract := ideaEntity.Abstract
-	motivation := ideaEntity.Motivation
-	methodology := ideaEntity.Methodology
-	expectedOutcome := ideaEntity.ExpectedOutcome
-	requiredResources := ideaEntity.RequiredResources
+	description := ideaEntity.Description
 
+	// Get detail fields from IdeaDetail edge
+	var progress, results, references, requiredResources string
+	var collaborationNeeded bool
 	var estimatedDuration string
-	if ideaEntity.EstimatedDurationMonths > 0 {
-		estimatedDuration = fmt.Sprintf("%d months", ideaEntity.EstimatedDurationMonths)
-	}
 
-	// Note: EstimatedBudget field not used in IdeaData response
+	if ideaEntity.Edges.Details != nil {
+		detail := ideaEntity.Edges.Details
+		progress = detail.Progress
+		results = detail.Results
+		references = detail.References
+		requiredResources = detail.RequiredResources
+		collaborationNeeded = detail.CollaborationNeeded
+
+		if detail.EstimatedDurationMonths > 0 {
+			estimatedDuration = fmt.Sprintf("%d months", detail.EstimatedDurationMonths)
+		}
+	}
 
 	// Tags from M2M edge (IdeaTag)
 	var tags []string
-	if ideaEntity.Edges.Tags != nil && len(ideaEntity.Edges.Tags) > 0 {
+	if len(ideaEntity.Edges.Tags) > 0 {
 		for _, t := range ideaEntity.Edges.Tags {
 			if t.Name != "" {
 				tags = append(tags, t.Name)
@@ -76,93 +85,42 @@ func (l *GetIdeaLogic) GetIdea(req *types.IdeaRequest) (resp *types.IdeaData, er
 	// Category: now directly from Ent field
 	category := ideaEntity.Category
 
-	// Create empty slices for complex fields
-	var futureDirections []string
-	if len(futureDirections) == 0 {
-		futureDirections = []string{}
-	}
-
+	// Initialize empty slices and missing variables
 	var techStack []string
-	if len(techStack) == 0 {
-		techStack = []string{}
-	}
-
 	var keywords []string
-	if len(keywords) == 0 {
-		keywords = []string{}
-	}
-
-	var keyFindings []string
-	if len(keyFindings) == 0 {
-		keyFindings = []string{}
-	}
-
-	var limitations []string
-	if len(limitations) == 0 {
-		limitations = []string{}
-	}
-
 	var collaborators []types.Collaborator
-	if len(collaborators) == 0 {
-		collaborators = []types.Collaborator{}
-	}
-
-	var experiments []types.Experiment
-	if len(experiments) == 0 {
-		experiments = []types.Experiment{}
-	}
-
-	var relatedWorks []types.Reference
-	if len(relatedWorks) == 0 {
-		relatedWorks = []types.Reference{}
-	}
-
-	var citations []types.Reference
-	if len(citations) == 0 {
-		citations = []types.Reference{}
-	}
-
 	var feedbackRequested []types.FeedbackType
-	if len(feedbackRequested) == 0 {
-		feedbackRequested = []types.FeedbackType{}
-	}
-
 	var publications []types.IdeaPublicationRef
-	if len(publications) == 0 {
-		publications = []types.IdeaPublicationRef{}
-	}
-
 	var conferences []string
-	if len(conferences) == 0 {
-		conferences = []string{}
-	}
+	var codeRepository string
+	var demoURL string
 
 	return &types.IdeaData{
 		ID:                   ideaEntity.ID.String(),
 		Title:                ideaEntity.Title,
-		Description:          abstract,
+		Description:          description,
 		Category:             category,
 		Tags:                 tags,
 		Status:               strings.ToLower(string(ideaEntity.Status)),
 		CreatedAt:            ideaEntity.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		LastUpdated:          ideaEntity.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 		Abstract:             abstract,
-		Motivation:           motivation,
-		Methodology:          methodology,
-		Experiments:          experiments,
-		PreliminaryResults:   expectedOutcome,
-		RelatedWorks:         relatedWorks,
-		Citations:            citations,
-		FutureDirections:     futureDirections,
+		AbstractZh:           abstract,
+		Progress:             progress,
+		ProgressZh:           progress,
+		Results:              results,
+		ResultsZh:            results,
+		Reference:            references,
+		Reference_Zh:         references,
+		CodeRepository:       codeRepository,
+		DemoURL:              demoURL,
 		TechStack:            techStack,
 		Collaborators:        collaborators,
-		OpenForCollaboration: ideaEntity.CollaborationNeeded,
+		OpenForCollaboration: collaborationNeeded,
 		FeedbackRequested:    feedbackRequested,
 		Publications:         publications,
 		Conferences:          conferences,
-		KeyFindings:          keyFindings,
-		Limitations:          limitations,
-		Difficulty:           strings.ToLower(string(ideaEntity.Priority)),
+		ResearchField:        category,
 		Keywords:             keywords,
 		EstimatedDuration:    estimatedDuration,
 		FundingStatus:        requiredResources,

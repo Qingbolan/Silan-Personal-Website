@@ -235,8 +235,6 @@ type CreateIdeaRequest struct {
 	Abstract             string   `json:"abstract,optional"`
 	Motivation           string   `json:"motivation,optional"`
 	TechStack            []string `json:"tech_stack,optional"`
-	Difficulty           string   `json:"difficulty"`
-	ResearchField        string   `json:"research_field"`
 	Keywords             []string `json:"keywords,optional"`
 	EstimatedDuration    string   `json:"estimated_duration,optional"`
 	OpenForCollaboration bool     `json:"open_for_collaboration,optional"`
@@ -410,19 +408,12 @@ type IdeaData struct {
 	LastUpdated          string               `json:"last_updated,omitempty"`
 	Abstract             string               `json:"abstract,omitempty"`
 	AbstractZh           string               `json:"abstract_zh,omitempty"`
-	Hypothesis           string               `json:"hypothesis,omitempty"`
-	HypothesisZh         string               `json:"hypothesis_zh,omitempty"`
-	Motivation           string               `json:"motivation,omitempty"`
-	MotivationZh         string               `json:"motivation_zh,omitempty"`
-	Methodology          string               `json:"methodology,omitempty"`
-	MethodologyZh        string               `json:"methodology_zh,omitempty"`
-	Experiments          []Experiment         `json:"experiments,omitempty"`
-	PreliminaryResults   string               `json:"preliminary_results,omitempty"`
-	PreliminaryResultsZh string               `json:"preliminary_results_zh,omitempty"`
-	RelatedWorks         []Reference          `json:"related_works,omitempty"`
-	Citations            []Reference          `json:"citations,omitempty"`
-	FutureDirections     []string             `json:"future_directions,omitempty"`
-	FutureDirectionsZh   []string             `json:"future_directions_zh,omitempty"`
+	Progress             string               `json:"progress,omitempty"`
+	ProgressZh           string               `json:"progress_zh,omitempty"`
+	Results              string               `json:"results,omitempty"`
+	ResultsZh            string               `json:"results_zh,omitempty"`
+	Reference            string               `json:"reference,omitempty"`
+	Reference_Zh         string               `json:"reference_zh,omitempty"`
 	TechStack            []string             `json:"tech_stack,omitempty"`
 	CodeRepository       string               `json:"code_repository,omitempty"`
 	DemoURL              string               `json:"demo_url,omitempty"`
@@ -431,12 +422,6 @@ type IdeaData struct {
 	FeedbackRequested    []FeedbackType       `json:"feedback_requested,omitempty"`
 	Publications         []IdeaPublicationRef `json:"publications,omitempty"`
 	Conferences          []string             `json:"conferences,omitempty"`
-	ValidationStatus     string               `json:"validation_status,omitempty"`
-	KeyFindings          []string             `json:"key_findings,omitempty"`
-	KeyFindingsZh        []string             `json:"key_findings_zh,omitempty"`
-	Limitations          []string             `json:"limitations,omitempty"`
-	LimitationsZh        []string             `json:"limitations_zh,omitempty"`
-	Difficulty           string               `json:"difficulty,omitempty"`
 	ResearchField        string               `json:"research_field,omitempty"`
 	Keywords             []string             `json:"keywords,omitempty"`
 	EstimatedDuration    string               `json:"estimated_duration,omitempty"`
@@ -607,11 +592,9 @@ type ProjectDetail struct {
 	ID                  string           `json:"id"`
 	ProjectID           string           `json:"project_id"`
 	DetailedDescription string           `json:"detailed_description,omitempty"`
-	Goals               string           `json:"goals,omitempty"`
-	Challenges          string           `json:"challenges,omitempty"`
-	Solutions           string           `json:"solutions,omitempty"`
-	LessonsLearned      string           `json:"lessons_learned,omitempty"`
-	FutureEnhancements  string           `json:"future_enhancements,omitempty"`
+	Release             string           `json:"release,omitempty"`
+	QuickStart          string           `json:"quick_start,omitempty"`
+	Dependance          string           `json:"dependance,omitempty"`
 	License             string           `json:"license,omitempty"`
 	LicenseText         string           `json:"license_text,omitempty"`
 	Version             string           `json:"version,omitempty"`
@@ -646,7 +629,7 @@ type ProjectExtended struct {
 	IsFeatured       bool     `json:"is_featured"`
 	IsPublic         bool     `json:"is_public"`
 	ViewCount        int64    `json:"view_count"`
-	LikeCount        int64    `json:"like_count"`
+	StarCount        int64    `json:"star_count"`
 	SortOrder        int      `json:"sort_order"`
 	Year             int      `json:"year"`
 	AnnualPlan       string   `json:"annual_plan,omitempty"`

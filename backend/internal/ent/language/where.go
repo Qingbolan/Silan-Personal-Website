@@ -541,6 +541,29 @@ func HasIdeaTranslationsWith(preds ...predicate.IdeaTranslation) predicate.Langu
 	})
 }
 
+// HasIdeaDetailTranslations applies the HasEdge predicate on the "idea_detail_translations" edge.
+func HasIdeaDetailTranslations() predicate.Language {
+	return predicate.Language(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, IdeaDetailTranslationsTable, IdeaDetailTranslationsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIdeaDetailTranslationsWith applies the HasEdge predicate on the "idea_detail_translations" edge with a given conditions (other predicates).
+func HasIdeaDetailTranslationsWith(preds ...predicate.IdeaDetailTranslation) predicate.Language {
+	return predicate.Language(func(s *sql.Selector) {
+		step := newIdeaDetailTranslationsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasResearchProjectTranslations applies the HasEdge predicate on the "research_project_translations" edge.
 func HasResearchProjectTranslations() predicate.Language {
 	return predicate.Language(func(s *sql.Selector) {

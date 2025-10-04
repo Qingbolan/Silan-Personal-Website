@@ -38,13 +38,9 @@ func (Idea) Fields() []ent.Field {
 			MaxLen(200).
 			Unique().
 			NotEmpty(),
+		field.Text("description").
+			Optional(),
 		field.Text("abstract").
-			Optional(),
-		field.Text("motivation").
-			Optional(),
-		field.Text("methodology").
-			Optional(),
-		field.Text("expected_outcome").
 			Optional(),
 		field.Enum("status").
 			Values("draft", "hypothesis", "experimenting", "validating", "published", "concluded").
@@ -52,16 +48,6 @@ func (Idea) Fields() []ent.Field {
 		field.Enum("priority").
 			Values("low", "medium", "high", "urgent").
 			Default("medium"),
-		field.Int("estimated_duration_months").
-			Optional(),
-		field.Text("required_resources").
-			Optional(),
-		field.Bool("collaboration_needed").
-			Default(false),
-		field.Bool("funding_required").
-			Default(false),
-		field.Float("estimated_budget").
-			Optional(),
 		field.Bool("is_public").
 			Default(false),
 		field.Int("view_count").
@@ -90,6 +76,8 @@ func (Idea) Edges() []ent.Edge {
 			Required().
 			Unique(),
 		edge.To("translations", IdeaTranslation.Type),
+		edge.To("details", IdeaDetail.Type).
+			Unique(),
 		edge.To("blog_posts", BlogPost.Type),
 		edge.To("comments", Comment.Type),
 		// Many-to-many: idea <-> tags

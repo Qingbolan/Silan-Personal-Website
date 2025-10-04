@@ -1,0 +1,37 @@
+collection_info:
+  collection_type: project
+  display_name: Projects
+  description: Portfolio projects and work showcase
+  default_template: project
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+display_settings:
+  sort_by: featured
+  sort_order: desc
+  items_per_page: 12
+  show_featured: true
+  show_drafts: false
+features:
+- technologies
+- demo_links
+- github_links
+- status
+content_registry:
+  total_items: 1
+  featured_items: 1
+  draft_items: 0
+  published_items: 1
+sync_metadata:
+  collection_type: project
+  sync_enabled: true
+  last_hash: a08e1ded4b40ef58
+  last_sync_date: '2025-10-03T11:26:29.910215'
+  created: '2025-09-23'
+  last_modified: '2025-09-23'
+  total_items: 1
+  sync_status: completed
+statistics:
+  total_views: 0
+  total_likes: 0
+  total_comments: 0
+  last_activity: '2025-09-23'

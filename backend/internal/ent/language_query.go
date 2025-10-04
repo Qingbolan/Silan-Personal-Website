@@ -13,6 +13,7 @@ import (
 	"silan-backend/internal/ent/blogseriestranslation"
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
+	"silan-backend/internal/ent/ideadetailtranslation"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
 	"silan-backend/internal/ent/personalinfotranslation"
@@ -52,6 +53,7 @@ type LanguageQuery struct {
 	withBlogPostTranslations              *BlogPostTranslationQuery
 	withBlogSeriesTranslations            *BlogSeriesTranslationQuery
 	withIdeaTranslations                  *IdeaTranslationQuery
+	withIdeaDetailTranslations            *IdeaDetailTranslationQuery
 	withResearchProjectTranslations       *ResearchProjectTranslationQuery
 	withResearchProjectDetailTranslations *ResearchProjectDetailTranslationQuery
 	withPublicationTranslations           *PublicationTranslationQuery
@@ -350,6 +352,28 @@ func (lq *LanguageQuery) QueryIdeaTranslations() *IdeaTranslationQuery {
 			sqlgraph.From(language.Table, language.FieldID, selector),
 			sqlgraph.To(ideatranslation.Table, ideatranslation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, language.IdeaTranslationsTable, language.IdeaTranslationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryIdeaDetailTranslations chains the current query on the "idea_detail_translations" edge.
+func (lq *LanguageQuery) QueryIdeaDetailTranslations() *IdeaDetailTranslationQuery {
+	query := (&IdeaDetailTranslationClient{config: lq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := lq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := lq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(language.Table, language.FieldID, selector),
+			sqlgraph.To(ideadetailtranslation.Table, ideadetailtranslation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, language.IdeaDetailTranslationsTable, language.IdeaDetailTranslationsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
 		return fromU, nil
@@ -671,6 +695,7 @@ func (lq *LanguageQuery) Clone() *LanguageQuery {
 		withBlogPostTranslations:              lq.withBlogPostTranslations.Clone(),
 		withBlogSeriesTranslations:            lq.withBlogSeriesTranslations.Clone(),
 		withIdeaTranslations:                  lq.withIdeaTranslations.Clone(),
+		withIdeaDetailTranslations:            lq.withIdeaDetailTranslations.Clone(),
 		withResearchProjectTranslations:       lq.withResearchProjectTranslations.Clone(),
 		withResearchProjectDetailTranslations: lq.withResearchProjectDetailTranslations.Clone(),
 		withPublicationTranslations:           lq.withPublicationTranslations.Clone(),
@@ -814,6 +839,17 @@ func (lq *LanguageQuery) WithIdeaTranslations(opts ...func(*IdeaTranslationQuery
 	return lq
 }
 
+// WithIdeaDetailTranslations tells the query-builder to eager-load the nodes that are connected to
+// the "idea_detail_translations" edge. The optional arguments are used to configure the query builder of the edge.
+func (lq *LanguageQuery) WithIdeaDetailTranslations(opts ...func(*IdeaDetailTranslationQuery)) *LanguageQuery {
+	query := (&IdeaDetailTranslationClient{config: lq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	lq.withIdeaDetailTranslations = query
+	return lq
+}
+
 // WithResearchProjectTranslations tells the query-builder to eager-load the nodes that are connected to
 // the "research_project_translations" edge. The optional arguments are used to configure the query builder of the edge.
 func (lq *LanguageQuery) WithResearchProjectTranslations(opts ...func(*ResearchProjectTranslationQuery)) *LanguageQuery {
@@ -947,7 +983,7 @@ func (lq *LanguageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Lan
 	var (
 		nodes       = []*Language{}
 		_spec       = lq.querySpec()
-		loadedTypes = [17]bool{
+		loadedTypes = [18]bool{
 			lq.withPersonalInfoTranslations != nil,
 			lq.withEducationTranslations != nil,
 			lq.withEducationDetailTranslations != nil,
@@ -960,6 +996,7 @@ func (lq *LanguageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Lan
 			lq.withBlogPostTranslations != nil,
 			lq.withBlogSeriesTranslations != nil,
 			lq.withIdeaTranslations != nil,
+			lq.withIdeaDetailTranslations != nil,
 			lq.withResearchProjectTranslations != nil,
 			lq.withResearchProjectDetailTranslations != nil,
 			lq.withPublicationTranslations != nil,
@@ -1088,6 +1125,15 @@ func (lq *LanguageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Lan
 		if err := lq.loadIdeaTranslations(ctx, query, nodes,
 			func(n *Language) { n.Edges.IdeaTranslations = []*IdeaTranslation{} },
 			func(n *Language, e *IdeaTranslation) { n.Edges.IdeaTranslations = append(n.Edges.IdeaTranslations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := lq.withIdeaDetailTranslations; query != nil {
+		if err := lq.loadIdeaDetailTranslations(ctx, query, nodes,
+			func(n *Language) { n.Edges.IdeaDetailTranslations = []*IdeaDetailTranslation{} },
+			func(n *Language, e *IdeaDetailTranslation) {
+				n.Edges.IdeaDetailTranslations = append(n.Edges.IdeaDetailTranslations, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -1484,6 +1530,36 @@ func (lq *LanguageQuery) loadIdeaTranslations(ctx context.Context, query *IdeaTr
 	}
 	query.Where(predicate.IdeaTranslation(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(language.IdeaTranslationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.LanguageCode
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "language_code" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (lq *LanguageQuery) loadIdeaDetailTranslations(ctx context.Context, query *IdeaDetailTranslationQuery, nodes []*Language, init func(*Language), assign func(*Language, *IdeaDetailTranslation)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Language)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(ideadetailtranslation.FieldLanguageCode)
+	}
+	query.Where(predicate.IdeaDetailTranslation(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(language.IdeaDetailTranslationsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

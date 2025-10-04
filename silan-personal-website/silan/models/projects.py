@@ -117,12 +117,10 @@ class ProjectDetail(Base, TimestampMixin):
     
     id: Mapped[str] = mapped_column(UUID, primary_key=True, default=generate_uuid)
     project_id: Mapped[str] = mapped_column(UUID, ForeignKey("projects.id"), nullable=False)
-    detailed_description: Mapped[Optional[str]] = mapped_column(Text)
-    goals: Mapped[Optional[str]] = mapped_column(Text)
-    challenges: Mapped[Optional[str]] = mapped_column(Text)
-    solutions: Mapped[Optional[str]] = mapped_column(Text)
-    lessons_learned: Mapped[Optional[str]] = mapped_column(Text)
-    future_enhancements: Mapped[Optional[str]] = mapped_column(Text)
+    project_details: Mapped[Optional[str]] = mapped_column(Text)
+    quick_start: Mapped[Optional[str]] = mapped_column(Text)
+    release_notes: Mapped[Optional[str]] = mapped_column(Text)
+    dependencies: Mapped[Optional[str]] = mapped_column(Text)
     license: Mapped[Optional[str]] = mapped_column(String(50))
     # Full license text stored for convenient API serving/searching
     license_text: Mapped[Optional[str]] = mapped_column(Text)

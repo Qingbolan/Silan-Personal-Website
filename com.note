@@ -1,0 +1,2 @@
+goctl api go -api api/backend.api -dir . --style=goZero
+ent generate ./ent/schema

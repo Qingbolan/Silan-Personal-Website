@@ -163,10 +163,9 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    // Check system preference first
-    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Check saved preference first, default to dark mode
     const savedMode = localStorage.getItem('darkMode');
-    return savedMode ? JSON.parse(savedMode) : systemPreference;
+    return savedMode !== null ? JSON.parse(savedMode) : true; // Default to dark mode
   });
 
   const toggleTheme = () => {

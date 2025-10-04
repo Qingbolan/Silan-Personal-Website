@@ -46,6 +46,8 @@ const (
 	EdgeBlogSeriesTranslations = "blog_series_translations"
 	// EdgeIdeaTranslations holds the string denoting the idea_translations edge name in mutations.
 	EdgeIdeaTranslations = "idea_translations"
+	// EdgeIdeaDetailTranslations holds the string denoting the idea_detail_translations edge name in mutations.
+	EdgeIdeaDetailTranslations = "idea_detail_translations"
 	// EdgeResearchProjectTranslations holds the string denoting the research_project_translations edge name in mutations.
 	EdgeResearchProjectTranslations = "research_project_translations"
 	// EdgeResearchProjectDetailTranslations holds the string denoting the research_project_detail_translations edge name in mutations.
@@ -80,6 +82,8 @@ const (
 	BlogSeriesTranslationFieldID = "id"
 	// IdeaTranslationFieldID holds the string denoting the ID field of the IdeaTranslation.
 	IdeaTranslationFieldID = "id"
+	// IdeaDetailTranslationFieldID holds the string denoting the ID field of the IdeaDetailTranslation.
+	IdeaDetailTranslationFieldID = "id"
 	// ResearchProjectTranslationFieldID holds the string denoting the ID field of the ResearchProjectTranslation.
 	ResearchProjectTranslationFieldID = "id"
 	// ResearchProjectDetailTranslationFieldID holds the string denoting the ID field of the ResearchProjectDetailTranslation.
@@ -176,6 +180,13 @@ const (
 	IdeaTranslationsInverseTable = "idea_translations"
 	// IdeaTranslationsColumn is the table column denoting the idea_translations relation/edge.
 	IdeaTranslationsColumn = "language_code"
+	// IdeaDetailTranslationsTable is the table that holds the idea_detail_translations relation/edge.
+	IdeaDetailTranslationsTable = "idea_detail_translations"
+	// IdeaDetailTranslationsInverseTable is the table name for the IdeaDetailTranslation entity.
+	// It exists in this package in order to avoid circular dependency with the "ideadetailtranslation" package.
+	IdeaDetailTranslationsInverseTable = "idea_detail_translations"
+	// IdeaDetailTranslationsColumn is the table column denoting the idea_detail_translations relation/edge.
+	IdeaDetailTranslationsColumn = "language_code"
 	// ResearchProjectTranslationsTable is the table that holds the research_project_translations relation/edge.
 	ResearchProjectTranslationsTable = "research_project_translations"
 	// ResearchProjectTranslationsInverseTable is the table name for the ResearchProjectTranslation entity.
@@ -441,6 +452,20 @@ func ByIdeaTranslations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 	}
 }
 
+// ByIdeaDetailTranslationsCount orders the results by idea_detail_translations count.
+func ByIdeaDetailTranslationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newIdeaDetailTranslationsStep(), opts...)
+	}
+}
+
+// ByIdeaDetailTranslations orders the results by idea_detail_translations terms.
+func ByIdeaDetailTranslations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newIdeaDetailTranslationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByResearchProjectTranslationsCount orders the results by research_project_translations count.
 func ByResearchProjectTranslationsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -592,6 +617,13 @@ func newIdeaTranslationsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(IdeaTranslationsInverseTable, IdeaTranslationFieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, IdeaTranslationsTable, IdeaTranslationsColumn),
+	)
+}
+func newIdeaDetailTranslationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(IdeaDetailTranslationsInverseTable, IdeaDetailTranslationFieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, IdeaDetailTranslationsTable, IdeaDetailTranslationsColumn),
 	)
 }
 func newResearchProjectTranslationsStep() *sqlgraph.Step {

@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 
 from ..utils import ModernLogger
 from ..cli.status import execute_status_command
+from ..cli.db_sync_command import execute_db_sync_command
 
 class SilanCLILogger(ModernLogger):
     """Specialized logger for CLI application"""
@@ -111,7 +112,6 @@ class CLILogic(SilanCLILogger):
                        create_tables: bool = False, start_backend: bool = False,
                        use_cache: bool = True, **kwargs) -> bool:
         """Handle db-sync command"""
-        from .database_sync_logic import DatabaseSyncLogic
         from ..utils import ConfigManager
         
         config_manager = ConfigManager(self.project_dir)
@@ -139,26 +139,18 @@ class CLILogic(SilanCLILogger):
         }
         config_manager.save_last_sync_config(db_config, sync_options)
         
-        # Execute sync
-        sync_logic = DatabaseSyncLogic(db_config, dry_run)
-        
-        if not sync_logic.validate_configuration():
-            return False
-        
-        sync_logic.show_sync_overview()
-        
-        if not dry_run:
-            # Get confirmation through logger interface
-            self.info("Proceed with database synchronization? (y/N): ")
-            # In real implementation, you'd handle user input here
-            # For now, assume yes for automation
-        
-        success = sync_logic.execute_sync(create_tables=create_tables)
-        
-        # Start backend if requested
+        # Execute sync through shared pipeline implementation
+        success = execute_db_sync_command(
+            db_config,
+            dry_run=dry_run,
+            create_tables=create_tables,
+            start_backend=start_backend,
+            logger=self,
+        )
+
         if start_backend and success and not dry_run:
             return self._start_backend_after_sync(db_config)
-        
+
         return success
     
     def _handle_db_config(self, action: str = 'show', **params) -> bool:

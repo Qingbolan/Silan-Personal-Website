@@ -34,7 +34,11 @@ class EpisodeParser(BaseParser):
         content = post.content
 
         # Extract series and episode context from metadata (includes config and episode info)
-        episode_path = Path(extracted.file_path)
+        if extracted.source_path:
+            episode_path = extracted.source_path
+        else:
+            fallback = metadata.get('file_path') or metadata.get('source_path') or ''
+            episode_path = Path(fallback) if fallback else Path('.')
 
         series_name = metadata.get('series_name') or metadata.get('series') or ''
         episode_name = metadata.get('episode_name') or metadata.get('title') or episode_path.stem

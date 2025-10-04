@@ -9,6 +9,7 @@ import (
 	"silan-backend/internal/ent/blogpost"
 	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/idea"
+	"silan-backend/internal/ent/ideadetail"
 	"silan-backend/internal/ent/ideatag"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/user"
@@ -44,6 +45,20 @@ func (ic *IdeaCreate) SetSlug(s string) *IdeaCreate {
 	return ic
 }
 
+// SetDescription sets the "description" field.
+func (ic *IdeaCreate) SetDescription(s string) *IdeaCreate {
+	ic.mutation.SetDescription(s)
+	return ic
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (ic *IdeaCreate) SetNillableDescription(s *string) *IdeaCreate {
+	if s != nil {
+		ic.SetDescription(*s)
+	}
+	return ic
+}
+
 // SetAbstract sets the "abstract" field.
 func (ic *IdeaCreate) SetAbstract(s string) *IdeaCreate {
 	ic.mutation.SetAbstract(s)
@@ -54,48 +69,6 @@ func (ic *IdeaCreate) SetAbstract(s string) *IdeaCreate {
 func (ic *IdeaCreate) SetNillableAbstract(s *string) *IdeaCreate {
 	if s != nil {
 		ic.SetAbstract(*s)
-	}
-	return ic
-}
-
-// SetMotivation sets the "motivation" field.
-func (ic *IdeaCreate) SetMotivation(s string) *IdeaCreate {
-	ic.mutation.SetMotivation(s)
-	return ic
-}
-
-// SetNillableMotivation sets the "motivation" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableMotivation(s *string) *IdeaCreate {
-	if s != nil {
-		ic.SetMotivation(*s)
-	}
-	return ic
-}
-
-// SetMethodology sets the "methodology" field.
-func (ic *IdeaCreate) SetMethodology(s string) *IdeaCreate {
-	ic.mutation.SetMethodology(s)
-	return ic
-}
-
-// SetNillableMethodology sets the "methodology" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableMethodology(s *string) *IdeaCreate {
-	if s != nil {
-		ic.SetMethodology(*s)
-	}
-	return ic
-}
-
-// SetExpectedOutcome sets the "expected_outcome" field.
-func (ic *IdeaCreate) SetExpectedOutcome(s string) *IdeaCreate {
-	ic.mutation.SetExpectedOutcome(s)
-	return ic
-}
-
-// SetNillableExpectedOutcome sets the "expected_outcome" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableExpectedOutcome(s *string) *IdeaCreate {
-	if s != nil {
-		ic.SetExpectedOutcome(*s)
 	}
 	return ic
 }
@@ -124,76 +97,6 @@ func (ic *IdeaCreate) SetPriority(i idea.Priority) *IdeaCreate {
 func (ic *IdeaCreate) SetNillablePriority(i *idea.Priority) *IdeaCreate {
 	if i != nil {
 		ic.SetPriority(*i)
-	}
-	return ic
-}
-
-// SetEstimatedDurationMonths sets the "estimated_duration_months" field.
-func (ic *IdeaCreate) SetEstimatedDurationMonths(i int) *IdeaCreate {
-	ic.mutation.SetEstimatedDurationMonths(i)
-	return ic
-}
-
-// SetNillableEstimatedDurationMonths sets the "estimated_duration_months" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableEstimatedDurationMonths(i *int) *IdeaCreate {
-	if i != nil {
-		ic.SetEstimatedDurationMonths(*i)
-	}
-	return ic
-}
-
-// SetRequiredResources sets the "required_resources" field.
-func (ic *IdeaCreate) SetRequiredResources(s string) *IdeaCreate {
-	ic.mutation.SetRequiredResources(s)
-	return ic
-}
-
-// SetNillableRequiredResources sets the "required_resources" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableRequiredResources(s *string) *IdeaCreate {
-	if s != nil {
-		ic.SetRequiredResources(*s)
-	}
-	return ic
-}
-
-// SetCollaborationNeeded sets the "collaboration_needed" field.
-func (ic *IdeaCreate) SetCollaborationNeeded(b bool) *IdeaCreate {
-	ic.mutation.SetCollaborationNeeded(b)
-	return ic
-}
-
-// SetNillableCollaborationNeeded sets the "collaboration_needed" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableCollaborationNeeded(b *bool) *IdeaCreate {
-	if b != nil {
-		ic.SetCollaborationNeeded(*b)
-	}
-	return ic
-}
-
-// SetFundingRequired sets the "funding_required" field.
-func (ic *IdeaCreate) SetFundingRequired(b bool) *IdeaCreate {
-	ic.mutation.SetFundingRequired(b)
-	return ic
-}
-
-// SetNillableFundingRequired sets the "funding_required" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableFundingRequired(b *bool) *IdeaCreate {
-	if b != nil {
-		ic.SetFundingRequired(*b)
-	}
-	return ic
-}
-
-// SetEstimatedBudget sets the "estimated_budget" field.
-func (ic *IdeaCreate) SetEstimatedBudget(f float64) *IdeaCreate {
-	ic.mutation.SetEstimatedBudget(f)
-	return ic
-}
-
-// SetNillableEstimatedBudget sets the "estimated_budget" field if the given value is not nil.
-func (ic *IdeaCreate) SetNillableEstimatedBudget(f *float64) *IdeaCreate {
-	if f != nil {
-		ic.SetEstimatedBudget(*f)
 	}
 	return ic
 }
@@ -316,6 +219,25 @@ func (ic *IdeaCreate) AddTranslations(i ...*IdeaTranslation) *IdeaCreate {
 	return ic.AddTranslationIDs(ids...)
 }
 
+// SetDetailsID sets the "details" edge to the IdeaDetail entity by ID.
+func (ic *IdeaCreate) SetDetailsID(id uuid.UUID) *IdeaCreate {
+	ic.mutation.SetDetailsID(id)
+	return ic
+}
+
+// SetNillableDetailsID sets the "details" edge to the IdeaDetail entity by ID if the given value is not nil.
+func (ic *IdeaCreate) SetNillableDetailsID(id *uuid.UUID) *IdeaCreate {
+	if id != nil {
+		ic = ic.SetDetailsID(*id)
+	}
+	return ic
+}
+
+// SetDetails sets the "details" edge to the IdeaDetail entity.
+func (ic *IdeaCreate) SetDetails(i *IdeaDetail) *IdeaCreate {
+	return ic.SetDetailsID(i.ID)
+}
+
 // AddBlogPostIDs adds the "blog_posts" edge to the BlogPost entity by IDs.
 func (ic *IdeaCreate) AddBlogPostIDs(ids ...uuid.UUID) *IdeaCreate {
 	ic.mutation.AddBlogPostIDs(ids...)
@@ -404,14 +326,6 @@ func (ic *IdeaCreate) defaults() {
 		v := idea.DefaultPriority
 		ic.mutation.SetPriority(v)
 	}
-	if _, ok := ic.mutation.CollaborationNeeded(); !ok {
-		v := idea.DefaultCollaborationNeeded
-		ic.mutation.SetCollaborationNeeded(v)
-	}
-	if _, ok := ic.mutation.FundingRequired(); !ok {
-		v := idea.DefaultFundingRequired
-		ic.mutation.SetFundingRequired(v)
-	}
 	if _, ok := ic.mutation.IsPublic(); !ok {
 		v := idea.DefaultIsPublic
 		ic.mutation.SetIsPublic(v)
@@ -479,12 +393,6 @@ func (ic *IdeaCreate) check() error {
 			return &ValidationError{Name: "priority", err: fmt.Errorf(`ent: validator failed for field "Idea.priority": %w`, err)}
 		}
 	}
-	if _, ok := ic.mutation.CollaborationNeeded(); !ok {
-		return &ValidationError{Name: "collaboration_needed", err: errors.New(`ent: missing required field "Idea.collaboration_needed"`)}
-	}
-	if _, ok := ic.mutation.FundingRequired(); !ok {
-		return &ValidationError{Name: "funding_required", err: errors.New(`ent: missing required field "Idea.funding_required"`)}
-	}
 	if _, ok := ic.mutation.IsPublic(); !ok {
 		return &ValidationError{Name: "is_public", err: errors.New(`ent: missing required field "Idea.is_public"`)}
 	}
@@ -551,21 +459,13 @@ func (ic *IdeaCreate) createSpec() (*Idea, *sqlgraph.CreateSpec) {
 		_spec.SetField(idea.FieldSlug, field.TypeString, value)
 		_node.Slug = value
 	}
+	if value, ok := ic.mutation.Description(); ok {
+		_spec.SetField(idea.FieldDescription, field.TypeString, value)
+		_node.Description = value
+	}
 	if value, ok := ic.mutation.Abstract(); ok {
 		_spec.SetField(idea.FieldAbstract, field.TypeString, value)
 		_node.Abstract = value
-	}
-	if value, ok := ic.mutation.Motivation(); ok {
-		_spec.SetField(idea.FieldMotivation, field.TypeString, value)
-		_node.Motivation = value
-	}
-	if value, ok := ic.mutation.Methodology(); ok {
-		_spec.SetField(idea.FieldMethodology, field.TypeString, value)
-		_node.Methodology = value
-	}
-	if value, ok := ic.mutation.ExpectedOutcome(); ok {
-		_spec.SetField(idea.FieldExpectedOutcome, field.TypeString, value)
-		_node.ExpectedOutcome = value
 	}
 	if value, ok := ic.mutation.Status(); ok {
 		_spec.SetField(idea.FieldStatus, field.TypeEnum, value)
@@ -574,26 +474,6 @@ func (ic *IdeaCreate) createSpec() (*Idea, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.Priority(); ok {
 		_spec.SetField(idea.FieldPriority, field.TypeEnum, value)
 		_node.Priority = value
-	}
-	if value, ok := ic.mutation.EstimatedDurationMonths(); ok {
-		_spec.SetField(idea.FieldEstimatedDurationMonths, field.TypeInt, value)
-		_node.EstimatedDurationMonths = value
-	}
-	if value, ok := ic.mutation.RequiredResources(); ok {
-		_spec.SetField(idea.FieldRequiredResources, field.TypeString, value)
-		_node.RequiredResources = value
-	}
-	if value, ok := ic.mutation.CollaborationNeeded(); ok {
-		_spec.SetField(idea.FieldCollaborationNeeded, field.TypeBool, value)
-		_node.CollaborationNeeded = value
-	}
-	if value, ok := ic.mutation.FundingRequired(); ok {
-		_spec.SetField(idea.FieldFundingRequired, field.TypeBool, value)
-		_node.FundingRequired = value
-	}
-	if value, ok := ic.mutation.EstimatedBudget(); ok {
-		_spec.SetField(idea.FieldEstimatedBudget, field.TypeFloat64, value)
-		_node.EstimatedBudget = value
 	}
 	if value, ok := ic.mutation.IsPublic(); ok {
 		_spec.SetField(idea.FieldIsPublic, field.TypeBool, value)
@@ -645,6 +525,22 @@ func (ic *IdeaCreate) createSpec() (*Idea, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(ideatranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ic.mutation.DetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   idea.DetailsTable,
+			Columns: []string{idea.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetail.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -61,6 +61,7 @@ func (Language) Edges() []ent.Edge {
 		edge.To("blog_post_translations", BlogPostTranslation.Type),
 		edge.To("blog_series_translations", BlogSeriesTranslation.Type),
 		edge.To("idea_translations", IdeaTranslation.Type),
+		edge.To("idea_detail_translations", IdeaDetailTranslation.Type),
 		edge.To("research_project_translations", ResearchProjectTranslation.Type),
 		edge.To("research_project_detail_translations", ResearchProjectDetailTranslation.Type),
 		edge.To("publication_translations", PublicationTranslation.Type),

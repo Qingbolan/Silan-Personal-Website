@@ -31,17 +31,13 @@ func (ProjectDetail) Fields() []ent.Field {
 			StorageKey("id"),
 		field.UUID("project_id", uuid.UUID{}).
 			StorageKey("project_id"),
-		field.Text("detailed_description").
+		field.String("project_details").
 			Optional(),
-		field.Text("goals").
+		field.Text("quick_start").
 			Optional(),
-		field.Text("challenges").
+		field.Text("release_notes").
 			Optional(),
-		field.Text("solutions").
-			Optional(),
-		field.Text("lessons_learned").
-			Optional(),
-		field.Text("future_enhancements").
+		field.Text("dependencies").
 			Optional(),
 		field.String("license").
 			Optional().

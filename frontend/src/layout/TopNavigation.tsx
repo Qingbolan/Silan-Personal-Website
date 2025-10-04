@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../components/LanguageContext';
 import { useTheme } from '../components/ThemeContext';
+import GlobalSearch from '../components/Search/GlobalSearch';
 
 interface NavItemData {
   key: string;
@@ -120,95 +121,62 @@ const ThemeToggle: React.FC = React.memo(() => {
   );
 });
 
-const SearchBox: React.FC = React.memo(() => {
+const SearchBox: React.FC<{ onOpenSearch: () => void }> = React.memo(({ onOpenSearch }) => {
   const { colors } = useTheme();
   const { language } = useLanguage();
-  const [searchValue, setSearchValue] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
   const reduceMotion = useReducedMotion();
-
-  const searchId = useId();
 
   // Keyboard shortcut for search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        inputRef.current?.focus();
+        onOpenSearch();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-  
+  }, [onOpenSearch]);
+
   return (
-    <motion.div
+    <motion.button
       role="search"
-      className="relative hidden md:block"
-      whileHover={reduceMotion ? undefined : { scale: 1.01 }}
+      onClick={onOpenSearch}
+      className="relative hidden md:flex items-center w-48 lg:w-56 px-3 py-1.5 rounded-xl text-sm transition-all duration-300 border"
+      style={{
+        backgroundColor: colors.surface,
+        color: colors.textTertiary,
+        borderColor: colors.cardBorder,
+        boxShadow: `0 2px 4px ${colors.shadowSm}`
+      }}
+      whileHover={reduceMotion ? undefined : {
+        scale: 1.01,
+        boxShadow: `0 4px 8px ${colors.shadowSm}`
+      }}
       transition={reduceMotion ? undefined : { duration: 0.2 }}
     >
-      <div className="relative">
-        <Search 
-          aria-hidden
-          focusable={false}
-          size={16} 
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200" 
-          style={{ color: isSearchFocused ? colors.primary : colors.textTertiary }}
-        />
-        <input
-          ref={inputRef}
-          type="text"
-          id={searchId}
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => setIsSearchFocused(false)}
-          placeholder={language === 'en' ? 'Search...' : '搜索...'}
-          aria-label={language === 'en' ? 'Search' : '搜索'}
-          className="w-48 lg:w-56 pl-10 pr-10 py-1.5 rounded-xl text-sm transition-all duration-300 focus:outline-none border"
+      <Search
+        aria-hidden
+        focusable={false}
+        size={16}
+        className="mr-2"
+        style={{ color: colors.textTertiary }}
+      />
+      <span>{language === 'en' ? 'Search...' : '搜索...'}</span>
+      <div className="ml-auto flex items-center gap-1">
+        <kbd
+          className="px-2 py-1 text-xs rounded border"
           style={{
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            borderColor: isSearchFocused ? colors.primary : colors.cardBorder,
-            boxShadow: isSearchFocused 
-              ? `0 0 0 3px ${colors.primary}15, 0 4px 12px ${colors.primary}10` 
-              : `0 2px 4px ${colors.shadowSm}`
+            backgroundColor: colors.background,
+            color: colors.textTertiary,
+            borderColor: colors.cardBorder
           }}
-        />
-        {searchValue && (
-          <motion.button
-            type="button"
-            aria-label={language === 'en' ? 'Clear search' : '清除搜索'}
-            initial={reduceMotion ? false : { opacity: 0, scale: 0 }}
-            animate={reduceMotion ? undefined : { opacity: 1, scale: 1 }}
-            onClick={() => setSearchValue('')}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-            style={{ color: colors.textTertiary }}
-          >
-            <X aria-hidden focusable={false} size={14} />
-          </motion.button>
-        )}
-        
-        {/* Search shortcut hint */}
-        {!isSearchFocused && !searchValue && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-            <kbd 
-              className="px-2 py-1 text-xs rounded border"
-              style={{ 
-                backgroundColor: colors.background,
-                color: colors.textTertiary,
-                borderColor: colors.cardBorder
-              }}
-            >
-              {typeof navigator !== 'undefined' && navigator.platform.includes('Mac') ? '⌘K' : 'Ctrl+K'}
-            </kbd>
-          </div>
-        )}
+        >
+          {typeof navigator !== 'undefined' && navigator.platform.includes('Mac') ? '⌘K' : 'Ctrl+K'}
+        </kbd>
       </div>
-    </motion.div>
+    </motion.button>
   );
 });
 
@@ -286,46 +254,38 @@ const Logo: React.FC = React.memo(() => {
   );
 });
 
-const MobileSearchBox: React.FC = React.memo(() => {
+const MobileSearchBox: React.FC<{ onOpenSearch: () => void }> = React.memo(({ onOpenSearch }) => {
   const { colors } = useTheme();
   const { language } = useLanguage();
-  const [focused, setFocused] = useState(false);
-  const mobileSearchId = useId();
 
   return (
     <div className="md:hidden mb-4">
-      <div className="relative">
+      <button
+        onClick={onOpenSearch}
+        className="w-full flex items-center px-4 py-3 rounded-xl text-sm transition-all duration-300 border"
+        style={{
+          backgroundColor: colors.surface,
+          color: colors.textTertiary,
+          borderColor: colors.cardBorder,
+          boxShadow: `0 2px 4px ${colors.shadowSm}`,
+        }}
+      >
         <Search
           aria-hidden
           focusable={false}
           size={16}
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200"
+          className="mr-3"
           style={{ color: colors.textTertiary }}
         />
-        <input
-          id={mobileSearchId}
-          type="text"
-          placeholder={language === 'en' ? 'Search...' : '搜索...'}
-          aria-label={language === 'en' ? 'Search' : '搜索'}
-          className="w-full pl-10 pr-4 py-3 rounded-xl text-sm transition-all duration-300 focus:outline-none border"
-          style={{
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            borderColor: focused ? colors.primary : colors.cardBorder,
-            boxShadow: focused
-              ? `0 0 0 3px ${colors.primary}15, 0 4px 12px ${colors.primary}10`
-              : `0 2px 4px ${colors.shadowSm}`,
-          }}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-        />
-      </div>
+        <span>{language === 'en' ? 'Search...' : '搜索...'}</span>
+      </button>
     </div>
   );
 });
 
 const TopNavigation: React.FC = () => {
   const [open, setOpen] = useState<boolean>(false);
+  const [searchOpen, setSearchOpen] = useState<boolean>(false);
   // const [scrolled, setScrolled] = useState<boolean>(false);
   const { pathname } = useLocation();
   const { language } = useLanguage();
@@ -336,38 +296,39 @@ const TopNavigation: React.FC = () => {
   useEffect(() => setOpen(false), [pathname]);
 
   const items = useMemo(() => NAV_ITEMS(language), [language]);
-  
+
   const isItemActive = useCallback((currentPath: string, itemPath: string): boolean => {
     if (itemPath === '/') return currentPath === '/';
     return currentPath === itemPath || currentPath.startsWith(itemPath + '/');
   }, []);
 
   return (
-    <motion.nav
-      aria-label="Primary"
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 fluent-glass"
-      initial={reduceMotion ? false : { y: -100, opacity: 0 }}
-      animate={reduceMotion ? undefined : { y: 0, opacity: 1 }}
-      transition={reduceMotion ? undefined : { duration: 0.6, ease: "easeOut" }}
-      style={{
-        // Frosted glass background with subtle tint
-        backgroundColor: isDarkMode ? 'rgba(26, 26, 26, 0.50)' : 'rgba(255, 255, 255, 0.70)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${colors.cardBorder}80`,
-      }}
-    >
-      {/* Removed: bottom gradient line (replaced by border) */}
-      
-      <div className="mx-auto px-3 xs:px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 xs:h-18 sm:h-20">
-          {/* Logo */}
-          <Logo />
-    
-          {/* Right side - All controls and navigation */}
-          <div className="flex items-center space-x-1 lg:space-x-2">
-            {/* Search Box */}
-            <SearchBox />
+    <>
+      <motion.nav
+        aria-label="Primary"
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 fluent-glass"
+        initial={reduceMotion ? false : { y: -100, opacity: 0 }}
+        animate={reduceMotion ? undefined : { y: 0, opacity: 1 }}
+        transition={reduceMotion ? undefined : { duration: 0.6, ease: "easeOut" }}
+        style={{
+          // Frosted glass background with subtle tint
+          backgroundColor: isDarkMode ? 'rgba(26, 26, 26, 0.50)' : 'rgba(255, 255, 255, 0.70)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          borderBottom: `1px solid ${colors.cardBorder}80`,
+        }}
+      >
+        {/* Removed: bottom gradient line (replaced by border) */}
+
+        <div className="mx-auto px-3 xs:px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 xs:h-18 sm:h-20">
+            {/* Logo */}
+            <Logo />
+
+            {/* Right side - All controls and navigation */}
+            <div className="flex items-center space-x-1 lg:space-x-2">
+              {/* Search Box */}
+              <SearchBox onOpenSearch={() => setSearchOpen(true)} />
 
             {/* Desktop Navigation - Hide on mobile/tablet, show on desktop */}
             <ul className="hidden lg:flex items-center space-x-1 xl:space-x-1 list-none p-0 m-0" role="list">
@@ -440,7 +401,7 @@ const TopNavigation: React.FC = () => {
                   animate={reduceMotion ? undefined : { x: 0, opacity: 1 }}
                   transition={reduceMotion ? undefined : { delay: 0, duration: 0.3 }}
                 >
-                  <MobileSearchBox />
+                  <MobileSearchBox onOpenSearch={() => setSearchOpen(true)} />
                 </motion.div>
 
                 {items.map((item, index) => (
@@ -466,6 +427,13 @@ const TopNavigation: React.FC = () => {
         </AnimatePresence>
       </div>
     </motion.nav>
+
+    {/* Global Search Modal */}
+    <GlobalSearch
+      isOpen={searchOpen}
+      onClose={() => setSearchOpen(false)}
+    />
+    </>
   );
 };
 

@@ -82,6 +82,8 @@ export interface IdeaData {
   hypothesisZh?: string;
   motivation?: string;
   motivationZh?: string;
+  progress?: string;
+  progressZh?: string;
   
   // Research methodology
   methodology?: string;
@@ -89,12 +91,16 @@ export interface IdeaData {
   experiments?: Experiment[];
   preliminaryResults?: string;
   preliminaryResultsZh?: string;
+  results?: string;
+  resultsZh?: string;
   
   // Academic context
   relatedWorks?: Reference[];
   citations?: Reference[];
   futureDirections?: string[];
   futureDirectionsZh?: string[];
+  reference?: string;
+  referenceZh?: string;
   
   // Implementation details (if applicable)
   techStack?: string[];

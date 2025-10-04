@@ -12,6 +12,7 @@ import (
 	"silan-backend/internal/ent/blogseriestranslation"
 	"silan-backend/internal/ent/educationdetailtranslation"
 	"silan-backend/internal/ent/educationtranslation"
+	"silan-backend/internal/ent/ideadetailtranslation"
 	"silan-backend/internal/ent/ideatranslation"
 	"silan-backend/internal/ent/language"
 	"silan-backend/internal/ent/personalinfotranslation"
@@ -265,6 +266,21 @@ func (lu *LanguageUpdate) AddIdeaTranslations(i ...*IdeaTranslation) *LanguageUp
 		ids[j] = i[j].ID
 	}
 	return lu.AddIdeaTranslationIDs(ids...)
+}
+
+// AddIdeaDetailTranslationIDs adds the "idea_detail_translations" edge to the IdeaDetailTranslation entity by IDs.
+func (lu *LanguageUpdate) AddIdeaDetailTranslationIDs(ids ...uuid.UUID) *LanguageUpdate {
+	lu.mutation.AddIdeaDetailTranslationIDs(ids...)
+	return lu
+}
+
+// AddIdeaDetailTranslations adds the "idea_detail_translations" edges to the IdeaDetailTranslation entity.
+func (lu *LanguageUpdate) AddIdeaDetailTranslations(i ...*IdeaDetailTranslation) *LanguageUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return lu.AddIdeaDetailTranslationIDs(ids...)
 }
 
 // AddResearchProjectTranslationIDs adds the "research_project_translations" edge to the ResearchProjectTranslation entity by IDs.
@@ -597,6 +613,27 @@ func (lu *LanguageUpdate) RemoveIdeaTranslations(i ...*IdeaTranslation) *Languag
 		ids[j] = i[j].ID
 	}
 	return lu.RemoveIdeaTranslationIDs(ids...)
+}
+
+// ClearIdeaDetailTranslations clears all "idea_detail_translations" edges to the IdeaDetailTranslation entity.
+func (lu *LanguageUpdate) ClearIdeaDetailTranslations() *LanguageUpdate {
+	lu.mutation.ClearIdeaDetailTranslations()
+	return lu
+}
+
+// RemoveIdeaDetailTranslationIDs removes the "idea_detail_translations" edge to IdeaDetailTranslation entities by IDs.
+func (lu *LanguageUpdate) RemoveIdeaDetailTranslationIDs(ids ...uuid.UUID) *LanguageUpdate {
+	lu.mutation.RemoveIdeaDetailTranslationIDs(ids...)
+	return lu
+}
+
+// RemoveIdeaDetailTranslations removes "idea_detail_translations" edges to IdeaDetailTranslation entities.
+func (lu *LanguageUpdate) RemoveIdeaDetailTranslations(i ...*IdeaDetailTranslation) *LanguageUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return lu.RemoveIdeaDetailTranslationIDs(ids...)
 }
 
 // ClearResearchProjectTranslations clears all "research_project_translations" edges to the ResearchProjectTranslation entity.
@@ -1307,6 +1344,51 @@ func (lu *LanguageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if lu.mutation.IdeaDetailTranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   language.IdeaDetailTranslationsTable,
+			Columns: []string{language.IdeaDetailTranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetailtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := lu.mutation.RemovedIdeaDetailTranslationsIDs(); len(nodes) > 0 && !lu.mutation.IdeaDetailTranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   language.IdeaDetailTranslationsTable,
+			Columns: []string{language.IdeaDetailTranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetailtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := lu.mutation.IdeaDetailTranslationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   language.IdeaDetailTranslationsTable,
+			Columns: []string{language.IdeaDetailTranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetailtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if lu.mutation.ResearchProjectTranslationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1774,6 +1856,21 @@ func (luo *LanguageUpdateOne) AddIdeaTranslations(i ...*IdeaTranslation) *Langua
 	return luo.AddIdeaTranslationIDs(ids...)
 }
 
+// AddIdeaDetailTranslationIDs adds the "idea_detail_translations" edge to the IdeaDetailTranslation entity by IDs.
+func (luo *LanguageUpdateOne) AddIdeaDetailTranslationIDs(ids ...uuid.UUID) *LanguageUpdateOne {
+	luo.mutation.AddIdeaDetailTranslationIDs(ids...)
+	return luo
+}
+
+// AddIdeaDetailTranslations adds the "idea_detail_translations" edges to the IdeaDetailTranslation entity.
+func (luo *LanguageUpdateOne) AddIdeaDetailTranslations(i ...*IdeaDetailTranslation) *LanguageUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return luo.AddIdeaDetailTranslationIDs(ids...)
+}
+
 // AddResearchProjectTranslationIDs adds the "research_project_translations" edge to the ResearchProjectTranslation entity by IDs.
 func (luo *LanguageUpdateOne) AddResearchProjectTranslationIDs(ids ...uuid.UUID) *LanguageUpdateOne {
 	luo.mutation.AddResearchProjectTranslationIDs(ids...)
@@ -2104,6 +2201,27 @@ func (luo *LanguageUpdateOne) RemoveIdeaTranslations(i ...*IdeaTranslation) *Lan
 		ids[j] = i[j].ID
 	}
 	return luo.RemoveIdeaTranslationIDs(ids...)
+}
+
+// ClearIdeaDetailTranslations clears all "idea_detail_translations" edges to the IdeaDetailTranslation entity.
+func (luo *LanguageUpdateOne) ClearIdeaDetailTranslations() *LanguageUpdateOne {
+	luo.mutation.ClearIdeaDetailTranslations()
+	return luo
+}
+
+// RemoveIdeaDetailTranslationIDs removes the "idea_detail_translations" edge to IdeaDetailTranslation entities by IDs.
+func (luo *LanguageUpdateOne) RemoveIdeaDetailTranslationIDs(ids ...uuid.UUID) *LanguageUpdateOne {
+	luo.mutation.RemoveIdeaDetailTranslationIDs(ids...)
+	return luo
+}
+
+// RemoveIdeaDetailTranslations removes "idea_detail_translations" edges to IdeaDetailTranslation entities.
+func (luo *LanguageUpdateOne) RemoveIdeaDetailTranslations(i ...*IdeaDetailTranslation) *LanguageUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return luo.RemoveIdeaDetailTranslationIDs(ids...)
 }
 
 // ClearResearchProjectTranslations clears all "research_project_translations" edges to the ResearchProjectTranslation entity.
@@ -2837,6 +2955,51 @@ func (luo *LanguageUpdateOne) sqlSave(ctx context.Context) (_node *Language, err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(ideatranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if luo.mutation.IdeaDetailTranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   language.IdeaDetailTranslationsTable,
+			Columns: []string{language.IdeaDetailTranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetailtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := luo.mutation.RemovedIdeaDetailTranslationsIDs(); len(nodes) > 0 && !luo.mutation.IdeaDetailTranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   language.IdeaDetailTranslationsTable,
+			Columns: []string{language.IdeaDetailTranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetailtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := luo.mutation.IdeaDetailTranslationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   language.IdeaDetailTranslationsTable,
+			Columns: []string{language.IdeaDetailTranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ideadetailtranslation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

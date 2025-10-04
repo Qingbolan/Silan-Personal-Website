@@ -381,7 +381,7 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
       <div className={`transition-all duration-300 ${metaSidebarCollapsed ? 'lg:ml-12' : 'lg:ml-80'} ${tocCollapsed ? 'lg:mr-0' : 'lg:mr-60'}`}>
         <div className="pt-24 sm:pt-28 lg:pt-32 pb-20 px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="mx-auto w-full max-w-[75ch]"
+            className="mx-auto w-full max-w-4xl"
             initial={reduceMotion ? false : { opacity: 0, y: 20 }}
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
           >
@@ -512,8 +512,12 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
       </motion.div>
 
       {/* Comments */}
-      <div className={`transition-all duration-300 ${metaSidebarCollapsed ? 'ml-12' : 'ml-80'} ${tocCollapsed ? 'mr-0' : 'mr-60'}`}>
-          <BlogComments postId={post.id} postSlug={post.slug} />
+      <div className={`transition-all duration-300 ${metaSidebarCollapsed ? 'lg:ml-12' : 'lg:ml-80'} ${tocCollapsed ? 'lg:mr-0' : 'lg:mr-60'}`}>
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-4xl">
+            <BlogComments postId={post.id} postSlug={post.slug} />
+          </div>
+        </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
