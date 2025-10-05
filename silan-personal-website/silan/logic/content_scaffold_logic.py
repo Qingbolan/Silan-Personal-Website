@@ -22,6 +22,7 @@ from ..utils import ModernLogger, FileOperations, ContentValidator
 
 @dataclass
 class IdeaOptions:
+    description: Optional[str] = None
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     open_for_collaboration: bool = False
@@ -34,6 +35,7 @@ class IdeaOptions:
 @dataclass
 class ProjectOptions:
     description: Optional[str] = None
+    category: Optional[str] = None
     tags: Optional[List[str]] = None
     status: str = "active"
     technologies: Optional[List[str]] = None
@@ -57,17 +59,66 @@ class ContentScaffoldLogic(ModernLogger):
             "research", "notes", "experiments", "references", "prototypes", "assets"
         ])
 
-        # Metadata .silan-cache
+        # Metadata .silan-cache - using the correct structure
+        today = datetime.date.today().isoformat()
         config = {
-            "idea": {
+            "content_files": [
+                {
+                    "file_id": "main",
+                    "file_path": "README.md",
+                    "is_primary": True,
+                    "language": "en",
+                    "created": today,
+                    "last_modified": today,
+                    "file_hash": None
+                },
+                {
+                    "file_id": "references",
+                    "file_path": "REFERENCES.md",
+                    "is_primary": False,
+                    "language": "en",
+                    "created": today,
+                    "last_modified": today,
+                    "file_hash": None
+                },
+                {
+                    "file_id": "notes",
+                    "file_path": "NOTES.md",
+                    "is_primary": False,
+                    "language": "en",
+                    "created": today,
+                    "last_modified": today,
+                    "file_hash": None
+                },
+                {
+                    "file_id": "timeline",
+                    "file_path": "TIMELINE.md",
+                    "is_primary": False,
+                    "language": "en",
+                    "created": today,
+                    "last_modified": today,
+                    "file_hash": None
+                }
+            ],
+            "idea_info": {
                 "title": title,
-                "status": "draft",
-                "category": options.category or "",
+                "description": options.description or f"An innovative idea about {title}",
+                "status": "DRAFT",
+                "category": options.category or "General",
+                "slug": slug,
+                "research_field": options.research_field or "",
                 "tags": options.tags or [],
                 "open_for_collaboration": bool(options.open_for_collaboration),
                 "difficulty": options.difficulty or "",
-                "research_field": options.research_field or "",
-                "created": datetime.date.today().isoformat(),
+            },
+            "sync_metadata": {
+                "content_type": "idea",
+                "item_id": slug,
+                "sync_enabled": True,
+                "created": today,
+                "last_modified": today,
+                "file_count": 4,
+                "total_size": 0
             }
         }
         if options.series:
@@ -128,17 +179,55 @@ class ContentScaffoldLogic(ModernLogger):
             self.file_ops.write_file(references_path, references_content)
             self.debug(f"Created REFERENCES: {references_path}")
 
-        # Create results.md (optional, only if needed)
-        # Uncomment if you want to create it by default
-        # results_path = idea_root / "results.md"
-        # if not results_path.exists():
-        #     results_content = f"""# Results - {title}
-        #
-        # ## Findings
-        # [Document your findings here]
-        # """
-        #     self.file_ops.write_file(results_path, results_content)
-        #     self.debug(f"Created results: {results_path}")
+        # Create TIMELINE.md for project timeline
+        timeline_path = idea_root / "TIMELINE.md"
+        if not timeline_path.exists():
+            timeline_content = f"""# Timeline - {title}
+
+## Project Phases
+
+### Phase 1: Research & Planning
+- **Duration**: TBD
+- **Status**: Not Started
+- **Objectives**:
+  - [ ] Define project scope
+  - [ ] Literature review
+  - [ ] Technical feasibility study
+
+### Phase 2: Development
+- **Duration**: TBD
+- **Status**: Not Started
+- **Objectives**:
+  - [ ] Prototype development
+  - [ ] Testing and iteration
+
+### Phase 3: Validation
+- **Duration**: TBD
+- **Status**: Not Started
+- **Objectives**:
+  - [ ] User testing
+  - [ ] Performance validation
+
+### Phase 4: Launch
+- **Duration**: TBD
+- **Status**: Not Started
+- **Objectives**:
+  - [ ] Documentation
+  - [ ] Deployment
+  - [ ] Knowledge sharing
+
+## Milestones
+- [ ] Milestone 1: [Description]
+- [ ] Milestone 2: [Description]
+- [ ] Milestone 3: [Description]
+
+## Timeline Visualization
+```
+[Add your timeline visualization here]
+```
+"""
+            self.file_ops.write_file(timeline_path, timeline_content)
+            self.debug(f"Created TIMELINE: {timeline_path}")
 
         # Save .silan-cache (non-destructive)
         config_path = idea_root / ".silan-cache"
@@ -182,6 +271,8 @@ class ContentScaffoldLogic(ModernLogger):
         proj_root = self.content_dir / "projects" / slug
         self._ensure_dirs(proj_root, ["docs", "assets", "notes"])
 
+        today = datetime.date.today().isoformat()
+
         # README.md
         readme_path = proj_root / "README.md"
         if not readme_path.exists():
@@ -193,15 +284,278 @@ class ContentScaffoldLogic(ModernLogger):
         if not license_path.exists():
             self.file_ops.write_file(license_path, self._license_text(options.license))
 
-        # .silan-cache for metadata
+        # QUICKSTART.md
+        quickstart_path = proj_root / "QUICKSTART.md"
+        if not quickstart_path.exists():
+            quickstart_content = f"""# Quick Start Guide - {name}
+
+## Prerequisites
+
+- List required software/tools
+- Required knowledge/skills
+- System requirements
+
+## Installation
+
+### Step 1: Clone the repository
+```bash
+git clone <repository-url>
+cd {slug}
+```
+
+### Step 2: Install dependencies
+```bash
+# Add installation commands
+```
+
+### Step 3: Configuration
+```bash
+# Add configuration steps
+```
+
+## Running the Project
+
+### Development Mode
+```bash
+# Add development server command
+```
+
+### Production Mode
+```bash
+# Add production build/run commands
+```
+
+## Basic Usage
+
+### Example 1: [Basic Operation]
+```bash
+# Add example command
+```
+
+### Example 2: [Common Task]
+```bash
+# Add example command
+```
+
+## Next Steps
+
+- Read the full [documentation](docs/README.md)
+- Check out [examples](examples/)
+- See [DEPENDENCIES.md](DEPENDENCIES.md) for detailed dependency information
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: [Common problem]
+**Solution**: [How to fix]
+
+## Getting Help
+
+- [Documentation](docs/)
+- [Issues](<github-url>/issues)
+- [Discussions](<github-url>/discussions)
+"""
+            self.file_ops.write_file(quickstart_path, quickstart_content)
+            self.debug(f"Created QUICKSTART: {quickstart_path}")
+
+        # DEPENDENCIES.md
+        dependencies_path = proj_root / "DEPENDENCIES.md"
+        if not dependencies_path.exists():
+            dependencies_content = f"""# Dependencies - {name}
+
+## Production Dependencies
+
+### Core Dependencies
+
+| Package | Version | Purpose | License |
+|---------|---------|---------|---------|
+| [Package Name] | ^1.0.0 | Description | MIT |
+
+### Required Tools
+
+- Tool 1: Purpose and version
+- Tool 2: Purpose and version
+
+## Development Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| [Dev Package] | ^1.0.0 | Description |
+
+## System Requirements
+
+- **OS**: Supported operating systems
+- **Runtime**: Required runtime version
+- **Memory**: Minimum RAM requirements
+- **Storage**: Disk space needed
+
+## Optional Dependencies
+
+| Package | Version | Purpose | When Needed |
+|---------|---------|---------|-------------|
+| [Optional] | ^1.0.0 | Description | Use case |
+
+## Installation Notes
+
+### Package Manager
+```bash
+# Installation command
+```
+
+### Manual Installation
+Steps for manual dependency installation.
+
+## Dependency Management
+
+### Updating Dependencies
+```bash
+# Update command
+```
+
+### Security Audits
+```bash
+# Security check command
+```
+
+## Known Issues
+
+- Issue 1: Description and workaround
+- Issue 2: Description and workaround
+
+## License Compliance
+
+All dependencies are compatible with the project's {options.license or 'MIT'} license.
+"""
+            self.file_ops.write_file(dependencies_path, dependencies_content)
+            self.debug(f"Created DEPENDENCIES: {dependencies_path}")
+
+        # RELEASES.md
+        releases_path = proj_root / "RELEASES.md"
+        if not releases_path.exists():
+            releases_content = f"""# Release Notes - {name}
+
+## [Unreleased]
+
+### Added
+- Initial project setup
+
+### Changed
+- N/A
+
+### Fixed
+- N/A
+
+### Deprecated
+- N/A
+
+### Removed
+- N/A
+
+### Security
+- N/A
+
+---
+
+## [1.0.0] - {today}
+
+### Added
+- Initial release
+- Core functionality
+- Basic documentation
+
+### Notes
+- First stable release
+- Ready for production use
+
+---
+
+## Version Naming Convention
+
+This project follows [Semantic Versioning](https://semver.org/):
+- **MAJOR**: Incompatible API changes
+- **MINOR**: New functionality (backward-compatible)
+- **PATCH**: Bug fixes (backward-compatible)
+
+## Release Schedule
+
+- Major releases: Quarterly
+- Minor releases: Monthly
+- Patch releases: As needed
+
+## How to Upgrade
+
+### From 0.x to 1.0
+```bash
+# Upgrade instructions
+```
+
+## Support Policy
+
+- **Current version**: Full support
+- **Previous major**: Security updates only
+- **Older versions**: No support
+
+## Migration Guides
+
+- [0.x to 1.0 Migration Guide](docs/migrations/0.x-to-1.0.md)
+"""
+            self.file_ops.write_file(releases_path, releases_content)
+            self.debug(f"Created RELEASES: {releases_path}")
+
+        # .silan-cache for metadata - using correct structure
         config = {
-            "project": {
+            "content_files": [
+                {
+                    "file_id": "main",
+                    "file_path": "README.md",
+                    "is_primary": True,
+                    "language": "en",
+                    "created": today,
+                    "last_modified": today,
+                    "file_hash": None
+                },
+                {
+                    "file_id": "license",
+                    "file_path": "LICENSE",
+                    "is_primary": False,
+                    "language": "en",
+                    "created": today,
+                    "last_modified": today,
+                    "file_hash": None
+                },
+                {
+                    "file_id": "structure",
+                    "file_path": "docs/STRUCTURE.md",
+                    "is_primary": False,
+                    "language": "en",
+                    "created": today,
+                    "last_modified": today,
+                    "file_hash": None
+                }
+            ],
+            "project_info": {
                 "title": name,
-                "description": options.description or "",
+                "slug": slug,
+                "project_id": slug,
+                "description": options.description or f"A project about {name}",
+                "category": options.category or "general",
                 "status": options.status,
+                "start_date": today,
                 "technologies": options.technologies or [],
-                "tags": options.tags or [],
-                "created": datetime.date.today().isoformat(),
+                "featured": False,
+                "github_url": None,
+                "demo_url": None,
+                "license": options.license or "MIT"
+            },
+            "sync_metadata": {
+                "content_type": "project",
+                "item_id": slug,
+                "sync_enabled": True,
+                "created": today,
+                "last_modified": today,
+                "file_count": 3,
+                "total_size": 0
             }
         }
         config_path = proj_root / ".silan-cache"

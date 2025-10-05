@@ -54,7 +54,7 @@ func (l *GetPersonalInfoLogic) GetPersonalInfo(req *types.PersonalInfoRequest) (
 	return &types.PersonalInfo{
 		ID:            personalInfo.ID.String(),
 		UserID:        user.ID.String(),
-		FullName:      user.FirstName + " " + user.LastName,
+		FullName:      personalInfo.FullName,
 		Title:         personalInfo.Title,
 		CurrentStatus: personalInfo.CurrentStatus,
 		Phone:         personalInfo.Phone,

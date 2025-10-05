@@ -46,6 +46,16 @@ class SilanCLI:
         cli.add_command(self._create_status_command())
         cli.add_command(self._create_help_command())
 
+        # File editing and writing commands
+        cli.add_command(self._create_edit_command())
+        cli.add_command(self._create_append_command())
+        cli.add_command(self._create_write_command())
+
+        # Content listing and search commands
+        cli.add_command(self._create_ls_command())
+        cli.add_command(self._create_show_command())
+        cli.add_command(self._create_search_command())
+
         return cli
 
     def _create_init_command(self):
@@ -443,6 +453,206 @@ class SilanCLI:
                 raise click.ClickException(f"Failed to create {content_type}: {name}")
 
         return new
+
+    def _create_edit_command(self):
+        """Create edit command for opening files in editor"""
+        import click
+
+        @click.command(name='edit')
+        @click.option('--file', '-f', 'file_path', help='Direct file path to edit')
+        @click.option('--type', '-t', 'content_type',
+                     type=click.Choice(['idea', 'project', 'blog', 'episode']),
+                     help='Content type (idea/project/blog/episode)')
+        @click.option('--name', '-n', 'item_name', help='Content item name/slug')
+        @click.option('--part', '-p', 'file_type', default='readme',
+                     type=click.Choice(['readme', 'notes', 'references', 'timeline',
+                                      'quickstart', 'dependencies', 'releases', 'structure', 'license']),
+                     help='Which file to edit (default: readme)')
+        @click.option('--editor', '-e', help='Editor to use (defaults to $EDITOR or system default)')
+        def edit(file_path: Optional[str], content_type: Optional[str],
+                item_name: Optional[str], file_type: str, editor: Optional[str]):
+            """Open files in your default editor
+
+            Examples:
+                silan edit --file content/ideas/my-idea/README.md
+                silan edit --type idea --name my-idea --part notes
+                silan edit -t project -n my-project -p quickstart
+            """
+            success = self.cli_logic.execute_command(
+                'edit',
+                file_path=file_path,
+                content_type=content_type,
+                item_name=item_name,
+                file_type=file_type,
+                editor=editor
+            )
+            if not success:
+                raise click.ClickException("Failed to open file in editor")
+
+        return edit
+
+    def _create_append_command(self):
+        """Create append command for adding content to files"""
+        import click
+
+        @click.command(name='append')
+        @click.argument('file_path')
+        @click.argument('content')
+        @click.option('--timestamp', '-t', is_flag=True, help='Add timestamp header')
+        @click.option('--separator', '-s', is_flag=True, help='Add separator before content')
+        def append(file_path: str, content: str, timestamp: bool, separator: bool):
+            """Append content to a file
+
+            Examples:
+                silan append content/ideas/my-idea/NOTES.md "New progress update"
+                silan append -t -s content/projects/my-project/NOTES.md "Meeting notes"
+            """
+            success = self.cli_logic.execute_command(
+                'append',
+                file_path=file_path,
+                content=content,
+                timestamp=timestamp,
+                separator=separator
+            )
+            if not success:
+                raise click.ClickException("Failed to append to file")
+
+        return append
+
+    def _create_write_command(self):
+        """Create write command for quick content updates"""
+        import click
+
+        @click.command(name='write')
+        @click.option('--type', '-t', 'content_type', required=True,
+                     type=click.Choice(['idea', 'project']),
+                     help='Content type (idea/project)')
+        @click.option('--name', '-n', 'item_name', required=True,
+                     help='Content item name/slug')
+        @click.option('--part', '-p', 'file_type', required=True,
+                     type=click.Choice(['readme', 'notes', 'references', 'timeline',
+                                      'quickstart', 'dependencies', 'releases']),
+                     help='Which file to write to')
+        @click.argument('content')
+        @click.option('--mode', '-m', default='append',
+                     type=click.Choice(['append', 'overwrite']),
+                     help='Write mode (default: append)')
+        def write(content_type: str, item_name: str, file_type: str,
+                 content: str, mode: str):
+            """Quick write to content files
+
+            Examples:
+                silan write -t idea -n my-idea -p notes "Progress update"
+                silan write -t project -n my-project -p timeline "## Phase 2 complete" -m append
+            """
+            success = self.cli_logic.execute_command(
+                'write',
+                content_type=content_type,
+                item_name=item_name,
+                file_type=file_type,
+                content=content,
+                mode=mode
+            )
+            if not success:
+                raise click.ClickException("Failed to write to content file")
+
+        return write
+
+    def _create_ls_command(self):
+        """Create ls command for listing content"""
+        import click
+
+        @click.command(name='ls')
+        @click.option('--type', '-t', 'content_type',
+                     type=click.Choice(['ideas', 'projects', 'blogs', 'episodes', 'all']),
+                     default='all',
+                     help='Content type to list (default: all)')
+        @click.option('--detailed', '-d', is_flag=True, help='Show detailed information')
+        @click.option('--files', '-f', is_flag=True, help='Show file listings')
+        def ls(content_type: str, detailed: bool, files: bool):
+            """List content items
+
+            Examples:
+                silan ls                          # List all content
+                silan ls --type ideas             # List only ideas
+                silan ls -t projects -d           # List projects with details
+                silan ls -t ideas -d -f           # List ideas with details and files
+            """
+            success = self.cli_logic.execute_command(
+                'ls',
+                content_type=content_type if content_type != 'all' else None,
+                detailed=detailed,
+                show_files=files
+            )
+            if not success:
+                raise click.ClickException("Failed to list content")
+
+        return ls
+
+    def _create_show_command(self):
+        """Create show command for displaying content details"""
+        import click
+
+        @click.command(name='show')
+        @click.option('--type', '-t', 'content_type', required=True,
+                     type=click.Choice(['idea', 'project', 'blog', 'episode']),
+                     help='Content type')
+        @click.option('--name', '-n', 'item_name', required=True,
+                     help='Content item name/slug')
+        @click.option('--no-files', is_flag=True, help='Hide file listings')
+        @click.option('--no-metadata', is_flag=True, help='Hide metadata')
+        def show(content_type: str, item_name: str, no_files: bool, no_metadata: bool):
+            """Show detailed information about a content item
+
+            Examples:
+                silan show --type idea --name my-idea
+                silan show -t project -n my-project
+                silan show -t blog -n my-blog-post --no-files
+            """
+            success = self.cli_logic.execute_command(
+                'show',
+                content_type=content_type,
+                item_name=item_name,
+                show_files=not no_files,
+                show_metadata=not no_metadata
+            )
+            if not success:
+                raise click.ClickException("Failed to show content details")
+
+        return show
+
+    def _create_search_command(self):
+        """Create search command for finding content"""
+        import click
+
+        @click.command(name='search')
+        @click.argument('query')
+        @click.option('--type', '-t', 'content_type',
+                     type=click.Choice(['ideas', 'projects', 'blogs', 'episodes', 'all']),
+                     default='all',
+                     help='Content type to search (default: all)')
+        @click.option('--in', 'search_in',
+                     type=click.Choice(['title', 'description', 'tags', 'all']),
+                     default='all',
+                     help='Where to search (default: all)')
+        def search(query: str, content_type: str, search_in: str):
+            """Search for content
+
+            Examples:
+                silan search "machine learning"
+                silan search "react" --type projects
+                silan search "tutorial" --in tags
+            """
+            success = self.cli_logic.execute_command(
+                'search',
+                query=query,
+                content_type=content_type if content_type != 'all' else None,
+                search_in=search_in
+            )
+            if not success:
+                raise click.ClickException("Search failed")
+
+        return search
 
 
 # Create the CLI instance and get the main group

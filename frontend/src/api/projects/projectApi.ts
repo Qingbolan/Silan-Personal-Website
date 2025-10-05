@@ -223,16 +223,12 @@ export const fetchProjectDetailById = async (
         size: 'Medium'
       },
 
-      // Quick start info from database or defaults
+      // Quick start info from database only (no defaults)
       quickStart: quickStartGuide ? {
         installation: [],
         basicUsage: quickStartGuide,
         requirements: []
-      } : {
-        installation: ['Clone the repository', 'Install dependencies', 'Run the application'],
-        basicUsage: 'Follow the README instructions to get started',
-        requirements: ['Node.js', 'Git']
-      },
+      } : undefined,
 
       // Default community info
       community: {

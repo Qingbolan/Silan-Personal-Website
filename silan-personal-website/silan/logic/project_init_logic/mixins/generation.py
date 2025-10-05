@@ -2346,208 +2346,257 @@ In the next episode, we'll cover:
         """Generate sample resume content based on real format"""
         return f"""---
 title: "Resume"
-name: "Your Full Name"
-email: "your.email@example.com"
-phone: "+1 (555) 123-4567"
-location: "City, State, Country"
-current: "Software Developer looking for new opportunities"
+name: "Silan Hu"
+email: "Silan.Hu@u.nus.edu"
+phone: "+65 86986181"
+location: "Singapore🇸🇬 / Beijing, China🇨🇳"
+current: "Actively seeking collaborators and investors to co-create an innovative and impactful product with global potential. "
 contacts:
   - type: "email"
-    value: "your.email@example.com"
+    value: "Silan.Hu@u.nus.edu"
   - type: "phone"
-    value: "+1 (555) 123-4567"
+    value: "+65 86986181"
   - type: "location"
-    value: "City, State, Country"
+    value: "Singapore🇸🇬 / Beijing, China🇨🇳"
 socialLinks:
   - type: "linkedin"
-    url: "https://linkedin.com/in/yourprofile"
-    display_name: "Your Full Name"
-  - type: "github"
-    url: "https://github.com/yourusername"
-    display_name: "yourusername"
+    url: "https://linkedin.com/in/qingbolan"
+    display_name: "Silan Hu"
+  - type: "github" 
+    url: "https://github.com/Qingbolan"
+    display_name: "Qingbolan"
 education_logos:
-  university: "/educations/university.png"
-  college: "/educations/college.png"
+  nus: "/educations/nus.png"
+  must: "/educations/must.png"
 education_websites:
-  university: "https://www.university.edu/"
-  college: "https://www.college.edu/"
+  nus: "https://www.nus.edu.sg/"
+  must: "https://www.must.edu.mo/"
 experience_logos:
-  company1: "/experiences/company1.jpeg"
-  company2: "/experiences/company2.jpeg"
-  company3: "/experiences/company3.png"
+  nus_computing: "/experiences/nus_computing.jpeg"
+  hpc_ai: "/experiences/hpc-ai.jpeg"
+  scholarhero: "/experiences/scholarhero.png"
+  lenovo: "/experiences/lenovo.jpeg"
+  ipsos: "/experiences/ipsos.jpeg"
+  summer: "/experiences/summer.png"
 experience_websites:
-  company1: "https://company1.com/"
-  company2: "https://company2.com/"
-  company3: "https://company3.com/"
+  hpc_ai: "https://hpc-ai.tech/"
+  scholarhero: "https://scholarhero.cn/"
+  lenovo: "https://www.lenovo.com/"
+  ipsos: "https://www.ipsos.com/en-cn"
+  summer: "https://mp.weixin.qq.com/s/SOLfbZpCDSDfk4K5E9L8Sw"
 language: "en"
 ---
-# Your Full Name
+# Silan Hu
 
-title: Software Developer & Technical Lead
+title: AI Researcher & Full Stack Developer
 
-status: Currently looking for new opportunities and exciting challenges
+status: Actively seeking collaborators and investors to co-create an innovative and impactful product with global potential.
 
 ## Contact Information
 
-- **Email**: your.email@example.com
-- **Phone**: +1 (555) 123-4567
-- **Location**: City, State, Country
+- **Email**: Silan.Hu@u.nus.edu
+- **Phone**: +65 86986181
+- **Location**: Singapore🇸🇬 / Beijing, China🇨🇳
 
 ## Education
 
-### University Name
+### National University of Singapore (NUS)
 
-*Logo*: university
-*Website*: https://www.university.edu/
+*Logo*: nus
+*Website*: https://www.nus.edu.sg/
 
-**Master of Science in Computer Science**
-*Sep 2020 – Jun 2022*
-*City, State*
+**Master of Computing (ARTIFICIAL INTELLIGENCE specialization)**
+*Aug 2024 – Future (Dec 2025)*
+*Singapore*
 
-- GPA: 3.8/4.0 (Ranked in top 10%)
-- Relevant Coursework: Advanced Algorithms, Machine Learning, Distributed Systems
-- Thesis: "Scalable Web Architecture for High-Traffic Applications"
+### Macau University of Science and Technology (MUST)
 
-### College Name
+*Logo*: must
+*Website*: https://www.must.edu.mo/
 
-*Logo*: college
-*Website*: https://www.college.edu/
+**Bachelor of Science in Computer Science (Minor in Artificial Intelligence)**
+*Sep 2020 – Jun 2024*
+*Macau, China*
 
-**Bachelor of Science in Computer Science**
-*Sep 2016 – Jun 2020*
-*City, State*
-
-- GPA: 3.7/4.0 (Magna Cum Laude)
-- Dean's List Student (4 semesters)
-- President of Computer Science Student Association
-- Core Courses: Data Structures (A+), Algorithms (A+), Database Systems (A), Software Engineering (A+)
+- GPA: 3.76/4 (Ranked in top 5%, 4/160+)
+- Received full scholarship of 250,000 CNY for Master's program
+- Dean's List Student
+- Vice President of Computer Science and Engineering Student Association
+- Core Courses: Graduation Project (A+), Machine Learning (A+), Computer Programming (A+), Data Structures (A), Digital Logic (A+), Database Systems (A+), etc.
 
 ## Work Experience
 
-### Tech Company Inc.
+### NUS Computing
+*Logo*: nus_computing
+*Website*: https://www.comp.nus.edu.sg
 
-*Logo*: company1
-*Website*: https://company1.com/
+**Research Assistant**
+*Aug 2025 - Now*
+*Singapore*
 
-**Senior Software Developer**
-*Jan 2023 - Present*
-*City, State*
 
-- Lead development of microservices architecture serving 500K+ users
-- Mentored team of 5 junior developers and conducted code reviews
-- Implemented CI/CD pipelines reducing deployment time by 70%
-- Technologies: Python, React, PostgreSQL, AWS, Docker
+### HPC-AI Tech
 
-### Startup Solutions
+*Logo*: hpc_ai
+*Website*: https://hpc-ai.tech/
 
-*Logo*: company2
-*Website*: https://company2.com/
+**AI Engineer Intern**
+*Jan 2025 – Aug 2025*
+*Singapore*
 
-**Full Stack Developer**
-*Jun 2022 – Dec 2022*
-*City, State*
+- Open-Sora Team (AIGC text-to-video): Conducted research on accelerating text-to-video generation while improving output quality.
+- Video Ocean Backend (Go, Entgo, go-zero): Built and maintained backend services for a platform with hundreds of thousands of users.
+  - Developed regular payment business modules and database maintenance SDKs.
+  - Contributed to two major system reconstructions, enhancing scalability and stability.
 
-- Developed and maintained web applications using modern JavaScript frameworks
-- Built RESTful APIs and integrated third-party services
-- Collaborated with design team to implement responsive UI components
-- Improved application performance by 40% through optimization
+### Beijing Stats City Data Technology Co., Ltd.
 
-### Innovation Labs
+*Logo*: scholarhero
+*Website*: https://scholarhero.cn/
 
-*Logo*: company3
-*Website*: https://company3.com/
+**Full Stack Engineer**
+*Jan 2024 – Sep 2024*
+*Beijing, China*
 
-**Software Engineering Intern**
-*May 2021 – Aug 2021*
-*City, State*
+- Scholar Hero: Led a student startup team to develop an AI-powered educational application. Currently, it has 300 users, received recognition and funding support from the Communication University of China, and attracted attention from top Chinese universities. Published a paper as the first author, with patents and software copyrights pending.
 
-- Participated in agile development processes and daily standups
-- Developed features for internal tools using React and Node.js
-- Wrote unit tests and participated in code review process
-- Gained experience with version control and collaborative development
+### Lenovo (Beijing) Co. Ltd
+
+*Logo*: lenovo
+*Website*: https://www.lenovo.com/
+
+**Python Develop Engineer Intern**
+*Jun 2023 – Sep 2023*
+*Beijing, China*
+
+- Knowledge and Training System: Led a team of 3 interns to fine-tune large language models and develop Lenovo's internal AI training system (intelligent recommendation and virtual teaching) using Flask and Vue3. Established the internal network for project deployment, configuring network equipment including NAS and computational resources.
+- Stable Diffusion Launcher: This is the precursor to the AI image generation software pre-installed on Lenovo AI PCs.
+
+### Ipsos China
+
+*Logo*: ipsos
+*Website*: https://www.ipsos.com/en-cn
+
+**Market Research Analysis Intern**
+*Jul 2022 – Aug 2022*
+*Beijing, China*
+
+- Used Octopus crawler tool to collect product data for AIoT smart in-vehicle devices, extracted and analyzed questionnaire data using SPSS, and conducted industry surveys on current AIoT smart in-vehicle devices using Microsoft Excel.
+- Gained familiarity with market research processes, improved data collection, organization, and analysis skills, and received the Outstanding Project Award for the market research internship project.
+
+### Chaoyang District 'Youth Elite' Internship Program
+
+*Logo*: summer
+*Website*: https://mp.weixin.qq.com/s/SOLfbZpCDSDfk4K5E9L8Sw
+
+**Summer Intern**
+*Jul 2021 – Aug 2021*
+
+- Participated in immersive learning experiences at HSBC Bank, Deloitte China, Siemens (China) Co., Ltd., and Beijing Greenenvision Technology Co., Ltd., gaining in-depth understanding of banking, risk and financial consulting, auditing, management consulting, corporate structure, and AI technologies.
+- Gained comprehensive understanding of operations and culture in renowned companies, expanded skills in finance, management, auditing, and artificial intelligence, and improved practical abilities in case analysis and business plan development.
 
 ## Research Experience
 
-### Scalable Web Architecture Research
+### FOKE: A Personalized and Explainable Education Framework
 
-*Jan 2022 – Jun 2022*
-*University Research Lab*
+*Jan 2024 – Mar 2024*
+*Beijing, China*
 
-- Researched and developed solutions for high-traffic web applications
-- Published thesis on microservices architecture patterns
+- Proposed a new framework applying LLMs to personalized education and developed practical application products.
 
-### Machine Learning in Software Engineering
+### Knowledge-Graph Relation Extraction for Chinese Business Datasets
 
-*Sep 2021 – Dec 2021*
-*University AI Lab*
+*Jun 2023 – Aug 2023*
+*Online*
 
-- Applied ML techniques to code analysis and bug prediction
-- Collaborated with PhD students on research publications
+- Filtered and optimized high-quality data and trained existing relation extraction algorithms on the constructed KG.
+
+### Point Cloud Recognition by 3D Lidar in a Hybrid Approach of ATSS and Big kernel
+
+*Feb 2023 – Jun 2023*
+*Macau, China*
+
+- Validated on GAC Research Institute's cloud computing platform, our method excelled in real traffic scenarios such as high-speed driving and low-speed parking.
 
 ## Publications
 
-1. Smith, J. and **Your Name**. "Modern Approaches to Scalable Web Architecture". Journal of Software Engineering, vol 45, issue 3 (2022).
-2. **Your Name**, Johnson, A. and Davis, B. "Machine Learning Applications in Code Quality Assessment". Proceedings of SE Conference 2022 (pp. 123-135).
+1. Hu, S. and Wang, X. "FOKE: A Personalized and Explainable Education Framework Integrating Foundation Models, Knowledge Graphs, and Prompt Engineering". Communications in Computer and Information Science, vol 2161. Springer (2024).
+2. Qiu, Y., Liu, H., Lin, Y., Hu, S., Wei, W. and Wang, X. "Knowledge-graph relation extraction for Chinese business datasets". Proceedings of AHPCAI 2023 (Vol. 12941, pp. 678-687). SPIE (2023).
+3. Shen, M., Chen, D., Hu, S. and Xu, G. "Class incremental learning of remote sensing images based on class similarity distillation". PeerJ Computer Science, vol 9, e1583 (2023).
 
 ## Awards
 
-- May 2022 Dean's List Achievement - University Name (Top 5%)
-- Apr 2021 Best Student Project Award - Computer Science Department
-- Sep 2020 Outstanding Academic Achievement Scholarship
-- Jun 2020 Summa Cum Laude Graduate - College Name
+- Oct 2023 Verified Certificate - LLM102x: Large Language Models (Awarded by Databricks & edX)
+- Dec 2022 Dean's Merit in Macau University of Science and Technology (TOP 5%)
+- Sep 2022 2022 Macau Cybersecurity Technology Competition – University Division Distinction Award
+- May 2022 2022 Greater Bay Area IT Application System Development Competition - Finalist Award (TOP 6 Teams)
+- Oct 2021 First Prize of the Macao University of Science and Technology's Cultural and Academic Excellence Award
+- Apr 2021 Global Entrepreneurship Exchange - Spring 2021，Third place team (Top 5%/20 Countries, 81 Teams)
 
 ## Skills
 
-- **Programming Languages**: Python, JavaScript, Java, C++
-- **Frameworks**: React, Node.js, Django, Spring Boot
-- **Technologies**: PostgreSQL, MongoDB, Redis, Docker, Kubernetes
-- **Development**: Git, CI/CD, Agile, Test-Driven Development
+- **Programming Languages**: Python, C/C++, Go, PHP
+- **Technologies**: Machine Learning, MySQL, VUE3
+- **Development**: Android App Development, Desktop Software Development
+- **Other**: Innovation
 
 ## Recent Updates
 
-### Promoted to Senior Developer
+### Joined HPC-AI Tech Open-Sora Team
 
 *ID*: 1
 *Type*: work
-*Date*: {self._get_current_date()}
-*Status*: completed
+*Date*: 2025-01-15
+*Status*: active
 *Priority*: high
-*Tags*: promotion, career, leadership
+*Tags*: AI, Video Generation, AIGC
 
-Received promotion to Senior Software Developer role with increased responsibilities
+Started working on improving text-to-video generation speed and quality
 
-### Open Source Contribution
+### FOKE Framework Published
 
 *ID*: 2
-*Type*: project
-*Date*: 2024-08-15
-*Status*: ongoing
-*Priority*: medium
-*Tags*: open-source, contribution, community
-
-Contributing to popular React library with over 10K GitHub stars
-
-### Conference Speaker
-
-*ID*: 3
-*Type*: speaking
-*Date*: 2024-07-20
+*Type*: publication
+*Date*: 2024-12-10
 *Status*: completed
 *Priority*: high
-*Tags*: conference, speaking, networking
+*Tags*: LLM, Education, AI
 
-Presented "Modern Web Architecture Patterns" at TechConf 2024
+Our research on personalized education framework using LLMs was published in Springer
 
-### Certification Achievement
+### NUS Master's Program Progress
+
+*ID*: 3
+*Type*: education
+*Date*: 2024-08-20
+*Status*: ongoing
+*Priority*: medium
+*Tags*: NUS, AI, Master's
+
+Currently pursuing Master of Computing with AI specialization at NUS
+
+### Scholar Hero Platform
 
 *ID*: 4
-*Type*: education
-*Date*: 2024-06-10
+*Type*: project
+*Date*: 2024-09-15
+*Status*: completed
+*Priority*: high
+*Tags*: Startup, AI, Education
+
+Led development of AI-powered educational application with 300+ users
+
+### Point Cloud Recognition Research
+
+*ID*: 5
+*Type*: research
+*Date*: 2023-06-30
 *Status*: completed
 *Priority*: medium
-*Tags*: certification, aws, cloud
+*Tags*: Computer Vision, Lidar, ML
 
-Earned AWS Certified Solutions Architect Professional certification
+Completed research on 3D Lidar using ATSS and big kernel approach
+
 """
 
     def _generate_resume_config(self) -> str:

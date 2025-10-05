@@ -1,8 +1,0 @@
-{
-  "database": {
-    "type": "sqlite",
-    "path": "portfolio.db"
-  },
-  "last_updated": "2025-09-23T22:23:36.452162",
-  "version": "1.0"
-}

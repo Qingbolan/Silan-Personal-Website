@@ -28,7 +28,6 @@ class IdeaSyncMixin:
         description = content_data.get('description', '')
         abstract = content_data.get('abstract', '')
         status = content_data.get('status', 'draft')
-        priority = content_data.get('priority', 'medium')
         category = content_data.get('category', '')
 
         # Debug logging
@@ -43,7 +42,6 @@ class IdeaSyncMixin:
             existing_idea.description = description
             existing_idea.abstract = abstract
             existing_idea.status = status
-            existing_idea.priority = priority
             existing_idea.category = category
             existing_idea.is_public = True
             existing_idea.updated_at = datetime.utcnow()
@@ -59,7 +57,6 @@ class IdeaSyncMixin:
                 description=description,
                 abstract=abstract,
                 status=status,
-                priority=priority,
                 category=category,
                 is_public=True
             )

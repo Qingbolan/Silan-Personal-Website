@@ -53,7 +53,13 @@ class CLILogic(SilanCLILogger):
             'frontend': self._handle_frontend,
             'new': self._handle_new,
             'status': self._handle_status,
-            'help': self._handle_help
+            'help': self._handle_help,
+            'edit': self._handle_edit,
+            'append': self._handle_append,
+            'write': self._handle_write,
+            'ls': self._handle_ls,
+            'show': self._handle_show,
+            'search': self._handle_search
         }
     
     def run_application(self, ctx, verbose: bool = False) -> None:
@@ -226,6 +232,7 @@ class CLILogic(SilanCLILogger):
             # Create content based on type
             if content_type == 'idea':
                 options = IdeaOptions(
+                    description=description,
                     category=category,
                     tags=tags or [],
                     research_field=category
@@ -237,6 +244,7 @@ class CLILogic(SilanCLILogger):
             elif content_type == 'project':
                 options = ProjectOptions(
                     description=description,
+                    category=category,
                     tags=tags or [],
                     status=status or 'active',
                     license='MIT'
@@ -406,11 +414,71 @@ class CLILogic(SilanCLILogger):
         """Handle help command"""
         from .help_logic import HelpLogic
         help_logic = HelpLogic()
-        
+
         if topic:
             return help_logic.show_topic_help(topic)
         else:
             return help_logic.show_general_help()
+
+    def _handle_edit(self, file_path: Optional[str] = None, content_type: Optional[str] = None,
+                    item_name: Optional[str] = None, file_type: str = 'readme',
+                    editor: Optional[str] = None, **kwargs) -> bool:
+        """Handle edit command"""
+        from .file_edit_logic import FileEditLogic
+
+        edit_logic = FileEditLogic()
+
+        # If file_path is provided, open it directly
+        if file_path:
+            return edit_logic.open_file_in_editor(file_path, editor)
+
+        # If content_type and item_name are provided, edit specific content file
+        elif content_type and item_name:
+            return edit_logic.edit_content_file(content_type, item_name, file_type, editor)
+
+        else:
+            self.error("Please provide either --file or both --type and --name")
+            return False
+
+    def _handle_append(self, file_path: str, content: str,
+                      timestamp: bool = False, separator: bool = False, **kwargs) -> bool:
+        """Handle append command"""
+        from .file_edit_logic import FileEditLogic
+
+        edit_logic = FileEditLogic()
+        return edit_logic.append_to_file(file_path, content, timestamp, separator)
+
+    def _handle_write(self, content_type: str, item_name: str, file_type: str,
+                     content: str, mode: str = 'append', **kwargs) -> bool:
+        """Handle write command"""
+        from .file_edit_logic import FileEditLogic
+
+        edit_logic = FileEditLogic()
+        return edit_logic.quick_write_to_content(content_type, item_name, file_type, content, mode)
+
+    def _handle_ls(self, content_type: Optional[str] = None, detailed: bool = False,
+                  show_files: bool = False, **kwargs) -> bool:
+        """Handle ls command"""
+        from .list_content_logic import ContentListLogic
+
+        list_logic = ContentListLogic()
+        return list_logic.list_content(content_type, detailed, show_files)
+
+    def _handle_show(self, content_type: str, item_name: str,
+                    show_files: bool = True, show_metadata: bool = True, **kwargs) -> bool:
+        """Handle show command"""
+        from .list_content_logic import ContentListLogic
+
+        list_logic = ContentListLogic()
+        return list_logic.show_content_details(content_type, item_name, show_files, show_metadata)
+
+    def _handle_search(self, query: str, content_type: Optional[str] = None,
+                      search_in: str = 'title', **kwargs) -> bool:
+        """Handle search command"""
+        from .list_content_logic import ContentListLogic
+
+        list_logic = ContentListLogic()
+        return list_logic.search_content(query, content_type, search_in)
     
     def _build_db_config(self, db_type: Optional[str], host: str, port: Optional[int],
                         user: Optional[str], password: Optional[str], 

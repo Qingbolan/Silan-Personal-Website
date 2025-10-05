@@ -47,7 +47,8 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
       case 'quickstart':
         // Check for markdown content or structured quickstart
         const hasMarkdownQuickstart = projectData.quickStart?.basicUsage;
-        return !!hasMarkdownQuickstart;
+        const hasStructuredQuickstart = projectData.quickStart?.installation || projectData.quickStart?.requirements;
+        return !!(hasMarkdownQuickstart || hasStructuredQuickstart);
       case 'dependencies':
         // Check for markdown content or structured dependencies
         const hasMarkdownDeps = projectData.dependencies?.raw;
@@ -176,45 +177,70 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({ projectData }) => {
       );
     }
 
-    // Legacy format with structured data
+    // Legacy format with structured data - only show if we have actual data
+    const hasInstallation = projectData.quickStart?.installation && projectData.quickStart.installation.length > 0;
+    const hasBasicUsage = projectData.quickStart?.basicUsage;
+    const hasRequirements = projectData.quickStart?.requirements && projectData.quickStart.requirements.length > 0;
+
+    // If no data at all, show empty state
+    if (!hasInstallation && !hasBasicUsage && !hasRequirements) {
+      return (
+        <div className="text-center py-12">
+          <Play size={48} className="mx-auto mb-4 text-theme-secondary opacity-50" />
+          <h4 className="text-lg font-medium text-theme-primary mb-2">
+            {t('projects.noQuickStartYet')}
+          </h4>
+          <p className="text-theme-secondary">
+            {t('projects.checkBackLater')}
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-3 text-theme-primary flex items-center gap-2">
-            <Terminal size={20} />
-            {t('projects.installation')}
-          </h3>
-          <div className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
-            <pre className="text-sm">
-              {projectData.quickStart?.installation?.join('\n') || 'npm install project-name'}
-            </pre>
+        {hasInstallation && (
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-theme-primary flex items-center gap-2">
+              <Terminal size={20} />
+              {t('projects.installation')}
+            </h3>
+            <div className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+              <pre className="text-sm">
+                {projectData.quickStart.installation.join('\n')}
+              </pre>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div>
-          <h3 className="text-lg font-semibold mb-3 text-theme-primary">
-            {t('projects.basicUsage')}
-          </h3>
-          <div className="bg-gray-900 text-white p-4 rounded-lg overflow-x-auto">
-            <pre className="text-sm">
-              {projectData.quickStart?.basicUsage || 'import project;\nproject.run();'}
-            </pre>
+        {hasBasicUsage && (
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-theme-primary">
+              {t('projects.basicUsage')}
+            </h3>
+            <div className="bg-gray-900 text-white p-4 rounded-lg overflow-x-auto">
+              <pre className="text-sm">
+                {projectData.quickStart.basicUsage}
+              </pre>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div>
-          <h3 className="text-lg font-semibold mb-3 text-theme-primary">
-            {t('projects.requirements')}
-          </h3>
-          <ul className="space-y-2">
-            {projectData.quickStart?.requirements?.map((req: string, index: number) => (
-              <li key={index} className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-theme-500 rounded-full"></span>
-                <span className="text-theme-secondary">{req}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {hasRequirements && (
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-theme-primary">
+              {t('projects.requirements')}
+            </h3>
+            <ul className="space-y-2">
+              {projectData.quickStart.requirements.map((req: string, index: number) => (
+                <li key={index} className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-theme-500 rounded-full"></span>
+                  <span className="text-theme-secondary">{req}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   };
