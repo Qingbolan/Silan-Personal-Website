@@ -516,10 +516,10 @@ const BlogStack: React.FC = () => {
       const typeMap: Record<string, string> = {
         'Articles': 'article',
         'Videos': 'vlog',
-        'Series': 'series',
+        'Series': 'episode',
         '文章': 'article',
         '视频': 'vlog',
-        '系列': 'series'
+        '系列': 'episode'
       };
       const targetType = typeMap[selectedType] || selectedType;
       filtered = filtered.filter(post => (post.type || 'article') === targetType);
