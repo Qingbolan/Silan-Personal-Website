@@ -21,8 +21,8 @@ class FrontendLogic(ModernLogger):
     def __init__(self):
         super().__init__(name="frontend", level="info")
         self.template_sources = {
-            'static': 'templates/frontend/static',
-            'dev': 'templates/frontend/dev'
+            'static': 'templates/frontend-dist',
+            'dev': 'templates/frontend-dev'
         }
 
     def install_frontend(self, dev_mode: bool = False, target_dir: Optional[str] = None) -> bool:
