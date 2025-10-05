@@ -390,6 +390,44 @@ export const TextContent: React.FC<TextContentProps> = ({
             a: ({ node, ...props }) => (
               <a {...props} target="_blank" rel="noopener noreferrer" />
             ),
+            // duplicate table overrides removed
+            table: ({ node, children, ...tblProps }) => (
+              <div className="my-4 overflow-x-auto">
+                <table
+                  {...tblProps}
+                  className={`w-full border border-theme-card-border text-left rounded-lg ${tblProps.className || ''}`.trim()}
+                >
+                  {children}
+                </table>
+              </div>
+            ),
+            thead: ({ node, children, ...theadProps }) => (
+              <thead {...theadProps} className={`bg-theme-surface-secondary ${theadProps.className || ''}`.trim()}>
+                {children}
+              </thead>
+            ),
+            tbody: ({ node, children, ...tbodyProps }) => <tbody {...tbodyProps}>{children}</tbody>,
+            tr: ({ node, children, ...trProps }) => (
+              <tr {...trProps} className={`even:bg-theme-surface-tertiary/40 ${trProps.className || ''}`.trim()}>
+                {children}
+              </tr>
+            ),
+            th: ({ node, children, ...thProps }) => (
+              <th
+                {...thProps}
+                className={`px-4 py-2 border-b border-theme-card-border font-semibold ${thProps.className || ''}`.trim()}
+              >
+                {children}
+              </th>
+            ),
+            td: ({ node, children, ...tdProps }) => (
+              <td
+                {...tdProps}
+                className={`px-4 py-2 border-b border-theme-card-border align-top ${tdProps.className || ''}`.trim()}
+              >
+                {children}
+              </td>
+            ),
             ul: ({ node, ...props }) => {
               const isTaskList = (props.className || '').includes('contains-task-list');
               const cls = `my-4 ${isTaskList ? 'pl-2 list-none' : 'pl-6 list-disc'} ${props.className || ''}`.trim();

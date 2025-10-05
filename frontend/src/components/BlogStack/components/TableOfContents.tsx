@@ -2,6 +2,11 @@ import React from 'react';
 import { Anchor } from 'antd';
 import type { AnchorLinkItemProps } from 'antd/es/anchor/Anchor';
 import { Section } from '../types/blog';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeHighlight from 'rehype-highlight';
 interface TableOfContentsProps {
   sections: Section[];
   className?: string;
@@ -22,9 +27,63 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       title: (
         <span 
           className={`simple-toc-item level-${section.level}`}
-          title={section.title} // Tooltip for long titles
+          title={section.title}
         >
-          {section.title}
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex as any, rehypeHighlight as any]}
+            // Force inline rendering to avoid block elements inside Anchor title
+            components={{
+              // Prevent nested anchors inside Anchor item title
+              a: ({ node, children }) => (
+                <span className="underline decoration-dotted underline-offset-2">
+                  {children}
+                </span>
+              ),
+              p: ({ node, ...props }) => (
+                <span {...props} />
+              ),
+              strong: ({ node, ...props }) => (
+                <strong {...props} />
+              ),
+              em: ({ node, ...props }) => (
+                <em {...props} />
+              ),
+              del: ({ node, ...props }) => (
+                <del {...props} />
+              ),
+              code: ({ className, children, ...props }) => (
+                <code
+                  {...props}
+                  className={`px-1 py-0.5 rounded bg-theme-surface-secondary text-theme-primary ${className || ''}`.trim()}
+                  style={{ fontSize: '0.9em' }}
+                >
+                  {children}
+                </code>
+              ),
+              // Defensive: collapse possible lists/blocks to inline spans
+              ul: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              ol: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              li: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              blockquote: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              table: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              thead: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              tbody: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              tr: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              th: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              td: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              hr: () => null,
+              br: () => <span> / </span>,
+              h1: ({ node, children, ...props }) => <strong {...props}>{children}</strong>,
+              h2: ({ node, children, ...props }) => <strong {...props}>{children}</strong>,
+              h3: ({ node, children, ...props }) => <strong {...props}>{children}</strong>,
+              h4: ({ node, children, ...props }) => <strong {...props}>{children}</strong>,
+              h5: ({ node, children, ...props }) => <strong {...props}>{children}</strong>,
+              h6: ({ node, children, ...props }) => <strong {...props}>{children}</strong>,
+            }}
+          >
+            {section.title}
+          </ReactMarkdown>
         </span>
       ),
     }));
