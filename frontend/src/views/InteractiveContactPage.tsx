@@ -270,10 +270,12 @@ const InteractiveContactPageContent: React.FC = () => {
                 ]}
               />
             </Card>
-
-            {/* Public Messages Wall */}
-            <PublicMessagesWall key={refreshKey} />
           </div>
+        </div>
+
+        {/* Public Messages Wall - Full Width Section */}
+        <div className="mt-16">
+          <PublicMessagesWall key={refreshKey} />
         </div>
       </div>
     </div>

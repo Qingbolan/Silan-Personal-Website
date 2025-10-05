@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Avatar, Tag, Empty, Button, Spin } from 'antd';
+import { Card, Avatar, Tag, Empty, Button } from 'antd';
 import { MessageSquare, Building2, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import { ContactMessage } from '../../types/contact';
 import { useLanguage } from '../LanguageContext';
@@ -8,7 +8,6 @@ import { getClientFingerprint } from '../../utils/fingerprint';
 
 const PublicMessagesWall: React.FC = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const { language } = useLanguage();
 
@@ -18,7 +17,6 @@ const PublicMessagesWall: React.FC = () => {
 
   const fetchMessages = async () => {
     try {
-      setLoading(true);
       const fingerprint = getClientFingerprint();
 
       // Fetch both general and job type comments from the unified API
@@ -70,23 +68,14 @@ const PublicMessagesWall: React.FC = () => {
       setMessages(allMessages);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
-    } finally {
-      setLoading(false);
+      setMessages([]);
     }
   };
 
   const displayMessages = showAll ? messages : messages.slice(0, 6);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Messages Title */}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-gradient-primary">
@@ -96,6 +85,22 @@ const PublicMessagesWall: React.FC = () => {
           {language === 'en' ? 'Public Messages' : '公开留言'}
         </h3>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .masonry-grid {
+            flex-direction: column !important;
+          }
+          .masonry-column:not(:first-child) {
+            display: none;
+          }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .masonry-column:nth-child(3) {
+            display: none;
+          }
+        }
+      `}</style>
 
       {/* Messages Grid */}
       {displayMessages.length === 0 ? (
@@ -110,12 +115,34 @@ const PublicMessagesWall: React.FC = () => {
           />
         </Card>
       ) : (
-        <div className="space-y-3">
-          {displayMessages.map((msg) => (
+        <div className="masonry-grid"
+          style={{
+            display: 'flex',
+            marginLeft: '-1rem',
+            width: 'auto',
+          }}
+        >
+          {[0, 1, 2].map(columnIndex => (
+            <div
+              key={columnIndex}
+              className="masonry-column"
+              style={{
+                paddingLeft: '1rem',
+                backgroundClip: 'padding-box',
+                flex: 1,
+              }}
+            >
+              {displayMessages
+                .filter((_, index) => index % 3 === columnIndex)
+                .map((msg) => (
             <Card
               key={msg.id}
-              className="card-interactive border-0"
-              style={{ borderRadius: '12px' }}
+              className="card-interactive masonry-card border-0"
+              style={{
+                borderRadius: '12px',
+                marginBottom: '1rem',
+                width: '100%',
+              }}
               styles={{ body: { padding: '16px' } }}
             >
               <div className="flex items-start gap-3">
@@ -172,7 +199,7 @@ const PublicMessagesWall: React.FC = () => {
                       )}
 
                       {/* Job Description */}
-                      <div className="text-xs text-theme-secondary line-clamp-3 mb-1">
+                      <div className="text-xs text-theme-secondary mb-1">
                         <span className="font-medium">{language === 'en' ? 'Description: ' : '职位描述：'}</span>
                         {msg.message}
                       </div>
@@ -188,7 +215,7 @@ const PublicMessagesWall: React.FC = () => {
 
                   {/* Message content for general messages */}
                   {msg.type === 'general' && (
-                    <div className="text-xs text-theme-secondary line-clamp-3">
+                    <div className="text-xs text-theme-secondary">
                       {msg.message}
                     </div>
                   )}
@@ -202,6 +229,8 @@ const PublicMessagesWall: React.FC = () => {
                 </div>
               </div>
             </Card>
+                ))}
+            </div>
           ))}
         </div>
       )}

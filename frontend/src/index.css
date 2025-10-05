@@ -484,12 +484,17 @@ img {
   .card-interactive {
     background-color: var(--color-cardBackground);
     box-shadow: var(--color-shadowMd);
-    transition: all 0.3s ease;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    will-change: transform, box-shadow;
   }
 
   .card-interactive:hover {
-    transform: translateY(-4px);
     box-shadow: var(--color-shadowXl);
+  }
+
+  /* Use scale instead of translateY for cards not in masonry layout */
+  .card-interactive:not(.masonry-card):hover {
+    transform: translateY(-4px);
   }
 
   /* Input focus styles */
