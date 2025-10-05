@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Empty, Tag, Avatar, Collapse, Input, Button, message as antdMessage } from 'antd';
+import { Card, Empty, Tag, Avatar, Input, Button, message as antdMessage } from 'antd';
 import { MessageSquare, Mail, Briefcase, Send } from 'lucide-react';
 import { ContactMessage } from '../../types/contact';
 import { useLanguage } from '../LanguageContext';
 import { useAuth } from './AuthContext';
 
-const { Panel } = Collapse;
+// Removed unused Panel
 
 const MyMessagesPanel: React.FC = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
 
   useEffect(() => {
     fetchMyMessages();

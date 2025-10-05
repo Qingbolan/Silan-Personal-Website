@@ -9,7 +9,6 @@ import {
   Plus,
   MessageSquare,
   Calendar,
-  User,
   Eye,
   FileText,
   MoreHorizontal,

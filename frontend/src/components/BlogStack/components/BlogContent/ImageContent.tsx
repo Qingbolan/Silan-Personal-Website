@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, Card, Tag, Typography, Spin } from 'antd';
-import { PictureOutlined, ExpandOutlined } from '@ant-design/icons';
+import { ExpandOutlined } from '@ant-design/icons';
 import { BlogContent } from '../../types/blog';
 import { useLanguage } from '../../../LanguageContext';
 import FuzzyText from '../../../ui/FuzzyText';
@@ -15,7 +15,7 @@ interface ImageContentProps {
 
 export const ImageContent: React.FC<ImageContentProps> = ({ item, index, isWideScreen }) => {
   const { language } = useLanguage();
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
   const imageSrc = item.content.startsWith('/api/placeholder')

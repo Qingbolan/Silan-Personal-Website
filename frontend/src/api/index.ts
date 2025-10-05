@@ -2,7 +2,28 @@
 export * from './home/resumeApi';
 export * from './projects/projectApi';
 export * from './ideas/ideaApi';
-export * from './blog/blogApi';
+// Avoid type name collisions across APIs by namespacing comment-like types
+export * as BlogAPI from './blog/blogApi';
+export * as ProjectAPI from './projects/projectApi';
+export * as IdeaAPI from './ideas/ideaApi';
+export * as ResumeAPI from './home/resumeApi';
+// Backward compatibility: re-export common functions without conflicting types
+export {
+  fetchBlogPosts,
+  fetchBlogById,
+  searchBlogPosts,
+  getBlogCategories,
+  getBlogTags,
+  updateBlogViews,
+  updateBlogLikes,
+  fetchSeriesData,
+  updateSeriesProgress,
+  setCurrentEpisode,
+  listBlogComments,
+  createBlogComment,
+  deleteBlogComment,
+  likeComment as likeBlogComment,
+} from './blog/blogApi';
 
 // Export specific functions from plans/planApi to avoid conflicts
 export { 

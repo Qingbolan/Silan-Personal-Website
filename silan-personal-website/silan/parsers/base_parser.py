@@ -221,6 +221,48 @@ class BaseParser(ABC, ModernLogger):
         content_str = json.dumps(post.metadata, sort_keys=True) + post.content
         return hashlib.md5(content_str.encode()).hexdigest()
 
+    def _remove_frontmatter(self, content: str) -> str:
+        """Remove YAML frontmatter from markdown content
+
+        Args:
+            content: Raw markdown content that may contain frontmatter
+
+        Returns:
+            Content with frontmatter removed
+        """
+        if not content or not content.strip():
+            return content
+
+        # Check if content starts with frontmatter delimiter
+        if not content.lstrip().startswith('---'):
+            return content
+
+        # Split by lines and find frontmatter boundaries
+        lines = content.split('\n')
+
+        # Find the first --- (should be at or near start)
+        start_idx = -1
+        for i, line in enumerate(lines):
+            if line.strip() == '---':
+                start_idx = i
+                break
+
+        if start_idx == -1:
+            return content
+
+        # Find the closing ---
+        end_idx = -1
+        for i in range(start_idx + 1, len(lines)):
+            if lines[i].strip() == '---':
+                end_idx = i
+                break
+
+        if end_idx == -1:
+            return content
+
+        # Return content after the closing ---
+        return '\n'.join(lines[end_idx + 1:]).lstrip()
+
     def _calculate_quality(self, extracted: ExtractedContent) -> float:
         """Basic quality score derived from collected validation messages."""
         penalties = len(extracted.validation_errors) * 0.25 + len(extracted.validation_warnings) * 0.1

@@ -14,14 +14,12 @@ import {
   Heart,
   Share2,
   Play,
-  CheckCircle,
-  Circle,
   X,
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { BlogData, UserAnnotation, SelectedText } from './types/blog';
-import { fetchSeriesData, updateSeriesProgress, SeriesData } from '../../api';
+import { BlogAPI } from '../../api';
 import { BlogContentRenderer } from './components/BlogContentRenderer';
 import { BlogBreadcrumb } from './components/Breadcrumb';
 import { useTOC } from './hooks/useTOC';
@@ -76,7 +74,7 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
   const [bookmarked, setBookmarked] = useState(false);
 
   // API state
-  const [seriesData, setSeriesData] = useState<SeriesData | null>(null);
+  const [seriesData, setSeriesData] = useState<BlogAPI.SeriesData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Scroll to top on component mount
@@ -127,7 +125,7 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
       try {
         console.log('🚀 Loading series data for seriesId:', post.seriesId);
         setLoading(true);
-        const data = await fetchSeriesData(post.seriesId, language as 'en' | 'zh');
+        const data = await BlogAPI.fetchSeriesData(post.seriesId, language as 'en' | 'zh');
         console.log('✅ Series data loaded:', data);
         setSeriesData(data);
       } catch (error) {
@@ -175,17 +173,7 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
     }
   };
 
-  // Handle episode completion toggle
-  const handleToggleCompletion = async (episodeId: string, completed: boolean) => {
-    if (!post.seriesId) return;
-
-    try {
-      const updatedSeries = await updateSeriesProgress(post.seriesId, episodeId, completed, language as 'en' | 'zh');
-      setSeriesData(updatedSeries);
-    } catch (error) {
-      console.error('Failed to update progress:', error);
-    }
-  };
+  // Removed: handleToggleCompletion is not used
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

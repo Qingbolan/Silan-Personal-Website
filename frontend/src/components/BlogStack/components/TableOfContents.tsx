@@ -35,21 +35,21 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             // Force inline rendering to avoid block elements inside Anchor title
             components={{
               // Prevent nested anchors inside Anchor item title
-              a: ({ node, children }) => (
+              a: ({ children }) => (
                 <span className="underline decoration-dotted underline-offset-2">
                   {children}
                 </span>
               ),
-              p: ({ node, ...props }) => (
+              p: ({ ...props }) => (
                 <span {...props} />
               ),
-              strong: ({ node, ...props }) => (
+              strong: ({ ...props }) => (
                 <strong {...props} />
               ),
-              em: ({ node, ...props }) => (
+              em: ({ ...props }) => (
                 <em {...props} />
               ),
-              del: ({ node, ...props }) => (
+              del: ({ ...props }) => (
                 <del {...props} />
               ),
               code: ({ className, children, ...props }) => (
@@ -62,16 +62,16 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
                 </code>
               ),
               // Defensive: collapse possible lists/blocks to inline spans
-              ul: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              ol: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              li: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              blockquote: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              table: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              thead: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              tbody: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              tr: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              th: ({ node, children, ...props }) => <span {...props}>{children}</span>,
-              td: ({ node, children, ...props }) => <span {...props}>{children}</span>,
+              ul: ({ children, ...props }) => <span {...props}>{children}</span>,
+              ol: ({ children, ...props }) => <span {...props}>{children}</span>,
+              li: ({ children, ...props }) => <span {...props}>{children}</span>,
+              blockquote: ({ children, ...props }) => <span {...props}>{children}</span>,
+              table: ({ children, ...props }) => <span {...props}>{children}</span>,
+              thead: ({ children, ...props }) => <span {...props}>{children}</span>,
+              tbody: ({ children, ...props }) => <span {...props}>{children}</span>,
+              tr: ({ children, ...props }) => <span {...props}>{children}</span>,
+              th: ({ children, ...props }) => <span {...props}>{children}</span>,
+              td: ({ children, ...props }) => <span {...props}>{children}</span>,
               hr: () => null,
               br: () => <span> / </span>,
               h1: ({ node, children, ...props }) => <strong {...props}>{children}</strong>,

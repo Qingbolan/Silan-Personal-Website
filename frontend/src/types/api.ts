@@ -375,6 +375,8 @@ export interface ProjectRelease {
   description: string;
   downloadCount: number;
   assets: ProjectAsset[];
+  // Optional markdown notes for release details
+  notes?: string;
 }
 
 export interface ProjectAsset {

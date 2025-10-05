@@ -185,6 +185,8 @@ class ProjectParser(BaseParser):
             try:
                 with open(readme_path, 'r', encoding='utf-8') as f:
                     readme_content = f.read()
+                    # Remove frontmatter if present
+                    readme_content = self._remove_frontmatter(readme_content)
                     extracted.main_entity['detailed_description'] = readme_content.strip()
             except Exception as e:
                 self.warning(f"Error reading README.md: {e}")

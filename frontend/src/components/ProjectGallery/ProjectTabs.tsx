@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Tabs, Space, Card, Tag } from 'antd';
+import { Tabs, Space, Tag } from 'antd';
 import { 
   BookOpen, 
   Download, 

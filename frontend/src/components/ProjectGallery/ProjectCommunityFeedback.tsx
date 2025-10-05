@@ -265,7 +265,7 @@ const ProjectCommunityFeedback: React.FC<ProjectCommunityFeedbackProps> = ({ pro
     }
   };
 
-  const likeReply = async (commentId: string, replyId: string) => {
+  const likeReply = async (_commentId: string, replyId: string) => {
     try {
       const fp = getClientFingerprint();
       const user = getCurrentUser();
@@ -305,7 +305,7 @@ const ProjectCommunityFeedback: React.FC<ProjectCommunityFeedbackProps> = ({ pro
     }
   };
 
-  const handleDeleteReply = async (commentId: string, replyId: string) => {
+  const handleDeleteReply = async (_commentId: string, replyId: string) => {
     try {
       const fp = getClientFingerprint();
       const user = getCurrentUser();

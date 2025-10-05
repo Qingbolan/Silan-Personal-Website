@@ -227,6 +227,8 @@ class IdeaParser(BaseParser):
             try:
                 with open(readme_path, 'r', encoding='utf-8') as f:
                     readme_content = f.read()
+                    # Remove frontmatter if present
+                    readme_content = self._remove_frontmatter(readme_content)
                     # Store full README content as abstract
                     extracted.main_entity['abstract'] = readme_content.strip()
             except Exception as e:

@@ -209,7 +209,17 @@ export const fetchProjectDetailById = async (
       // Version info with release notes
       versions: {
         latest: projectDetail?.version || '1.0.0',
-        releases: releaseNotes ? [{ version: projectDetail?.version || '1.0.0', notes: releaseNotes }] : []
+        releases: releaseNotes
+          ? [{
+              version: projectDetail?.version || '1.0.0',
+              date: projectDetail?.updated_at || new Date().toISOString().split('T')[0],
+              description: releaseNotes,
+              downloadCount: 0,
+              assets: [],
+              // Include markdown notes for UI markdown rendering
+              notes: releaseNotes,
+            }]
+          : []
       },
 
       // Default status info
@@ -223,12 +233,12 @@ export const fetchProjectDetailById = async (
         size: 'Medium'
       },
 
-      // Quick start info from database only (no defaults)
-      quickStart: quickStartGuide ? {
+      // Always provide quickStart object; UI handles empty content
+      quickStart: {
         installation: [],
-        basicUsage: quickStartGuide,
+        basicUsage: quickStartGuide || '',
         requirements: []
-      } : undefined,
+      },
 
       // Default community info
       community: {
@@ -244,14 +254,17 @@ export const fetchProjectDetailById = async (
       },
 
       // Dependencies from database or defaults
-      dependencies: dependenciesDoc ? {
-        production: [],
-        development: [],
-        raw: dependenciesDoc
-      } : {
-        production: [],
-        development: []
-      },
+      dependencies: dependenciesDoc
+        ? {
+            production: [],
+            development: [],
+            // Additional raw markdown for UI rendering
+            raw: dependenciesDoc as any,
+          } as any
+        : {
+            production: [],
+            development: []
+          },
 
       // Default performance
       performance: {

@@ -39,7 +39,7 @@ export const fetchIdeas = async (
   params: Partial<IdeaListRequest> = {},
   language: 'en' | 'zh' = 'en'
 ): Promise<IdeaData[]> => {
-  const response = await get<any>('/api/v1/ideas', {
+  const response = await get<IdeaListResponse>('/api/v1/ideas', {
     ...params,
     lang: formatLanguage(language)
   });
@@ -235,7 +235,7 @@ export const createIdeaComment = async (
   return res;
 };
 
-export interface LikeCommentResponse { likes_count: number; is_liked_by_user: boolean }
+interface LikeCommentResponse { likes_count: number; is_liked_by_user: boolean }
 
 export const likeIdeaComment = async (
   commentId: string,

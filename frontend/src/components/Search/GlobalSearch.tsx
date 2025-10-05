@@ -198,7 +198,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, initialQue
                             {language === 'en' ? blog.title : blog.titleZh || blog.title}
                           </h4>
                           <p className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
-                            {language === 'en' ? blog.description : blog.descriptionZh || blog.description}
+                            {language === 'en' ? (blog.summary || '') : (blog.summaryZh || blog.summary || '')}
                           </p>
                         </motion.div>
                       ))}
@@ -251,10 +251,10 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, initialQue
                           style={{ backgroundColor: colors.surface }}
                         >
                           <h4 className="font-medium mb-1" style={{ color: colors.textPrimary }}>
-                            {language === 'en' ? idea.title : idea.titleZh || idea.title}
+                            {idea.title}
                           </h4>
                           <p className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
-                            {language === 'en' ? idea.description : idea.descriptionZh || idea.description}
+                            {idea.description}
                           </p>
                         </motion.div>
                       ))}

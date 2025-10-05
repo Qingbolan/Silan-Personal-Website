@@ -127,7 +127,7 @@ const SearchResults: React.FC = () => {
                           {language === 'en' ? blog.title : blog.titleZh || blog.title}
                         </h3>
                         <p className="text-sm mb-2 line-clamp-2" style={{ color: colors.textSecondary }}>
-                          {language === 'en' ? blog.description : blog.descriptionZh || blog.description}
+                          {language === 'en' ? (blog.summary || '') : (blog.summaryZh || blog.summary || '')}
                         </p>
                         {blog.tags && blog.tags.length > 0 && (
                           <div className="flex flex-wrap gap-2">
@@ -220,10 +220,10 @@ const SearchResults: React.FC = () => {
                     >
                       <Link to={`/ideas/${idea.id}`}>
                         <h3 className="text-lg font-semibold mb-2" style={{ color: colors.primary }}>
-                          {language === 'en' ? idea.title : idea.titleZh || idea.title}
+                          {idea.title}
                         </h3>
                         <p className="text-sm mb-2 line-clamp-2" style={{ color: colors.textSecondary }}>
-                          {language === 'en' ? idea.description : idea.descriptionZh || idea.description}
+                          {idea.description}
                         </p>
                         {idea.tags && idea.tags.length > 0 && (
                           <div className="flex flex-wrap gap-2">
