@@ -1,9 +1,11 @@
-import React from 'react';
-import { Image, Card, Tag, Typography } from 'antd';
-import { PictureOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Image, Card, Tag, Typography, Spin } from 'antd';
+import { PictureOutlined, ExpandOutlined } from '@ant-design/icons';
 import { BlogContent } from '../../types/blog';
+import { useLanguage } from '../../../LanguageContext';
+import FuzzyText from '../../../ui/FuzzyText';
 
-const { Text, Paragraph } = Typography;
+const { Paragraph } = Typography;
 
 interface ImageContentProps {
   item: BlogContent;
@@ -12,52 +14,73 @@ interface ImageContentProps {
 }
 
 export const ImageContent: React.FC<ImageContentProps> = ({ item, index, isWideScreen }) => {
-  const imageSrc = item.content.startsWith('/api/placeholder') 
+  const { language } = useLanguage();
+  const [loading, setLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  const imageSrc = item.content.startsWith('/api/placeholder')
     ? `https://via.placeholder.com/800x400/6366f1/ffffff?text=${encodeURIComponent(item.caption || 'Academic Figure')}`
     : item.content;
-
-  const fallbackSrc = `https://via.placeholder.com/800x400/6366f1/ffffff?text=${encodeURIComponent('Figure Not Available')}`;
 
   return (
     <figure className={`my-16 ${isWideScreen ? 'col-span-2' : ''} break-inside-avoid`}>
       <Card
-        className="overflow-hidden shadow-medium"
+        className="overflow-hidden shadow-medium hover:shadow-lg transition-shadow duration-300"
         bodyStyle={{ padding: 0 }}
-        style={{ 
+        style={{
           borderRadius: '12px',
           backgroundColor: 'var(--color-surface-elevated, white)',
           borderColor: 'var(--color-card-border, rgba(229, 231, 235, 1))'
         }}
       >
         {/* Image with Ant Design Image component */}
-        <div className="relative overflow-hidden  -secondary">
-          <Image
-            src={imageSrc}
-            alt={item.caption || 'Academic figure'}
-            fallback={fallbackSrc}
-            placeholder={
-              <div className="flex items-center justify-center h-64 bg-gray-100">
-                <PictureOutlined style={{ fontSize: '48px', color: '#d9d9d9' }} />
-              </div>
-            }
-            preview={{
-              mask: (
-                <div className="flex flex-col items-center justify-center text-white">
-                  <PictureOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
-                  <Text style={{ color: 'white', fontSize: '14px' }}>预览</Text>
+        <div className="relative overflow-hidden bg-theme-surface-secondary">
+          {imageError ? (
+            <div className="flex flex-col items-center justify-center h-96 bg-gradient-to-br from-theme-surface to-theme-surface-secondary">
+              <FuzzyText
+                fontSize="3.5rem"
+                fontWeight={800}
+                color="var(--color-text-tertiary, #9ca3af)"
+                baseIntensity={0.08}
+                hoverIntensity={0.25}
+              >
+                {language === 'en' ? 'Image Not Found' : '图片加载失败'}
+              </FuzzyText>
+            </div>
+          ) : (
+            <Image
+              src={imageSrc}
+              alt={item.caption || 'Academic figure'}
+              onLoad={() => setLoading(false)}
+              onError={() => {
+                setLoading(false);
+                setImageError(true);
+              }}
+              placeholder={
+                <div className="flex items-center justify-center h-96 bg-theme-surface/50">
+                  <Spin size="large" />
                 </div>
-              )
-            }}
-            style={{ 
-              width: '100%',
-              height: '400px',
-              objectFit: 'cover'
-            }}
-            className="hover:scale-105 transition-transform duration-500"
-          />
-          
-          {/* Subtle Overlay for Better Text Readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none"></div>
+              }
+              preview={{
+                mask: (
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <ExpandOutlined style={{ fontSize: '28px', color: 'white' }} />
+                    <span className="text-white text-sm font-medium">
+                      {language === 'en' ? 'Click to preview' : '点击预览'}
+                    </span>
+                  </div>
+                ),
+                maskClassName: 'backdrop-blur-sm bg-black/30'
+              }}
+              style={{
+                width: '100%',
+                maxHeight: '600px',
+                objectFit: 'contain',
+                backgroundColor: 'var(--color-surface-secondary, #f9fafb)'
+              }}
+              className="transition-all duration-500"
+            />
+          )}
         </div>
         
         {/* Caption */}

@@ -8,6 +8,7 @@ import {
   CodeContent,
   HeadingContent,
 } from './BlogContent';
+import TableBlock from './BlogContent/TableBlock';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -45,6 +46,93 @@ const looksLikeLooseMarkdown = (text: string): boolean => {
     /\[[^\]]+\]\([^\)]+\)/.test(text) || // 链接
     /^(-{3,}|\*{3,}|_{3,})$/m.test(text); // 分割线
   return mdSignals;
+};
+
+/** Detect GFM table (header row with pipes + alignment row) */
+const hasGfmTable = (s: string = ''): boolean => {
+  if (!s) return false;
+  const lineHasPipes = /^\s*\|.*\|\s*$/m.test(s);
+  const alignRow =
+    /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/m.test(s);
+  // Also consider collapsed tables where rows are separated by '||'
+  const collapsedRowTight = /\|\|/.test(s);
+  // Variant: rows separated by " | | " (spaces around the divider)
+  const collapsedRowSpaced = /\s\|\s\|/.test(s);
+  const collapsedRow = (collapsedRowTight || collapsedRowSpaced) && /\|/.test(s);
+  // eslint-disable-next-line no-console
+  console.debug('[GFM Detect] flags', {
+    lineHasPipes,
+    alignRow,
+    collapsedRow,
+    collapsedRowTight,
+    collapsedRowSpaced,
+    length: s.length,
+    preview: s.slice(0, 200).replace(/\n/g, '\\n')
+  });
+  return (lineHasPipes && alignRow) || collapsedRow;
+};
+
+/** Expand collapsed table rows delimited by '||' into real newlines */
+const expandCollapsedTableRows = (s: string = ''): string => {
+  if (!s) return s;
+  if (/\|\|/.test(s)) {
+    const before = s;
+    let after = s.replace(/\|\|\s*/g, '\n');
+    // Also support the spaced variant: " | | "
+    const before2 = after;
+    after = after.replace(/\s\|\s\|\s*/g, '\n');
+    // eslint-disable-next-line no-console
+    console.debug('[GFM Normalize] collapsed rows expanded', {
+      beforePreview: before.slice(0, 200).replace(/\n/g, '\\n'),
+      midPreview: before2.slice(0, 200).replace(/\n/g, '\\n'),
+      afterPreview: after.slice(0, 200).replace(/\n/g, '\\n')
+    });
+    return after;
+  }
+  // If it doesn't contain tight "||", still try spaced variant alone
+  if (/\s\|\s\|/.test(s)) {
+    const before = s;
+    const after = s.replace(/\s\|\s\|\s*/g, '\n');
+    // eslint-disable-next-line no-console
+    console.debug('[GFM Normalize] spaced collapsed rows expanded', {
+      beforePreview: before.slice(0, 200).replace(/\n/g, '\\n'),
+      afterPreview: after.slice(0, 200).replace(/\n/g, '\\n')
+    });
+    return after;
+  }
+  return s;
+};
+
+/** After expansion, coerce rows to valid GFM by adding missing leading/trailing pipes */
+const coerceGfmTableFormat = (s: string = ''): string => {
+  if (!s) return s;
+  // Ensure a newline after alignment row if the next row starts immediately with a pipe
+  let pre = s.replace(
+    /(\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?)\s*\|\s*/g,
+    '$1\n| '
+  );
+  const lines = pre.split(/\n/);
+  const coerced = lines.map((raw) => {
+    let line = raw.replace(/^\s+/, ''); // left trim spaces but keep leading '|'
+    // Leave empty lines untouched
+    if (!line) return line;
+    // If alignment row, keep as is
+    if (/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line)) return line.trim();
+    const hasPipe = /\|/.test(line);
+    const looksLikeRow = hasPipe && /\|/.test(line.replace(/^\|/, ''));
+    if (!looksLikeRow) return line;
+    // Ensure starting and ending pipes for non-header/data rows
+    if (!/^\|/.test(line)) line = `| ${line}`;
+    if (!/\|\s*$/.test(line)) line = `${line} |`;
+    return line;
+  });
+  const out = coerced.join('\n');
+  // eslint-disable-next-line no-console
+  console.debug('[GFM Normalize] coerced table lines', {
+    beforePreview: s.slice(0, 200).replace(/\n/g, '\\n'),
+    afterPreview: out.slice(0, 200).replace(/\n/g, '\\n')
+  });
+  return out;
 };
 
 type CanonicalType = NonNullable<BlogContent['type']>;
@@ -169,7 +257,19 @@ export const BlogContentRenderer: React.FC<BlogContentRendererProps> = (props) =
   const renderMarkdown = (item: PreparedItem) => {
     // 不要误处理 fenced code
     const shouldTweak = item.content && !/```/.test(item.content);
-    const md = shouldTweak ? normalizeInlineMarkdownHeuristics(item.content) : (item.content ?? '');
+    let md = shouldTweak ? normalizeInlineMarkdownHeuristics(item.content) : (item.content ?? '');
+    if (hasGfmTable(md)) {
+      md = expandCollapsedTableRows(md);
+      md = coerceGfmTableFormat(md);
+      // Debug: confirm detection/normalization in console
+      // eslint-disable-next-line no-console
+      console.debug('[BlogContentRenderer] GFM table detected', {
+        id: item.id,
+        type: item.type,
+        length: md.length,
+        preview: md.slice(0, 200).replace(/\n/g, '\\n')
+      });
+    }
 
     return (
       <div key={item.id} className="prose prose-lg max-w-none">
@@ -208,6 +308,83 @@ export const BlogContentRenderer: React.FC<BlogContentRendererProps> = (props) =
                 style={{ accentColor: 'var(--color-primary, #0066FF)' }}
               />
             ),
+            // Convert Markdown tables to TableBlock for unified styling & inner markdown parsing
+            table: ({ node }) => {
+              try {
+                const elem: any = node as any;
+                const children: any[] = (elem?.children || []) as any[];
+                let header: (string | React.ReactNode)[] = [];
+                const rows: (Array<string | React.ReactNode>)[] = [];
+
+                // Rebuild inline markdown from HAST so cells keep formatting like `code`, **bold**, links, etc.
+                const getMdText = (n: any): string => {
+                  if (!n) return '';
+                  if (typeof n.value === 'string') return n.value;
+                  const tag = n.tagName;
+                  const inner = Array.isArray(n.children) ? n.children.map(getMdText).join('') : '';
+                  switch (tag) {
+                    case 'code':
+                      return '`' + inner + '`';
+                    case 'strong':
+                      return '**' + inner + '**';
+                    case 'em':
+                      return '*' + inner + '*';
+                    case 'del':
+                      return '~~' + inner + '~~';
+                    case 'a': {
+                      const href = n.properties?.href || '';
+                      return '[' + inner + '](' + href + ')';
+                    }
+                    case 'br':
+                      return '\n';
+                    case 'p':
+                    case 'span':
+                    case 'div':
+                      return inner;
+                    case 'img': {
+                      const src = n.properties?.src || '';
+                      const alt = n.properties?.alt || '';
+                      return '![' + alt + '](' + src + ')';
+                    }
+                    default:
+                      return inner;
+                  }
+                };
+
+                const thead = children.find((c) => c.tagName === 'thead');
+                if (thead) {
+                  const tr = (thead.children || []).find((c: any) => c.tagName === 'tr');
+                  if (tr) {
+                    header = (tr.children || [])
+                      .filter((c: any) => c.tagName === 'th' || c.tagName === 'td')
+                      .map((c: any) => getMdText(c).trim());
+                  }
+                }
+
+                const tbody = children.find((c) => c.tagName === 'tbody') || children.find((c) => c.tagName === 'thead' ? null : c);
+                if (tbody) {
+                  (tbody.children || [])
+                    .filter((c: any) => c && c.tagName === 'tr')
+                    .forEach((tr: any) => {
+                      const row = (tr.children || [])
+                        .filter((c: any) => c.tagName === 'td' || c.tagName === 'th')
+                        .map((c: any) => getMdText(c).trim());
+                      if (row.length) rows.push(row);
+                    });
+                }
+
+                return <TableBlock header={header as any} rows={rows as any} />;
+              } catch (e) {
+                // Fallback: simple wrapper if parsing fails
+                // eslint-disable-next-line no-console
+                console.warn('[Markdown->TableBlock] Failed to convert table, falling back.', e);
+                return (
+                  <div className="my-6 overflow-x-auto not-prose">
+                    <table className="w-full text-sm" />
+                  </div>
+                );
+              }
+            },
           }}
         >
           {md}
@@ -217,8 +394,45 @@ export const BlogContentRenderer: React.FC<BlogContentRendererProps> = (props) =
   };
 
   const renderContent = (item: PreparedItem) => {
+    // Programmatic table support via metadata
+    // Programmatic table support via metadata
+    const tableMeta = (item.metadata as any)?.table;
+    if (
+      tableMeta &&
+      Array.isArray(tableMeta.header) &&
+      Array.isArray(tableMeta.rows)
+    ) {
+      // eslint-disable-next-line no-console
+      console.debug('[BlogContentRenderer] Rendering TableBlock via metadata', {
+        id: item.id,
+        headers: (tableMeta.header || []).length,
+        rows: (tableMeta.rows || []).length
+      });
+      return (
+        <TableBlock
+          key={item.id}
+          header={tableMeta.header as string[]}
+          rows={tableMeta.rows as string[][]}
+        />
+      );
+    }
+
     switch (item.type) {
       case 'text':
+        {
+          const raw = item.content || '';
+          if (hasGfmTable(raw)) {
+            // eslint-disable-next-line no-console
+            console.debug('[BlogContentRenderer] Rendering text item as Markdown due to table', { id: item.id });
+            return renderMarkdown(item);
+          }
+          // eslint-disable-next-line no-console
+          console.debug('[BlogContentRenderer] Rendering TextContent (no table detected)', {
+            id: item.id,
+            length: raw.length,
+            preview: raw.slice(0, 200).replace(/\n/g, '\\n')
+          });
+        }
         return (
           <TextContent
             key={item.id}
@@ -293,6 +507,11 @@ export const BlogContentRenderer: React.FC<BlogContentRendererProps> = (props) =
         );
 
       case 'markdown':
+        // eslint-disable-next-line no-console
+        console.debug('[BlogContentRenderer] Rendering explicit markdown block', {
+          id: item.id,
+          length: (item.content || '').length
+        });
         return renderMarkdown(item);
 
       default:
