@@ -1,19 +1,3 @@
----
-title: "Episode 2: Creating Rich Content"
-series: "Portfolio Tutorial Series"
-episode_number: 2
-date: "2025-09-23"
-type: "episode"
-duration: "20 minutes"
-difficulty: "beginner"
-tags:
-  - "tutorial"
-  - "content"
-  - "markdown"
-prev_episode: "episode-01-setup.md"
-next_episode: "episode-03-organization.md"
----
-
 # Episode 2: Creating Rich Content
 
 Now that you have your portfolio project set up, let's learn how to create compelling content that showcases your work effectively.
@@ -61,7 +45,7 @@ This project demonstrates the core concepts of maintaining a professional portfo
 | Silan CLI  | Content Management | 1.0.0 |
 | Markdown   | Documentation | - |
 | YAML       | Configuration | - |
-
+```
 ## Getting Started
 
 ### Prerequisites
@@ -113,7 +97,6 @@ The project achieves:
 - 📦 **Bundle Size**: 1.2MB compressed
 - 🚀 **Load Time**: < 500ms
 - 📱 **Mobile Score**: 95/100
-```
 
 ### Blog Posts
 
@@ -274,11 +257,3 @@ In Episode 3, we'll cover:
 | `silan new idea NAME` | Create new idea |
 | `silan status` | Check project status |
 | `silan db-sync` | Sync to database |
-
----
-
-**Previous**: [Episode 1: Setting Up Your Portfolio Project](episode-01-setup.md)
-**Next**: Episode 3: Content Organization (Coming Soon)
-
-**Estimated Time**: 20 minutes
-**Difficulty**: Beginner

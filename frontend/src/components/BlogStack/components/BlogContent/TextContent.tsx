@@ -4,7 +4,12 @@ import { Quote, X, MessageCircle } from 'lucide-react';
 import { BlogContent, UserAnnotation, SelectedText } from '../../types/blog';
 import { useTheme } from '../../../ThemeContext';
 import { useLanguage } from '../../../LanguageContext';
-import { renderInlineMarkdown, renderFullMarkdown, hasCompleteMarkdownFormatting, processPlainTextWithBreaks, isFileTreeStructure, FileTreeRenderer } from '../../../../utils/fullMarkdownRenderer';
+import { renderInlineMarkdown, hasCompleteMarkdownFormatting, processPlainTextWithBreaks, isFileTreeStructure, FileTreeRenderer } from '../../../../utils/fullMarkdownRenderer';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeHighlight from 'rehype-highlight';
 
 interface TextContentProps {
   item: BlogContent;
@@ -66,14 +71,8 @@ export const TextContent: React.FC<TextContentProps> = ({
     // Process markdown formatting first
     let processedText = processMarkdownText(text);
     
-    // Check if processed text contains block elements
-    const hasBlockElements = React.isValidElement(processedText) && 
-      (processedText.type === 'div' || 
-       (processedText.props && processedText.props.children && 
-        Array.isArray(processedText.props.children) && 
-        processedText.props.children.some((child: any) => 
-          React.isValidElement(child) && (child.type === 'ul' || child.type === 'ol' || child.type === 'div')
-        )));
+    // Treat any React element (including react-markdown output) as block content
+    const hasBlockElements = React.isValidElement(processedText);
 
     if (relevantAnnotations.length === 0) {
       const result = isFirstParagraph && (typeof processedText === 'string' || React.isValidElement(processedText))
@@ -297,6 +296,80 @@ export const TextContent: React.FC<TextContentProps> = ({
       return <FileTreeRenderer content={text} />;
     }
 
+    // Normalize inline task lists written on one line into proper multiline lists
+    // Example: "Item 1 - [ ] Item 2 - [x] Item 3" -> "- Item 1\n- [ ] Item 2\n- [x] Item 3"
+    if (!text.includes('\n') && /\s-\s(?=\[[ xX]\]\s)/.test(text)) {
+      let normalized = text.replace(/\s-\s(?=\[[ xX]\]\s)/g, '\n- ');
+      if (!/^\s*[-*+]\s/.test(normalized)) {
+        normalized = `- ${normalized}`;
+      }
+      text = normalized;
+    }
+
+    // Convert visual bullets '• ' at start of lines into markdown '- '
+    if (text.includes('\n') && /(\n|^)\s*•\s+/.test(text)) {
+      text = text.replace(/(^|\n)\s*•\s+/g, '$1- ');
+    }
+
+    // Normalize inline unordered list: "A - B - C" -> "- A\n- B\n- C"
+    if (!text.includes('\n')) {
+      const parts = text.split(/\s-\s(?!\[[ xX]\]\s)/); // exclude task-list markers
+      if (parts.length >= 3) {
+        const listText = parts
+          .map((s) => `- ${s.trim().replace(/^[•*+\-]\s*/, '')}`)
+          .join('\n');
+        return (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex as any, rehypeHighlight as any]}
+            components={{
+              a: ({ node, ...props }) => (
+                <a {...props} target="_blank" rel="noopener noreferrer" />
+              ),
+              ul: ({ node, ...props }) => {
+                const isTaskList = (props.className || '').includes('contains-task-list');
+                const cls = `my-4 ${isTaskList ? 'pl-2 list-none' : 'pl-6 list-disc'} ${props.className || ''}`.trim();
+                return <ul {...props} className={cls} />;
+              },
+              li: ({ node, children, ...props }) => (
+                <li {...props} className={`leading-7 mb-1 ${props.className || ''}`.trim()}>
+                  {children}
+                </li>
+              ),
+            }}
+          >
+            {listText}
+          </ReactMarkdown>
+        );
+      }
+    }
+
+    // Normalize inline ordered list: supports "1. A - 2. B", "1) A 2) B", "1、A 2、B"
+    if (!text.includes('\n') && /^\s*\d+[\.)、]\s/.test(text) && /\s(?=\d+[\.)、]\s)/.test(text)) {
+      const listText = text.replace(/\s(?:-\s)?(?=\d+[\.)、]\s)/g, '\n');
+      return (
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex as any, rehypeHighlight as any]}
+          components={{
+            a: ({ node, ...props }) => (
+              <a {...props} target="_blank" rel="noopener noreferrer" />
+            ),
+            ol: ({ node, ...props }) => (
+              <ol {...props} className={`my-4 pl-6 list-decimal ${props.className || ''}`.trim()} />
+            ),
+            li: ({ node, children, ...props }) => (
+              <li {...props} className={`leading-7 mb-1 ${props.className || ''}`.trim()}>
+                {children}
+              </li>
+            ),
+          }}
+        >
+          {listText}
+        </ReactMarkdown>
+      );
+    }
+
     // Enhanced list detection: check for various list patterns
     const listPatterns = [
       /^[-*+]\s+/m,           // Standard markdown lists
@@ -307,15 +380,52 @@ export const TextContent: React.FC<TextContentProps> = ({
 
     const hasListPattern = listPatterns.some(pattern => pattern.test(text));
 
-    // If text contains line breaks OR has list patterns, use full markdown renderer
+    // If text contains line breaks OR has list patterns, render with react-markdown
     if (text.includes('\n') || hasListPattern || text.match(/^[#>]/m) || text.includes('---')) {
-      return renderFullMarkdown(text);
+      return (
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex as any, rehypeHighlight as any]}
+          components={{
+            a: ({ node, ...props }) => (
+              <a {...props} target="_blank" rel="noopener noreferrer" />
+            ),
+            ul: ({ node, ...props }) => {
+              const isTaskList = (props.className || '').includes('contains-task-list');
+              const cls = `my-4 ${isTaskList ? 'pl-2 list-none' : 'pl-6 list-disc'} ${props.className || ''}`.trim();
+              return <ul {...props} className={cls} />;
+            },
+            ol: ({ node, ...props }) => {
+              const isTaskList = (props.className || '').includes('contains-task-list');
+              const cls = `my-4 ${isTaskList ? 'pl-2 list-none' : 'pl-6 list-decimal'} ${props.className || ''}`.trim();
+              return <ol {...props} className={cls} />;
+            },
+            li: ({ node, children, ...props }) => {
+              const isTaskItem = (props.className || '').includes('task-list-item');
+              const cls = `leading-7 mb-1 ${isTaskItem ? 'list-none ml-0' : ''} ${props.className || ''}`.trim();
+              return <li {...props} className={cls}>{children}</li>;
+            },
+            input: ({ node, ...props }) => (
+              <input
+                {...props}
+                disabled
+                readOnly
+                className={`mr-2 align-middle ${props.className || ''}`.trim()}
+                style={{ accentColor: 'var(--color-primary, #0066FF)' }}
+              />
+            ),
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      );
     }
 
     // Check if text has markdown formatting for inline elements
     if (hasCompleteMarkdownFormatting(text)) {
       return renderInlineMarkdown(text);
     }
+
 
     // Avoid over-aggressive inline list conversion: if text already looks like a single bullet
     // or contains URLs/code-like patterns, do not rewrite it.
@@ -330,7 +440,19 @@ export const TextContent: React.FC<TextContentProps> = ({
         const parts = text.split(/ - (?=[A-Z][^-:]*:)/);
         const items = parts.map(part => part.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
         const listText = items.map(item => `- ${item}`).join('\n');
-        return renderFullMarkdown(listText);
+        return (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex as any, rehypeHighlight as any]}
+            components={{
+              a: ({ node, ...props }) => (
+                <a {...props} target="_blank" rel="noopener noreferrer" />
+              ),
+            }}
+          >
+            {listText}
+          </ReactMarkdown>
+        );
       }
     }
 

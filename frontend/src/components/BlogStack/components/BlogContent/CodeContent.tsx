@@ -1,24 +1,20 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { BlogContent } from '../../types/blog';
 import { useTheme } from '../../../ThemeContext';
 import { useLanguage } from '../../../LanguageContext';
 import { Copy, Check } from 'lucide-react';
-import Prism from 'prismjs';
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-markup';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-yaml';
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-ini';
-import 'prismjs/components/prism-docker';
-import 'prismjs/components/prism-powershell';
+import { basicSetup } from 'codemirror';
+import { EditorView } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { javascript } from '@codemirror/lang-javascript';
+import { python } from '@codemirror/lang-python';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import { json } from '@codemirror/lang-json';
+import { markdown } from '@codemirror/lang-markdown';
+import { sql } from '@codemirror/lang-sql';
+import { dracula } from '@uiw/codemirror-theme-dracula';
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 
 interface CodeContentProps {
   item: BlogContent;
@@ -30,36 +26,67 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
   const { isDarkMode } = useTheme();
   const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<EditorView | null>(null);
 
-  // Normalize code content to avoid odd Unicode or BOM artifacts
+  // Normalize code content
   const code = useMemo(() => {
-    let text = (item.content ?? '').replace(/^\uFEFF/, ''); // strip BOM
-    // Normalize line endings
+    let text = (item.content ?? '').replace(/^\uFEFF/, '');
     text = text.replace(/\r\n?/g, '\n');
     return text;
   }, [item.content]);
 
-  const mapLanguage = (lang?: string): string => {
+  const getLanguageExtension = (lang?: string) => {
     const s = (lang || '').toLowerCase();
-    if (['bash', 'sh', 'shell'].includes(s)) return 'bash';
-    if (['js', 'javascript', 'node'].includes(s)) return 'javascript';
-    if (['ts', 'typescript'].includes(s)) return 'typescript';
-    if (['jsx'].includes(s)) return 'jsx';
-    if (['tsx'].includes(s)) return 'tsx';
-    if (['py', 'python'].includes(s)) return 'python';
-    if (['json'].includes(s)) return 'json';
-    if (['yml', 'yaml'].includes(s)) return 'yaml';
-    if (['md', 'markdown'].includes(s)) return 'markdown';
-    if (['sql'].includes(s)) return 'sql';
-    if (['ini', 'cfg', 'conf'].includes(s)) return 'ini';
-    if (['docker', 'dockerfile'].includes(s)) return 'docker';
-    if (['ps', 'ps1', 'powershell'].includes(s)) return 'powershell';
-    if (['html', 'xml'].includes(s)) return 'markup';
-    if (['css'].includes(s)) return 'css';
-    return 'bash';
+    if (['js', 'javascript', 'node', 'jsx', 'ts', 'typescript', 'tsx'].includes(s)) {
+      return javascript({ jsx: true, typescript: s.includes('ts') });
+    }
+    if (['py', 'python'].includes(s)) return python();
+    if (['html', 'xml', 'markup'].includes(s)) return html();
+    if (['css'].includes(s)) return css();
+    if (['json'].includes(s)) return json();
+    if (['md', 'markdown'].includes(s)) return markdown();
+    if (['sql'].includes(s)) return sql();
+    return javascript(); // default
   };
 
-  const langId = useMemo(() => mapLanguage(item.language), [item.language]);
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    // Clean up previous editor
+    if (viewRef.current) {
+      viewRef.current.destroy();
+    }
+
+    const extensions = [
+      basicSetup,
+      getLanguageExtension(item.language),
+      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      EditorView.editable.of(false),
+      EditorView.lineWrapping,
+      EditorState.readOnly.of(true),
+    ];
+
+    if (isDarkMode) {
+      extensions.push(dracula);
+    }
+
+    const state = EditorState.create({
+      doc: code,
+      extensions,
+    });
+
+    const view = new EditorView({
+      state,
+      parent: editorRef.current,
+    });
+
+    viewRef.current = view;
+
+    return () => {
+      view.destroy();
+    };
+  }, [code, item.language, isDarkMode]);
 
   const handleCopyCode = async () => {
     try {
@@ -83,20 +110,20 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
                 {item.language || 'TEXT'}
               </span>
             </div>
-            
+
             {/* Listing Number */}
             <span className="text-xs text-theme-text-tertiary font-sans">
               Listing {index + 1}
             </span>
           </div>
-          
+
           {/* Copy Button */}
           <button
             onClick={handleCopyCode}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium 
-                       text-theme-text-secondary hover:text-theme-text-primary 
-                       hover:bg-theme-surface-secondary rounded-lg transition-all duration-200 
-                       focus:outline-none focus:ring-2 focus:ring-theme-focus-ring 
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium
+                       text-theme-text-secondary hover:text-theme-text-primary
+                       hover:bg-theme-surface-secondary rounded-lg transition-all duration-200
+                       focus:outline-none focus:ring-2 focus:ring-theme-focus-ring
                        focus:ring-offset-1 group"
             aria-label={language === 'en' ? 'Copy code to clipboard' : '复制代码到剪贴板'}
           >
@@ -117,48 +144,16 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
             )}
           </button>
         </div>
-        
-        {/* Code Block */}
-        <div className="relative">
-          <pre
-            className="p-0 overflow-x-auto text-sm leading-relaxed scrollbar-thin scrollbar-thumb-theme-accent/20 scrollbar-track-transparent"
-            aria-label={item.language || 'code'}
-            style={{
-              fontFamily: 'JetBrains Mono, Monaco, Menlo, "Ubuntu Mono", Consolas, monospace',
-              fontVariantLigatures: 'none', // avoid unexpected ligatures
-              tabSize: 2,
-              margin: 0,
-            }}
-          >
-            <code className={`language-${langId} ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-              {/* Render per-line with Prism highlight to keep line numbers aligned */}
-              {code.split('\n').map((line, i) => (
-                <div key={i} className="flex items-start">
-                  <span
-                    className="select-none text-right w-10 pr-3 mr-2 text-xs text-theme-text-tertiary hidden lg:block"
-                    style={{ lineHeight: '1.7' }}
-                    aria-hidden
-                  >
-                    {i + 1}
-                  </span>
-                  <span
-                    className="whitespace-pre block px-6 py-1"
-                    style={{ lineHeight: '1.7' }}
-                    dangerouslySetInnerHTML={{ __html: Prism.highlight(line || ' ', Prism.languages[langId] || Prism.languages.markup, langId) }}
-                  />
-                </div>
-              ))}
-            </code>
-          </pre>
-        </div>
-        
+
+        {/* CodeMirror Editor */}
+        <div className="relative" ref={editorRef} />
+
         {/* Caption */}
         {item.caption && (
           <figcaption className="p-6 bg-theme-surface-elevated border-t border-theme-card-border">
             <div className="text-center space-y-2">
-              {/* Caption Text */}
               <p className="text-sm text-theme-text-secondary leading-relaxed max-w-2xl mx-auto font-normal"
-                 style={{ 
+                 style={{
                    fontFamily: 'Georgia, "Times New Roman", Charter, serif'
                  }}>
                 {item.caption}
@@ -169,4 +164,4 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, index, isWideScr
       </div>
     </figure>
   );
-}; 
+};

@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 export interface BlogContent {
   id: string;
-  type: 'text' | 'image' | 'video' | 'quote' | 'code' | 'heading';
+  type: 'text' | 'image' | 'video' | 'quote' | 'code' | 'heading' | 'markdown';
   content: string;
   metadata?: Record<string, any>;
   children?: ReactNode;
