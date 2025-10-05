@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Avatar, Tag, Empty, Button, Spin } from 'antd';
-import { MessageSquare, Building2, Briefcase, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { MessageSquare, Building2, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import { ContactMessage } from '../../types/contact';
 import { useLanguage } from '../LanguageContext';
+import { listIdeaComments, IdeaCommentData } from '../../api/ideas/ideaApi';
+import { getClientFingerprint } from '../../utils/fingerprint';
 
 const PublicMessagesWall: React.FC = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -12,16 +14,60 @@ const PublicMessagesWall: React.FC = () => {
 
   useEffect(() => {
     fetchMessages();
-  }, []);
+  }, [language]);
 
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/v1/contact/messages/public');
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.items || []);
-      }
+      const fingerprint = getClientFingerprint();
+
+      // Fetch both general and job type comments from the unified API
+      const [generalComments, jobComments] = await Promise.all([
+        listIdeaComments('contact-page', 'general', fingerprint, undefined, language as 'en' | 'zh'),
+        listIdeaComments('contact-page', 'job', fingerprint, undefined, language as 'en' | 'zh'),
+      ]);
+
+      // Transform IdeaCommentData to ContactMessage format
+      const transformComment = (comment: IdeaCommentData): ContactMessage => {
+        // Parse metadata from content if it exists (for job type)
+        let content = comment.content;
+        let metadata: any = {};
+        const metadataMatch = content.match(/\n\n__METADATA__(.+)$/);
+        if (metadataMatch) {
+          try {
+            metadata = JSON.parse(metadataMatch[1]);
+            content = content.replace(/\n\n__METADATA__.+$/, '');
+          } catch (e) {
+            // If parsing fails, use content as is
+          }
+        }
+
+        return {
+          id: comment.id,
+          type: comment.type as 'general' | 'job',
+          author_name: comment.author_name,
+          author_avatar: comment.author_avatar_url,
+          author_email: '',
+          message: content,
+          subject: metadata.subject || '',
+          company: metadata.company,
+          position: metadata.position,
+          recruiter_name: metadata.recruiter_name,
+          recruiter_title: metadata.recruiter_title,
+          consentCompanyLogo: metadata.consentCompanyLogo || false,
+          isPublic: metadata.isPublic !== false,
+          status: 'read' as const,
+          createdAt: comment.created_at,
+          updatedAt: comment.created_at,
+          replies: undefined, // Flatten replies for display
+        };
+      };
+
+      const allMessages = [...generalComments, ...jobComments]
+        .map(transformComment)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setMessages(allMessages);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
     } finally {
@@ -30,8 +76,6 @@ const PublicMessagesWall: React.FC = () => {
   };
 
   const displayMessages = showAll ? messages : messages.slice(0, 6);
-  const jobMessages = messages.filter(m => m.type === 'job').length;
-  const companiesCount = new Set(messages.filter(m => m.company).map(m => m.company)).size;
 
   if (loading) {
     return (
@@ -42,131 +86,119 @@ const PublicMessagesWall: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats Header */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="text-center bg-theme-surface-elevated border-0" style={{ borderRadius: '16px' }}>
-          <div className="flex flex-col items-center">
-            <TrendingUp size={32} className="text-theme-accent mb-2" />
-            <div className="text-3xl font-bold text-theme-primary">{messages.length}</div>
-            <div className="text-sm text-theme-secondary">
-              {language === 'en' ? 'Total Messages' : '总留言数'}
-            </div>
-          </div>
-        </Card>
-
-        <Card className="text-center bg-theme-surface-elevated border-0" style={{ borderRadius: '16px' }}>
-          <div className="flex flex-col items-center">
-            <Briefcase size={32} className="text-theme-accent mb-2" />
-            <div className="text-3xl font-bold text-theme-primary">{jobMessages}</div>
-            <div className="text-sm text-theme-secondary">
-              {language === 'en' ? 'Job Opportunities' : '工作机会'}
-            </div>
-          </div>
-        </Card>
-
-        <Card className="text-center bg-theme-surface-elevated border-0" style={{ borderRadius: '16px' }}>
-          <div className="flex flex-col items-center">
-            <Building2 size={32} className="text-theme-success mb-2" />
-            <div className="text-3xl font-bold text-theme-primary">{companiesCount}</div>
-            <div className="text-sm text-theme-secondary">
-              {language === 'en' ? 'Companies' : '家公司'}
-            </div>
-          </div>
-        </Card>
-      </div>
-
+    <div className="space-y-4">
       {/* Messages Title */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-bold text-theme-primary flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-primary">
-            <MessageSquare size={24} className="text-white" />
-          </div>
-          {language === 'en' ? 'Recent Messages' : '最新留言'}
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-gradient-primary">
+          <MessageSquare size={20} className="text-white" />
+        </div>
+        <h3 className="text-lg font-semibold text-theme-primary">
+          {language === 'en' ? 'Public Messages' : '公开留言'}
         </h3>
       </div>
 
       {/* Messages Grid */}
       {displayMessages.length === 0 ? (
-        <Card className="card-interactive" style={{ borderRadius: '20px' }}>
+        <Card className="card-interactive border-0" style={{ borderRadius: '12px' }}>
           <Empty
-            image={<MessageSquare size={64} className="mx-auto text-theme-tertiary" />}
+            image={<MessageSquare size={48} className="mx-auto text-theme-tertiary" />}
             description={
-              <span className="text-theme-secondary">
+              <span className="text-theme-secondary text-sm">
                 {language === 'en' ? 'No public messages yet' : '还没有公开留言'}
               </span>
             }
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-3">
           {displayMessages.map((msg) => (
             <Card
               key={msg.id}
-              className="card-interactive"
-              style={{ borderRadius: '20px' }}
-              bodyStyle={{ padding: '20px' }}
+              className="card-interactive border-0"
+              style={{ borderRadius: '12px' }}
+              styles={{ body: { padding: '16px' } }}
             >
-              <div className="space-y-3">
-                {/* Author */}
-                <div className="flex items-center gap-3">
-                  <Avatar
-                    size={48}
-                    src={msg.author_avatar}
-                    className="shadow-theme-md"
-                  >
-                    {msg.author_name.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-theme-primary truncate">
+              <div className="flex items-start gap-3">
+                {/* Author Avatar */}
+                <Avatar
+                  size={40}
+                  src={msg.author_avatar}
+                  className="flex-shrink-0"
+                >
+                  {msg.author_name.charAt(0).toUpperCase()}
+                </Avatar>
+
+                {/* Message Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Header with name and type */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-theme-primary text-sm truncate">
                       {msg.author_name}
-                    </div>
-                    {msg.type === 'job' && msg.company && msg.consentCompanyLogo && (
-                      <div className="text-xs text-theme-secondary flex items-center gap-1 truncate">
-                        <Building2 size={12} />
-                        {msg.company}
-                      </div>
+                    </span>
+                    {msg.type === 'job' && (
+                      <Tag className="rounded-full px-2 py-0 text-xs bg-theme-warning text-white border-0">
+                        Job
+                      </Tag>
                     )}
-                  </div>
-                  {msg.type === 'job' && (
-                    <Tag className="rounded-full px-3 bg-theme-warning text-white border-theme-warning">
-                      <Briefcase size={12} className="inline mr-1" />
-                      Job
-                    </Tag>
-                  )}
-                </div>
-
-                {/* Subject */}
-                <div className="bg-theme-surface-elevated backdrop-blur-sm rounded-xl p-3">
-                  <div className="font-semibold text-theme-primary mb-1 line-clamp-1">
-                    {msg.subject}
-                  </div>
-                  <div className="text-sm text-theme-secondary line-clamp-2">
-                    {msg.message}
-                  </div>
-                </div>
-
-                {/* Position (for job type) */}
-                {msg.type === 'job' && msg.position && (
-                  <div className="flex items-center gap-2 text-theme-secondary text-sm">
-                    <Briefcase size={14} />
-                    <span className="truncate">{msg.position}</span>
-                  </div>
-                )}
-
-                {/* Replies count */}
-                {msg.replies && msg.replies.length > 0 && (
-                  <div className="flex items-center gap-2 text-theme-tertiary text-xs">
-                    <MessageSquare size={14} />
-                    <span>
-                      {msg.replies.length} {language === 'en' ? 'replies' : '条回复'}
+                    <span className="text-xs text-theme-tertiary ml-auto">
+                      {new Date(msg.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                )}
 
-                {/* Date */}
-                <div className="text-xs text-theme-tertiary">
-                  {new Date(msg.createdAt).toLocaleDateString()}
+                  {/* Job-specific information */}
+                  {msg.type === 'job' && (
+                    <>
+                      {/* Recruiter info */}
+                      {msg.recruiter_title && (
+                        <div className="text-xs text-theme-tertiary mb-2">
+                          {msg.recruiter_title}
+                        </div>
+                      )}
+
+                      {/* Position Title */}
+                      {msg.position && (
+                        <div className="text-sm font-semibold text-theme-primary mb-2 flex items-center gap-2">
+                          <Briefcase size={14} className="text-theme-accent" />
+                          {msg.position}
+                        </div>
+                      )}
+
+                      {/* Company info */}
+                      {msg.company && msg.consentCompanyLogo && (
+                        <div className="text-xs text-theme-secondary flex items-center gap-1.5 mb-2">
+                          <Building2 size={12} className="text-theme-accent" />
+                          <span className="font-medium">{msg.company}</span>
+                        </div>
+                      )}
+
+                      {/* Job Description */}
+                      <div className="text-xs text-theme-secondary line-clamp-3 mb-1">
+                        <span className="font-medium">{language === 'en' ? 'Description: ' : '职位描述：'}</span>
+                        {msg.message}
+                      </div>
+                    </>
+                  )}
+
+                  {/* General message subject (for non-job messages) */}
+                  {msg.type === 'general' && msg.subject && (
+                    <div className="text-sm text-theme-primary font-medium mb-1">
+                      {msg.subject}
+                    </div>
+                  )}
+
+                  {/* Message content for general messages */}
+                  {msg.type === 'general' && (
+                    <div className="text-xs text-theme-secondary line-clamp-3">
+                      {msg.message}
+                    </div>
+                  )}
+
+                  {msg.replies && msg.replies.length > 0 && (
+                    <div className="flex items-center gap-1 text-theme-tertiary text-xs mt-2">
+                      <MessageSquare size={12} />
+                      <span>{msg.replies.length} {language === 'en' ? 'replies' : '回复'}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>

@@ -29,6 +29,8 @@ export interface ContactMessage {
   company?: string;
   company_email?: string;
   position?: string;
+  recruiter_name?: string;              // 招聘者姓名
+  recruiter_title?: string;             // 招聘者职位
   send_resume?: boolean;
 
   // Privacy settings
