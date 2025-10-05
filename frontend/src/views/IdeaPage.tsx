@@ -79,19 +79,19 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
     [language]
   );
 
-  // 返回的是“文字色 + 背景色”组合，既当徽章也当小图标底色
+  // 返回的是"文字色 + 背景色"组合，既当徽章也当小图标底色
   const getStatusClass = useCallback((status: IdeaStatus) => {
     switch (status) {
       case "published":
         return "text-theme-success bg-theme-success-20";
       case "validating":
-        return "text-theme-600 bg-theme-100";
+        return "text-theme-accent bg-theme-primary-20";
       case "experimenting":
-        return "text-purple-600 bg-purple-100";
+        return "text-theme-accent bg-theme-primary-20";
       case "hypothesis":
         return "text-theme-warning bg-theme-warning-20";
       case "concluded":
-        return "text-gray-600 bg-gray-100";
+        return "text-theme-secondary bg-theme-surface-elevated";
       default:
         return "text-theme-accent bg-theme-primary-20";
     }
@@ -175,13 +175,13 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onView }) => {
                   idea.status === "published"
                     ? "text-theme-success"
                     : idea.status === "validating"
-                    ? "text-theme-600"
+                    ? "text-theme-accent"
                     : idea.status === "experimenting"
-                    ? "text-purple-600"
+                    ? "text-theme-accent"
                     : idea.status === "hypothesis"
                     ? "text-theme-warning"
                     : idea.status === "concluded"
-                    ? "text-gray-600"
+                    ? "text-theme-secondary"
                     : "text-theme-accent"
                 }
               />
@@ -439,10 +439,10 @@ const IdeaPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-theme-primary">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6  ">
             {language === 'en' ? 'Ideas' : '想法'}
           </h1>
-          <p className="text-xl max-w-3xl mx-auto text-theme-secondary">
+          <p className="text-xl md:text-2xl max-w-3xl mx-auto text-theme-secondary font-light">
             {language === 'en'
               ? "A collection of my thoughts, concepts, and potential projects in various stages of development."
               : "我在各个开发阶段的想法、概念和潜在项目的集合。"

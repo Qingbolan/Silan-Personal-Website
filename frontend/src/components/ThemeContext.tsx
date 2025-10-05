@@ -3,53 +3,53 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 // Vue.js inspired color scheme
 const colorSchemes = {
   light: {
-    // Primary colors - Vue green
+    // Primary colors - Simple green (same as dark)
     primary: '#42b883',         // Vue green
-    primaryHover: '#369870',    // Darker Vue green
-    primaryLight: '#f0f9ff',    // Very light green background
-    
-    // Secondary colors - Vue dark blue
-    secondary: '#35495e',       // Vue dark blue
-    secondaryHover: '#2c3e50',  // Darker Vue blue
-    secondaryLight: '#f8fafc',  // Light gray
-    
-    // Background colors - Clean and minimal
+    primaryHover: '#4fc08d',    // Lighter green (same as dark)
+    primaryLight: '#e8f5f0',    // Very light green background
+
+    // Secondary colors - Simple gray
+    secondary: '#6b7280',       // Medium gray
+    secondaryHover: '#4b5563',  // Darker gray
+    secondaryLight: '#f3f4f6',  // Light gray
+
+    // Background colors - Clean white
     background: '#ffffff',       // Pure white
-    backgroundSecondary: '#f8fafc',   // Very light gray
-    backgroundTertiary: '#f1f5f9',    // Light gray
-    
-    // Text colors - High contrast
-    textPrimary: '#2c3e50',     // Vue dark blue for text
-    textSecondary: '#606266',   // Medium gray
-    textTertiary: '#909399',    // Light gray
-    
-    // Accent colors
-    accent: '#42b883',          // Vue green accent
-    accentHover: '#369870',     // Darker Vue green
-    
-    // Status colors
-    success: '#67c23a',         // Vue success green
-    warning: '#e6a23c',         // Vue warning yellow
-    error: '#f56c6c',           // Vue error red
-    
-    // Gradients - Vue style
-    gradientPrimary: 'linear-gradient(135deg, #42b883 0%, #35495e 100%)',
-    gradientSecondary: 'linear-gradient(135deg, #67c23a 0%, #42b883 100%)',
-    gradientAccent: 'linear-gradient(135deg, #35495e 0%, #2c3e50 100%)',
-    
-    // Surface colors
+    backgroundSecondary: '#f9fafb',   // Very light gray
+    backgroundTertiary: '#f3f4f6',    // Light gray
+
+    // Text colors - Simple grayscale
+    textPrimary: '#111827',     // Almost black
+    textSecondary: '#6b7280',   // Medium gray
+    textTertiary: '#9ca3af',    // Light gray
+
+    // Accent colors - Green (consistent with dark)
+    accent: '#42b883',          // Vue green
+    accentHover: '#4fc08d',     // Lighter green
+
+    // Status colors - Same as dark
+    success: '#42b883',         // Green
+    warning: '#e6a23c',         // Yellow
+    error: '#f56c6c',           // Red
+
+    // Gradients - Simple green gradients
+    gradientPrimary: 'linear-gradient(135deg, #42b883 0%, #4fc08d 100%)',
+    gradientSecondary: 'linear-gradient(135deg, #34d399 0%, #42b883 100%)',
+    gradientAccent: 'linear-gradient(135deg, #42b883 0%, #10b981 100%)',
+
+    // Surface colors - Clean white and gray
     cardBackground: '#ffffff',
-    cardBorder: '#ebeef5',      // Vue border gray
-    surface: '#f8fafc',         
-    surfaceSecondary: '#f1f5f9', 
-    surfaceTertiary: '#ebeef5',  
+    cardBorder: '#e5e7eb',      // Light gray border
+    surface: '#f9fafb',
+    surfaceSecondary: '#f3f4f6',
+    surfaceTertiary: '#e5e7eb',
     surfaceElevated: '#ffffff',
-    
+
     // Interactive states
-    hoverBackground: '#f1f5f9',
-    activeBackground: '#ebeef5',
+    hoverBackground: '#f3f4f6',
+    activeBackground: '#e5e7eb',
     focusRing: '#42b883',
-    
+
     // Shadows
     shadowSm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
     shadowMd: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',

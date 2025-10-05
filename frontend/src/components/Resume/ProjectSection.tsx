@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Github, Linkedin, Mail, MapPin, Phone, Globe } from 'lucide-react';
+import GradientText from '../ui/text/gradient-text';
 
 interface ContactInfo {
   type: string;
@@ -74,14 +75,15 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({
 
         {/* Title */}
         {title && (
-          <motion.h2
-            className="text-lg sm:text-xl lg:text-2xl mb-6 text-gradient font-medium"
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            {title}
-          </motion.h2>
+            <GradientText className="text-lg sm:text-xl lg:text-2xl mb-6 font-medium">
+              {title}
+            </GradientText>
+          </motion.div>
         )}
 
         {/* Current Status */}
