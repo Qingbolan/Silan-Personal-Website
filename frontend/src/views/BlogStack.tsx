@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, User, ArrowRight, Play, Video, List, Grid, BookOpen, Tag as TagIcon } from 'lucide-react';
-import { Card, Input, Tag, Row, Col, Alert, Spin, Empty } from 'antd';
+import { Card, Input, Row, Col, Alert, Spin, Empty } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useTheme } from '../components/ThemeContext';
 import { useLanguage } from '../components/LanguageContext';
@@ -306,19 +306,18 @@ const BlogCard: React.FC<BlogCardProps> = ({
           {language === 'zh' && post.summaryZh ? post.summaryZh : post.summary}
         </p>
 
-        {/* Enhanced tags with better spacing and typography */}
+        {/* Post tags */}
         <div className={`flex flex-wrap gap-2 mb-4 ${isWideLayout ? 'gap-3' : 'gap-2'}`}>
           {post.tags.slice(0, isWideLayout ? 6 : 4).map((tag, tagIndex) => (
-            <motion.span
+            <span
               key={tagIndex}
-              className={`px-3 py-1 rounded-full font-medium tag-default ${
+              className={`px-3 py-1 rounded-full font-medium border ${
                 isWideLayout ? 'text-sm' : 'text-xs'
-              }`}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
+              } border-theme-card-border text-theme-secondary hover:text-theme-primary transition-colors duration-200`}
+              title={tag}
             >
               {tag}
-            </motion.span>
+            </span>
           ))}
           {post.tags.length > (isWideLayout ? 6 : 4) && (
             <span className={`px-3 py-1 rounded-full font-medium text-theme-tertiary ${
@@ -378,7 +377,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
       <Card
         hoverable
         cover={cardCover}
-        className="blog-card-custom"
+        className="blog-card-custom border border-theme-card-border bg-theme-card-background"
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -389,6 +388,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
           overflow: 'hidden',
           height: '100%'
         }}
+        styles={{ body: { background: 'var(--color-cardBackground)' } }}
       >
         {cardContent}
       </Card>
@@ -404,39 +404,34 @@ interface TagFilterProps {
 
 const TagFilter: React.FC<TagFilterProps> = ({ tag, active, onClick }) => {
   return (
-    <motion.div
+    <motion.button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-theme-primary ring-offset-theme-background filter-chip ${
+        active ? 'active' : ''
+      }`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
+      aria-pressed={active}
+      type="button"
     >
-      <Tag.CheckableTag
-        checked={active}
-        onChange={onClick}
-        style={{ 
-          borderRadius: '12px',
-          padding: '4px 16px',
-          fontSize: '14px',
-          fontWeight: 500
-        }}
-      >
-        {tag}
-      </Tag.CheckableTag>
-    </motion.div>
+      {tag}
+    </motion.button>
   );
 };
 
 const BlogStack: React.FC = () => {
-  const [posts, setPosts] = useState<BlogData[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<BlogData[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string>('All');
-  const [selectedType, setSelectedType] = useState<string>('All');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const { colors } = useTheme();
   const { language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [posts, setPosts] = useState<BlogData[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<BlogData[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string>(() => (language === 'en' ? 'All' : '全部'));
+  const [selectedType, setSelectedType] = useState<string>(() => (language === 'en' ? 'All' : '全部'));
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Set CSS variables based on current theme
   useEffect(() => {
@@ -455,7 +450,7 @@ const BlogStack: React.FC = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const typeParam = searchParams.get('type');
-    
+    const allLabel = language === 'en' ? 'All' : '全部';
     if (typeParam) {
       // Map category filter keys to display names
       const typeMap: Record<string, string> = {
@@ -463,11 +458,19 @@ const BlogStack: React.FC = () => {
         'vlog': language === 'en' ? 'Videos' : '视频',
         'episode': language === 'en' ? 'Series' : '系列'
       };
-      
-      const displayType = typeMap[typeParam] || (language === 'en' ? 'All' : '全部');
+      const displayType = typeMap[typeParam] || allLabel;
       setSelectedType(displayType);
+    } else {
+      setSelectedType(allLabel);
     }
   }, [location.search, language]);
+
+  // Keep default selection in sync with language
+  useEffect(() => {
+    const allLabel = language === 'en' ? 'All' : '全部';
+    setSelectedTag(allLabel);
+    // selectedType is handled in the URL effect above
+  }, [language]);
 
   // Load posts
   useEffect(() => {
@@ -586,7 +589,7 @@ const BlogStack: React.FC = () => {
 
   return (
     <motion.div
-      className="min-h-screen py-20 "
+      className="min-h-screen py-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -631,7 +634,7 @@ const BlogStack: React.FC = () => {
           </div>
 
           {/* Content Type Filters */}
-          <div className="flex flex-wrap justify-center gap-3 mb-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <div className="flex items-center space-x-2 mb-2">
               <Grid size={16} className="text-theme-secondary" />
               <span className="text-sm font-medium text-theme-secondary">
@@ -651,7 +654,7 @@ const BlogStack: React.FC = () => {
           </div>
 
           {/* Tag Filters */}
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-4">
             <div className="flex items-center space-x-2 mb-2">
               <TagIcon size={16} className="text-theme-secondary" />
               <span className="text-sm font-medium text-theme-secondary">
