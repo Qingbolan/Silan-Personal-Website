@@ -141,7 +141,7 @@ const InteractiveContactPageContent: React.FC = () => {
           }
         />
 
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 [&>*]:self-start">
           {/* Left — contact form. */}
           <Card>
             <CardContent>
