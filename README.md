@@ -1,17 +1,10 @@
-# Silan Viking
+# Silan Viking -- Research Publishing Workspace
 
-**Turn one research update into a current public presence.**
+**AI is now in the loop of research—from related-work discovery to paper understanding and peer review. Researchers therefore need an academic presence that is accurate, verifiable, and AI-native.**
 
-Silan Viking is a local-first research publishing workspace for technical
-researchers. It connects research notes, articles, project pages, résumé
-evidence, and AI/search metadata in one owner-reviewed workflow, then verifies
-what actually reached the web.
+Silan Viking is a local-first research publishing workspace for technical researchers. It connects research notes, articles, project pages, résumé evidence, and AI/search metadata in one owner-reviewed workflow—controlling both how research is indexed and how it is semantically represented across search engines and AI systems.
 
-A research result should not spend weeks trapped in notes while the project
-page, résumé, and public explanation stay stale. The product starts from that
-concrete maintenance problem rather than from website generation: capture the
-result once, keep each public form honest, and preserve the evidence and review
-history around it.
+Capture a research update once. Keep every public representation current, evidence-backed, and understandable to both people and AI.
 
 ![Silan Viking dashboard showing local/deployed version status, human visits, and crawler requests](docs/images/silan-viking-dashboard.png)
 
