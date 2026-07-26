@@ -5,65 +5,193 @@
 //! command arguments, or CLI output.
 
 use silan_viking_app::{
-    CredentialProfile, GitHubOAuthCredentials, GoogleOAuthClientId, OpenAiApiKey,
-    OpenAiCredentialVerifier, GITHUB_OAUTH_KEYCHAIN_ACCOUNT, GITHUB_OAUTH_KEYCHAIN_SERVICE,
+    CredentialProfile, DeepSeekApiKey, DeepSeekCredentialVerifier, GitHubOAuthCredentials,
+    GoogleOAuthClientId, OpenAiApiKey, OpenAiCredentialVerifier, DEEPSEEK_KEYCHAIN_ACCOUNT,
+    DEEPSEEK_KEYCHAIN_SERVICE, GITHUB_OAUTH_KEYCHAIN_ACCOUNT, GITHUB_OAUTH_KEYCHAIN_SERVICE,
     GOOGLE_OAUTH_KEYCHAIN_ACCOUNT, GOOGLE_OAUTH_KEYCHAIN_SERVICE, OPENAI_KEYCHAIN_ACCOUNT,
     OPENAI_KEYCHAIN_SERVICE,
 };
+use std::env;
 
-pub fn openai_set() -> Result<(), String> {
-    let secret = rpassword::prompt_password("OpenAI API Key: ")
+trait ApiCredentialProvider {
+    type Key;
+
+    const SLUG: &'static str;
+    const DISPLAY_NAME: &'static str;
+    const ENVIRONMENT_VARIABLE: &'static str;
+    const KEYCHAIN_SERVICE: &'static str;
+    const KEYCHAIN_ACCOUNT: &'static str;
+
+    fn parse(secret: String) -> Result<Self::Key, String>;
+    fn expose_secret(key: &Self::Key) -> &str;
+    fn verify(key: &Self::Key) -> Result<Option<String>, String>;
+}
+
+struct OpenAiProvider;
+
+impl ApiCredentialProvider for OpenAiProvider {
+    type Key = OpenAiApiKey;
+
+    const SLUG: &'static str = "openai";
+    const DISPLAY_NAME: &'static str = "OpenAI";
+    const ENVIRONMENT_VARIABLE: &'static str = "OPENAI_API_KEY";
+    const KEYCHAIN_SERVICE: &'static str = OPENAI_KEYCHAIN_SERVICE;
+    const KEYCHAIN_ACCOUNT: &'static str = OPENAI_KEYCHAIN_ACCOUNT;
+
+    fn parse(secret: String) -> Result<Self::Key, String> {
+        OpenAiApiKey::parse(secret).map_err(|error| error.to_string())
+    }
+
+    fn expose_secret(key: &Self::Key) -> &str {
+        key.expose_secret()
+    }
+
+    fn verify(key: &Self::Key) -> Result<Option<String>, String> {
+        OpenAiCredentialVerifier::default()
+            .verify(key)
+            .map(|verification| verification.request_id)
+            .map_err(|error| error.to_string())
+    }
+}
+
+struct DeepSeekProvider;
+
+impl ApiCredentialProvider for DeepSeekProvider {
+    type Key = DeepSeekApiKey;
+
+    const SLUG: &'static str = "deepseek";
+    const DISPLAY_NAME: &'static str = "DeepSeek";
+    const ENVIRONMENT_VARIABLE: &'static str = "DEEPSEEK_API_KEY";
+    const KEYCHAIN_SERVICE: &'static str = DEEPSEEK_KEYCHAIN_SERVICE;
+    const KEYCHAIN_ACCOUNT: &'static str = DEEPSEEK_KEYCHAIN_ACCOUNT;
+
+    fn parse(secret: String) -> Result<Self::Key, String> {
+        DeepSeekApiKey::parse(secret).map_err(|error| error.to_string())
+    }
+
+    fn expose_secret(key: &Self::Key) -> &str {
+        key.expose_secret()
+    }
+
+    fn verify(key: &Self::Key) -> Result<Option<String>, String> {
+        DeepSeekCredentialVerifier::default()
+            .verify(key)
+            .map(|verification| verification.request_id)
+            .map_err(|error| error.to_string())
+    }
+}
+
+fn api_key<P: ApiCredentialProvider>() -> Result<P::Key, String> {
+    if let Ok(secret) = env::var(P::ENVIRONMENT_VARIABLE) {
+        return P::parse(secret);
+    }
+    let secret = load_secret(P::KEYCHAIN_SERVICE, P::KEYCHAIN_ACCOUNT)?.ok_or_else(|| {
+        format!(
+            "{} API key is not configured; set {} or run `silan credentials {} set`",
+            P::DISPLAY_NAME,
+            P::ENVIRONMENT_VARIABLE,
+            P::SLUG,
+        )
+    })?;
+    P::parse(secret)
+}
+
+fn set<P: ApiCredentialProvider>() -> Result<(), String> {
+    let secret = rpassword::prompt_password(format!("{} API Key: ", P::DISPLAY_NAME))
         .map_err(|error| format!("could not read API key: {error}"))?;
-    let key = OpenAiApiKey::parse(secret).map_err(|error| error.to_string())?;
+    let key = P::parse(secret)?;
 
-    println!("Verifying OpenAI API key...");
-    let verification = OpenAiCredentialVerifier::default()
-        .verify(&key)
-        .map_err(|error| error.to_string())?;
+    println!("Verifying {} API key...", P::DISPLAY_NAME);
+    let request_id = P::verify(&key)?;
     store_secret(
-        OPENAI_KEYCHAIN_SERVICE,
-        OPENAI_KEYCHAIN_ACCOUNT,
-        key.expose_secret(),
+        P::KEYCHAIN_SERVICE,
+        P::KEYCHAIN_ACCOUNT,
+        P::expose_secret(&key),
     )?;
 
-    println!("OpenAI API key verified and stored in macOS Keychain.");
-    if let Some(request_id) = verification.request_id {
+    println!(
+        "{} API key verified and stored in macOS Keychain.",
+        P::DISPLAY_NAME
+    );
+    if let Some(request_id) = request_id {
         println!("request_id={request_id}");
     }
     Ok(())
+}
+
+fn status<P: ApiCredentialProvider>() -> Result<(), String> {
+    if env::var(P::ENVIRONMENT_VARIABLE).is_ok() {
+        println!(
+            "{} API key: configured in {}",
+            P::DISPLAY_NAME,
+            P::ENVIRONMENT_VARIABLE
+        );
+        return Ok(());
+    }
+    match load_secret(P::KEYCHAIN_SERVICE, P::KEYCHAIN_ACCOUNT)? {
+        Some(_) => println!("{} API key: configured in macOS Keychain", P::DISPLAY_NAME),
+        None => println!("{} API key: not configured", P::DISPLAY_NAME),
+    }
+    Ok(())
+}
+
+fn test<P: ApiCredentialProvider>() -> Result<(), String> {
+    let key = api_key::<P>()?;
+    let request_id = P::verify(&key)?;
+    println!("{} API key is valid.", P::DISPLAY_NAME);
+    if let Some(request_id) = request_id {
+        println!("request_id={request_id}");
+    }
+    Ok(())
+}
+
+fn remove<P: ApiCredentialProvider>() -> Result<(), String> {
+    if remove_secret(P::KEYCHAIN_SERVICE, P::KEYCHAIN_ACCOUNT)? {
+        println!("{} API key removed from macOS Keychain.", P::DISPLAY_NAME);
+    } else {
+        println!("{} API key was not configured.", P::DISPLAY_NAME);
+    }
+    Ok(())
+}
+
+pub fn openai_api_key() -> Result<OpenAiApiKey, String> {
+    api_key::<OpenAiProvider>()
+}
+
+pub fn openai_set() -> Result<(), String> {
+    set::<OpenAiProvider>()
 }
 
 pub fn openai_status() -> Result<(), String> {
-    match load_secret(OPENAI_KEYCHAIN_SERVICE, OPENAI_KEYCHAIN_ACCOUNT)? {
-        Some(_) => println!("OpenAI API key: configured in macOS Keychain"),
-        None => println!("OpenAI API key: not configured"),
-    }
-    Ok(())
+    status::<OpenAiProvider>()
 }
 
 pub fn openai_test() -> Result<(), String> {
-    let secret =
-        load_secret(OPENAI_KEYCHAIN_SERVICE, OPENAI_KEYCHAIN_ACCOUNT)?.ok_or_else(|| {
-            "OpenAI API key is not configured; run `silan credentials openai set`".to_owned()
-        })?;
-    let key = OpenAiApiKey::parse(secret).map_err(|error| error.to_string())?;
-    let verification = OpenAiCredentialVerifier::default()
-        .verify(&key)
-        .map_err(|error| error.to_string())?;
-    println!("OpenAI API key is valid.");
-    if let Some(request_id) = verification.request_id {
-        println!("request_id={request_id}");
-    }
-    Ok(())
+    test::<OpenAiProvider>()
 }
 
 pub fn openai_remove() -> Result<(), String> {
-    if remove_secret(OPENAI_KEYCHAIN_SERVICE, OPENAI_KEYCHAIN_ACCOUNT)? {
-        println!("OpenAI API key removed from macOS Keychain.");
-    } else {
-        println!("OpenAI API key was not configured.");
-    }
-    Ok(())
+    remove::<OpenAiProvider>()
+}
+
+pub fn deepseek_set() -> Result<(), String> {
+    set::<DeepSeekProvider>()
+}
+
+pub fn deepseek_api_key() -> Result<DeepSeekApiKey, String> {
+    api_key::<DeepSeekProvider>()
+}
+
+pub fn deepseek_status() -> Result<(), String> {
+    status::<DeepSeekProvider>()
+}
+
+pub fn deepseek_test() -> Result<(), String> {
+    test::<DeepSeekProvider>()
+}
+
+pub fn deepseek_remove() -> Result<(), String> {
+    remove::<DeepSeekProvider>()
 }
 
 pub fn github_set(profile: &CredentialProfile) -> Result<(), String> {

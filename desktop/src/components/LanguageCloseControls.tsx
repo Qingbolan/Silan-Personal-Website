@@ -15,6 +15,7 @@ type LanguageCloseControlsProps = {
   closeLabel: string;
   closeTitle?: string;
   closeSize?: number;
+  closeText?: string;
   className?: string;
   onLanguageSelect?: (language: string) => void;
   onClose: () => void;
@@ -33,6 +34,7 @@ export function LanguageCloseControls({
   closeLabel,
   closeTitle,
   closeSize = 18,
+  closeText,
   className = '',
   onLanguageSelect,
   onClose,
@@ -61,12 +63,13 @@ export function LanguageCloseControls({
       <button
         type="button"
         className="language-close-button"
+        data-text={closeText || undefined}
         disabled={disabled}
         onClick={onClose}
         title={closeTitle}
         aria-label={closeLabel}
       >
-        <X size={closeSize} />
+        {closeText || <X size={closeSize} />}
       </button>
     </div>
   );

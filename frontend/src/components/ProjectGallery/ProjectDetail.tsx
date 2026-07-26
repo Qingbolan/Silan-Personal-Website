@@ -547,7 +547,7 @@ const ProjectDetail: React.FC = () => {
         outlineContainerSelector="#project-detail-document"
         outlineHeadingSelector="header h1, h2, h3"
       >
-        <article id="project-detail-document" className="w-full">
+        <article data-ds id="project-detail-document" className="w-full">
           <header id={PROJECT_HEADER_ID} className="scroll-mt-24 pb-8 pt-6">
             {(project.status?.lifecycle || project.year || hasReportedBuildStatus) && (
               <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] leading-5 text-ds-fg-subtle">
@@ -568,19 +568,13 @@ const ProjectDetail: React.FC = () => {
             )}
 
             <h1
-              className="max-w-[70rem] text-balance font-display text-ds-fg"
-              style={{
-                fontSize: 'clamp(3.5rem, 6vw, 5.8rem)',
-                lineHeight: 1.03,
-                fontWeight: 500,
-                letterSpacing: '-0.035em',
-              }}
+              className="max-w-[70rem] break-words text-balance font-display text-[2.5rem] font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-[3.5rem] lg:text-[5rem]"
             >
               {title}
             </h1>
 
             {project.description && (
-              <p className="mt-7 max-w-[58rem] text-pretty text-[19px] font-medium leading-[1.55] text-ds-fg-muted">
+              <p className="mt-7 max-w-[58rem] text-pretty text-[17px] font-medium leading-7 text-ds-fg-muted sm:text-[19px] sm:leading-[1.55]">
                 {project.description}
               </p>
             )}

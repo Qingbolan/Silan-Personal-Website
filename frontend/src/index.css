@@ -1374,7 +1374,7 @@ code[class*="language-"] .token.italic { font-style: italic; }
 .markdown-content .markdown-body {
   color: color-mix(in srgb, var(--color-textPrimary, #171717) 84%, transparent);
   font-family: var(--font-body);
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.74;
   overflow-wrap: anywhere;
   text-wrap: pretty;
@@ -1389,15 +1389,15 @@ code[class*="language-"] .token.italic { font-style: italic; }
   color: var(--color-textPrimary, #171717);
   font-family: var(--font-display);
   font-weight: 680;
-  letter-spacing: -0.012em;
+  letter-spacing: 0;
   line-height: 1.26;
   scroll-margin-top: 6rem;
 }
 
-.markdown-content .markdown-body h1 { margin: 3.25rem 0 1.05rem; font-size: 2.25rem; font-weight: 760; line-height: 1.16; }
-.markdown-content .markdown-body h2 { margin: 3.25rem 0 1.05rem; font-size: 2rem; font-weight: 760; line-height: 1.16; }
-.markdown-content .markdown-body h3 { margin: 2.4rem 0 0.85rem; font-size: 1.55rem; font-weight: 680; }
-.markdown-content .markdown-body h4 { margin: 1.9rem 0 0.7rem; font-size: 1.28rem; }
+.markdown-content .markdown-body h1 { margin: 2.25rem 0 0.85rem; font-size: 2rem; font-weight: 760; line-height: 1.18; }
+.markdown-content .markdown-body h2 { margin: 2.5rem 0 0.9rem; font-size: 1.65rem; font-weight: 760; line-height: 1.2; }
+.markdown-content .markdown-body h3 { margin: 2.1rem 0 0.8rem; font-size: 1.35rem; font-weight: 680; }
+.markdown-content .markdown-body h4 { margin: 1.6rem 0 0.6rem; font-size: 1.15rem; }
 .markdown-content .markdown-body h5,
 .markdown-content .markdown-body h6 {
   margin: 1.25rem 0 0.5rem;
@@ -1405,6 +1405,17 @@ code[class*="language-"] .token.italic { font-style: italic; }
   font-size: 0.8125rem;
   font-weight: 650;
   text-transform: uppercase;
+}
+
+@media (min-width: 640px) {
+  .markdown-content .markdown-body {
+    font-size: 18px;
+  }
+
+  .markdown-content .markdown-body h1 { margin: 3.25rem 0 1.05rem; font-size: 2.25rem; line-height: 1.16; }
+  .markdown-content .markdown-body h2 { margin: 3.25rem 0 1.05rem; font-size: 2rem; line-height: 1.16; }
+  .markdown-content .markdown-body h3 { margin: 2.4rem 0 0.85rem; font-size: 1.55rem; }
+  .markdown-content .markdown-body h4 { margin: 1.9rem 0 0.7rem; font-size: 1.28rem; }
 }
 
 .markdown-content .markdown-body p,

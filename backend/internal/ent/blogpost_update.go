@@ -239,6 +239,86 @@ func (bpu *BlogPostUpdate) ClearFeaturedImageURL() *BlogPostUpdate {
 	return bpu
 }
 
+// SetProjectName sets the "project_name" field.
+func (bpu *BlogPostUpdate) SetProjectName(s string) *BlogPostUpdate {
+	bpu.mutation.SetProjectName(s)
+	return bpu
+}
+
+// SetNillableProjectName sets the "project_name" field if the given value is not nil.
+func (bpu *BlogPostUpdate) SetNillableProjectName(s *string) *BlogPostUpdate {
+	if s != nil {
+		bpu.SetProjectName(*s)
+	}
+	return bpu
+}
+
+// ClearProjectName clears the value of the "project_name" field.
+func (bpu *BlogPostUpdate) ClearProjectName() *BlogPostUpdate {
+	bpu.mutation.ClearProjectName()
+	return bpu
+}
+
+// SetPublicationVenue sets the "publication_venue" field.
+func (bpu *BlogPostUpdate) SetPublicationVenue(s string) *BlogPostUpdate {
+	bpu.mutation.SetPublicationVenue(s)
+	return bpu
+}
+
+// SetNillablePublicationVenue sets the "publication_venue" field if the given value is not nil.
+func (bpu *BlogPostUpdate) SetNillablePublicationVenue(s *string) *BlogPostUpdate {
+	if s != nil {
+		bpu.SetPublicationVenue(*s)
+	}
+	return bpu
+}
+
+// ClearPublicationVenue clears the value of the "publication_venue" field.
+func (bpu *BlogPostUpdate) ClearPublicationVenue() *BlogPostUpdate {
+	bpu.mutation.ClearPublicationVenue()
+	return bpu
+}
+
+// SetProjectURL sets the "project_url" field.
+func (bpu *BlogPostUpdate) SetProjectURL(s string) *BlogPostUpdate {
+	bpu.mutation.SetProjectURL(s)
+	return bpu
+}
+
+// SetNillableProjectURL sets the "project_url" field if the given value is not nil.
+func (bpu *BlogPostUpdate) SetNillableProjectURL(s *string) *BlogPostUpdate {
+	if s != nil {
+		bpu.SetProjectURL(*s)
+	}
+	return bpu
+}
+
+// ClearProjectURL clears the value of the "project_url" field.
+func (bpu *BlogPostUpdate) ClearProjectURL() *BlogPostUpdate {
+	bpu.mutation.ClearProjectURL()
+	return bpu
+}
+
+// SetExternalResources sets the "external_resources" field.
+func (bpu *BlogPostUpdate) SetExternalResources(s string) *BlogPostUpdate {
+	bpu.mutation.SetExternalResources(s)
+	return bpu
+}
+
+// SetNillableExternalResources sets the "external_resources" field if the given value is not nil.
+func (bpu *BlogPostUpdate) SetNillableExternalResources(s *string) *BlogPostUpdate {
+	if s != nil {
+		bpu.SetExternalResources(*s)
+	}
+	return bpu
+}
+
+// ClearExternalResources clears the value of the "external_resources" field.
+func (bpu *BlogPostUpdate) ClearExternalResources() *BlogPostUpdate {
+	bpu.mutation.ClearExternalResources()
+	return bpu
+}
+
 // SetReadingTimeMinutes sets the "reading_time_minutes" field.
 func (bpu *BlogPostUpdate) SetReadingTimeMinutes(i int) *BlogPostUpdate {
 	bpu.mutation.ResetReadingTimeMinutes()
@@ -497,6 +577,21 @@ func (bpu *BlogPostUpdate) check() error {
 			return &ValidationError{Name: "featured_image_url", err: fmt.Errorf(`ent: validator failed for field "BlogPost.featured_image_url": %w`, err)}
 		}
 	}
+	if v, ok := bpu.mutation.ProjectName(); ok {
+		if err := blogpost.ProjectNameValidator(v); err != nil {
+			return &ValidationError{Name: "project_name", err: fmt.Errorf(`ent: validator failed for field "BlogPost.project_name": %w`, err)}
+		}
+	}
+	if v, ok := bpu.mutation.PublicationVenue(); ok {
+		if err := blogpost.PublicationVenueValidator(v); err != nil {
+			return &ValidationError{Name: "publication_venue", err: fmt.Errorf(`ent: validator failed for field "BlogPost.publication_venue": %w`, err)}
+		}
+	}
+	if v, ok := bpu.mutation.ProjectURL(); ok {
+		if err := blogpost.ProjectURLValidator(v); err != nil {
+			return &ValidationError{Name: "project_url", err: fmt.Errorf(`ent: validator failed for field "BlogPost.project_url": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -568,6 +663,30 @@ func (bpu *BlogPostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if bpu.mutation.FeaturedImageURLCleared() {
 		_spec.ClearField(blogpost.FieldFeaturedImageURL, field.TypeString)
+	}
+	if value, ok := bpu.mutation.ProjectName(); ok {
+		_spec.SetField(blogpost.FieldProjectName, field.TypeString, value)
+	}
+	if bpu.mutation.ProjectNameCleared() {
+		_spec.ClearField(blogpost.FieldProjectName, field.TypeString)
+	}
+	if value, ok := bpu.mutation.PublicationVenue(); ok {
+		_spec.SetField(blogpost.FieldPublicationVenue, field.TypeString, value)
+	}
+	if bpu.mutation.PublicationVenueCleared() {
+		_spec.ClearField(blogpost.FieldPublicationVenue, field.TypeString)
+	}
+	if value, ok := bpu.mutation.ProjectURL(); ok {
+		_spec.SetField(blogpost.FieldProjectURL, field.TypeString, value)
+	}
+	if bpu.mutation.ProjectURLCleared() {
+		_spec.ClearField(blogpost.FieldProjectURL, field.TypeString)
+	}
+	if value, ok := bpu.mutation.ExternalResources(); ok {
+		_spec.SetField(blogpost.FieldExternalResources, field.TypeString, value)
+	}
+	if bpu.mutation.ExternalResourcesCleared() {
+		_spec.ClearField(blogpost.FieldExternalResources, field.TypeString)
 	}
 	if value, ok := bpu.mutation.ReadingTimeMinutes(); ok {
 		_spec.SetField(blogpost.FieldReadingTimeMinutes, field.TypeInt, value)
@@ -895,6 +1014,86 @@ func (bpuo *BlogPostUpdateOne) ClearFeaturedImageURL() *BlogPostUpdateOne {
 	return bpuo
 }
 
+// SetProjectName sets the "project_name" field.
+func (bpuo *BlogPostUpdateOne) SetProjectName(s string) *BlogPostUpdateOne {
+	bpuo.mutation.SetProjectName(s)
+	return bpuo
+}
+
+// SetNillableProjectName sets the "project_name" field if the given value is not nil.
+func (bpuo *BlogPostUpdateOne) SetNillableProjectName(s *string) *BlogPostUpdateOne {
+	if s != nil {
+		bpuo.SetProjectName(*s)
+	}
+	return bpuo
+}
+
+// ClearProjectName clears the value of the "project_name" field.
+func (bpuo *BlogPostUpdateOne) ClearProjectName() *BlogPostUpdateOne {
+	bpuo.mutation.ClearProjectName()
+	return bpuo
+}
+
+// SetPublicationVenue sets the "publication_venue" field.
+func (bpuo *BlogPostUpdateOne) SetPublicationVenue(s string) *BlogPostUpdateOne {
+	bpuo.mutation.SetPublicationVenue(s)
+	return bpuo
+}
+
+// SetNillablePublicationVenue sets the "publication_venue" field if the given value is not nil.
+func (bpuo *BlogPostUpdateOne) SetNillablePublicationVenue(s *string) *BlogPostUpdateOne {
+	if s != nil {
+		bpuo.SetPublicationVenue(*s)
+	}
+	return bpuo
+}
+
+// ClearPublicationVenue clears the value of the "publication_venue" field.
+func (bpuo *BlogPostUpdateOne) ClearPublicationVenue() *BlogPostUpdateOne {
+	bpuo.mutation.ClearPublicationVenue()
+	return bpuo
+}
+
+// SetProjectURL sets the "project_url" field.
+func (bpuo *BlogPostUpdateOne) SetProjectURL(s string) *BlogPostUpdateOne {
+	bpuo.mutation.SetProjectURL(s)
+	return bpuo
+}
+
+// SetNillableProjectURL sets the "project_url" field if the given value is not nil.
+func (bpuo *BlogPostUpdateOne) SetNillableProjectURL(s *string) *BlogPostUpdateOne {
+	if s != nil {
+		bpuo.SetProjectURL(*s)
+	}
+	return bpuo
+}
+
+// ClearProjectURL clears the value of the "project_url" field.
+func (bpuo *BlogPostUpdateOne) ClearProjectURL() *BlogPostUpdateOne {
+	bpuo.mutation.ClearProjectURL()
+	return bpuo
+}
+
+// SetExternalResources sets the "external_resources" field.
+func (bpuo *BlogPostUpdateOne) SetExternalResources(s string) *BlogPostUpdateOne {
+	bpuo.mutation.SetExternalResources(s)
+	return bpuo
+}
+
+// SetNillableExternalResources sets the "external_resources" field if the given value is not nil.
+func (bpuo *BlogPostUpdateOne) SetNillableExternalResources(s *string) *BlogPostUpdateOne {
+	if s != nil {
+		bpuo.SetExternalResources(*s)
+	}
+	return bpuo
+}
+
+// ClearExternalResources clears the value of the "external_resources" field.
+func (bpuo *BlogPostUpdateOne) ClearExternalResources() *BlogPostUpdateOne {
+	bpuo.mutation.ClearExternalResources()
+	return bpuo
+}
+
 // SetReadingTimeMinutes sets the "reading_time_minutes" field.
 func (bpuo *BlogPostUpdateOne) SetReadingTimeMinutes(i int) *BlogPostUpdateOne {
 	bpuo.mutation.ResetReadingTimeMinutes()
@@ -1166,6 +1365,21 @@ func (bpuo *BlogPostUpdateOne) check() error {
 			return &ValidationError{Name: "featured_image_url", err: fmt.Errorf(`ent: validator failed for field "BlogPost.featured_image_url": %w`, err)}
 		}
 	}
+	if v, ok := bpuo.mutation.ProjectName(); ok {
+		if err := blogpost.ProjectNameValidator(v); err != nil {
+			return &ValidationError{Name: "project_name", err: fmt.Errorf(`ent: validator failed for field "BlogPost.project_name": %w`, err)}
+		}
+	}
+	if v, ok := bpuo.mutation.PublicationVenue(); ok {
+		if err := blogpost.PublicationVenueValidator(v); err != nil {
+			return &ValidationError{Name: "publication_venue", err: fmt.Errorf(`ent: validator failed for field "BlogPost.publication_venue": %w`, err)}
+		}
+	}
+	if v, ok := bpuo.mutation.ProjectURL(); ok {
+		if err := blogpost.ProjectURLValidator(v); err != nil {
+			return &ValidationError{Name: "project_url", err: fmt.Errorf(`ent: validator failed for field "BlogPost.project_url": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1254,6 +1468,30 @@ func (bpuo *BlogPostUpdateOne) sqlSave(ctx context.Context) (_node *BlogPost, er
 	}
 	if bpuo.mutation.FeaturedImageURLCleared() {
 		_spec.ClearField(blogpost.FieldFeaturedImageURL, field.TypeString)
+	}
+	if value, ok := bpuo.mutation.ProjectName(); ok {
+		_spec.SetField(blogpost.FieldProjectName, field.TypeString, value)
+	}
+	if bpuo.mutation.ProjectNameCleared() {
+		_spec.ClearField(blogpost.FieldProjectName, field.TypeString)
+	}
+	if value, ok := bpuo.mutation.PublicationVenue(); ok {
+		_spec.SetField(blogpost.FieldPublicationVenue, field.TypeString, value)
+	}
+	if bpuo.mutation.PublicationVenueCleared() {
+		_spec.ClearField(blogpost.FieldPublicationVenue, field.TypeString)
+	}
+	if value, ok := bpuo.mutation.ProjectURL(); ok {
+		_spec.SetField(blogpost.FieldProjectURL, field.TypeString, value)
+	}
+	if bpuo.mutation.ProjectURLCleared() {
+		_spec.ClearField(blogpost.FieldProjectURL, field.TypeString)
+	}
+	if value, ok := bpuo.mutation.ExternalResources(); ok {
+		_spec.SetField(blogpost.FieldExternalResources, field.TypeString, value)
+	}
+	if bpuo.mutation.ExternalResourcesCleared() {
+		_spec.ClearField(blogpost.FieldExternalResources, field.TypeString)
 	}
 	if value, ok := bpuo.mutation.ReadingTimeMinutes(); ok {
 		_spec.SetField(blogpost.FieldReadingTimeMinutes, field.TypeInt, value)

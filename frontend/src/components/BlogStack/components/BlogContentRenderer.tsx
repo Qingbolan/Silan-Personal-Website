@@ -82,12 +82,7 @@ const expandCollapsedTableRows = (s: string = ''): string => {
 /** After expansion, coerce rows to valid GFM by adding missing leading/trailing pipes */
 const coerceGfmTableFormat = (s: string = ''): string => {
   if (!s) return s;
-  // Ensure a newline after alignment row if the next row starts immediately with a pipe
-  let pre = s.replace(
-    /(\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?)\s*\|\s*/g,
-    '$1\n| '
-  );
-  const lines = pre.split(/\n/);
+  const lines = s.split(/\n/);
   const coerced = lines.map((raw) => {
     let line = raw.replace(/^\s+/, ''); // left trim spaces but keep leading '|'
     // Leave empty lines untouched

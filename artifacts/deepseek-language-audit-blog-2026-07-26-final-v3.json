@@ -1,0 +1,595 @@
+{
+  "state": "complete",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "min_confidence": 0.8,
+  "scope": "blog",
+  "documents_total": 12,
+  "documents_completed": 12,
+  "documents_failed": 0,
+  "findings_total": 44,
+  "major_findings": 0,
+  "results": [
+    {
+      "target_uri": "silan://resources/blog/building-silan-viking",
+      "source_path": "resources/blog/building-silan-viking/parts/body/en.md",
+      "language": "en",
+      "title": "I Did Not Need Another Website Builder",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is well-written with a clear narrative and technical accuracy. No concrete problems found.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 1532,
+        "completion_tokens": 31,
+        "total_tokens": 1563
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/building-silan-viking",
+      "source_path": "resources/blog/building-silan-viking/parts/body/zh.md",
+      "language": "zh",
+      "title": "I Did Not Need Another Website Builder",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体表达自然，逻辑清晰，但存在少量术语不一致和表达可优化之处。",
+      "findings": [
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "crawler 请求只表示某个地址被访问",
+          "explanation": "前文使用英文 'crawler'，此处突然混用英文，与全文中文风格不一致。",
+          "suggestion": "改为“爬虫请求只表示某个地址被访问”",
+          "confidence": 0.85,
+          "source_line": 82
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1454,
+        "completion_tokens": 129,
+        "total_tokens": 1583
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/gem-bench-ai-answers-with-ads",
+      "source_path": "resources/blog/gem-bench-ai-answers-with-ads/parts/body/en.md",
+      "language": "en",
+      "title": "Can an AI Answer Carry an Ad Without Becoming the Ad?",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is a well-written blog post introducing GEM-Bench. It is clear, logically structured, and uses precise terminology. No concrete problems were found that meet the confidence threshold.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 3970,
+        "completion_tokens": 50,
+        "total_tokens": 4020
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/gem-bench-ai-answers-with-ads",
+      "source_path": "resources/blog/gem-bench-ai-answers-with-ads/parts/body/zh.md",
+      "language": "zh",
+      "title": "Can an AI Answer Carry an Ad Without Becoming the Ad?",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体清晰，但存在少量表达不自然和术语不一致的问题。",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "GEM-Bench 把一个具体失败变成可重复测试",
+          "explanation": "“具体失败”指代不明，读者可能不清楚是什么失败；且“变成可重复测试”搭配略显生硬。",
+          "suggestion": "GEM-Bench 把这一具体问题转化为可重复测试",
+          "confidence": 0.85,
+          "source_line": 10
+        },
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "GEM-Bench 是它发表于 KDD 2026 的带广告回答生成基准",
+          "explanation": "“它”指代不明，前文主语是“GEM-Bench”，但“它”可能被误解为其他对象。",
+          "suggestion": "GEM-Bench 是我们发表于 KDD 2026 的带广告回答生成基准",
+          "confidence": 0.9
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "GEM-Bench 因此先把任务边界写清楚",
+          "explanation": "“写清楚”口语化，在正式文档中略显随意。",
+          "suggestion": "GEM-Bench 因此首先明确任务边界",
+          "confidence": 0.8,
+          "source_line": 51
+        },
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "论文中 CA-Prod 的“CTR”带引号是有意为之",
+          "explanation": "“带引号”表述不够正式，且“有意为之”略显冗余。",
+          "suggestion": "论文中 CA-Prod 的“CTR”加引号是刻意为之",
+          "confidence": 0.85,
+          "source_line": 226
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3901,
+        "completion_tokens": 435,
+        "total_tokens": 4336
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/make-research-work-findable",
+      "source_path": "resources/blog/make-research-work-findable/parts/body/en.md",
+      "language": "en",
+      "title": "Researchers Should Not Rebuild a Website for Every New Result",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is well-written and coherent, with a clear argument and consistent terminology. No concrete problems were found that meet the confidence threshold.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 3009,
+        "completion_tokens": 40,
+        "total_tokens": 3049
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/make-research-work-findable",
+      "source_path": "resources/blog/make-research-work-findable/parts/body/zh.md",
+      "language": "zh",
+      "title": "Researchers Should Not Rebuild a Website for Every New Result",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体逻辑清晰，但存在少量表达不自然和术语不一致的问题。",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "研究者真正想做的事情通常很小：把当前判断讲清楚，让别人能找到证据，并且知道哪一个页面代表最新版本。",
+          "explanation": "“通常很小”搭配“把当前判断讲清楚”略显口语化，且“并且知道哪一个页面代表最新版本”与前文并列不够自然。",
+          "suggestion": "研究者真正想做的事情通常很简单：讲清楚当前判断，让别人能找到证据，并知道哪个页面代表最新版本。",
+          "confidence": 0.85,
+          "source_line": 25
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "在上下文还新鲜时把它变成一页清楚的公开说明",
+          "explanation": "“上下文还新鲜时”是直译，中文更自然的说法是“趁上下文还新鲜时”或“在信息还新鲜时”。",
+          "suggestion": "趁上下文还新鲜时把它变成一页清楚的公开说明",
+          "confidence": 0.9,
+          "source_line": 31
+        },
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "Silan Viking 当前把这个过程拆成五个状态转换：`capture -> structure -> propose -> publish -> observe`。",
+          "explanation": "“状态转换”在软件工程中通常称为“状态转移”或“状态机转换”，此处用“状态转换”虽可理解，但不够专业。",
+          "suggestion": "Silan Viking 当前把这个过程拆成五个状态转移：`capture -> structure -> propose -> publish -> observe`。",
+          "confidence": 0.8,
+          "source_line": 31
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "在证据和判断还新鲜时先保存下来",
+          "explanation": "“还新鲜时”口语化，建议改为“还新鲜的时候”或“趁新鲜”。",
+          "suggestion": "在证据和判断还新鲜的时候先保存下来",
+          "confidence": 0.85,
+          "source_line": 37
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "它暂时不需要漂亮标题、搜索关键词或完整论证",
+          "explanation": "“漂亮标题”略显口语化，且“搜索关键词”通常说“关键词”。",
+          "suggestion": "它暂时不需要精美的标题、关键词或完整论证",
+          "confidence": 0.8,
+          "source_line": 45
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "记录门槛足够低，但这句话不是一次性便签。",
+          "explanation": "“记录门槛足够低”搭配稍显生硬，建议改为“记录门槛足够低，但这句话不是一次性便签”可接受，但“一次性便签”不如“一次性笔记”自然。",
+          "suggestion": "记录门槛足够低，但这句话不是一次性笔记。",
+          "confidence": 0.8,
+          "source_line": 49
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "研究维护最容易丢失的不是文本，而是文本之间的来路。",
+          "explanation": "“来路”一词在此语境中略显抽象，通常说“来源”或“关联”。",
+          "suggestion": "研究维护最容易丢失的不是文本，而是文本之间的来源关系。",
+          "confidence": 0.85,
+          "source_line": 49
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "它改变了哪条旧判断？",
+          "explanation": "“哪条旧判断”搭配不自然，通常说“哪条旧结论”或“哪个旧判断”。",
+          "suggestion": "它改变了哪条旧结论？",
+          "confidence": 0.85,
+          "source_line": 58
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "编辑器呈现的是可以直接阅读的页面；内容源则保存标题、摘要、语言版本、图片和相关工作链接所需的结构。",
+          "explanation": "“内容源则保存……所需的结构”略显冗长，可简化。",
+          "suggestion": "编辑器呈现的是可直接阅读的页面；内容源则保存标题、摘要、语言版本、图片和相关工作链接的结构。",
+          "confidence": 0.8,
+          "source_line": 64
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "好的工具应该让研究者修改解释本身，而不是每次都重新面对前端目录、构建脚本和部署管道。",
+          "explanation": "“重新面对”略显生硬，建议改为“重新处理”或“重新应对”。",
+          "suggestion": "好的工具应该让研究者修改解释本身，而不是每次都重新处理前端目录、构建脚本和部署管道。",
+          "confidence": 0.85,
+          "source_line": 64
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "系统应该保存关系，而不是要求同一段话勉强服务所有读者。",
+          "explanation": "“勉强服务”搭配不自然，建议改为“勉强满足”或“勉强适应”。",
+          "suggestion": "系统应该保存关系，而不是要求同一段话勉强满足所有读者。",
+          "confidence": 0.85,
+          "source_line": 66
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "以后无论是人还是 Agent，都能找到每项表述的来路。",
+          "explanation": "“来路”再次出现，建议改为“来源”或“出处”。",
+          "suggestion": "以后无论是人还是 Agent，都能找到每项表述的出处。",
+          "confidence": 0.85,
+          "source_line": 66
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "任务足够具体、输出可以验证时，Agent 才真正有用。",
+          "explanation": "“输出可以验证时”略显翻译腔，建议改为“输出可验证时”。",
+          "suggestion": "任务足够具体、输出可验证时，Agent 才真正有用。",
+          "confidence": 0.85,
+          "source_line": 70
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "这些都是维护动作，不是研究判断本身。",
+          "explanation": "“维护动作”略显生硬，通常说“维护操作”或“维护工作”。",
+          "suggestion": "这些都是维护操作，不是研究判断本身。",
+          "confidence": 0.8,
+          "source_line": 70
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "可审阅的 Agent 输出不应该只是“我已经帮你更新好了”。",
+          "explanation": "“可审阅的 Agent 输出”略显冗长，建议改为“Agent 的可审阅输出”。",
+          "suggestion": "Agent 的可审阅输出不应该只是“我已经帮你更新好了”。",
+          "confidence": 0.8,
+          "source_line": 78
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "哪些内容仍然不能公开断言",
+          "explanation": "“公开断言”搭配稍显生硬，通常说“公开声称”或“公开断言”可接受，但“断言”偏正式。",
+          "suggestion": "哪些内容仍然不能公开声称",
+          "confidence": 0.8,
+          "source_line": 78
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "编辑、同步、翻译和 Agent proposal 都不是 publish event。",
+          "explanation": "中英混用，且“Agent proposal”和“publish event”未翻译，建议统一为中文。",
+          "suggestion": "编辑、同步、翻译和 Agent 提案都不是发布事件。",
+          "confidence": 0.9,
+          "source_line": 82
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "本人审阅页面、发布内容，再通过已经配置好的站点完成部署。",
+          "explanation": "“本人”在此语境中略显突兀，建议改为“研究者”或“作者”。",
+          "suggestion": "研究者审阅页面、发布内容，再通过已经配置好的站点完成部署。",
+          "confidence": 0.85,
+          "source_line": 86
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "好系统的结果应该降低读者理解成本，而不是要求读者理解你的工具链。",
+          "explanation": "“好系统的结果”表述不自然，建议改为“好系统的效果”。",
+          "suggestion": "好系统的效果应该降低读者理解成本，而不是要求读者理解你的工具链。",
+          "confidence": 0.85,
+          "source_line": 88
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "SEO 和 GEO 在这里有一个克制的含义。",
+          "explanation": "“克制的含义”搭配不自然，建议改为“克制的含义”可接受，但更自然的说法是“有限的意义”或“克制的定义”。",
+          "suggestion": "SEO 和 GEO 在这里有一个有限的意义。",
+          "confidence": 0.8,
+          "source_line": 92
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "它不是承诺某个搜索引擎或 AI 系统一定会引用你的研究，而是让公开页面带有稳定地址、清楚的标题和摘要、语言信息、结构化数据，以及指向相关工作的明确链接。",
+          "explanation": "句子较长，且“带有”后并列多项，略显累赘。",
+          "suggestion": "它不是承诺某个搜索引擎或 AI 系统一定会引用你的研究，而是让公开页面具备稳定地址、清晰标题和摘要、语言信息、结构化数据，以及指向相关工作的明确链接。",
+          "confidence": 0.8,
+          "source_line": 92
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "这些信号方便搜索引擎和问答系统处理页面，但不保证收录、理解、引用或排名。",
+          "explanation": "“方便”后接动词短语略显口语化，建议改为“有助于”。",
+          "suggestion": "这些信号有助于搜索引擎和问答系统处理页面，但不保证收录、理解、引用或排名。",
+          "confidence": 0.85,
+          "source_line": 92
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "传统页面浏览量（PV）也不足以解释问题：访问不等于读完，抓取不等于理解，引用不等于读者真的看到了证据。",
+          "explanation": "“解释问题”搭配稍显生硬，建议改为“说明问题”。",
+          "suggestion": "传统页面浏览量（PV）也不足以说明问题：访问不等于读完，抓取不等于理解，引用不等于读者真的看到了证据。",
+          "confidence": 0.85,
+          "source_line": 96
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "更有用的是把发布后的反馈拆成几个诊断信号。",
+          "explanation": "“拆成”略显口语化，建议改为“分解为”。",
+          "suggestion": "更有用的是把发布后的反馈分解为几个诊断信号。",
+          "confidence": 0.85,
+          "source_line": 96
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "抓取程序请求过页面，只能说明它到达过这个地址，不能证明某个 AI 已经理解或引用了研究。",
+          "explanation": "“请求过页面”搭配不自然，通常说“请求过该页面”或“访问过页面”。",
+          "suggestion": "抓取程序请求过该页面，只能说明它到达过这个地址，不能证明某个 AI 已经理解或引用了研究。",
+          "confidence": 0.85,
+          "source_line": 102
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "真正有用的问题更具体，也更可执行：",
+          "explanation": "“可执行”通常用于任务或计划，此处用于“问题”略显生硬，建议改为“可操作”。",
+          "suggestion": "真正有用的问题更具体，也更可操作：",
+          "confidence": 0.85,
+          "source_line": 102
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "关键是研究者能够区分问题发生在哪里：内容没有部署、读者没有打开页面、机器没有请求，还是页面本身没有把证据讲清楚。",
+          "explanation": "“机器没有请求”表述不完整，通常说“机器没有请求该页面”。",
+          "suggestion": "关键是研究者能够区分问题发生在哪里：内容没有部署、读者没有打开页面、机器没有请求该页面，还是页面本身没有把证据讲清楚。",
+          "confidence": 0.85,
+          "source_line": 109
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "上面的截图来自 Silan Viking 源码仓库中已经能工作的桌面界面，展示的是已有网站内容中的当前编辑体验，不是档案案例的摆拍流程，也不代表新工作区的安装路径。",
+          "explanation": "“已经能工作的桌面界面”略显冗长，建议改为“已可运行的桌面界面”。",
+          "suggestion": "上面的截图来自 Silan Viking 源码仓库中已可运行的桌面界面，展示的是已有网站内容中的当前编辑体验，不是档案案例的摆拍流程，也不代表新工作区的安装路径。",
+          "confidence": 0.85,
+          "source_line": 115
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "新建的外部工作区现在可以直接使用 CLI 和普通 Markdown 文件；独立打包的桌面端上手流程和更直接的跨设备体验仍在完善中。",
+          "explanation": "“独立打包的桌面端上手流程”表述稍显生硬，建议改为“独立打包的桌面端的上手流程”。",
+          "suggestion": "新建的外部工作区现在可以直接使用 CLI 和普通 Markdown 文件；独立打包的桌面端的上手流程和更直接的跨设备体验仍在完善中。",
+          "confidence": 0.8,
+          "source_line": 115
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "真正重要的不是自动化叙事，而是把研究更新从一次性页面工程变成一个可重复的状态机。",
+          "explanation": "“自动化叙事”略显抽象，建议改为“自动化故事”或“自动化叙述”。",
+          "suggestion": "真正重要的不是自动化叙述，而是把研究更新从一次性页面工程变成一个可重复的状态机。",
+          "confidence": 0.8,
+          "source_line": 117
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "不要先整理所有旧项目。先为下一项原本会留在幻灯片里的结果创建一篇私人文章。",
+          "explanation": "“下一项原本会留在幻灯片里的结果”表述稍显啰嗦，建议简化。",
+          "suggestion": "不要先整理所有旧项目。先为下一项原本会留在幻灯片里的结果创建一篇私人文章。",
+          "confidence": 0.8,
+          "source_line": 121
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "下面这些命令创建的是一个本地工作区和一条可校验的私有研究更新，不会自动替你公开发布：",
+          "explanation": "“替你”略显口语化，建议改为“为您”或“替你”可接受，但“替你”在正式文档中稍显随意。",
+          "suggestion": "下面这些命令创建的是一个本地工作区和一条可校验的私有研究更新，不会自动为您公开发布：",
+          "confidence": 0.8,
+          "source_line": 121
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "用任意编辑器打开生成的 Markdown 文件，回答上面的四个问题。",
+          "explanation": "“回答上面的四个问题”中“上面”指代不明确，建议改为“上述”。",
+          "suggestion": "用任意编辑器打开生成的 Markdown 文件，回答上述四个问题。",
+          "confidence": 0.85,
+          "source_line": 134
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "第一个有用结果不是“网站已经全自动”，而是一页有效、私密、由你决定何时公开的研究说明。",
+          "explanation": "“由你决定何时公开”略显口语化，建议改为“由您决定何时公开”。",
+          "suggestion": "第一个有用结果不是“网站已经全自动”，而是一页有效、私密、由您决定何时公开的研究说明。",
+          "confidence": 0.85,
+          "source_line": 134
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "一旦这条更新有了身份、证据、关系、状态和观测信号，网站就不再只是一个展示页面。它开始成为研究工作的外部记忆。",
+          "explanation": "“外部记忆”概念在文中首次出现，但未定义，读者可能困惑。不过属于概念引入，不算严重问题。",
+          "suggestion": "一旦这条更新有了身份、证据、关系、状态和观测信号，网站就不再只是一个展示页面。它开始成为研究工作的外部记忆。",
+          "confidence": 0.8,
+          "source_line": 136
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2731,
+        "completion_tokens": 3937,
+        "total_tokens": 6668
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/research-4x0y2zr5",
+      "source_path": "resources/blog/research-4x0y2zr5/parts/body/en.md",
+      "language": "en",
+      "title": "What Is the Field Stuck On Without My Method?",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is a short, clear blog post draft. No concrete problems found.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 627,
+        "completion_tokens": 29,
+        "total_tokens": 656
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/research-4x0y2zr5",
+      "source_path": "resources/blog/research-4x0y2zr5/parts/body/zh.md",
+      "language": "zh",
+      "title": "What Is the Field Stuck On Without My Method?",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体流畅，但存在一处逻辑跳跃和一处表达不够自然的问题。",
+      "findings": [
+        {
+          "category": "logical_gap",
+          "severity": "minor",
+          "quote": "例如，现有工具可能无法在不反复手工发布的情况下，既管理一组研究结果，又把读者带到真正重要的证据。",
+          "explanation": "这个例子突然出现，与前文讨论的“领域卡在哪里”没有明确关联，读者难以理解为什么突然提到“管理研究结果”和“带到证据”，缺乏上下文铺垫。",
+          "suggestion": "删除或替换为一个更贴近研究领域常见问题的例子，例如：“例如，现有方法可能无法在保持计算效率的同时，准确处理大规模数据中的噪声。”",
+          "confidence": 0.85,
+          "source_line": 15
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "研究可以从灵感出发，也可能先做出一个优秀结果。",
+          "explanation": "“做出一个优秀结果”搭配不自然，中文中更常说“取得优秀结果”或“获得优秀结果”。",
+          "suggestion": "改为“研究可以从灵感出发，也可能先取得一个优秀结果。”",
+          "confidence": 0.9,
+          "source_line": 15
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 608,
+        "completion_tokens": 281,
+        "total_tokens": 889
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/silan-viking-visual-guide",
+      "source_path": "resources/blog/silan-viking-visual-guide/parts/body/en.md",
+      "language": "en",
+      "title": "From One Research Note to a Public Page",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is clear and well-structured, with no concrete problems in the specified categories.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 967,
+        "completion_tokens": 30,
+        "total_tokens": 997
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/silan-viking-visual-guide",
+      "source_path": "resources/blog/silan-viking-visual-guide/parts/body/zh.md",
+      "language": "zh",
+      "title": "From One Research Note to a Public Page",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体清晰，但存在少量表达和逻辑问题。",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "一项刚出现的研究结果，应该在相关信息仍然清晰时及时整理成一页说明。",
+          "explanation": "“相关信息仍然清晰”表述不够自然，通常会说“信息还新鲜”或“记忆还清晰”。",
+          "suggestion": "一项刚出现的研究结果，应该在信息还新鲜时及时整理成一页说明。",
+          "confidence": 0.85,
+          "source_line": 23
+        },
+        {
+          "category": "logical_gap",
+          "severity": "minor",
+          "quote": "抓取行为只能提供线索，不能证明页面已经被理解或引用。",
+          "explanation": "前文只提到“真实读者或已识别的抓取程序是否请求过这页”，没有说明抓取行为与理解/引用的关系，读者可能觉得这个结论跳跃。",
+          "suggestion": "抓取行为只能提供页面被访问的线索，不能证明页面已经被理解或引用。",
+          "confidence": 0.8,
+          "source_line": 45
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 927,
+        "completion_tokens": 259,
+        "total_tokens": 1186
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/welcome",
+      "source_path": "resources/blog/welcome/parts/body/en.md",
+      "language": "en",
+      "title": "Welcome",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is a placeholder with no substantive prose to review.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 472,
+        "completion_tokens": 25,
+        "total_tokens": 497
+      }
+    },
+    {
+      "target_uri": "silan://resources/blog/welcome",
+      "source_path": "resources/blog/welcome/parts/body/zh.md",
+      "language": "zh",
+      "title": "Welcome",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档内容极少，无实质问题。",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 469,
+        "completion_tokens": 22,
+        "total_tokens": 491
+      }
+    }
+  ],
+  "failures": []
+}

@@ -327,6 +327,11 @@ type (
 		Annotation string `json:"annotation,omitempty"`
 		ID         string `json:"id"`
 	}
+	BlogResource {
+		Kind  string `json:"kind"`
+		Label string `json:"label,omitempty"`
+		URL   string `json:"url"`
+	}
 	BlogData {
 		ID                  string        `json:"id"`
 		Title               string        `json:"title"`
@@ -345,7 +350,12 @@ type (
 		Views               int64         `json:"views"`
 		Summary             string        `json:"summary"`
 		SummaryZh           string        `json:"summary_zh,omitempty"`
-		FeaturedImageURL    string        `json:"featured_image_url,omitempty"`
+		FeaturedImageURL    string            `json:"featured_image_url,omitempty"`
+		FeaturedImageURLs   map[string]string `json:"featured_image_urls,omitempty"`
+		ProjectName         string            `json:"project_name,omitempty"`
+		PublicationVenue    string            `json:"publication_venue,omitempty"`
+		ProjectURL          string            `json:"project_url,omitempty"`
+		ExternalResources   []BlogResource    `json:"external_resources,omitempty"`
 		Type                string        `json:"type,omitempty"`
 		VideoURL            string        `json:"video_url,omitempty"`
 		VideoDuration       string        `json:"video_duration,omitempty"`

@@ -52,6 +52,8 @@ export interface SeoProps {
   path?: string;
   /** Share image — absolute URL or a path under the site origin. */
   image?: string;
+  /** Human-readable image identity for social cards and image search. */
+  imageAlt?: string;
   /** og:type — `website` for index pages, `article` for posts. */
   type?: 'website' | 'article' | 'profile';
   /** Discourage indexing of this page (search results, etc.). */
@@ -136,6 +138,7 @@ export const Seo: React.FC<SeoProps> = ({
   description,
   path = '/',
   image = DEFAULT_IMAGE,
+  imageAlt,
   type = 'website',
   noindex = false,
   lang = 'en',
@@ -187,6 +190,7 @@ export const Seo: React.FC<SeoProps> = ({
       <meta property="og:description" content={resolvedDescription} />
       <meta property="og:url" content={canonical} />
       <meta property="og:image" content={ogImage} />
+      <meta property="og:image:alt" content={imageAlt || fullTitle} />
       <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
       <meta property="og:locale:alternate" content={lang === 'zh' ? 'en_US' : 'zh_CN'} />
       {type === 'article' && <meta property="article:author" content={authorProfileUrl} />}
@@ -196,6 +200,7 @@ export const Seo: React.FC<SeoProps> = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={resolvedDescription} />
       <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image:alt" content={imageAlt || fullTitle} />
 
       {/* Structured data — emitted only when supplied. */}
       {jsonLd && (
@@ -215,12 +220,17 @@ export const blogPostingJsonLd = (post: {
   description?: string;
   path: string;
   image?: string;
+  imageAlt?: string;
   datePublished?: string;
   dateModified?: string;
   author?: string;
   lang?: 'en' | 'zh';
   seriesTitle?: string;
   seriesPosition?: number;
+  projectName?: string;
+  projectUrl?: string;
+  publicationVenue?: string;
+  externalResources?: Array<{ kind: string; label: string; url: string }>;
 }): Record<string, unknown> => {
   const language = post.lang || 'en';
   const canonical = contentCanonicalUrl(post.path, language);
@@ -231,6 +241,35 @@ export const blogPostingJsonLd = (post: {
     name: SITE_NAME,
     url: SITE_URL,
   };
+  const rightsNotice = contentRightsNotice({
+    author: post.author,
+    canonicalUrl: canonical,
+    language,
+  });
+  const project = post.projectName
+    ? {
+        '@type': 'CreativeWork',
+        name: post.projectName,
+        ...(post.projectUrl && { url: post.projectUrl }),
+        ...(post.publicationVenue && { isPartOf: {
+          '@type': 'Event',
+          name: post.publicationVenue,
+        } }),
+      }
+    : undefined;
+  const resources = post.externalResources || [];
+  const citations = resources
+    .filter((resource) => resource.kind === 'paper' || resource.kind === 'doi')
+    .map((resource) => ({
+      '@type': 'ScholarlyArticle',
+      name: resource.label,
+      url: resource.url,
+    }));
+  const mentions = resources.map((resource) => ({
+    '@type': resource.kind === 'github' ? 'SoftwareSourceCode' : 'CreativeWork',
+    name: resource.label,
+    url: resource.url,
+  }));
 
   return {
     '@context': 'https://schema.org',
@@ -243,19 +282,34 @@ export const blogPostingJsonLd = (post: {
       '@id': canonical,
     },
     inLanguage: language === 'zh' ? 'zh-Hans' : 'en',
-    ...(post.image && { image: absoluteUrl(post.image) }),
+    ...(post.image && {
+      image: {
+        '@type': 'ImageObject',
+        contentUrl: absoluteUrl(post.image),
+        url: absoluteUrl(post.image),
+        caption: post.imageAlt || `${post.title} — ${contentAuthorDisplayName(post.author)}`,
+        creator: author,
+        creditText: contentAuthorDisplayName(post.author),
+        copyrightHolder: author,
+        copyrightNotice: rightsNotice,
+        isPartOf: {
+          '@type': 'WebPage',
+          '@id': canonical,
+        },
+        ...(project && { about: project }),
+      },
+    }),
     ...(post.datePublished && { datePublished: post.datePublished }),
     ...((post.dateModified || post.datePublished) && { dateModified: post.dateModified || post.datePublished }),
     ...(post.seriesPosition != null && { position: post.seriesPosition }),
     author,
     creator: author,
     copyrightHolder: author,
-    copyrightNotice: contentRightsNotice({
-      author: post.author,
-      canonicalUrl: canonical,
-      language,
-    }),
+    copyrightNotice: rightsNotice,
     creditText: contentAuthorDisplayName(post.author),
+    ...(project && { about: project }),
+    ...(citations.length > 0 && { citation: citations }),
+    ...(mentions.length > 0 && { mentions }),
     isPartOf: [
       website,
       ...(post.seriesTitle

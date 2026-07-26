@@ -96,12 +96,20 @@ types:
       - { name: visibility,         type: "enum(private,unlisted,public)",     required: true,  default: private, source: new,      column: "blog_posts.visibility" }
       - { name: excerpt,            type: text,                                 required: false, default: null,    source: "py,ent", column: "blog_posts.excerpt" }
       - { name: is_featured,        type: bool,                                 required: false, default: false,   source: "py,ent", column: "blog_posts.is_featured" }
-      - { name: featured_image_url, type: string,                               required: false, default: null,    source: "py,ent", column: "blog_posts.featured_image_url" }
+      - { name: featured_image_url, type: string,                               required: false, default: null,    source: "py,ent", column: "blog_post_translations.featured_image_url", translatable: true }
       - { name: published_at,       type: datetime,                             required: false, default: null,    source: "py,ent", column: "blog_posts.published_at" }
       - { name: category,          type: string,                               required: false, default: null,    source: "py,ent", column: "blog_posts.category_id" }
       - { name: tags,               type: "list<string>",                      required: false, default: [],      source: "py,ent", column: "content_tag" }
       - { name: series,             type: "string(slug)",                      required: false, default: null,    source: "py,ent", column: "blog_posts.series_id" }
       - { name: series_order,       type: int,                                  required: false, default: null,    source: "py,ent", column: "blog_posts.series_order" }
+      - { name: project_name,       type: string,                               required: false, default: null,    source: new,      column: "blog_posts.project_name" }
+      - { name: publication_venue,  type: string,                               required: false, default: null,    source: new,      column: "blog_posts.publication_venue" }
+      - { name: project_url,        type: string,                               required: false, default: null,    source: new,      column: "blog_posts.project_url" }
+      - { name: external_resources, type: "list<{kind:string,label:string,url:string}>", required: false, default: [], source: new, column: "blog_posts.external_resources" }
+      - { name: image_author,       type: string,                               required: false, default: null,    source: new,      column: null }
+      - { name: image_site_url,     type: string,                               required: false, default: null,    source: new,      column: null }
+      - { name: image_watermark_mode, type: "enum(off,metadata,visible,both)",  required: false, default: off,     source: new,      column: null }
+      - { name: image_watermark_position, type: "enum(bottom-left,bottom-right)", required: false, default: bottom-right, source: new, column: null }
       - { name: relations,          type: "list<relation>",                    required: false, default: [],      source: new,      column: "content_relation" }
     parts:
       - { role: body, required: true, order: 10, shape: prose }

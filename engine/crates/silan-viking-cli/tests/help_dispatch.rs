@@ -150,6 +150,11 @@ fn credential_help_exposes_oauth_lifecycles() {
     let (code, stdout, stderr) = run(&["credentials", "--help"]);
     assert_eq!(code, 0);
     assert!(
+        stdout.contains("credentials deepseek set|rotate")
+            && stdout.contains("credentials deepseek status|test|remove"),
+        "credential help must expose the DeepSeek lifecycle: {stdout}"
+    );
+    assert!(
         stdout.contains("credentials google set|rotate|status|remove"),
         "credential help must expose the Google OAuth lifecycle: {stdout}"
     );
@@ -158,6 +163,68 @@ fn credential_help_exposes_oauth_lifecycles() {
         "credential help must expose the GitHub OAuth lifecycle: {stdout}"
     );
     assert!(stderr.is_empty());
+}
+
+#[test]
+fn deepseek_status_recognizes_environment_configuration_without_exposing_it() {
+    let secret = "deepseek-test-secret-that-must-stay-private";
+    let dir = empty_cwd();
+    let out = Command::new(bin())
+        .args(["credentials", "deepseek", "status"])
+        .env("DEEPSEEK_API_KEY", secret)
+        .current_dir(&dir)
+        .output()
+        .expect("cli runs");
+    let _ = std::fs::remove_dir_all(&dir);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+
+    assert!(out.status.success(), "{stderr}");
+    assert!(
+        stdout.contains("configured in DEEPSEEK_API_KEY"),
+        "{stdout}"
+    );
+    assert!(!stdout.contains(secret), "{stdout}");
+    assert!(!stderr.contains(secret), "{stderr}");
+}
+
+#[test]
+fn cover_help_exposes_query_generation_and_apply_behavior() {
+    let (code, stdout, stderr) = run(&["cover", "--help"]);
+    assert_eq!(code, 0);
+    assert!(stdout.contains("cover find [query]"), "{stdout}");
+    assert!(stdout.contains("cover generate <target-uri>"), "{stdout}");
+    assert!(stdout.contains("applies by default"), "{stdout}");
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn media_help_exposes_preview_apply_and_inspection() {
+    let (code, stdout, stderr) = run(&["media", "--help"]);
+    assert_eq!(code, 0);
+    assert!(stdout.contains("media watermark <blog-uri>"), "{stdout}");
+    assert!(stdout.contains("media inspect <asset-uri>"), "{stdout}");
+    assert!(stdout.contains("--dry-run"), "{stdout}");
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn blog_and_episode_help_expose_deepseek_language_checks() {
+    let (blog_code, blog_stdout, blog_stderr) = run(&["blog", "--help"]);
+    assert_eq!(blog_code, 0);
+    assert!(
+        blog_stdout.contains("blog language-check [<slug>]"),
+        "{blog_stdout}"
+    );
+    assert!(blog_stderr.is_empty());
+
+    let (episode_code, episode_stdout, episode_stderr) = run(&["episode", "--help"]);
+    assert_eq!(episode_code, 0);
+    assert!(
+        episode_stdout.contains("episode series language-check [<series>]"),
+        "{episode_stdout}"
+    );
+    assert!(episode_stderr.is_empty());
 }
 
 #[test]

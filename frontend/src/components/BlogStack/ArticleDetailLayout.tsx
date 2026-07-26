@@ -17,6 +17,7 @@ import { useLanguage } from '../LanguageContext';
 import { BlogData, UserAnnotation, SelectedText } from './types/blog';
 import { BlogContentRenderer } from './components/BlogContentRenderer';
 import AuthorByline from './components/AuthorByline';
+import { ArticleResourceStrip } from './components/ArticleResourceStrip';
 import { useBlogEngagement } from './hooks/useBlogEngagement';
 import {
   ArticleFooter,
@@ -204,7 +205,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
       >
         {/* Body — article title, short deck, then the long-form content.
             `#kb-active-part` is the contract DOMOutline scans for headings. */}
-        <div id={ARTICLE_ID} className="prose-content markdown-body w-full scroll-mt-24">
+        <div data-ds id={ARTICLE_ID} className="prose-content markdown-body w-full scroll-mt-24">
           <header id={ARTICLE_HEADER_ID} className="scroll-mt-24 pb-8 pt-6">
             <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] leading-5 text-ds-fg-subtle">
               {formattedDate && <span>{formattedDate}</span>}
@@ -212,13 +213,7 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
               {post.readTime && <span>{post.readTime}</span>}
             </div>
             <h1
-              className="max-w-[70rem] text-balance font-display text-ds-fg"
-              style={{
-                fontSize: 'clamp(4.25rem, 6.4vw, 6.2rem)',
-                lineHeight: 1.02,
-                fontWeight: 500,
-                letterSpacing: '-0.035em',
-              }}
+              className="max-w-[70rem] break-words text-balance font-display text-[2.5rem] font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-[3.5rem] lg:text-[5rem]"
             >
               {title}
             </h1>
@@ -277,11 +272,18 @@ const ArticleDetailLayout: React.FC<ArticleDetailLayoutProps> = ({
               id={ARTICLE_SUMMARY_ID}
               className="scroll-mt-24 rounded-b-ds-lg bg-ds-surface-2 px-6 py-6 sm:px-8"
             >
-              <p className="max-w-[58rem] text-pretty text-[19px] font-medium leading-[1.55] text-ds-fg">
+              <p className="max-w-[58rem] text-pretty text-[17px] font-medium leading-7 text-ds-fg sm:text-[19px] sm:leading-[1.55]">
                 {summary}
               </p>
             </section>
           )}
+
+          <ArticleResourceStrip
+            projectName={post.projectName}
+            publicationVenue={post.publicationVenue}
+            resources={post.externalResources || []}
+            language={language}
+          />
 
           <section id={ARTICLE_BODY_ID} className="mt-12 max-w-[68rem] scroll-mt-24">
             <div className="mb-6 flex items-center gap-3">

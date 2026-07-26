@@ -21,13 +21,19 @@
 
 #![forbid(unsafe_code)]
 
+mod api_credentials;
+
 pub mod capture;
+pub mod cover;
 pub mod credential_profile;
+pub mod deepseek_credentials;
 pub mod delivery_control;
 pub mod editor;
 pub mod geo_advisor;
 pub mod github_oauth_credentials;
 pub mod google_oauth_credentials;
+pub mod image_attribution;
+pub mod language_audit;
 pub mod media_library;
 pub mod media_optimizer;
 pub mod openai_credentials;
@@ -47,8 +53,16 @@ pub mod workspace_content;
 pub mod workspace_sync;
 
 pub use capture::{CaptureError, CapturedContent, ContentCreator, IdeaCategory};
+pub use cover::{
+    CoverApplyState, CoverBrief, CoverError, CoverGenerationInput, CoverGenerationResult,
+    CoverTargetKind, CoverTargetSummary, CoverWorkspace,
+};
 pub use credential_profile::{
     CredentialProfile, CredentialProfileError, DEFAULT_CREDENTIAL_PROFILE,
+};
+pub use deepseek_credentials::{
+    DeepSeekApiKey, DeepSeekCredentialError, DeepSeekCredentialVerifier, DeepSeekVerification,
+    DEEPSEEK_KEYCHAIN_ACCOUNT, DEEPSEEK_KEYCHAIN_SERVICE,
 };
 pub use delivery_control::{
     DeliveryControl, DeliveryControlError, DeliverySyncStatus, DeployRunStatus,
@@ -70,6 +84,19 @@ pub use github_oauth_credentials::{
 pub use google_oauth_credentials::{
     GoogleOAuthClientId, GoogleOAuthCredentialError, GOOGLE_OAUTH_KEYCHAIN_ACCOUNT,
     GOOGLE_OAUTH_KEYCHAIN_SERVICE,
+};
+pub use image_attribution::{
+    ArticleImageAssetPlan, ArticleImageAttributionPlan, ArticleImageAttributionResult,
+    ArticleImageAttributionWorkspace, EmbeddedImageAttribution, ImageAttributionApplyState,
+    ImageAttributionAssetResult, ImageAttributionError, ImageWatermarkMode, ImageWatermarkPosition,
+};
+pub use language_audit::{
+    DeepSeekLanguageAuditError, DeepSeekLanguageAuditor, DocumentLanguageAudit,
+    LanguageAuditCategory, LanguageAuditDocument, LanguageAuditFailure, LanguageAuditFinding,
+    LanguageAuditProgress, LanguageAuditReport, LanguageAuditRunState, LanguageAuditScope,
+    LanguageAuditSeverity, LanguageAuditUsage, LanguageAuditWorkflow, LanguageAuditWorkspace,
+    LanguageAuditWorkspaceError, DEEPSEEK_LANGUAGE_AUDIT_MODEL_ENV,
+    DEFAULT_DEEPSEEK_LANGUAGE_AUDIT_MODEL, DEFAULT_LANGUAGE_AUDIT_MIN_CONFIDENCE,
 };
 pub use media_library::{MediaAssetRef, MediaLibrary, MediaLibraryError, MediaReferenceStatus};
 pub use media_optimizer::{
@@ -100,7 +127,8 @@ pub use stats::{
     StatsSync, StatsSyncResult, VisitorRow,
 };
 pub use translation_ai::{
-    GeneratedMarkdownTranslation, MarkdownTranslationRequest, MarkdownTranslationSyncRequest,
+    GeneratedMarkdownTranslation, MarkdownSelectionEdit, MarkdownSelectionEditAction,
+    MarkdownSelectionEditRequest, MarkdownTranslationRequest, MarkdownTranslationSyncRequest,
     OpenAiMarkdownTranslator, OpenAiTranslationError, SyncedMarkdownTranslation,
     DEFAULT_OPENAI_TRANSLATION_MODEL,
 };
@@ -111,10 +139,10 @@ pub use website_insights::{
 };
 pub use workspace::{LintIssue, ScanError, ScannedAsset, Workspace};
 pub use workspace_content::{
-    CreateTranslationInput, EditableDocument, EditableEntry, EditablePart, EditableSection,
-    EditableTranslation, EditableWorkspace, SaveLifecycleInput, SaveMetadataInput,
-    SaveProjectFeaturedInput, SaveTranslationInput, SourceRevision, WorkspaceContent,
-    WorkspaceContentError, WorkspaceEntityCount,
+    ArticleAttribution, ArticleResource, CreateTranslationInput, EditableDocument, EditableEntry,
+    EditablePart, EditableSection, EditableTranslation, EditableWorkspace, SaveLifecycleInput,
+    SaveMetadataInput, SaveProjectFeaturedInput, SaveTranslationInput, SourceRevision,
+    WorkspaceContent, WorkspaceContentError, WorkspaceEntityCount,
 };
 pub use workspace_sync::{
     WorkspaceSync, WorkspaceSyncError, WorkspaceSyncResult, WorkspaceSyncState, WorkspaceSyncStatus,

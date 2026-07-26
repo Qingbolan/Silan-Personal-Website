@@ -1,7 +1,10 @@
 //! `silan-viking` CLI binary — M8 command surface.
 
 mod banner;
+mod cover;
 mod credentials;
+mod image_attribution;
+mod language_check;
 mod onboarding;
 mod scaffold;
 mod skill;
@@ -54,6 +57,7 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
             "blog add-part <slug> <role> · blog add-lang <slug> <lang>",
             "blog publish|unpublish <slug>",
             "blog list [--status <status>|--tag <tag>]",
+            "blog language-check [<slug>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]",
         ],
         "project" => &[
             "project new|list|show|edit|archive|rm <slug>",
@@ -69,6 +73,7 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
         ],
         "episode" => &[
             "episode series new|list|show|reorder|archive|rm <series>",
+            "episode series language-check [<series>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]",
             "episode new <series> <slug>",
             "episode show|edit|publish|unpublish|archive|rm <series> <slug>",
             "episode add-lang <series> <slug> <lang>",
@@ -77,6 +82,18 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
             "resume show|list",
             "resume add-part <role> · resume add-lang <role> <lang>",
             "resume edit <role> [lang]",
+        ],
+        "cover" => &[
+            "cover find [query] [--type blog|series] [--limit N] [--json]",
+            "cover generate <target-uri> [--headline TEXT] [--audience TEXT] [--value TEXT] [--visual TEXT]",
+            "cover generate <target-uri> [--language en|zh] [--prompt TEXT]",
+            "cover generate <target-uri> [--size wide|portrait|square] [--quality low|medium|high] [--format png|webp|jpeg]",
+            "cover generate <target-uri> [--no-apply] [--dry-run] [--json]  # applies by default",
+        ],
+        "media" => &[
+            "media watermark <blog-uri> [--mode metadata|visible|both|off] [--position bottom-left|bottom-right]",
+            "media watermark <blog-uri> [--dry-run] [--json]",
+            "media inspect <asset-uri> [--json]",
         ],
         "index" => &["index sync|status|lint|rebuild"],
         "content" => &[
@@ -115,6 +132,8 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
         "credentials" => &[
             "credentials openai set|rotate",
             "credentials openai status|test|remove",
+            "credentials deepseek set|rotate",
+            "credentials deepseek status|test|remove",
             "credentials google set|rotate|status|remove [--profile <name>]",
             "credentials github set|rotate|status|remove [--profile <name>]",
         ],
@@ -237,6 +256,12 @@ fn run(args: Vec<String>) -> Result<(), String> {
         ["credentials", "openai", "status"] => credentials::openai_status(),
         ["credentials", "openai", "test"] => credentials::openai_test(),
         ["credentials", "openai", "remove"] => credentials::openai_remove(),
+        ["credentials", "deepseek", "set"] | ["credentials", "deepseek", "rotate"] => {
+            credentials::deepseek_set()
+        }
+        ["credentials", "deepseek", "status"] => credentials::deepseek_status(),
+        ["credentials", "deepseek", "test"] => credentials::deepseek_test(),
+        ["credentials", "deepseek", "remove"] => credentials::deepseek_remove(),
         ["credentials", "github", action, flags @ ..]
             if matches!(*action, "set" | "rotate" | "status" | "remove") =>
         {
@@ -321,6 +346,16 @@ fn run(args: Vec<String>) -> Result<(), String> {
         ["content", "lint"] => content_lint(&opts.content_root, None),
         ["content", "lint", "--drift"] => content_lint_drift(),
         ["content", "lint", uri] => content_lint(&opts.content_root, Some(uri)),
+        ["cover", "find", rest @ ..] => cover::find(&opts.content_root, rest),
+        ["cover", "generate", target_uri, rest @ ..] => {
+            cover::generate(&opts.content_root, &opts.db_path, target_uri, rest)
+        }
+        ["media", "watermark", target_uri, rest @ ..] => {
+            image_attribution::watermark(&opts.content_root, target_uri, rest)
+        }
+        ["media", "inspect", asset_uri, rest @ ..] => {
+            image_attribution::inspect(&opts.content_root, asset_uri, rest)
+        }
         // `relation list` is the noun-first alias newcomers reach for first
         // (matches `<type> list` for content); behaves identically to graph.
         ["relation", "graph"] | ["relation", "list"] => relation_graph(&opts.content_root),
@@ -343,6 +378,11 @@ fn run(args: Vec<String>) -> Result<(), String> {
         ["episode", "series", "new", series] => episode_series_new(&opts.content_root, series),
         ["episode", "series", "list"] => episode_series_list(&opts.content_root),
         ["episode", "series", "show", series] => episode_series_show(&opts.content_root, series),
+        ["episode", "series", "language-check", rest @ ..] => language_check::run(
+            &opts.content_root,
+            silan_viking_app::LanguageAuditScope::EpisodeSeries,
+            rest,
+        ),
         ["episode", "series", "reorder", series, rest @ ..] => {
             episode_series_reorder(&opts.content_root, series, rest)
         }
@@ -394,6 +434,11 @@ fn run(args: Vec<String>) -> Result<(), String> {
             // Reverse: status back to draft AND visibility back to private.
             type_set_lifecycle_state(&opts.content_root, "blog", slug, "draft", "private")
         }
+        ["blog", "language-check", rest @ ..] => language_check::run(
+            &opts.content_root,
+            silan_viking_app::LanguageAuditScope::Blog,
+            rest,
+        ),
         ["project", "progress", slug] => project_progress(&opts.content_root, slug),
         ["project", "feature", slug] => {
             type_set_field(&opts.content_root, "project", slug, "is_featured", "true")
@@ -541,11 +586,12 @@ fn run(args: Vec<String>) -> Result<(), String> {
                 what,
             )
         }
-        // `site update-content` — the narrow, frequently-needed verb: push
-        // edited content/ to the live backend, nothing else. It is exactly
-        // `site deploy --what=content` with a name that says what it does,
-        // so authors don't have to know that "deploy" is overloaded for
-        // both "ship the whole stack" and "just refresh the DB".
+        // `site update-content` — the narrow, frequently-needed verb. It
+        // publishes edited content, then derives a fresh SEO/static release
+        // from the updated production API on the server. It remains exactly
+        // `site deploy --what=content`, so source-code deployment stays out
+        // of the authoring workflow while every public projection stays in
+        // sync with the content transaction.
         ["site", "update-content", flags @ ..] => {
             let mut confirm = false;
             for arg in flags {
@@ -693,7 +739,7 @@ fn find_project_root_from(start: &Path) -> Option<PathBuf> {
 /// config path is joined onto it. Returns `None` when there is no project
 /// config yet (e.g. before `silan init`) so the caller can fall back.
 fn resolve_db_path(content_root: &Path) -> Option<PathBuf> {
-    let project_root = content_root.parent().unwrap_or(&content_root);
+    let project_root = content_root.parent().unwrap_or(content_root);
     let config: toml::Value = fs::read_to_string(project_root.join("silan-viking.toml"))
         .ok()?
         .parse()
@@ -802,6 +848,14 @@ fn print_help(content_root: &Path) {
     row("blog|project|moment", "Create / edit / list a content item");
     row("episode", "Manage episode series and per-episode entries");
     row("resume", "Show and edit the single resume Item");
+    row(
+        "cover",
+        "Find Blog or series targets and generate their cover",
+    );
+    row(
+        "media",
+        "Preview, apply, and inspect article image attribution",
+    );
     println!();
 
     println!("  {}", h("[Workflow]"));
@@ -827,6 +881,10 @@ fn print_help(content_root: &Path) {
     row(
         "skill",
         "Manage the silan-viking Claude skill (emit, status, rm)",
+    );
+    row(
+        "credentials",
+        "Configure OpenAI, DeepSeek, and OAuth credentials",
     );
     println!();
 
@@ -866,6 +924,10 @@ fn print_help(content_root: &Path) {
     );
     println!(
         "  {}",
+        d("blog language-check [<slug>] [--min-confidence N] [--report PATH] [--json]")
+    );
+    println!(
+        "  {}",
         d("moment status <slug> <state> · moment set-type <slug> <moment-type>")
     );
     println!(
@@ -878,7 +940,19 @@ fn print_help(content_root: &Path) {
     );
     println!(
         "  {}",
+        d("episode series language-check [<series>] [--min-confidence N] [--report PATH] [--json]")
+    );
+    println!(
+        "  {}",
         d("resume show|list · resume add-part|add-lang|edit <role> [lang]")
+    );
+    println!(
+        "  {}",
+        d("cover find [query] [--type blog|series] · cover generate <target-uri> [options]")
+    );
+    println!(
+        "  {}",
+        d("media watermark <blog-uri> [--mode MODE] [--dry-run] · media inspect <asset-uri>")
     );
     println!();
 
@@ -988,7 +1062,7 @@ fn init_content(content_root: &Path) -> Result<(), String> {
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("content");
-    let project_root = content_root.parent().unwrap_or(&content_root);
+    let project_root = content_root.parent().unwrap_or(content_root);
     let config = project_root.join("silan-viking.toml");
     if !config.exists() {
         fs::write(&config, default_config(content_dir_name)).map_err(|e| e.to_string())?;
@@ -2471,8 +2545,8 @@ fn completion(shell: &str) -> Result<(), String> {
                 "# silan bash completion — source this, or add to ~/.bashrc:\n\
                  #   eval \"$(silan completion bash)\"\n\
                  _silan() {{\n  \
-                   local groups=\"blog project episode resume moment content index \\\n    \
-                     relation site stats proposal mcp skill init onboard setup config doctor completion\"\n  \
+                   local groups=\"blog project episode resume moment cover media content index \\\n    \
+                     relation site stats proposal mcp skill credentials init onboard setup config doctor completion\"\n  \
                    COMPREPLY=( $(compgen -W \"$groups\" -- \"${{COMP_WORDS[COMP_CWORD]}}\") )\n\
                  }}\n\
                  complete -F _silan silan svk silan-viking"
@@ -2486,8 +2560,8 @@ fn completion(shell: &str) -> Result<(), String> {
                  #compdef silan svk silan-viking\n\
                  _silan() {{\n  \
                    local -a groups\n  \
-                   groups=(blog project episode resume moment content index \\\n    \
-                     relation site stats proposal mcp skill init onboard setup config doctor completion)\n  \
+                   groups=(blog project episode resume moment cover media content index \\\n    \
+                     relation site stats proposal mcp skill credentials init onboard setup config doctor completion)\n  \
                    compadd -- $groups\n\
                  }}\n\
                  compdef _silan silan svk silan-viking"
@@ -2498,8 +2572,8 @@ fn completion(shell: &str) -> Result<(), String> {
             println!(
                 "# silan fish completion — save to ~/.config/fish/completions/silan.fish\n\
                  complete -c silan -f -n __fish_use_subcommand -a \\\n  \
-                 'blog project episode resume moment content index relation site \\\n   \
-                 stats proposal mcp skill init onboard setup config doctor completion'\n\
+                 'blog project episode resume moment cover media content index relation site \\\n   \
+                 stats proposal mcp skill credentials init onboard setup config doctor completion'\n\
                  complete -c svk -w silan\n\
                  complete -c silan-viking -w silan"
             );
@@ -3238,37 +3312,6 @@ impl<'a> RemoteArtifactTransport<'a> {
         Err(last_error.unwrap_or_else(|| format!("[transfer] {label}: download failed")))
     }
 
-    fn sync_frontend_dist(&self, dist: &Path, remote_dir: &str) -> Result<(), String> {
-        if !dist.is_dir() {
-            return Err(format!(
-                "[frontend] dist directory not found: {}",
-                dist.display()
-            ));
-        }
-        ssh_exec(
-            self.cfg,
-            &format!(
-                "mkdir -p {} {}",
-                shell_quote(remote_dir),
-                shell_quote(&format!("{remote_dir}/assets"))
-            ),
-        )?;
-        self.rsync_frontend_root(dist, remote_dir)?;
-        let assets = dist.join("assets");
-        if assets.is_dir() {
-            self.rsync_frontend_assets(&assets, remote_dir)?;
-        }
-        ssh_exec(
-            self.cfg,
-            &format!(
-                "cd {} && find . -maxdepth 4 -name '._*' -delete && \
-                 find assets -maxdepth 1 -type f -name '*.map' -delete",
-                shell_quote(remote_dir)
-            ),
-        )?;
-        Ok(())
-    }
-
     fn sync_backend_source(&self, backend: &Path, remote_build_dir: &str) -> Result<(), String> {
         if !backend.is_dir() {
             return Err(format!(
@@ -3307,44 +3350,42 @@ impl<'a> RemoteArtifactTransport<'a> {
         Ok(())
     }
 
-    fn rsync_frontend_root(&self, dist: &Path, remote_dir: &str) -> Result<(), String> {
+    fn sync_frontend_source(&self, frontend: &Path, remote_source_dir: &str) -> Result<(), String> {
+        if !frontend.is_dir() {
+            return Err(format!(
+                "[frontend] source directory not found: {}",
+                frontend.display()
+            ));
+        }
+        ssh_exec(
+            self.cfg,
+            &format!("mkdir -p {}", shell_quote(remote_source_dir)),
+        )?;
         let mut cmd = Command::new("rsync");
         cmd.args([
             "-az",
             "--delete",
-            "--exclude=/api/",
-            "--exclude=/.well-known/",
-            "--exclude=/.user.ini",
-            "--exclude=/assets/",
+            "--exclude=.git/",
+            "--exclude=.DS_Store",
+            "--exclude=._*",
+            "--exclude=*.log",
+            "--exclude=artifacts/",
+            "--exclude=/dist",
+            "--exclude=dist.zip",
+            "--exclude=node_modules/",
+            "--exclude=silan-personal-website/",
         ]);
         cmd.arg("-e").arg(self.rsync_ssh_command());
-        cmd.arg(format!("{}/", dist.display()));
+        cmd.arg(format!("{}/", frontend.display()));
         cmd.arg(format!(
             "{}:{}/",
             ssh_target(self.cfg),
-            remote_dir.trim_end_matches('/')
+            remote_source_dir.trim_end_matches('/')
         ));
-        let status = run_status_with_timeout(&mut cmd, self.timeout, "[frontend] rsync root")?;
-        if !status.success() {
-            return Err(format!("[frontend] rsync root exited with status {status}"));
-        }
-        Ok(())
-    }
-
-    fn rsync_frontend_assets(&self, assets: &Path, remote_dir: &str) -> Result<(), String> {
-        let mut cmd = Command::new("rsync");
-        cmd.args(["-az"]);
-        cmd.arg("-e").arg(self.rsync_ssh_command());
-        cmd.arg(format!("{}/", assets.display()));
-        cmd.arg(format!(
-            "{}:{}/assets/",
-            ssh_target(self.cfg),
-            remote_dir.trim_end_matches('/')
-        ));
-        let status = run_status_with_timeout(&mut cmd, self.timeout, "[frontend] rsync assets")?;
+        let status = run_status_with_timeout(&mut cmd, self.timeout, "[frontend] rsync source")?;
         if !status.success() {
             return Err(format!(
-                "[frontend] rsync assets exited with status {status}"
+                "[frontend] rsync source exited with status {status}"
             ));
         }
         Ok(())
@@ -3821,6 +3862,45 @@ fn deploy_health_check(cfg: &DeployConfig) -> Result<(), String> {
     }
 }
 
+fn deploy_frontend_health_check(cfg: &DeployConfig) -> Result<(), String> {
+    let base = cfg
+        .public_url
+        .clone()
+        .unwrap_or_else(|| format!("https://{}", cfg.host));
+    let url = format!(
+        "{}/zh/blog/?silan-release-check={}",
+        base.trim_end_matches('/'),
+        time::OffsetDateTime::now_utc().unix_timestamp()
+    );
+    let out = Command::new("curl")
+        .args(["-fsSLk", "--max-time", "20", &url])
+        .output()
+        .map_err(|error| format!("[frontend:server] curl {url}: {error}"))?;
+    if !out.status.success() {
+        return Err(format!(
+            "[frontend:server] public page check failed with status {}",
+            out.status
+        ));
+    }
+    let html = String::from_utf8_lossy(&out.stdout);
+    if !html.contains("<div id=\"root\">") || !html.contains("data-masonry-cell") {
+        return Err(
+            "[frontend:server] public blog page is not the prerendered managed release".to_owned(),
+        );
+    }
+    if html.contains("\"blogList\"") {
+        return Err(
+            "[frontend:server] public blog page still contains a serialized list snapshot"
+                .to_owned(),
+        );
+    }
+    println!(
+        "[frontend:server] public SEO page verified · {} bytes",
+        out.stdout.len()
+    );
+    Ok(())
+}
+
 fn curl_health_check(url: &str, host_header: Option<&str>) -> Result<(), String> {
     let mut args = vec![
         "-sSLk".to_owned(),
@@ -4140,18 +4220,22 @@ fn site_preview(
 // ---------------------------------------------------------------------------
 //
 // Targets a host where Nginx already fronts vhosts (e.g. BaoTa / 宝塔) and
-// the backend runs under systemd. The CLI orchestrates a sequence of host
-// tools (npm, go via ssh, scp, ssh, curl); it does not bundle them. A
-// missing tool surfaces as a clear error before anything is shipped.
+// the backend runs under systemd. Frontend source is transferred to a
+// persistent server workspace; Node, dependencies, Chromium, SEO rendering,
+// and static release promotion all remain server-owned.
 //
 // The remote layout follows the README + the manual EasyNet-style deploy:
 //
 //   <remote_dir>/                     (e.g. /www/wwwroot/silan.tech)
-//   ├── index.html  assets/  ...      ← frontend dist root
 //   └── api/
 //       ├── silan-backend             ← compiled Go binary
 //       ├── etc/backend-api.yaml      ← server config
-//       └── _deploy/api/portfolio.db  ← derived database
+//       └── _deploy/
+//           ├── api/portfolio.db      ← derived database
+//           └── frontend/
+//               ├── source/           ← persistent build source
+//               ├── releases/         ← immutable static releases
+//               └── current -> ...    ← atomically promoted Nginx root
 
 /// One end-to-end nginx-mode deploy. Backend binaries require a restart;
 /// SQLite content swaps require stop/start; PostgreSQL content transactions
@@ -4177,7 +4261,11 @@ fn run_nginx_deploy(
         println!("  scope   --what={}", what.label());
         let mut step = 1;
         if what.does_frontend() {
-            println!("  {step} frontend npm run build → incremental rsync dist/");
+            println!("  {step} frontend source → persistent server build workspace");
+            step += 1;
+        }
+        if what.does_frontend() || what.does_content() {
+            println!("  {step} preflight server Node/Chromium/dependencies; no live state changed");
             step += 1;
         }
         if what.does_backend() {
@@ -4208,9 +4296,21 @@ fn run_nginx_deploy(
             (false, false) => "no API lifecycle change".to_owned(),
         };
         println!("  {step} activate  {activation} → curl /api/v1/health");
+        step += 1;
+        if what.does_frontend() || what.does_content() {
+            println!(
+                "  {step} SEO  server npm run build:seo against production API → \
+                 verified immutable release → atomic current switch"
+            );
+            step += 1;
+        }
+        if what.does_backend() || what.does_frontend() || what.does_content() {
+            println!("  {step} nginx  point static locations at managed current release");
+        }
         return Ok(());
     }
 
+    let refresh_frontend = what.does_frontend() || what.does_content();
     let mut did_work = false;
     // `deploy_nginx_content` stops the backend itself (to release the
     // mmap'd DB before scp). If it ran we need `start`, not `restart` —
@@ -4218,17 +4318,23 @@ fn run_nginx_deploy(
     // journal context, and tooling that watches the unit state sees two
     // active→inactive flips instead of one.
     let mut backend_stopped = false;
-    // Run every failure-prone build before content stops the live API. This
-    // prevents a missing local toolchain or remote compile error from leaving
-    // the service offline. Backend goes before content so the matching
-    // sqlite2pg importer is installed before the content phase invokes it.
+    // Stage frontend source and provision all failure-prone build dependencies
+    // before touching content. The actual SEO render must happen later, after
+    // the updated API is healthy.
     if what.does_frontend() {
-        deploy_nginx_frontend(project_root, cfg)?;
+        sync_nginx_frontend_source(project_root, cfg)?;
         did_work = true;
     }
+    if refresh_frontend {
+        prepare_nginx_frontend(cfg)?;
+    }
+    if what.does_frontend() {
+        provision_nginx_frontend_publisher(cfg, !what.does_backend())?;
+    }
+    // Backend goes before content so the matching sqlite2pg importer is
+    // installed before the content phase invokes it.
     if what.does_backend() {
         deploy_nginx_backend(project_root, cfg)?;
-        deploy_nginx_extension(cfg)?;
         did_work = true;
     }
     if what.does_backend() {
@@ -4253,7 +4359,7 @@ fn run_nginx_deploy(
     } else if what.does_content() {
         println!("[online] PostgreSQL content transaction applied; API stayed running");
     } else {
-        println!("[online] static frontend updated; API lifecycle unchanged");
+        println!("[online] API lifecycle unchanged; server SEO build follows");
     }
     let health_base = cfg
         .public_url
@@ -4261,6 +4367,16 @@ fn run_nginx_deploy(
         .unwrap_or_else(|| format!("https://{}", cfg.host));
     println!("[health] {health_base}/api/v1/health");
     deploy_health_check(cfg)?;
+
+    if refresh_frontend {
+        publish_nginx_frontend(cfg)?;
+    }
+    if what.does_backend() || refresh_frontend {
+        deploy_nginx_extension(cfg)?;
+    }
+    if refresh_frontend {
+        deploy_frontend_health_check(cfg)?;
+    }
     println!("done.");
     Ok(())
 }
@@ -4268,6 +4384,26 @@ fn run_nginx_deploy(
 fn deploy_nginx_extension(cfg: &DeployConfig) -> Result<(), String> {
     let Some(extension_dir) = cfg.nginx_extension_dir.as_deref() else {
         return Ok(());
+    };
+    let managed_static_root = remote_frontend_current_dir(cfg);
+    let managed_static_exists = ssh_exec(
+        cfg,
+        &format!(
+            "if [ -L {root} ] && [ -f {root}/index.html ]; then printf yes; fi",
+            root = shell_quote(&managed_static_root),
+        ),
+    )?
+    .trim()
+        == "yes";
+    let static_root_directive = if managed_static_exists {
+        format!("    root {managed_static_root};\n")
+    } else {
+        String::new()
+    };
+    let spa_location = if managed_static_exists {
+        "location ^~ /"
+    } else {
+        "location /"
     };
     let configuration = format!(
         r#"# silan-viking — backend reverse proxy, crawler capture, SPA fallback
@@ -4289,8 +4425,8 @@ gzip_types
 
 location /api/ {{
     client_max_body_size 128m;
-    proxy_read_timeout 130s;
-    proxy_send_timeout 130s;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
     proxy_pass http://127.0.0.1:{port};
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -4304,6 +4440,7 @@ location = /api/v1/analytics/crawler-hit {{
 }}
 
 location = /index.html {{
+{static_root_directive}
     mirror /_silan_crawler_hit;
     mirror_request_body off;
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
@@ -4313,6 +4450,7 @@ location = /index.html {{
 }}
 
 location = /about.txt {{
+{static_root_directive}
     mirror /_silan_crawler_hit;
     mirror_request_body off;
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
@@ -4322,6 +4460,7 @@ location = /about.txt {{
 }}
 
 location = /llms.txt {{
+{static_root_directive}
     mirror /_silan_crawler_hit;
     mirror_request_body off;
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
@@ -4346,6 +4485,7 @@ location = /_silan_crawler_hit {{
 }}
 
 location ^~ /assets/ {{
+{static_root_directive}
     mirror /_silan_crawler_hit;
     mirror_request_body off;
     add_header Cache-Control "public, max-age=31536000, immutable" always;
@@ -4357,7 +4497,8 @@ location @silan_asset_404 {{
     return 410 "asset gone\n";
 }}
 
-location / {{
+{spa_location} {{
+{static_root_directive}
     mirror /_silan_crawler_hit;
     mirror_request_body off;
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
@@ -4367,6 +4508,8 @@ location / {{
 }}
 "#,
         port = cfg.backend_port,
+        static_root_directive = static_root_directive,
+        spa_location = spa_location,
     );
     let encoded = base64_encode(configuration.as_bytes());
     let target = format!("{extension_dir}/silan-viking.conf");
@@ -4375,10 +4518,15 @@ location / {{
         cfg,
         &format!(
             "set -e && mkdir -p {dir} && \
-             test ! -f {target} || cp {target} {target}.prev && \
+             had_target=0 && \
+             if test -f {target}; then cp {target} {target}.prev; had_target=1; fi && \
              echo {encoded} | base64 -d > {target}.next && \
              mv {target}.next {target} && \
-             nginx -t && nginx -s reload",
+             if nginx -t && nginx -s reload; then exit 0; fi; \
+             if test \"$had_target\" = 1; then cp {target}.prev {target}; \
+             else rm -f {target}; fi; \
+             nginx -t && nginx -s reload || true; \
+             exit 1",
             dir = extension_dir,
             target = target,
         ),
@@ -4853,20 +5001,225 @@ fn md5_file(path: &Path) -> Result<String, String> {
     Ok(format!("{:x}", ctx.compute()))
 }
 
-/// Phase 2 — frontend. Build the default frontend target locally and
-/// incrementally sync `dist/`. Root HTML/routes are deleted to match the new
-/// build; hashed assets are only appended/overwritten so cached old HTML keeps
-/// resolving its chunks during a rolling browser refresh.
-fn deploy_nginx_frontend(project_root: &Path, cfg: &DeployConfig) -> Result<(), String> {
-    let dist = build_frontend_target(
-        project_root,
-        &FrontendBuildTarget::default(),
-        Some(&cfg.credential_profile),
-        false,
-    )?;
-    println!("[frontend] rsync dist → {}", cfg.remote_dir);
-    RemoteArtifactTransport::new(cfg).sync_frontend_dist(&dist, &cfg.remote_dir)?;
+const REMOTE_FRONTEND_NODE_VERSION: &str = "22.16.0";
+
+fn remote_frontend_state_root(cfg: &DeployConfig) -> String {
+    format!("{}/api/_deploy/frontend", cfg.remote_dir)
+}
+
+fn remote_frontend_source_dir(cfg: &DeployConfig) -> String {
+    format!("{}/source", remote_frontend_state_root(cfg))
+}
+
+fn remote_frontend_current_dir(cfg: &DeployConfig) -> String {
+    format!("{}/published/current", remote_frontend_state_root(cfg))
+}
+
+const REMOTE_FRONTEND_PUBLISHER: &str = "/usr/local/libexec/silan-viking-publish-frontend";
+
+/// Install a project-owned Node runtime on the server. The archive is checked
+/// against nodejs.org's signed release checksum list before extraction, and no
+/// system Node/npm package is required.
+fn ensure_remote_frontend_runtime(cfg: &DeployConfig) -> Result<(), String> {
+    println!(
+        "[frontend:server] ensure Node {} runtime",
+        REMOTE_FRONTEND_NODE_VERSION
+    );
+    let command = format!(
+        "set -e && \
+         base=/opt/silan-viking && version=v{version} && \
+         case \"$(uname -m)\" in \
+           x86_64) node_arch=linux-x64 ;; \
+           aarch64|arm64) node_arch=linux-arm64 ;; \
+           *) echo \"unsupported server architecture: $(uname -m)\" >&2; exit 1 ;; \
+         esac && \
+         archive=node-$version-$node_arch.tar.xz && \
+         install_dir=$base/node-$version-$node_arch && \
+         if [ ! -x \"$install_dir/bin/node\" ]; then \
+           tmp=$(mktemp -d) && \
+           trap 'rm -rf \"$tmp\"' EXIT && \
+           cd \"$tmp\" && \
+           curl -fsSLO \"https://nodejs.org/dist/$version/$archive\" && \
+           curl -fsSLO \"https://nodejs.org/dist/$version/SHASUMS256.txt\" && \
+           grep \" $archive$\" SHASUMS256.txt | sha256sum -c - && \
+           mkdir -p \"$base\" && \
+           tar -xJf \"$archive\" -C \"$base\"; \
+         fi && \
+         ln -sfn \"$install_dir\" \"$base/node\" && \
+         export PATH=\"$base/node/bin:$PATH\" && \
+         node --version && \
+         npm --version",
+        version = REMOTE_FRONTEND_NODE_VERSION,
+    );
+    ssh_exec(cfg, &command)?;
     Ok(())
+}
+
+/// Upload only frontend source/configuration. Dependencies, browser runtime,
+/// build output, and releases remain server-resident and are never copied
+/// through the operator's machine.
+fn sync_nginx_frontend_source(project_root: &Path, cfg: &DeployConfig) -> Result<(), String> {
+    let frontend = project_root.join("frontend");
+    println!(
+        "[frontend] rsync source → {}",
+        remote_frontend_source_dir(cfg)
+    );
+    RemoteArtifactTransport::new(cfg)
+        .sync_frontend_source(&frontend, &remote_frontend_source_dir(cfg))
+}
+
+fn run_remote_frontend_stage(cfg: &DeployConfig, stage: &str) -> Result<(), String> {
+    if !matches!(stage, "prepare" | "publish") {
+        return Err(format!("[frontend:server] unknown stage `{stage}`"));
+    }
+    let public_origin = cfg
+        .public_url
+        .clone()
+        .unwrap_or_else(|| format!("https://{}", cfg.host));
+    let state_root = remote_frontend_state_root(cfg);
+    let source_dir = remote_frontend_source_dir(cfg);
+    let command = format!(
+        "set -e && \
+         export PATH=/opt/silan-viking/node/bin:$PATH && \
+         export SILAN_FRONTEND_STATE_ROOT={state_root} && \
+         export SILAN_PUBLIC_ORIGIN={public_origin} && \
+         cd {source_dir} && \
+         test -f scripts/server-publish.sh && \
+         bash scripts/server-publish.sh {stage}",
+        state_root = shell_quote(&state_root),
+        public_origin = shell_quote(public_origin.trim_end_matches('/')),
+        source_dir = shell_quote(&source_dir),
+    );
+    let output = ssh_exec(cfg, &command)?;
+    for line in output.lines().filter(|line| !line.trim().is_empty()) {
+        println!("{}", line.trim_end());
+    }
+    Ok(())
+}
+
+/// Provision the least-privilege bridge used by Desktop's authenticated HTTP
+/// content deployment. The API remains `www`; it executes one root-owned
+/// launcher and can write only the build/release directories already covered
+/// by the service's systemd ReadWritePaths boundary. Source and dependencies
+/// stay root-owned and read-only to the API process.
+fn provision_nginx_frontend_publisher(
+    cfg: &DeployConfig,
+    restart_backend: bool,
+) -> Result<(), String> {
+    let state_root = remote_frontend_state_root(cfg);
+    let source_dir = remote_frontend_source_dir(cfg);
+    let public_origin = cfg
+        .public_url
+        .clone()
+        .unwrap_or_else(|| format!("https://{}", cfg.host));
+    let wrapper = format!(
+        r#"#!/usr/bin/env bash
+set -euo pipefail
+export PATH=/opt/silan-viking/node/bin:$PATH
+export SILAN_FRONTEND_STATE_ROOT={state_root}
+export SILAN_PUBLIC_ORIGIN={public_origin}
+cd {source_dir}
+exec bash scripts/server-publish.sh publish
+"#,
+        state_root = shell_quote(&state_root),
+        public_origin = shell_quote(public_origin.trim_end_matches('/')),
+        source_dir = shell_quote(&source_dir),
+    );
+    let drop_in = format!(
+        "[Service]\nEnvironment=CONTENT_DEPLOY_STATIC_PUBLISHER={REMOTE_FRONTEND_PUBLISHER}\n"
+    );
+    let wrapper_encoded = base64_encode(wrapper.as_bytes());
+    let drop_in_encoded = base64_encode(drop_in.as_bytes());
+    let restart = if restart_backend {
+        format!(
+            "systemctl restart {unit} && \
+             (for attempt in $(seq 1 20); do \
+                if curl -fsS http://127.0.0.1:{port}/api/v1/health >/dev/null; then \
+                  exit 0; \
+                fi; \
+                sleep 1; \
+              done; \
+              exit 1)",
+            unit = cfg.systemd_unit,
+            port = cfg.backend_port,
+        )
+    } else {
+        "true".to_owned()
+    };
+    let command = format!(
+        "set -e && \
+         state={state} && source_dir={source_dir} && \
+         published=\"$state/published\" && build=\"$state/build\" && \
+         install -d -o root -g root -m 0755 \"$state\" \"$source_dir\" && \
+         install -d -o www -g www -m 0755 \
+           \"$published\" \"$published/releases\" \"$build\" \"$build/dist\" && \
+         current_name='' && previous_name='' && \
+         if test -L \"$state/current\"; then \
+           current_name=$(basename \"$(readlink \"$state/current\")\"); \
+         fi && \
+         if test -L \"$state/previous\"; then \
+           previous_name=$(basename \"$(readlink \"$state/previous\")\"); \
+         fi && \
+         if test -d \"$state/releases\"; then \
+           find \"$state/releases\" -mindepth 1 -maxdepth 1 \
+             -exec mv -t \"$published/releases\" {{}} +; \
+           rmdir \"$state/releases\"; \
+         fi && \
+         if test -n \"$current_name\"; then \
+           if test -d \"$published/releases/$current_name\"; then \
+             test -L \"$published/current\" || \
+               ln -s \"$published/releases/$current_name\" \"$published/current\"; \
+           fi; \
+           rm -f \"$state/current\"; \
+         fi && \
+         if test -n \"$previous_name\"; then \
+           if test -d \"$published/releases/$previous_name\"; then \
+             test -L \"$published/previous\" || \
+               ln -s \"$published/releases/$previous_name\" \"$published/previous\"; \
+           fi; \
+           rm -f \"$state/previous\"; \
+         fi && \
+         rm -rf \"$source_dir/dist\" && \
+         ln -s \"$build/dist\" \"$source_dir/dist\" && \
+         chown -R root:root \"$source_dir\" && \
+         chown -R www:www \"$published\" \"$build\" && \
+         install -d -o www -g www -m 0755 \
+           \"$source_dir/node_modules/.vite-temp\" && \
+         install -d -o root -g root -m 0755 /usr/local/libexec && \
+         echo {wrapper} | base64 -d > {publisher}.next && \
+         chown root:root {publisher}.next && chmod 0755 {publisher}.next && \
+         mv {publisher}.next {publisher} && \
+         install -d -o root -g root -m 0755 \
+           /etc/systemd/system/{unit}.service.d && \
+         echo {drop_in} | base64 -d > \
+           /etc/systemd/system/{unit}.service.d/frontend-publisher.conf.next && \
+         chown root:root \
+           /etc/systemd/system/{unit}.service.d/frontend-publisher.conf.next && \
+         chmod 0644 \
+           /etc/systemd/system/{unit}.service.d/frontend-publisher.conf.next && \
+         mv /etc/systemd/system/{unit}.service.d/frontend-publisher.conf.next \
+           /etc/systemd/system/{unit}.service.d/frontend-publisher.conf && \
+         systemctl daemon-reload && {restart}",
+        state = shell_quote(&state_root),
+        source_dir = shell_quote(&source_dir),
+        wrapper = wrapper_encoded,
+        publisher = REMOTE_FRONTEND_PUBLISHER,
+        drop_in = drop_in_encoded,
+        unit = cfg.systemd_unit,
+        restart = restart,
+    );
+    println!("[frontend:server] provision Desktop static publisher");
+    ssh_exec(cfg, &command)?;
+    Ok(())
+}
+
+fn prepare_nginx_frontend(cfg: &DeployConfig) -> Result<(), String> {
+    ensure_remote_frontend_runtime(cfg)?;
+    run_remote_frontend_stage(cfg, "prepare")
+}
+
+fn publish_nginx_frontend(cfg: &DeployConfig) -> Result<(), String> {
+    run_remote_frontend_stage(cfg, "publish")
 }
 
 /// Phase 3 — backend. Incrementally sync the Go source, build on the server

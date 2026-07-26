@@ -162,6 +162,8 @@ pub struct DeliverySyncStatus {
 pub struct DeployRunStatus {
     pub success: bool,
     pub content_commit: String,
+    pub static_published: bool,
+    pub static_release: String,
     pub stdout: String,
     pub stderr: String,
 }
@@ -183,6 +185,10 @@ struct ContentDeployResponse {
     content_commit: String,
     generated_at: String,
     media_root_ok: bool,
+    #[serde(default)]
+    static_published: bool,
+    #[serde(default)]
+    static_release: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -676,19 +682,30 @@ impl DeliveryControl {
         if !response.success
             || response.state != "complete"
             || !response.media_root_ok
+            || !response.static_published
+            || response.static_release.is_empty()
             || response.content_commit != content_commit
         {
             return Err(DeliveryControlError::Remote(format!(
-                "deployment verification failed: state={}, commit={}, media_root_ok={}",
-                response.state, response.content_commit, response.media_root_ok
+                "deployment verification failed: state={}, commit={}, media_root_ok={}, static_published={}, static_release={}",
+                response.state,
+                response.content_commit,
+                response.media_root_ok,
+                response.static_published,
+                response.static_release,
             )));
         }
         Ok(DeployRunStatus {
             success: true,
             content_commit,
+            static_published: response.static_published,
+            static_release: response.static_release.clone(),
             stdout: format!(
-                "Deployed content {} ({}) at {}",
-                response.content_commit, response.content_hash, response.generated_at
+                "Deployed content {} ({}) and SEO release {} at {}",
+                response.content_commit,
+                response.content_hash,
+                response.static_release,
+                response.generated_at,
             ),
             stderr: String::new(),
         })
@@ -851,7 +868,7 @@ fn revision_count(repo: &GitRepo, revision: &str) -> Option<usize> {
 fn deploy_http_agent(content_root: &Path, api_base: &str) -> ureq::Agent {
     let mut builder = ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(3))
-        .timeout_read(Duration::from_secs(130))
+        .timeout_read(Duration::from_secs(300))
         .timeout_write(Duration::from_secs(60));
     if let Some((api_host, deploy_ip)) = deploy_socket_override(content_root, api_base) {
         builder = builder.resolver(move |netloc: &str| {

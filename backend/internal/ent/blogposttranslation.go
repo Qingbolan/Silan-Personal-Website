@@ -27,6 +27,8 @@ type BlogPostTranslation struct {
 	Title string `json:"title,omitempty"`
 	// Excerpt holds the value of the "excerpt" field.
 	Excerpt string `json:"excerpt,omitempty"`
+	// FeaturedImageURL holds the value of the "featured_image_url" field.
+	FeaturedImageURL string `json:"featured_image_url,omitempty"`
 	// Content holds the value of the "content" field.
 	Content string `json:"content,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -75,7 +77,7 @@ func (*BlogPostTranslation) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case blogposttranslation.FieldID, blogposttranslation.FieldBlogPostID, blogposttranslation.FieldLanguageCode, blogposttranslation.FieldTitle, blogposttranslation.FieldExcerpt, blogposttranslation.FieldContent:
+		case blogposttranslation.FieldID, blogposttranslation.FieldBlogPostID, blogposttranslation.FieldLanguageCode, blogposttranslation.FieldTitle, blogposttranslation.FieldExcerpt, blogposttranslation.FieldFeaturedImageURL, blogposttranslation.FieldContent:
 			values[i] = new(sql.NullString)
 		case blogposttranslation.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -123,6 +125,12 @@ func (bpt *BlogPostTranslation) assignValues(columns []string, values []any) err
 				return fmt.Errorf("unexpected type %T for field excerpt", values[i])
 			} else if value.Valid {
 				bpt.Excerpt = value.String
+			}
+		case blogposttranslation.FieldFeaturedImageURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field featured_image_url", values[i])
+			} else if value.Valid {
+				bpt.FeaturedImageURL = value.String
 			}
 		case blogposttranslation.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -193,6 +201,9 @@ func (bpt *BlogPostTranslation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("excerpt=")
 	builder.WriteString(bpt.Excerpt)
+	builder.WriteString(", ")
+	builder.WriteString("featured_image_url=")
+	builder.WriteString(bpt.FeaturedImageURL)
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(bpt.Content)

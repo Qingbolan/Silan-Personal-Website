@@ -6,6 +6,7 @@ content_type: article
 status: published
 visibility: public
 is_featured: true
+featured_image_url: https://example.com/cover-en.png
 tags:
   - intro
   - meta

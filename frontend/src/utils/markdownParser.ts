@@ -57,6 +57,13 @@ export const parseAcademicMarkdown = (markdownText: string): BlogContent[] => {
   let inQuote = false;
   let quoteContent = '';
   let listContent = '';
+  let tableContent = '';
+
+  const isGfmTableRow = (line: string): boolean =>
+    /^\s*\|.*\|\s*$/.test(line) && line.split('|').length >= 3;
+
+  const isGfmTableDelimiter = (line: string): boolean =>
+    /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
 
   const pushParagraph = () => {
     if (currentParagraph.trim()) {
@@ -104,9 +111,21 @@ export const parseAcademicMarkdown = (markdownText: string): BlogContent[] => {
     }
   };
 
+  const pushTable = () => {
+    if (tableContent.trim()) {
+      content.push({
+        type: 'markdown',
+        content: tableContent.trimEnd(),
+        id: generateId()
+      });
+      tableContent = '';
+    }
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmedLine = line.trim();
+    const nextLine = lines[i + 1] ?? '';
 
     // Handle code blocks
     if (trimmedLine.startsWith('```')) {
@@ -127,6 +146,23 @@ export const parseAcademicMarkdown = (markdownText: string): BlogContent[] => {
 
     if (inCodeBlock) {
       codeContent += line + '\n';
+      continue;
+    }
+
+    const startsGfmTable = isGfmTableRow(line) && isGfmTableDelimiter(nextLine);
+    if (tableContent) {
+      if (isGfmTableRow(line) || isGfmTableDelimiter(line)) {
+        tableContent += `${tableContent ? '\n' : ''}${line}`;
+        continue;
+      }
+      pushTable();
+    }
+    if (startsGfmTable) {
+      pushParagraph();
+      pushQuote();
+      pushList();
+      inQuote = false;
+      tableContent = line;
       continue;
     }
 
@@ -182,6 +218,7 @@ export const parseAcademicMarkdown = (markdownText: string): BlogContent[] => {
 
     // Handle empty lines
     if (trimmedLine === '') {
+      pushTable();
       if (currentParagraph.trim()) {
         pushParagraph();
       }
@@ -227,6 +264,7 @@ export const parseAcademicMarkdown = (markdownText: string): BlogContent[] => {
   pushCodeBlock();
   pushQuote();
   pushList();
+  pushTable();
 
   return content;
 };

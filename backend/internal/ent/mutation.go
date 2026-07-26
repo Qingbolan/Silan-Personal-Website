@@ -4654,6 +4654,10 @@ type BlogPostMutation struct {
 	visibility              *blogpost.Visibility
 	is_featured             *bool
 	featured_image_url      *string
+	project_name            *string
+	publication_venue       *string
+	project_url             *string
+	external_resources      *string
 	reading_time_minutes    *int
 	addreading_time_minutes *int
 	view_count              *int
@@ -5303,6 +5307,202 @@ func (m *BlogPostMutation) ResetFeaturedImageURL() {
 	delete(m.clearedFields, blogpost.FieldFeaturedImageURL)
 }
 
+// SetProjectName sets the "project_name" field.
+func (m *BlogPostMutation) SetProjectName(s string) {
+	m.project_name = &s
+}
+
+// ProjectName returns the value of the "project_name" field in the mutation.
+func (m *BlogPostMutation) ProjectName() (r string, exists bool) {
+	v := m.project_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProjectName returns the old "project_name" field's value of the BlogPost entity.
+// If the BlogPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlogPostMutation) OldProjectName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProjectName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProjectName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProjectName: %w", err)
+	}
+	return oldValue.ProjectName, nil
+}
+
+// ClearProjectName clears the value of the "project_name" field.
+func (m *BlogPostMutation) ClearProjectName() {
+	m.project_name = nil
+	m.clearedFields[blogpost.FieldProjectName] = struct{}{}
+}
+
+// ProjectNameCleared returns if the "project_name" field was cleared in this mutation.
+func (m *BlogPostMutation) ProjectNameCleared() bool {
+	_, ok := m.clearedFields[blogpost.FieldProjectName]
+	return ok
+}
+
+// ResetProjectName resets all changes to the "project_name" field.
+func (m *BlogPostMutation) ResetProjectName() {
+	m.project_name = nil
+	delete(m.clearedFields, blogpost.FieldProjectName)
+}
+
+// SetPublicationVenue sets the "publication_venue" field.
+func (m *BlogPostMutation) SetPublicationVenue(s string) {
+	m.publication_venue = &s
+}
+
+// PublicationVenue returns the value of the "publication_venue" field in the mutation.
+func (m *BlogPostMutation) PublicationVenue() (r string, exists bool) {
+	v := m.publication_venue
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPublicationVenue returns the old "publication_venue" field's value of the BlogPost entity.
+// If the BlogPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlogPostMutation) OldPublicationVenue(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPublicationVenue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPublicationVenue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPublicationVenue: %w", err)
+	}
+	return oldValue.PublicationVenue, nil
+}
+
+// ClearPublicationVenue clears the value of the "publication_venue" field.
+func (m *BlogPostMutation) ClearPublicationVenue() {
+	m.publication_venue = nil
+	m.clearedFields[blogpost.FieldPublicationVenue] = struct{}{}
+}
+
+// PublicationVenueCleared returns if the "publication_venue" field was cleared in this mutation.
+func (m *BlogPostMutation) PublicationVenueCleared() bool {
+	_, ok := m.clearedFields[blogpost.FieldPublicationVenue]
+	return ok
+}
+
+// ResetPublicationVenue resets all changes to the "publication_venue" field.
+func (m *BlogPostMutation) ResetPublicationVenue() {
+	m.publication_venue = nil
+	delete(m.clearedFields, blogpost.FieldPublicationVenue)
+}
+
+// SetProjectURL sets the "project_url" field.
+func (m *BlogPostMutation) SetProjectURL(s string) {
+	m.project_url = &s
+}
+
+// ProjectURL returns the value of the "project_url" field in the mutation.
+func (m *BlogPostMutation) ProjectURL() (r string, exists bool) {
+	v := m.project_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProjectURL returns the old "project_url" field's value of the BlogPost entity.
+// If the BlogPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlogPostMutation) OldProjectURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProjectURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProjectURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProjectURL: %w", err)
+	}
+	return oldValue.ProjectURL, nil
+}
+
+// ClearProjectURL clears the value of the "project_url" field.
+func (m *BlogPostMutation) ClearProjectURL() {
+	m.project_url = nil
+	m.clearedFields[blogpost.FieldProjectURL] = struct{}{}
+}
+
+// ProjectURLCleared returns if the "project_url" field was cleared in this mutation.
+func (m *BlogPostMutation) ProjectURLCleared() bool {
+	_, ok := m.clearedFields[blogpost.FieldProjectURL]
+	return ok
+}
+
+// ResetProjectURL resets all changes to the "project_url" field.
+func (m *BlogPostMutation) ResetProjectURL() {
+	m.project_url = nil
+	delete(m.clearedFields, blogpost.FieldProjectURL)
+}
+
+// SetExternalResources sets the "external_resources" field.
+func (m *BlogPostMutation) SetExternalResources(s string) {
+	m.external_resources = &s
+}
+
+// ExternalResources returns the value of the "external_resources" field in the mutation.
+func (m *BlogPostMutation) ExternalResources() (r string, exists bool) {
+	v := m.external_resources
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExternalResources returns the old "external_resources" field's value of the BlogPost entity.
+// If the BlogPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlogPostMutation) OldExternalResources(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExternalResources is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExternalResources requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExternalResources: %w", err)
+	}
+	return oldValue.ExternalResources, nil
+}
+
+// ClearExternalResources clears the value of the "external_resources" field.
+func (m *BlogPostMutation) ClearExternalResources() {
+	m.external_resources = nil
+	m.clearedFields[blogpost.FieldExternalResources] = struct{}{}
+}
+
+// ExternalResourcesCleared returns if the "external_resources" field was cleared in this mutation.
+func (m *BlogPostMutation) ExternalResourcesCleared() bool {
+	_, ok := m.clearedFields[blogpost.FieldExternalResources]
+	return ok
+}
+
+// ResetExternalResources resets all changes to the "external_resources" field.
+func (m *BlogPostMutation) ResetExternalResources() {
+	m.external_resources = nil
+	delete(m.clearedFields, blogpost.FieldExternalResources)
+}
+
 // SetReadingTimeMinutes sets the "reading_time_minutes" field.
 func (m *BlogPostMutation) SetReadingTimeMinutes(i int) {
 	m.reading_time_minutes = &i
@@ -5846,7 +6046,7 @@ func (m *BlogPostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BlogPostMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 24)
 	if m.user_id != nil {
 		fields = append(fields, blogpost.FieldUserID)
 	}
@@ -5882,6 +6082,18 @@ func (m *BlogPostMutation) Fields() []string {
 	}
 	if m.featured_image_url != nil {
 		fields = append(fields, blogpost.FieldFeaturedImageURL)
+	}
+	if m.project_name != nil {
+		fields = append(fields, blogpost.FieldProjectName)
+	}
+	if m.publication_venue != nil {
+		fields = append(fields, blogpost.FieldPublicationVenue)
+	}
+	if m.project_url != nil {
+		fields = append(fields, blogpost.FieldProjectURL)
+	}
+	if m.external_resources != nil {
+		fields = append(fields, blogpost.FieldExternalResources)
 	}
 	if m.reading_time_minutes != nil {
 		fields = append(fields, blogpost.FieldReadingTimeMinutes)
@@ -5939,6 +6151,14 @@ func (m *BlogPostMutation) Field(name string) (ent.Value, bool) {
 		return m.IsFeatured()
 	case blogpost.FieldFeaturedImageURL:
 		return m.FeaturedImageURL()
+	case blogpost.FieldProjectName:
+		return m.ProjectName()
+	case blogpost.FieldPublicationVenue:
+		return m.PublicationVenue()
+	case blogpost.FieldProjectURL:
+		return m.ProjectURL()
+	case blogpost.FieldExternalResources:
+		return m.ExternalResources()
 	case blogpost.FieldReadingTimeMinutes:
 		return m.ReadingTimeMinutes()
 	case blogpost.FieldViewCount:
@@ -5988,6 +6208,14 @@ func (m *BlogPostMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldIsFeatured(ctx)
 	case blogpost.FieldFeaturedImageURL:
 		return m.OldFeaturedImageURL(ctx)
+	case blogpost.FieldProjectName:
+		return m.OldProjectName(ctx)
+	case blogpost.FieldPublicationVenue:
+		return m.OldPublicationVenue(ctx)
+	case blogpost.FieldProjectURL:
+		return m.OldProjectURL(ctx)
+	case blogpost.FieldExternalResources:
+		return m.OldExternalResources(ctx)
 	case blogpost.FieldReadingTimeMinutes:
 		return m.OldReadingTimeMinutes(ctx)
 	case blogpost.FieldViewCount:
@@ -6096,6 +6324,34 @@ func (m *BlogPostMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFeaturedImageURL(v)
+		return nil
+	case blogpost.FieldProjectName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProjectName(v)
+		return nil
+	case blogpost.FieldPublicationVenue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPublicationVenue(v)
+		return nil
+	case blogpost.FieldProjectURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProjectURL(v)
+		return nil
+	case blogpost.FieldExternalResources:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExternalResources(v)
 		return nil
 	case blogpost.FieldReadingTimeMinutes:
 		v, ok := value.(int)
@@ -6267,6 +6523,18 @@ func (m *BlogPostMutation) ClearedFields() []string {
 	if m.FieldCleared(blogpost.FieldFeaturedImageURL) {
 		fields = append(fields, blogpost.FieldFeaturedImageURL)
 	}
+	if m.FieldCleared(blogpost.FieldProjectName) {
+		fields = append(fields, blogpost.FieldProjectName)
+	}
+	if m.FieldCleared(blogpost.FieldPublicationVenue) {
+		fields = append(fields, blogpost.FieldPublicationVenue)
+	}
+	if m.FieldCleared(blogpost.FieldProjectURL) {
+		fields = append(fields, blogpost.FieldProjectURL)
+	}
+	if m.FieldCleared(blogpost.FieldExternalResources) {
+		fields = append(fields, blogpost.FieldExternalResources)
+	}
 	if m.FieldCleared(blogpost.FieldReadingTimeMinutes) {
 		fields = append(fields, blogpost.FieldReadingTimeMinutes)
 	}
@@ -6316,6 +6584,18 @@ func (m *BlogPostMutation) ClearField(name string) error {
 		return nil
 	case blogpost.FieldFeaturedImageURL:
 		m.ClearFeaturedImageURL()
+		return nil
+	case blogpost.FieldProjectName:
+		m.ClearProjectName()
+		return nil
+	case blogpost.FieldPublicationVenue:
+		m.ClearPublicationVenue()
+		return nil
+	case blogpost.FieldProjectURL:
+		m.ClearProjectURL()
+		return nil
+	case blogpost.FieldExternalResources:
+		m.ClearExternalResources()
 		return nil
 	case blogpost.FieldReadingTimeMinutes:
 		m.ClearReadingTimeMinutes()
@@ -6375,6 +6655,18 @@ func (m *BlogPostMutation) ResetField(name string) error {
 		return nil
 	case blogpost.FieldFeaturedImageURL:
 		m.ResetFeaturedImageURL()
+		return nil
+	case blogpost.FieldProjectName:
+		m.ResetProjectName()
+		return nil
+	case blogpost.FieldPublicationVenue:
+		m.ResetPublicationVenue()
+		return nil
+	case blogpost.FieldProjectURL:
+		m.ResetProjectURL()
+		return nil
+	case blogpost.FieldExternalResources:
+		m.ResetExternalResources()
 		return nil
 	case blogpost.FieldReadingTimeMinutes:
 		m.ResetReadingTimeMinutes()
@@ -6491,21 +6783,22 @@ func (m *BlogPostMutation) ResetEdge(name string) error {
 // BlogPostTranslationMutation represents an operation that mutates the BlogPostTranslation nodes in the graph.
 type BlogPostTranslationMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *string
-	title            *string
-	excerpt          *string
-	content          *string
-	created_at       *time.Time
-	clearedFields    map[string]struct{}
-	blog_post        *string
-	clearedblog_post bool
-	language         *string
-	clearedlanguage  bool
-	done             bool
-	oldValue         func(context.Context) (*BlogPostTranslation, error)
-	predicates       []predicate.BlogPostTranslation
+	op                 Op
+	typ                string
+	id                 *string
+	title              *string
+	excerpt            *string
+	featured_image_url *string
+	content            *string
+	created_at         *time.Time
+	clearedFields      map[string]struct{}
+	blog_post          *string
+	clearedblog_post   bool
+	language           *string
+	clearedlanguage    bool
+	done               bool
+	oldValue           func(context.Context) (*BlogPostTranslation, error)
+	predicates         []predicate.BlogPostTranslation
 }
 
 var _ ent.Mutation = (*BlogPostTranslationMutation)(nil)
@@ -6782,6 +7075,55 @@ func (m *BlogPostTranslationMutation) ResetExcerpt() {
 	delete(m.clearedFields, blogposttranslation.FieldExcerpt)
 }
 
+// SetFeaturedImageURL sets the "featured_image_url" field.
+func (m *BlogPostTranslationMutation) SetFeaturedImageURL(s string) {
+	m.featured_image_url = &s
+}
+
+// FeaturedImageURL returns the value of the "featured_image_url" field in the mutation.
+func (m *BlogPostTranslationMutation) FeaturedImageURL() (r string, exists bool) {
+	v := m.featured_image_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeaturedImageURL returns the old "featured_image_url" field's value of the BlogPostTranslation entity.
+// If the BlogPostTranslation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlogPostTranslationMutation) OldFeaturedImageURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeaturedImageURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeaturedImageURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeaturedImageURL: %w", err)
+	}
+	return oldValue.FeaturedImageURL, nil
+}
+
+// ClearFeaturedImageURL clears the value of the "featured_image_url" field.
+func (m *BlogPostTranslationMutation) ClearFeaturedImageURL() {
+	m.featured_image_url = nil
+	m.clearedFields[blogposttranslation.FieldFeaturedImageURL] = struct{}{}
+}
+
+// FeaturedImageURLCleared returns if the "featured_image_url" field was cleared in this mutation.
+func (m *BlogPostTranslationMutation) FeaturedImageURLCleared() bool {
+	_, ok := m.clearedFields[blogposttranslation.FieldFeaturedImageURL]
+	return ok
+}
+
+// ResetFeaturedImageURL resets all changes to the "featured_image_url" field.
+func (m *BlogPostTranslationMutation) ResetFeaturedImageURL() {
+	m.featured_image_url = nil
+	delete(m.clearedFields, blogposttranslation.FieldFeaturedImageURL)
+}
+
 // SetContent sets the "content" field.
 func (m *BlogPostTranslationMutation) SetContent(s string) {
 	m.content = &s
@@ -6981,7 +7323,7 @@ func (m *BlogPostTranslationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BlogPostTranslationMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.blog_post != nil {
 		fields = append(fields, blogposttranslation.FieldBlogPostID)
 	}
@@ -6993,6 +7335,9 @@ func (m *BlogPostTranslationMutation) Fields() []string {
 	}
 	if m.excerpt != nil {
 		fields = append(fields, blogposttranslation.FieldExcerpt)
+	}
+	if m.featured_image_url != nil {
+		fields = append(fields, blogposttranslation.FieldFeaturedImageURL)
 	}
 	if m.content != nil {
 		fields = append(fields, blogposttranslation.FieldContent)
@@ -7016,6 +7361,8 @@ func (m *BlogPostTranslationMutation) Field(name string) (ent.Value, bool) {
 		return m.Title()
 	case blogposttranslation.FieldExcerpt:
 		return m.Excerpt()
+	case blogposttranslation.FieldFeaturedImageURL:
+		return m.FeaturedImageURL()
 	case blogposttranslation.FieldContent:
 		return m.Content()
 	case blogposttranslation.FieldCreatedAt:
@@ -7037,6 +7384,8 @@ func (m *BlogPostTranslationMutation) OldField(ctx context.Context, name string)
 		return m.OldTitle(ctx)
 	case blogposttranslation.FieldExcerpt:
 		return m.OldExcerpt(ctx)
+	case blogposttranslation.FieldFeaturedImageURL:
+		return m.OldFeaturedImageURL(ctx)
 	case blogposttranslation.FieldContent:
 		return m.OldContent(ctx)
 	case blogposttranslation.FieldCreatedAt:
@@ -7077,6 +7426,13 @@ func (m *BlogPostTranslationMutation) SetField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetExcerpt(v)
+		return nil
+	case blogposttranslation.FieldFeaturedImageURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeaturedImageURL(v)
 		return nil
 	case blogposttranslation.FieldContent:
 		v, ok := value.(string)
@@ -7128,6 +7484,9 @@ func (m *BlogPostTranslationMutation) ClearedFields() []string {
 	if m.FieldCleared(blogposttranslation.FieldExcerpt) {
 		fields = append(fields, blogposttranslation.FieldExcerpt)
 	}
+	if m.FieldCleared(blogposttranslation.FieldFeaturedImageURL) {
+		fields = append(fields, blogposttranslation.FieldFeaturedImageURL)
+	}
 	if m.FieldCleared(blogposttranslation.FieldContent) {
 		fields = append(fields, blogposttranslation.FieldContent)
 	}
@@ -7154,6 +7513,9 @@ func (m *BlogPostTranslationMutation) ClearField(name string) error {
 	case blogposttranslation.FieldExcerpt:
 		m.ClearExcerpt()
 		return nil
+	case blogposttranslation.FieldFeaturedImageURL:
+		m.ClearFeaturedImageURL()
+		return nil
 	case blogposttranslation.FieldContent:
 		m.ClearContent()
 		return nil
@@ -7179,6 +7541,9 @@ func (m *BlogPostTranslationMutation) ResetField(name string) error {
 		return nil
 	case blogposttranslation.FieldExcerpt:
 		m.ResetExcerpt()
+		return nil
+	case blogposttranslation.FieldFeaturedImageURL:
+		m.ResetFeaturedImageURL()
 		return nil
 	case blogposttranslation.FieldContent:
 		m.ResetContent()

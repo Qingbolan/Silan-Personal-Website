@@ -110,6 +110,26 @@ func FeaturedImageURL(v string) predicate.BlogPost {
 	return predicate.BlogPost(sql.FieldEQ(FieldFeaturedImageURL, v))
 }
 
+// ProjectName applies equality check predicate on the "project_name" field. It's identical to ProjectNameEQ.
+func ProjectName(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldProjectName, v))
+}
+
+// PublicationVenue applies equality check predicate on the "publication_venue" field. It's identical to PublicationVenueEQ.
+func PublicationVenue(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldPublicationVenue, v))
+}
+
+// ProjectURL applies equality check predicate on the "project_url" field. It's identical to ProjectURLEQ.
+func ProjectURL(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldProjectURL, v))
+}
+
+// ExternalResources applies equality check predicate on the "external_resources" field. It's identical to ExternalResourcesEQ.
+func ExternalResources(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldExternalResources, v))
+}
+
 // ReadingTimeMinutes applies equality check predicate on the "reading_time_minutes" field. It's identical to ReadingTimeMinutesEQ.
 func ReadingTimeMinutes(v int) predicate.BlogPost {
 	return predicate.BlogPost(sql.FieldEQ(FieldReadingTimeMinutes, v))
@@ -808,6 +828,306 @@ func FeaturedImageURLEqualFold(v string) predicate.BlogPost {
 // FeaturedImageURLContainsFold applies the ContainsFold predicate on the "featured_image_url" field.
 func FeaturedImageURLContainsFold(v string) predicate.BlogPost {
 	return predicate.BlogPost(sql.FieldContainsFold(FieldFeaturedImageURL, v))
+}
+
+// ProjectNameEQ applies the EQ predicate on the "project_name" field.
+func ProjectNameEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldProjectName, v))
+}
+
+// ProjectNameNEQ applies the NEQ predicate on the "project_name" field.
+func ProjectNameNEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNEQ(FieldProjectName, v))
+}
+
+// ProjectNameIn applies the In predicate on the "project_name" field.
+func ProjectNameIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIn(FieldProjectName, vs...))
+}
+
+// ProjectNameNotIn applies the NotIn predicate on the "project_name" field.
+func ProjectNameNotIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotIn(FieldProjectName, vs...))
+}
+
+// ProjectNameGT applies the GT predicate on the "project_name" field.
+func ProjectNameGT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGT(FieldProjectName, v))
+}
+
+// ProjectNameGTE applies the GTE predicate on the "project_name" field.
+func ProjectNameGTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGTE(FieldProjectName, v))
+}
+
+// ProjectNameLT applies the LT predicate on the "project_name" field.
+func ProjectNameLT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLT(FieldProjectName, v))
+}
+
+// ProjectNameLTE applies the LTE predicate on the "project_name" field.
+func ProjectNameLTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLTE(FieldProjectName, v))
+}
+
+// ProjectNameContains applies the Contains predicate on the "project_name" field.
+func ProjectNameContains(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContains(FieldProjectName, v))
+}
+
+// ProjectNameHasPrefix applies the HasPrefix predicate on the "project_name" field.
+func ProjectNameHasPrefix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasPrefix(FieldProjectName, v))
+}
+
+// ProjectNameHasSuffix applies the HasSuffix predicate on the "project_name" field.
+func ProjectNameHasSuffix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasSuffix(FieldProjectName, v))
+}
+
+// ProjectNameIsNil applies the IsNil predicate on the "project_name" field.
+func ProjectNameIsNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIsNull(FieldProjectName))
+}
+
+// ProjectNameNotNil applies the NotNil predicate on the "project_name" field.
+func ProjectNameNotNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotNull(FieldProjectName))
+}
+
+// ProjectNameEqualFold applies the EqualFold predicate on the "project_name" field.
+func ProjectNameEqualFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEqualFold(FieldProjectName, v))
+}
+
+// ProjectNameContainsFold applies the ContainsFold predicate on the "project_name" field.
+func ProjectNameContainsFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContainsFold(FieldProjectName, v))
+}
+
+// PublicationVenueEQ applies the EQ predicate on the "publication_venue" field.
+func PublicationVenueEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldPublicationVenue, v))
+}
+
+// PublicationVenueNEQ applies the NEQ predicate on the "publication_venue" field.
+func PublicationVenueNEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNEQ(FieldPublicationVenue, v))
+}
+
+// PublicationVenueIn applies the In predicate on the "publication_venue" field.
+func PublicationVenueIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIn(FieldPublicationVenue, vs...))
+}
+
+// PublicationVenueNotIn applies the NotIn predicate on the "publication_venue" field.
+func PublicationVenueNotIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotIn(FieldPublicationVenue, vs...))
+}
+
+// PublicationVenueGT applies the GT predicate on the "publication_venue" field.
+func PublicationVenueGT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGT(FieldPublicationVenue, v))
+}
+
+// PublicationVenueGTE applies the GTE predicate on the "publication_venue" field.
+func PublicationVenueGTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGTE(FieldPublicationVenue, v))
+}
+
+// PublicationVenueLT applies the LT predicate on the "publication_venue" field.
+func PublicationVenueLT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLT(FieldPublicationVenue, v))
+}
+
+// PublicationVenueLTE applies the LTE predicate on the "publication_venue" field.
+func PublicationVenueLTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLTE(FieldPublicationVenue, v))
+}
+
+// PublicationVenueContains applies the Contains predicate on the "publication_venue" field.
+func PublicationVenueContains(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContains(FieldPublicationVenue, v))
+}
+
+// PublicationVenueHasPrefix applies the HasPrefix predicate on the "publication_venue" field.
+func PublicationVenueHasPrefix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasPrefix(FieldPublicationVenue, v))
+}
+
+// PublicationVenueHasSuffix applies the HasSuffix predicate on the "publication_venue" field.
+func PublicationVenueHasSuffix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasSuffix(FieldPublicationVenue, v))
+}
+
+// PublicationVenueIsNil applies the IsNil predicate on the "publication_venue" field.
+func PublicationVenueIsNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIsNull(FieldPublicationVenue))
+}
+
+// PublicationVenueNotNil applies the NotNil predicate on the "publication_venue" field.
+func PublicationVenueNotNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotNull(FieldPublicationVenue))
+}
+
+// PublicationVenueEqualFold applies the EqualFold predicate on the "publication_venue" field.
+func PublicationVenueEqualFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEqualFold(FieldPublicationVenue, v))
+}
+
+// PublicationVenueContainsFold applies the ContainsFold predicate on the "publication_venue" field.
+func PublicationVenueContainsFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContainsFold(FieldPublicationVenue, v))
+}
+
+// ProjectURLEQ applies the EQ predicate on the "project_url" field.
+func ProjectURLEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldProjectURL, v))
+}
+
+// ProjectURLNEQ applies the NEQ predicate on the "project_url" field.
+func ProjectURLNEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNEQ(FieldProjectURL, v))
+}
+
+// ProjectURLIn applies the In predicate on the "project_url" field.
+func ProjectURLIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIn(FieldProjectURL, vs...))
+}
+
+// ProjectURLNotIn applies the NotIn predicate on the "project_url" field.
+func ProjectURLNotIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotIn(FieldProjectURL, vs...))
+}
+
+// ProjectURLGT applies the GT predicate on the "project_url" field.
+func ProjectURLGT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGT(FieldProjectURL, v))
+}
+
+// ProjectURLGTE applies the GTE predicate on the "project_url" field.
+func ProjectURLGTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGTE(FieldProjectURL, v))
+}
+
+// ProjectURLLT applies the LT predicate on the "project_url" field.
+func ProjectURLLT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLT(FieldProjectURL, v))
+}
+
+// ProjectURLLTE applies the LTE predicate on the "project_url" field.
+func ProjectURLLTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLTE(FieldProjectURL, v))
+}
+
+// ProjectURLContains applies the Contains predicate on the "project_url" field.
+func ProjectURLContains(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContains(FieldProjectURL, v))
+}
+
+// ProjectURLHasPrefix applies the HasPrefix predicate on the "project_url" field.
+func ProjectURLHasPrefix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasPrefix(FieldProjectURL, v))
+}
+
+// ProjectURLHasSuffix applies the HasSuffix predicate on the "project_url" field.
+func ProjectURLHasSuffix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasSuffix(FieldProjectURL, v))
+}
+
+// ProjectURLIsNil applies the IsNil predicate on the "project_url" field.
+func ProjectURLIsNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIsNull(FieldProjectURL))
+}
+
+// ProjectURLNotNil applies the NotNil predicate on the "project_url" field.
+func ProjectURLNotNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotNull(FieldProjectURL))
+}
+
+// ProjectURLEqualFold applies the EqualFold predicate on the "project_url" field.
+func ProjectURLEqualFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEqualFold(FieldProjectURL, v))
+}
+
+// ProjectURLContainsFold applies the ContainsFold predicate on the "project_url" field.
+func ProjectURLContainsFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContainsFold(FieldProjectURL, v))
+}
+
+// ExternalResourcesEQ applies the EQ predicate on the "external_resources" field.
+func ExternalResourcesEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEQ(FieldExternalResources, v))
+}
+
+// ExternalResourcesNEQ applies the NEQ predicate on the "external_resources" field.
+func ExternalResourcesNEQ(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNEQ(FieldExternalResources, v))
+}
+
+// ExternalResourcesIn applies the In predicate on the "external_resources" field.
+func ExternalResourcesIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIn(FieldExternalResources, vs...))
+}
+
+// ExternalResourcesNotIn applies the NotIn predicate on the "external_resources" field.
+func ExternalResourcesNotIn(vs ...string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotIn(FieldExternalResources, vs...))
+}
+
+// ExternalResourcesGT applies the GT predicate on the "external_resources" field.
+func ExternalResourcesGT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGT(FieldExternalResources, v))
+}
+
+// ExternalResourcesGTE applies the GTE predicate on the "external_resources" field.
+func ExternalResourcesGTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldGTE(FieldExternalResources, v))
+}
+
+// ExternalResourcesLT applies the LT predicate on the "external_resources" field.
+func ExternalResourcesLT(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLT(FieldExternalResources, v))
+}
+
+// ExternalResourcesLTE applies the LTE predicate on the "external_resources" field.
+func ExternalResourcesLTE(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldLTE(FieldExternalResources, v))
+}
+
+// ExternalResourcesContains applies the Contains predicate on the "external_resources" field.
+func ExternalResourcesContains(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContains(FieldExternalResources, v))
+}
+
+// ExternalResourcesHasPrefix applies the HasPrefix predicate on the "external_resources" field.
+func ExternalResourcesHasPrefix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasPrefix(FieldExternalResources, v))
+}
+
+// ExternalResourcesHasSuffix applies the HasSuffix predicate on the "external_resources" field.
+func ExternalResourcesHasSuffix(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldHasSuffix(FieldExternalResources, v))
+}
+
+// ExternalResourcesIsNil applies the IsNil predicate on the "external_resources" field.
+func ExternalResourcesIsNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldIsNull(FieldExternalResources))
+}
+
+// ExternalResourcesNotNil applies the NotNil predicate on the "external_resources" field.
+func ExternalResourcesNotNil() predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldNotNull(FieldExternalResources))
+}
+
+// ExternalResourcesEqualFold applies the EqualFold predicate on the "external_resources" field.
+func ExternalResourcesEqualFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldEqualFold(FieldExternalResources, v))
+}
+
+// ExternalResourcesContainsFold applies the ContainsFold predicate on the "external_resources" field.
+func ExternalResourcesContainsFold(v string) predicate.BlogPost {
+	return predicate.BlogPost(sql.FieldContainsFold(FieldExternalResources, v))
 }
 
 // ReadingTimeMinutesEQ applies the EQ predicate on the "reading_time_minutes" field.

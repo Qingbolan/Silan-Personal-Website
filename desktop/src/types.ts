@@ -1,10 +1,87 @@
 export type ContentKind = 'blog' | 'project' | 'idea' | 'resume' | 'episode' | 'moment';
 
-export type OpenAiCredentialStatus = {
+export type ApiCredentialStatus = {
+  provider: 'openai' | 'deepseek';
   state: 'missing' | 'ready' | 'invalid';
   model: string;
   detail: string | null;
   request_id: string | null;
+};
+
+export type OpenAiCredentialStatus = ApiCredentialStatus;
+export type DeepSeekCredentialStatus = ApiCredentialStatus;
+
+export type LanguageAuditCategory =
+  | 'unnatural_expression'
+  | 'logical_gap'
+  | 'concept_misuse'
+  | 'terminology';
+
+export type LanguageAuditFinding = {
+  category: LanguageAuditCategory;
+  severity: 'major' | 'minor';
+  quote: string;
+  explanation: string;
+  suggestion: string;
+  confidence: number;
+  source_line?: number;
+};
+
+export type DocumentLanguageAudit = {
+  target_uri: string;
+  source_path: string;
+  language: string;
+  title: string;
+  provider: 'deepseek';
+  model: string;
+  summary: string;
+  findings: LanguageAuditFinding[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+};
+
+export type LanguageAuditReport = {
+  state: 'complete' | 'partial_failure' | 'failed';
+  provider: 'deepseek';
+  model: string;
+  min_confidence: number;
+  scope: 'blog' | 'episode_series';
+  selector?: string;
+  documents_total: number;
+  documents_completed: number;
+  documents_failed: number;
+  findings_total: number;
+  major_findings: number;
+  results: DocumentLanguageAudit[];
+  failures: Array<{
+    target_uri: string;
+    source_path: string;
+    language: string;
+    error: string;
+  }>;
+};
+
+export type MarkdownSelectionAssistAction =
+  | 'agent_edit'
+  | 'optimize_expression'
+  | 'comment_issue';
+
+export type MarkdownSelectionAssistInput = {
+  action: MarkdownSelectionAssistAction;
+  language: string;
+  title: string;
+  selected_text: string;
+  before_context: string;
+  after_context: string;
+  instruction?: string;
+};
+
+export type MarkdownSelectionAssistResult = {
+  replacement: string;
+  comment: string;
 };
 
 export type EditorDocument = {
@@ -33,8 +110,55 @@ export type EditorDocument = {
   cover_website_url?: string | null;
   github_url?: string | null;
   demo_url?: string | null;
+  article_attribution?: ArticleAttribution | null;
   engagement: EngagementStats;
   translations: EditorTranslation[];
+};
+
+export type ArticleResource = {
+  kind: 'website' | 'github' | 'paper' | 'doi' | 'documentation' | 'other' | string;
+  label: string;
+  url: string;
+};
+
+export type ArticleAttribution = {
+  project_name: string;
+  publication_venue: string;
+  project_url: string;
+  external_resources: ArticleResource[];
+  image_author: string;
+  image_site_url: string;
+  image_watermark_mode: 'off' | 'metadata' | 'visible' | 'both';
+  image_watermark_position: 'bottom-left' | 'bottom-right';
+};
+
+export type ArticleImageAttributionPlan = {
+  target_uri: string;
+  project_name: string;
+  publication_venue: string;
+  author: string;
+  site_url: string;
+  article_url: string;
+  project_url: string;
+  mode: ArticleAttribution['image_watermark_mode'];
+  position: ArticleAttribution['image_watermark_position'];
+  visible_lines: string[];
+  assets: Array<{
+    uri: string;
+    local_path: string;
+    file_name: string;
+    supported: boolean;
+  }>;
+};
+
+export type ArticleImageAttributionResult = {
+  plan: ArticleImageAttributionPlan;
+  assets: Array<{
+    uri: string;
+    local_path: string;
+    state: 'applied' | 'unchanged' | 'skipped_unsupported';
+    byte_count: number;
+  }>;
 };
 
 export type EngagementStats = {
@@ -246,6 +370,8 @@ export type WorkspaceFileChange = {
 export type DeployRunStatus = {
   success: boolean;
   content_commit: string;
+  static_published: boolean;
+  static_release: string;
   stdout: string;
   stderr: string;
 };
@@ -293,6 +419,7 @@ export type ContentGroup = {
   coverWebsiteUrl?: string;
   githubUrl?: string;
   demoUrl?: string;
+  articleAttribution?: ArticleAttribution;
   description?: string | null;
   language?: string;
   documents: EditorDocument[];

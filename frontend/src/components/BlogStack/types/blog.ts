@@ -8,6 +8,12 @@ export interface BlogLiker {
   label?: string;
 }
 
+export interface BlogResource {
+  kind: 'website' | 'github' | 'paper' | 'doi' | 'documentation' | 'other' | string;
+  label: string;
+  url: string;
+}
+
 export interface BlogContent {
   id: string;
   type: 'text' | 'image' | 'video' | 'quote' | 'code' | 'heading' | 'markdown';
@@ -42,8 +48,15 @@ export interface BlogData {
   views: number;
   summary: string;
   summaryZh?: string;
+  /** Locale-indexed source covers returned by the API. */
+  featuredImageUrls?: Partial<Record<'en' | 'zh', string>>;
+  /** Cover resolved for the language used to load this record. */
   featuredImageUrl?: string;
   coverImage?: string;
+  projectName?: string;
+  publicationVenue?: string;
+  projectUrl?: string;
+  externalResources?: BlogResource[];
   type?: 'article' | 'vlog' | 'tutorial' | 'podcast' | 'episode' | 'series';
   // Vlog specific fields
   videoUrl?: string;

@@ -28,8 +28,8 @@ export interface EpisodeSeriesData {
   cover_url?: string;
   status: string;
   episodes: EpisodeData[];
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface EpisodeSeriesListResponse {

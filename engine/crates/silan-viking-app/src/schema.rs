@@ -90,6 +90,11 @@ pub struct FieldSpec {
     pub type_decl: String,
     /// Whether the field is required.
     pub required: bool,
+    /// Whether the field carries a distinct value for each language.
+    ///
+    /// When omitted from SCHEMA.md, prose fields keep the established
+    /// semantic default: titles and text fields are translatable.
+    pub translatable: bool,
     /// Where the field's value lands in the database (parsed from `column:`).
     pub column: FieldColumn,
 }
@@ -344,11 +349,16 @@ fn parse_field_spec(node: &serde_yaml::Value, main_table: &str) -> Option<FieldS
         .get("required")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let translatable = node
+        .get("translatable")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(name == "title" || type_decl == "text");
     let column = parse_field_column(node.get("column"), main_table);
     Some(FieldSpec {
         name,
         type_decl,
         required,
+        translatable,
         column,
     })
 }
@@ -471,6 +481,17 @@ mod tests {
         let status = blog.field("status").expect("status field");
         let values = status.enum_values().expect("status is an enum");
         assert_eq!(values, ["draft", "published", "archived"]);
+    }
+
+    #[test]
+    fn blog_cover_is_explicitly_translatable() {
+        let schema = real_schema();
+        let blog = schema.type_spec(ContentKind::Blog).expect("blog spec");
+        assert!(
+            blog.field("featured_image_url")
+                .expect("featured image field")
+                .translatable
+        );
     }
 
     #[test]

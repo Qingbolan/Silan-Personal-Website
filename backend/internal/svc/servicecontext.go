@@ -297,11 +297,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		CrawlerHits:     traffic.NewObservationDeduplicator(30*time.Second, 4096),
 		CountryResolver: countryResolver,
 		ContentDeploy: contentdeploy.NewService(contentdeploy.Config{
-			Driver:         c.Database.Driver,
-			ImporterPath:   c.ContentDeployImporterPath(),
-			DatabaseEnv:    c.ContentDeployDatabaseEnv(),
-			MediaRoot:      c.MediaRoot(),
-			MaxBundleBytes: c.ContentDeployMaxBundleBytes(),
+			Driver:          c.Database.Driver,
+			ImporterPath:    c.ContentDeployImporterPath(),
+			DatabaseEnv:     c.ContentDeployDatabaseEnv(),
+			MediaRoot:       c.MediaRoot(),
+			MaxBundleBytes:  c.ContentDeployMaxBundleBytes(),
+			StaticPublisher: contentdeploy.NewCommandStaticPublisher(c.ContentDeployStaticPublisher()),
 		}, rawDB),
 	}
 }

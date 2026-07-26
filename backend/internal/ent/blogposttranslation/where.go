@@ -85,6 +85,11 @@ func Excerpt(v string) predicate.BlogPostTranslation {
 	return predicate.BlogPostTranslation(sql.FieldEQ(FieldExcerpt, v))
 }
 
+// FeaturedImageURL applies equality check predicate on the "featured_image_url" field. It's identical to FeaturedImageURLEQ.
+func FeaturedImageURL(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldEQ(FieldFeaturedImageURL, v))
+}
+
 // Content applies equality check predicate on the "content" field. It's identical to ContentEQ.
 func Content(v string) predicate.BlogPostTranslation {
 	return predicate.BlogPostTranslation(sql.FieldEQ(FieldContent, v))
@@ -373,6 +378,81 @@ func ExcerptEqualFold(v string) predicate.BlogPostTranslation {
 // ExcerptContainsFold applies the ContainsFold predicate on the "excerpt" field.
 func ExcerptContainsFold(v string) predicate.BlogPostTranslation {
 	return predicate.BlogPostTranslation(sql.FieldContainsFold(FieldExcerpt, v))
+}
+
+// FeaturedImageURLEQ applies the EQ predicate on the "featured_image_url" field.
+func FeaturedImageURLEQ(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldEQ(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLNEQ applies the NEQ predicate on the "featured_image_url" field.
+func FeaturedImageURLNEQ(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldNEQ(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLIn applies the In predicate on the "featured_image_url" field.
+func FeaturedImageURLIn(vs ...string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldIn(FieldFeaturedImageURL, vs...))
+}
+
+// FeaturedImageURLNotIn applies the NotIn predicate on the "featured_image_url" field.
+func FeaturedImageURLNotIn(vs ...string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldNotIn(FieldFeaturedImageURL, vs...))
+}
+
+// FeaturedImageURLGT applies the GT predicate on the "featured_image_url" field.
+func FeaturedImageURLGT(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldGT(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLGTE applies the GTE predicate on the "featured_image_url" field.
+func FeaturedImageURLGTE(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldGTE(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLLT applies the LT predicate on the "featured_image_url" field.
+func FeaturedImageURLLT(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldLT(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLLTE applies the LTE predicate on the "featured_image_url" field.
+func FeaturedImageURLLTE(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldLTE(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLContains applies the Contains predicate on the "featured_image_url" field.
+func FeaturedImageURLContains(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldContains(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLHasPrefix applies the HasPrefix predicate on the "featured_image_url" field.
+func FeaturedImageURLHasPrefix(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldHasPrefix(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLHasSuffix applies the HasSuffix predicate on the "featured_image_url" field.
+func FeaturedImageURLHasSuffix(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldHasSuffix(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLIsNil applies the IsNil predicate on the "featured_image_url" field.
+func FeaturedImageURLIsNil() predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldIsNull(FieldFeaturedImageURL))
+}
+
+// FeaturedImageURLNotNil applies the NotNil predicate on the "featured_image_url" field.
+func FeaturedImageURLNotNil() predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldNotNull(FieldFeaturedImageURL))
+}
+
+// FeaturedImageURLEqualFold applies the EqualFold predicate on the "featured_image_url" field.
+func FeaturedImageURLEqualFold(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldEqualFold(FieldFeaturedImageURL, v))
+}
+
+// FeaturedImageURLContainsFold applies the ContainsFold predicate on the "featured_image_url" field.
+func FeaturedImageURLContainsFold(v string) predicate.BlogPostTranslation {
+	return predicate.BlogPostTranslation(sql.FieldContainsFold(FieldFeaturedImageURL, v))
 }
 
 // ContentEQ applies the EQ predicate on the "content" field.

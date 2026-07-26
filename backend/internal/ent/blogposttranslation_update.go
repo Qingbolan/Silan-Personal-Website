@@ -97,6 +97,26 @@ func (bptu *BlogPostTranslationUpdate) ClearExcerpt() *BlogPostTranslationUpdate
 	return bptu
 }
 
+// SetFeaturedImageURL sets the "featured_image_url" field.
+func (bptu *BlogPostTranslationUpdate) SetFeaturedImageURL(s string) *BlogPostTranslationUpdate {
+	bptu.mutation.SetFeaturedImageURL(s)
+	return bptu
+}
+
+// SetNillableFeaturedImageURL sets the "featured_image_url" field if the given value is not nil.
+func (bptu *BlogPostTranslationUpdate) SetNillableFeaturedImageURL(s *string) *BlogPostTranslationUpdate {
+	if s != nil {
+		bptu.SetFeaturedImageURL(*s)
+	}
+	return bptu
+}
+
+// ClearFeaturedImageURL clears the value of the "featured_image_url" field.
+func (bptu *BlogPostTranslationUpdate) ClearFeaturedImageURL() *BlogPostTranslationUpdate {
+	bptu.mutation.ClearFeaturedImageURL()
+	return bptu
+}
+
 // SetContent sets the "content" field.
 func (bptu *BlogPostTranslationUpdate) SetContent(s string) *BlogPostTranslationUpdate {
 	bptu.mutation.SetContent(s)
@@ -189,6 +209,11 @@ func (bptu *BlogPostTranslationUpdate) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "BlogPostTranslation.title": %w`, err)}
 		}
 	}
+	if v, ok := bptu.mutation.FeaturedImageURL(); ok {
+		if err := blogposttranslation.FeaturedImageURLValidator(v); err != nil {
+			return &ValidationError{Name: "featured_image_url", err: fmt.Errorf(`ent: validator failed for field "BlogPostTranslation.featured_image_url": %w`, err)}
+		}
+	}
 	if bptu.mutation.BlogPostCleared() && len(bptu.mutation.BlogPostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BlogPostTranslation.blog_post"`)
 	}
@@ -221,6 +246,12 @@ func (bptu *BlogPostTranslationUpdate) sqlSave(ctx context.Context) (n int, err 
 	}
 	if bptu.mutation.ExcerptCleared() {
 		_spec.ClearField(blogposttranslation.FieldExcerpt, field.TypeString)
+	}
+	if value, ok := bptu.mutation.FeaturedImageURL(); ok {
+		_spec.SetField(blogposttranslation.FieldFeaturedImageURL, field.TypeString, value)
+	}
+	if bptu.mutation.FeaturedImageURLCleared() {
+		_spec.ClearField(blogposttranslation.FieldFeaturedImageURL, field.TypeString)
 	}
 	if value, ok := bptu.mutation.Content(); ok {
 		_spec.SetField(blogposttranslation.FieldContent, field.TypeString, value)
@@ -377,6 +408,26 @@ func (bptuo *BlogPostTranslationUpdateOne) ClearExcerpt() *BlogPostTranslationUp
 	return bptuo
 }
 
+// SetFeaturedImageURL sets the "featured_image_url" field.
+func (bptuo *BlogPostTranslationUpdateOne) SetFeaturedImageURL(s string) *BlogPostTranslationUpdateOne {
+	bptuo.mutation.SetFeaturedImageURL(s)
+	return bptuo
+}
+
+// SetNillableFeaturedImageURL sets the "featured_image_url" field if the given value is not nil.
+func (bptuo *BlogPostTranslationUpdateOne) SetNillableFeaturedImageURL(s *string) *BlogPostTranslationUpdateOne {
+	if s != nil {
+		bptuo.SetFeaturedImageURL(*s)
+	}
+	return bptuo
+}
+
+// ClearFeaturedImageURL clears the value of the "featured_image_url" field.
+func (bptuo *BlogPostTranslationUpdateOne) ClearFeaturedImageURL() *BlogPostTranslationUpdateOne {
+	bptuo.mutation.ClearFeaturedImageURL()
+	return bptuo
+}
+
 // SetContent sets the "content" field.
 func (bptuo *BlogPostTranslationUpdateOne) SetContent(s string) *BlogPostTranslationUpdateOne {
 	bptuo.mutation.SetContent(s)
@@ -482,6 +533,11 @@ func (bptuo *BlogPostTranslationUpdateOne) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "BlogPostTranslation.title": %w`, err)}
 		}
 	}
+	if v, ok := bptuo.mutation.FeaturedImageURL(); ok {
+		if err := blogposttranslation.FeaturedImageURLValidator(v); err != nil {
+			return &ValidationError{Name: "featured_image_url", err: fmt.Errorf(`ent: validator failed for field "BlogPostTranslation.featured_image_url": %w`, err)}
+		}
+	}
 	if bptuo.mutation.BlogPostCleared() && len(bptuo.mutation.BlogPostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BlogPostTranslation.blog_post"`)
 	}
@@ -531,6 +587,12 @@ func (bptuo *BlogPostTranslationUpdateOne) sqlSave(ctx context.Context) (_node *
 	}
 	if bptuo.mutation.ExcerptCleared() {
 		_spec.ClearField(blogposttranslation.FieldExcerpt, field.TypeString)
+	}
+	if value, ok := bptuo.mutation.FeaturedImageURL(); ok {
+		_spec.SetField(blogposttranslation.FieldFeaturedImageURL, field.TypeString, value)
+	}
+	if bptuo.mutation.FeaturedImageURLCleared() {
+		_spec.ClearField(blogposttranslation.FieldFeaturedImageURL, field.TypeString)
 	}
 	if value, ok := bptuo.mutation.Content(); ok {
 		_spec.SetField(blogposttranslation.FieldContent, field.TypeString, value)

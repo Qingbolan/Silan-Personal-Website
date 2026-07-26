@@ -1,5 +1,6 @@
 ---
 title: 你好世界
+featured_image_url: https://example.com/cover-zh.png
 ---
 # 你好世界
 

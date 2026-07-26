@@ -18,11 +18,11 @@ import {
   Eye,
   EyeOff,
   FileImage,
+  FileSearch,
   FileText,
   Folder,
   FolderPlus,
   GitBranch,
-  Globe2,
   LoaderCircle,
   Menu,
   MessageCircle,
@@ -44,11 +44,25 @@ import {
   X,
 } from 'lucide-react';
 import { CaptureSheet } from './components/CaptureSheet';
+import { AiCoverGenerator } from './components/AiCoverGenerator';
+import { ArticleDiscoverySettings } from './components/ArticleDiscoverySettings';
 import { CommitWall, TrafficWall } from './components/CommitWall';
 import { ContentCard } from './components/ContentCard';
-import { EditorAssistDock, type EditorAssistReference } from './components/EditorAssistDock';
 import { LanguageCloseControls, type LanguageCloseTab } from './components/LanguageCloseControls';
-import MarkdownEditor, { type MarkdownEditorHandle } from './components/MarkdownEditor';
+import { LanguageReviewPanel } from './components/LanguageReviewPanel';
+import {
+  MarkdownDocumentWorkspace,
+  type MarkdownWorkspaceActivity,
+} from './components/MarkdownDocumentWorkspace';
+import type {
+  EditorReviewFinding,
+  MarkdownEditorHandle,
+  MarkdownSelectionAssistRequest,
+} from './components/MarkdownEditor';
+import {
+  type EditorAssistReference,
+  useEditorAssistSlashCommands,
+} from './components/editor/useEditorAssistSlashCommands';
 import { NewProjectDialog } from './components/NewProjectDialog';
 import { WorkspaceSettingsPage } from './components/WorkspaceSettingsPage';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
@@ -76,15 +90,22 @@ import {
 } from './lib/contentLifecycle';
 import { inferCoverSourceType, type CoverSourceType } from './lib/coverSource';
 import { formatSyncedAgo } from './lib/format';
+import { summarizeMarkdownBlockChanges } from './lib/markdownBlockDiff';
 import { cssBackgroundImage, toWebviewMediaUrl } from './lib/media';
+import {
+  languageReviewFindingId,
+  useLanguageReviewWorkflow,
+} from './lib/languageReviewWorkflow';
 import {
   countResourcesByShelf,
   filterResourceDocuments,
   isArchivedResource,
 } from './lib/resourceVisibility';
+import { useTranslationSyncWorkflow } from './lib/translationSyncWorkflow';
 import type {
   CapturePhase,
   CaptureTarget,
+  ArticleAttribution,
   ContentGroup,
   ContentKind,
   DashboardData,
@@ -93,6 +114,7 @@ import type {
   DeploymentPlan,
   DeployRunStatus,
   DeployVerificationResult,
+  DocumentLanguageAudit,
   EditorDocument,
   EntityFilter,
   EpisodeGroup,
@@ -102,6 +124,8 @@ import type {
   GeoInsightReport,
   IdeaCategory,
   ImportedMediaAsset,
+  LanguageAuditFinding,
+  MarkdownSelectionAssistResult,
   MomentsSettings,
   StatsSyncReport,
   TrafficEvidence,
@@ -114,6 +138,13 @@ const masonryContentKinds = new Set<ContentKind>(['blog', 'project']);
 const editableMasonryContentKinds = new Set<ContentKind>(['blog', 'project', 'episode', 'resume', 'moment']);
 const versionScopeFilters = new Set<EntityFilter>(['resume', 'blog', 'project', 'moment']);
 const preferredMarkdownLanguages = ['en', 'zh'];
+
+type PendingReviewAction = {
+  findingId: string;
+  sourcePath: string;
+  language: string;
+  mode: 'focus' | 'apply';
+};
 
 const isVersionScope = (filter: EntityFilter): filter is VersionScope => (
   versionScopeFilters.has(filter)
@@ -250,9 +281,14 @@ const ideaCategories: Array<{ value: IdeaCategory; label: string; Icon: typeof S
 
 const stateManagedKinds = new Set<ContentKind>(['blog', 'project', 'episode', 'moment']);
 const archivableKinds = new Set<ContentKind>(['blog', 'project', 'episode']);
-const pairedMarkdownLanguage = (language: string) => (
-  language.trim().toLowerCase().startsWith('zh') ? 'en' : 'zh'
-);
+const ENGLISH_MARKDOWN_LANGUAGE = 'en';
+const CHINESE_MARKDOWN_LANGUAGE = 'zh';
+const counterpartMarkdownLanguage = (language: string) => {
+  const normalized = language.trim().toLowerCase();
+  if (normalized === ENGLISH_MARKDOWN_LANGUAGE) return CHINESE_MARKDOWN_LANGUAGE;
+  if (normalized === CHINESE_MARKDOWN_LANGUAGE || normalized.startsWith('zh')) return ENGLISH_MARKDOWN_LANGUAGE;
+  return '';
+};
 
 const inferMarkdownLanguage = (markdown: string, fallback: string) => {
   const cjkCount = (markdown.match(/[\u3400-\u9fff]/g) || []).length;
@@ -272,7 +308,14 @@ const fileBytes = async (file: File) => Array.from(new Uint8Array(await file.arr
 
 type ContentRailPanel = 'parts' | 'settings' | 'reactions';
 type ContentRailMode = 'files' | 'interaction';
+type ContentSettingsPage = 'overview' | 'cover' | 'discovery' | 'links' | 'publishing' | 'source';
+type SeriesSettingsPage = 'overview' | 'cover' | 'publishing' | 'source';
 type DashboardRankingMetric = 'views' | 'likes' | 'comments' | 'crawlers' | 'ai_crawlers' | 'search_bots' | 'ai_chat';
+type SettingsPageItem<Page extends string> = {
+  id: Page;
+  label: string;
+  description: string;
+};
 type DashboardRankingItem = {
   kind: ContentKind;
   title: string;
@@ -291,6 +334,82 @@ const dashboardRankingLabels: Record<DashboardRankingMetric, string> = {
   search_bots: 'Search bot ranking',
   ai_chat: 'AI chat ranking',
 };
+
+const contentSettingsPages: Array<SettingsPageItem<ContentSettingsPage>> = [
+  { id: 'overview', label: 'Overview', description: 'Title and summary' },
+  { id: 'cover', label: 'Cover', description: 'Preview and generate' },
+  { id: 'discovery', label: 'Discovery', description: 'Resources and image credit' },
+  { id: 'links', label: 'Links', description: 'Repository and demo' },
+  { id: 'publishing', label: 'Publishing', description: 'Visibility and lifecycle' },
+  { id: 'source', label: 'Source', description: 'Identifiers and files' },
+];
+
+const defaultArticleAttribution = (): ArticleAttribution => ({
+  project_name: '',
+  publication_venue: '',
+  project_url: '',
+  external_resources: [],
+  image_author: '',
+  image_site_url: '',
+  image_watermark_mode: 'off',
+  image_watermark_position: 'bottom-right',
+});
+
+const seriesSettingsPages: Array<SettingsPageItem<SeriesSettingsPage>> = [
+  { id: 'overview', label: 'Overview', description: 'Title and summary' },
+  { id: 'cover', label: 'Cover', description: 'Upload or generate' },
+  { id: 'publishing', label: 'Publishing', description: 'Series availability' },
+  { id: 'source', label: 'Source', description: 'Identifier and file' },
+];
+
+function SettingsPageNavigation<Page extends string>({
+  items,
+  activePage,
+  onChange,
+  label,
+}: {
+  items: Array<SettingsPageItem<Page>>;
+  activePage: Page;
+  onChange: (page: Page) => void;
+  label: string;
+}) {
+  return (
+    <nav className="content-settings-page-nav" aria-label={label}>
+      {items.map(({ id, label: itemLabel, description }) => (
+        <button
+          key={id}
+          type="button"
+          className={activePage === id ? 'active' : ''}
+          aria-current={activePage === id ? 'page' : undefined}
+          onClick={() => onChange(id)}
+        >
+          <span>
+            <strong>{itemLabel}</strong>
+            <small>{description}</small>
+          </span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function SettingsPageIntro({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <header className="content-settings-page-intro">
+      <span>{eyebrow}</span>
+      <h2>{title}</h2>
+      <p>{description}</p>
+    </header>
+  );
+}
 
 const isContentKind = (value: string): value is ContentKind => contentKinds.has(value as ContentKind);
 
@@ -371,6 +490,7 @@ export default function App() {
   const [freshnessTick, setFreshnessTick] = React.useState(0);
   const [deployingContent, setDeployingContent] = React.useState(false);
   const [confirmingDeploy, setConfirmingDeploy] = React.useState(false);
+  const [deployedStaticRelease, setDeployedStaticRelease] = React.useState<string | null>(null);
   const [deployVerification, setDeployVerification] = React.useState<DeployVerificationResult | null>(null);
   const [momentsSettings, setMomentsSettings] = React.useState<MomentsSettings | null>(null);
   const [workspacePreferences, setWorkspacePreferences] = React.useState<WorkspacePreferences | null>(null);
@@ -385,7 +505,6 @@ export default function App() {
   const [saveFailed, setSaveFailed] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [generatingTranslation, setGeneratingTranslation] = React.useState('');
-  const [syncingTranslation, setSyncingTranslation] = React.useState('');
   const [confirmingRefresh, setConfirmingRefresh] = React.useState(false);
   const [capturePhase, setCapturePhase] = React.useState<CapturePhase>('closed');
   const [captureOrigin, setCaptureOrigin] = React.useState({ x: 0, y: 0 });
@@ -400,6 +519,7 @@ export default function App() {
   const [contentEditorOpen, setContentEditorOpen] = React.useState(false);
   const [contentRailPanel, setContentRailPanel] = React.useState<ContentRailPanel>('parts');
   const [contentRailMode, setContentRailMode] = React.useState<ContentRailMode>('files');
+  const [contentSettingsPage, setContentSettingsPage] = React.useState<ContentSettingsPage>('overview');
   const [metadataDraft, setMetadataDraft] = React.useState<{
     title: string;
     description: string;
@@ -408,6 +528,7 @@ export default function App() {
     cover_website_url: string;
     github_url: string;
     demo_url: string;
+    article_attribution: ArticleAttribution;
   }>({
     title: '',
     description: '',
@@ -416,9 +537,13 @@ export default function App() {
     cover_website_url: '',
     github_url: '',
     demo_url: '',
+    article_attribution: defaultArticleAttribution(),
   });
   const [metadataSavingId, setMetadataSavingId] = React.useState('');
   const [metadataError, setMetadataError] = React.useState<string | null>(null);
+  const [metadataCoverBusy, setMetadataCoverBusy] = React.useState(false);
+  const [metadataCoverError, setMetadataCoverError] = React.useState<string | undefined>(undefined);
+  const [metadataCoverLocalPreview, setMetadataCoverLocalPreview] = React.useState('');
   const [reactionDraft, setReactionDraft] = React.useState({ likes: '0', comments: '0' });
   const [reactionSavingId, setReactionSavingId] = React.useState('');
   const [reactionError, setReactionError] = React.useState<string | null>(null);
@@ -443,7 +568,6 @@ export default function App() {
   const [versionPanelOpen, setVersionPanelOpen] = React.useState(false);
   const [mediaDragActive, setMediaDragActive] = React.useState(false);
   const [mediaImporting, setMediaImporting] = React.useState(false);
-  const [mediaOperation, setMediaOperation] = React.useState<'import' | 'generate'>('import');
   const [mediaDropError, setMediaDropError] = React.useState<string | null>(null);
   const [lastImportedAsset, setLastImportedAsset] = React.useState<ImportedMediaAsset | null>(null);
   const [geoPanelOpen, setGeoPanelOpen] = React.useState(false);
@@ -453,6 +577,7 @@ export default function App() {
   const [stateSavingId, setStateSavingId] = React.useState('');
   const [gitPanelOpen, setGitPanelOpen] = React.useState(false);
   const [seriesEditingSlug, setSeriesEditingSlug] = React.useState('');
+  const [seriesSettingsPage, setSeriesSettingsPage] = React.useState<SeriesSettingsPage>('overview');
   const [seriesSource, setSeriesSource] = React.useState<EpisodeSeriesSource | null>(null);
   const [seriesDraft, setSeriesDraft] = React.useState<EpisodeSeriesInput>({
     title: '',
@@ -466,10 +591,20 @@ export default function App() {
   const [seriesCoverBusy, setSeriesCoverBusy] = React.useState(false);
   const [seriesCoverError, setSeriesCoverError] = React.useState<string | undefined>(undefined);
   const [seriesCoverLocalPreview, setSeriesCoverLocalPreview] = React.useState('');
+  const [pendingReviewAction, setPendingReviewAction] = React.useState<PendingReviewAction | null>(null);
   const editorRef = React.useRef<MarkdownEditorHandle | null>(null);
+  const savedTranslationContentRef = React.useRef(new Map<string, string>());
   const captureInputRef = React.useRef<MarkdownEditorHandle | null>(null);
   const newProjectInputRef = React.useRef<HTMLInputElement | null>(null);
   const settingsReturnScreenRef = React.useRef<'dashboard' | 'content'>('dashboard');
+  const languageReview = useLanguageReviewWorkflow();
+  const translationSync = useTranslationSyncWorkflow();
+  const syncingTranslation = (
+    translationSync.state.phase === 'saving_source'
+    || translationSync.state.phase === 'syncing'
+  )
+    ? translationSync.state.key || ''
+    : '';
 
   const activeDocuments = React.useMemo(
     () => filterResourceDocuments(documents, { view: 'active' }),
@@ -696,6 +831,16 @@ export default function App() {
   const selectedTranslation = selected?.translations.find(
     (translation) => translation.language === selectedLanguage,
   ) || selected?.translations[0] || null;
+  const selectedReviewResult = languageReview.state.report?.results.find((result) => (
+    result.source_path === selectedTranslation?.source_path
+    && result.language === selectedTranslation.language
+  )) || null;
+  const selectedReviewFindings: EditorReviewFinding[] = selectedReviewResult
+    ? selectedReviewResult.findings.map((finding) => ({
+        ...finding,
+        id: languageReviewFindingId(selectedReviewResult, finding),
+      }))
+    : [];
   const selectedEditorLanguages = selected
     ? Array.from(new Set([
       ...preferredMarkdownLanguages,
@@ -797,29 +942,82 @@ export default function App() {
     ? `${otherDirtyCount} other unsaved translation${otherDirtyCount > 1 ? 's' : ''}`
     : selectedTranslation?.source_path || 'No source selected';
   const counterpartLanguage = selectedTranslation
-    ? pairedMarkdownLanguage(selectedTranslation.language)
-    : 'zh';
+    ? counterpartMarkdownLanguage(selectedTranslation.language)
+    : CHINESE_MARKDOWN_LANGUAGE;
   const counterpartTranslation = selected?.translations.find(
     (translation) => translation.language === counterpartLanguage,
   ) || null;
   const counterpartDirty = counterpartTranslation ? dirtyIds.has(counterpartTranslation.id) : false;
   const aiTranslationBusy = Boolean(syncingTranslation || generatingTranslation);
-  const aiTranslationLabel = syncingTranslation
-    ? 'Syncing'
-    : counterpartTranslation
-      ? `Sync ${counterpartLanguage}`
-      : `Create ${counterpartLanguage}`;
+  const showTranslationSync = Boolean(
+    selectedTranslation
+    && counterpartLanguage
+    && (dirty || !counterpartTranslation),
+  );
+  const pendingSourceChanges = selectedTranslation
+    ? summarizeMarkdownBlockChanges(
+        savedTranslationContentRef.current.get(selectedTranslation.id) ?? selectedTranslation.content,
+        selectedTranslation.content,
+      )
+    : null;
   const aiTranslationTitle = selectedTranslation
     ? counterpartTranslation
       ? `Update ${counterpartLanguage} from ${selectedTranslation.language} without rewriting unchanged text`
       : `Create ${counterpartLanguage} from ${selectedTranslation.language}`
     : 'Open a Markdown translation first';
+  const translationActivityForSelected = (
+    selected
+    && translationSync.state.documentId === selected.id
+    && translationSync.state.phase !== 'idle'
+  );
+  const workspaceActivity: MarkdownWorkspaceActivity | null = translationActivityForSelected
+    ? (() => {
+        const syncState = translationSync.state;
+        const sourceAffected = syncState.sourceChanges?.affected || 0;
+        const targetAffected = syncState.targetChanges?.affected || 0;
+        if (syncState.phase === 'saving_source') {
+          return {
+            state: 'working',
+            label: `Saving ${syncState.sourceLanguage} source`,
+            detail: `${sourceAffected} changed Markdown block${sourceAffected === 1 ? '' : 's'}`,
+          };
+        }
+        if (syncState.phase === 'syncing') {
+          return {
+            state: 'working',
+            label: `Syncing ${syncState.sourceLanguage} → ${syncState.targetLanguage}`,
+            detail: 'Translating changed blocks while preserving unchanged structure',
+          };
+        }
+        if (syncState.phase === 'failed') {
+          return {
+            state: 'error',
+            label: 'Translation sync failed',
+            detail: syncState.error || undefined,
+          };
+        }
+        return {
+          state: 'complete',
+          label: `${syncState.targetLanguage} synchronized`,
+          detail: targetAffected === 0
+            ? 'No target Markdown blocks changed'
+            : `${targetAffected} target block${targetAffected === 1 ? '' : 's'} updated`,
+        };
+      })()
+    : selectedReviewFindings.length > 0
+      ? {
+          state: 'review',
+          label: `${selectedReviewFindings.length} DeepSeek finding${selectedReviewFindings.length === 1 ? '' : 's'}`,
+          detail: 'Click an underlined sentence to inspect the suggested repair',
+        }
+      : null;
   const renderLanguageCloseControls = ({
     fixed = false,
     disabled = false,
     closeLabel,
     closeTitle,
     closeSize,
+    closeText,
     onClose,
   }: {
     fixed?: boolean;
@@ -827,6 +1025,7 @@ export default function App() {
     closeLabel: string;
     closeTitle?: string;
     closeSize?: number;
+    closeText?: string;
     onClose: () => void;
   }) => (
     <LanguageCloseControls
@@ -837,6 +1036,7 @@ export default function App() {
       closeLabel={closeLabel}
       closeTitle={closeTitle}
       closeSize={closeSize}
+      closeText={closeText}
       onLanguageSelect={selectTopControlLanguage}
       onClose={onClose}
     />
@@ -1071,6 +1271,11 @@ export default function App() {
     setError(null);
     try {
       const nextDocuments = await invoke<EditorDocument[]>('list_documents');
+      savedTranslationContentRef.current = new Map(
+        nextDocuments.flatMap((document) => (
+          document.translations.map((translation) => [translation.id, translation.content] as const)
+        )),
+      );
       setDocuments(nextDocuments);
       setSelectedId((current) => (
         current && nextDocuments.some((document) => (
@@ -1129,9 +1334,11 @@ export default function App() {
     setConfirmingDeploy(false);
     setDeployingContent(true);
     setDeployVerification(null);
+    setDeployedStaticRelease(null);
     setError(null);
     try {
-      await invoke<DeployRunStatus>('deploy_content');
+      const deployed = await invoke<DeployRunStatus>('deploy_content');
+      setDeployedStaticRelease(deployed.static_release);
       const verification = await invoke<DeployVerificationResult>('verify_remote_content');
       setDeployVerification(verification);
       await Promise.all([loadDeploymentPlan(), loadDeliverySyncStatus()]);
@@ -1243,10 +1450,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeWorkspaceSettings, screen]);
 
-  const openWorkspaceSettings = () => {
+  const openWorkspaceSettings = (preserveEditorContext = false) => {
     settingsReturnScreenRef.current = screen === 'content' ? 'content' : 'dashboard';
-    setContentEditorOpen(false);
-    setSelectedSeriesId('');
+    if (!preserveEditorContext) {
+      setContentEditorOpen(false);
+      setSelectedSeriesId('');
+    }
     setSidebarOpen(false);
     setError(null);
     setScreen('settings');
@@ -1505,16 +1714,6 @@ export default function App() {
     setCaptureAttachments((current) => [...current, ...files]);
   }, []);
 
-  const insertCaptureMarkdown = React.useCallback((markdown: string) => {
-    const block = `\n\n${markdown.trim()}\n`;
-    const inserted = captureInputRef.current?.insertMarkdown(block);
-    if (inserted != null) {
-      setCaptureNote(inserted);
-      return;
-    }
-    setCaptureNote((current) => `${current}${block}`);
-  }, []);
-
   const openNewProject = () => {
     setNewProjectTitle('');
     setNewProjectError(null);
@@ -1575,6 +1774,12 @@ export default function App() {
         content: selectedTranslation.content,
         expectedRevision: selectedTranslation.revision,
       });
+      const savedTranslation = saved.translations.find(
+        (translation) => translation.id === selectedTranslation.id,
+      );
+      if (savedTranslation) {
+        savedTranslationContentRef.current.set(savedTranslation.id, savedTranslation.content);
+      }
       setDocuments((current) => current.map((document) => {
         if (document.id !== saved.id) return document;
         return {
@@ -1604,29 +1809,36 @@ export default function App() {
     }
   };
 
-  async function generateMissingTranslation(targetLanguage: string) {
-    if (!selected) return;
+  async function generateMissingTranslation(
+    targetLanguage: string,
+    options: { saveDirtySource?: boolean } = {},
+  ): Promise<EditorDocument | null> {
+    if (!selected) return null;
     const existing = selected.translations.find((translation) => translation.language === targetLanguage);
     if (existing) {
       setLanguageByDocument((current) => ({
         ...current,
         [selected.id]: targetLanguage,
       }));
-      return;
+      return selected;
     }
     const source = selectedTranslation
       || selected.translations.find((translation) => translation.language === selected.canonical_language)
       || selected.translations[0];
     if (!source) {
       setError('This Part has no source language to translate from.');
-      return;
+      return null;
     }
     if (dirtyIds.has(source.id)) {
-      setError(`Save ${source.language} before generating ${targetLanguage}.`);
-      return;
+      if (!options.saveDirtySource || source.id !== selectedTranslation?.id) {
+        setError(`Save ${source.language} before generating ${targetLanguage}.`);
+        return null;
+      }
+      const saved = await saveSelected();
+      if (!saved) return null;
     }
     const generationKey = `${selected.id}:${targetLanguage}`;
-    if (generatingTranslation) return;
+    if (generatingTranslation) return null;
     setGeneratingTranslation(generationKey);
     setError(null);
     try {
@@ -1638,13 +1850,18 @@ export default function App() {
       setDocuments((current) => current.map((document) => (
         document.id === generated.id ? generated : document
       )));
+      generated.translations.forEach((translation) => {
+        savedTranslationContentRef.current.set(translation.id, translation.content);
+      });
       setLanguageByDocument((current) => ({
         ...current,
         [generated.id]: targetLanguage,
       }));
       setSaveFailed(false);
+      return generated;
     } catch (reason) {
       setError(String(reason));
+      return null;
     } finally {
       setGeneratingTranslation('');
     }
@@ -1652,10 +1869,38 @@ export default function App() {
 
   async function syncCounterpartTranslation() {
     if (!selected || !selectedTranslation || aiTranslationBusy || saving) return;
-    const targetLanguage = pairedMarkdownLanguage(selectedTranslation.language);
+    const targetLanguage = counterpartMarkdownLanguage(selectedTranslation.language);
+    if (!targetLanguage) {
+      setError('Language sync supports en and zh Markdown translations.');
+      return;
+    }
     const target = selected.translations.find((translation) => translation.language === targetLanguage);
+    const previousSourceBody = savedTranslationContentRef.current.get(selectedTranslation.id)
+      ?? selectedTranslation.content;
+    const sourceChanges = summarizeMarkdownBlockChanges(
+      previousSourceBody,
+      selectedTranslation.content,
+    );
+    const syncKey = `${selectedTranslation.id}:${targetLanguage}`;
+
     if (!target) {
-      await generateMissingTranslation(targetLanguage);
+      translationSync.begin({
+        key: syncKey,
+        documentId: selected.id,
+        sourceLanguage: selectedTranslation.language,
+        targetLanguage,
+        sourceChanges,
+        saveRequired: dirtyIds.has(selectedTranslation.id),
+      });
+      const generated = await generateMissingTranslation(targetLanguage, { saveDirtySource: true });
+      const generatedTarget = generated?.translations.find(
+        (translation) => translation.language === targetLanguage,
+      );
+      if (!generatedTarget) {
+        translationSync.fail(`Could not generate ${targetLanguage}.`);
+        return;
+      }
+      translationSync.complete(summarizeMarkdownBlockChanges('', generatedTarget.content));
       return;
     }
     if (dirtyIds.has(target.id)) {
@@ -1663,22 +1908,45 @@ export default function App() {
       return;
     }
 
-    const syncKey = `${selectedTranslation.id}:${targetLanguage}`;
     let sourceTranslationId = selectedTranslation.id;
-    setSyncingTranslation(syncKey);
+    translationSync.begin({
+      key: syncKey,
+      documentId: selected.id,
+      sourceLanguage: selectedTranslation.language,
+      targetLanguage,
+      sourceChanges,
+      saveRequired: dirtyIds.has(selectedTranslation.id),
+    });
     setError(null);
     try {
       if (dirtyIds.has(selectedTranslation.id)) {
         const saved = await saveSelected();
-        if (!saved) return;
+        if (!saved) {
+          translationSync.fail(`Could not save ${selectedTranslation.language} before syncing.`);
+          return;
+        }
         sourceTranslationId = saved.translations.find(
           (translation) => translation.language === selectedTranslation.language,
         )?.id || sourceTranslationId;
+        translationSync.sourceSaved();
       }
       const synced = await invoke<EditorDocument>('sync_counterpart_translation', {
         id: sourceTranslationId,
         targetLanguage,
+        previousSourceBody,
       });
+      const syncedSource = synced.translations.find(
+        (translation) => translation.language === selectedTranslation.language,
+      );
+      const syncedTarget = synced.translations.find(
+        (translation) => translation.language === targetLanguage,
+      );
+      if (syncedSource) {
+        savedTranslationContentRef.current.set(syncedSource.id, syncedSource.content);
+      }
+      if (syncedTarget) {
+        savedTranslationContentRef.current.set(syncedTarget.id, syncedTarget.content);
+      }
       setDocuments((current) => current.map((document) => (
         document.id !== synced.id
           ? document
@@ -1709,10 +1977,14 @@ export default function App() {
         [synced.id]: targetLanguage,
       }));
       setSaveFailed(false);
+      translationSync.complete(summarizeMarkdownBlockChanges(
+        target.content,
+        syncedTarget?.content || target.content,
+      ));
     } catch (reason) {
-      setError(String(reason));
-    } finally {
-      setSyncingTranslation('');
+      const message = String(reason);
+      setError(message);
+      translationSync.fail(message);
     }
   }
 
@@ -1726,6 +1998,12 @@ export default function App() {
 
   const patchSelectedTranslationContent = React.useCallback((content: string) => {
     if (!selected || !selectedTranslation) return;
+    if (
+      translationSync.state.documentId === selected.id
+      && translationSync.state.phase === 'complete'
+    ) {
+      translationSync.reset();
+    }
     setDocuments((current) => current.map((document) => (
       document.id === selected.id
         ? {
@@ -1737,7 +2015,13 @@ export default function App() {
         : document
     )));
     setDirtyIds((current) => new Set(current).add(selectedTranslation.id));
-  }, [selected?.id, selectedTranslation?.id]);
+  }, [
+    selected?.id,
+    selectedTranslation?.id,
+    translationSync.reset,
+    translationSync.state.documentId,
+    translationSync.state.phase,
+  ]);
 
   const insertMarkdownAtCursor = React.useCallback((markdown: string) => {
     if (!selectedTranslation) return;
@@ -1773,7 +2057,6 @@ export default function App() {
     }
     if (files.length === 0) return;
 
-    setMediaOperation('import');
     setMediaImporting(true);
     setMediaDropError(null);
     try {
@@ -1788,47 +2071,26 @@ export default function App() {
     }
   }, [deploymentPlan, importFileAssets, insertMarkdownAtCursor, loadDeploymentPlan, selectedTranslation]);
 
-  const generateImageForSelected = React.useCallback(async (request: {
-    prompt: string;
-    size: string;
-    quality: string;
-    outputFormat: string;
-  }) => {
-    if (!selectedTranslation) {
-      setMediaDropError('Open a Markdown translation before generating an image.');
-      return;
-    }
-    if (!isTauri()) {
-      setMediaDropError('AI image generation is available in the desktop app.');
-      return;
-    }
-    const prompt = request.prompt.trim();
-    if (!prompt) {
-      setMediaDropError('Image prompt is empty.');
-      return;
-    }
+  const editorAssist = useEditorAssistSlashCommands({
+    disabled: !selectedTranslation || saving,
+    importing: mediaImporting,
+    references: editorAssistReferences,
+    onAttachFiles: attachFilesToSelected,
+  });
 
-    setMediaOperation('generate');
-    setMediaImporting(true);
-    setMediaDropError(null);
-    try {
-      const asset = await invoke<ImportedMediaAsset>('generate_image_asset', {
-        id: selectedTranslation.id,
-        prompt,
-        size: request.size,
-        quality: request.quality,
-        outputFormat: request.outputFormat,
-      });
-      insertMarkdownAtCursor(asset.markdown);
-      setLastImportedAsset(asset);
-      if (deploymentPlan) void loadDeploymentPlan();
-    } catch (reason) {
-      setMediaDropError(String(reason));
-    } finally {
-      setMediaImporting(false);
-      setMediaOperation('import');
-    }
-  }, [deploymentPlan, insertMarkdownAtCursor, loadDeploymentPlan, selectedTranslation]);
+  const requestSelectionAssist = React.useCallback(async (
+    request: MarkdownSelectionAssistRequest,
+  ) => invoke<MarkdownSelectionAssistResult>('edit_markdown_selection', {
+    input: {
+      action: request.action,
+      language: selectedTranslation?.language || chromeLanguage,
+      title: selected?.title || 'Untitled',
+      selected_text: request.selectedText,
+      before_context: request.beforeContext,
+      after_context: request.afterContext,
+      instruction: request.instruction,
+    },
+  }), [chromeLanguage, selected?.title, selectedTranslation?.language]);
 
   const importDroppedMedia = React.useCallback(async (paths: string[]) => {
     if (!selectedTranslation) {
@@ -2131,6 +2393,7 @@ export default function App() {
   const openSeriesEditor = async (series: EpisodeSeries) => {
     if (seriesEditorLoading || seriesEditorSaving) return;
     setSeriesEditingSlug(series.slug);
+    setSeriesSettingsPage('overview');
     setSeriesSource(null);
     setSeriesDraft({
       title: series.title,
@@ -2241,6 +2504,121 @@ export default function App() {
         || null
       : contentGroups.find((group) => group.id === `${selected.entity_type}:${selected.entity_id}`) || null
     : null;
+  const languageReviewAvailable = Boolean(
+    selectedTranslation
+    && (selected?.entity_type === 'blog' || selected?.entity_type === 'episode'),
+  );
+  const reviewScopeDocuments = selected?.entity_type === 'episode'
+    ? episodeSeries
+        .find((series) => series.slug === selected.series_slug)
+        ?.episodes.flatMap((episode) => episode.documents) || []
+    : selectedContentGroup?.documents || [];
+  const reviewScopeDirty = reviewScopeDocuments.some((document) => (
+    document.translations.some((translation) => dirtyIds.has(translation.id))
+  ));
+  const reviewRunning = languageReview.state.phase === 'running';
+  const runCurrentLanguageReview = () => {
+    if (!selectedTranslation || !selected || dirty || reviewRunning) return;
+    void languageReview.run({
+      kind: 'translation',
+      id: selectedTranslation.id,
+      label: `${selected.title} · ${selected.role} · ${selectedTranslation.language}`,
+    });
+  };
+  const runResourceLanguageReview = () => {
+    if (!selected || reviewScopeDirty || reviewRunning) return;
+    if (selected.entity_type === 'blog') {
+      void languageReview.run({
+        kind: 'blog',
+        slug: selected.slug,
+        label: `${selected.title} · complete article`,
+      });
+      return;
+    }
+    if (selected.entity_type === 'episode' && selected.series_slug) {
+      void languageReview.run({
+        kind: 'episode_series',
+        seriesSlug: selected.series_slug,
+        label: `${selected.series_title || selected.series_slug} · complete series`,
+      });
+    }
+  };
+  const languageReviewCountForDocument = (document: EditorDocument) => {
+    const sourcePaths = new Set(document.translations.map((translation) => translation.source_path));
+    const matchingResults = languageReview.state.report?.results.filter(
+      (result) => sourcePaths.has(result.source_path),
+    ) || [];
+    if (matchingResults.length === 0) return null;
+    return matchingResults.reduce((count, result) => count + result.findings.length, 0);
+  };
+  const queueReviewFindingAction = (
+    result: DocumentLanguageAudit,
+    finding: LanguageAuditFinding,
+    mode: PendingReviewAction['mode'],
+  ) => {
+    const targetDocument = documents.find((document) => (
+      document.translations.some((translation) => (
+        translation.source_path === result.source_path
+        && translation.language === result.language
+      ))
+    ));
+    const targetTranslation = targetDocument?.translations.find((translation) => (
+      translation.source_path === result.source_path
+      && translation.language === result.language
+    ));
+    if (!targetDocument || !targetTranslation) {
+      setError(`Cannot locate reviewed source ${result.source_path}. Refresh the workspace and review again.`);
+      return;
+    }
+    setScreen('content');
+    setSelectedId(targetDocument.id);
+    setLanguageByDocument((current) => ({
+      ...current,
+      [targetDocument.id]: targetTranslation.language,
+    }));
+    setContentRailMode('files');
+    setContentRailPanel('parts');
+    if (editableMasonryContentKinds.has(targetDocument.entity_type)) {
+      setContentEditorOpen(true);
+    }
+    setPendingReviewAction({
+      findingId: languageReviewFindingId(result, finding),
+      sourcePath: result.source_path,
+      language: result.language,
+      mode,
+    });
+    languageReview.close();
+  };
+
+  React.useEffect(() => {
+    if (
+      !pendingReviewAction
+      || selectedTranslation?.source_path !== pendingReviewAction.sourcePath
+      || selectedTranslation.language !== pendingReviewAction.language
+    ) {
+      return;
+    }
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        const handled = pendingReviewAction.mode === 'apply'
+          ? editorRef.current?.applyReviewSuggestion(pendingReviewAction.findingId) != null
+          : editorRef.current?.focusReviewFinding(pendingReviewAction.findingId) === true;
+        if (!handled) {
+          setError('The reviewed sentence no longer matches the editor. Save and run DeepSeek review again.');
+        }
+        setPendingReviewAction(null);
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [
+    pendingReviewAction,
+    selectedTranslation?.language,
+    selectedTranslation?.source_path,
+  ]);
   const masonryGroups = isMasonryShelf
     ? entityFilter === 'blog'
       ? arrangeBlogGroupsForGrid([
@@ -2274,7 +2652,7 @@ export default function App() {
   const selectedMetadataSummaryLabel = selectedContentGroup ? metadataSummaryLabel(selectedContentGroup.kind) : '';
   const selectedMetadataCoverLabel = selectedContentGroup ? metadataCoverLabel(selectedContentGroup.kind) : '';
   const selectedCoverPreviewUrl = selectedMetadataCoverLabel
-    ? toWebviewMediaUrl(metadataDraft.cover_url)
+    ? metadataCoverLocalPreview || toWebviewMediaUrl(metadataDraft.cover_url)
     : '';
   const metadataDirty = Boolean(selectedContentGroup && (
     metadataDraft.title.trim() !== selectedContentGroup.title
@@ -2284,6 +2662,8 @@ export default function App() {
     || metadataDraft.cover_website_url.trim() !== (selectedContentGroup.coverWebsiteUrl || '')
     || metadataDraft.github_url.trim() !== (selectedContentGroup.githubUrl || '')
     || metadataDraft.demo_url.trim() !== (selectedContentGroup.demoUrl || '')
+    || JSON.stringify(metadataDraft.article_attribution)
+      !== JSON.stringify(selectedContentGroup.articleAttribution || defaultArticleAttribution())
   ));
   const reactionDirty = Boolean(selectedContentGroup && (
     Number.parseInt(reactionDraft.likes, 10) !== selectedContentGroup.engagement.likes
@@ -2300,8 +2680,11 @@ export default function App() {
       cover_website_url: selectedContentGroup.coverWebsiteUrl || '',
       github_url: selectedContentGroup.githubUrl || '',
       demo_url: selectedContentGroup.demoUrl || '',
+      article_attribution: selectedContentGroup.articleAttribution || defaultArticleAttribution(),
     });
     setMetadataError(null);
+    setMetadataCoverError(undefined);
+    setMetadataCoverLocalPreview('');
   }, [
     selectedContentGroup?.id,
     selectedContentGroup?.title,
@@ -2311,6 +2694,7 @@ export default function App() {
     selectedContentGroup?.coverWebsiteUrl,
     selectedContentGroup?.githubUrl,
     selectedContentGroup?.demoUrl,
+    selectedContentGroup?.articleAttribution,
     metadataSavingId,
   ]);
 
@@ -2337,8 +2721,11 @@ export default function App() {
       cover_website_url: group.coverWebsiteUrl || '',
       github_url: group.githubUrl || '',
       demo_url: group.demoUrl || '',
+      article_attribution: group.articleAttribution || defaultArticleAttribution(),
     });
     setMetadataError(null);
+    setMetadataCoverError(undefined);
+    setMetadataCoverLocalPreview('');
   };
 
   const closeContentEditorLayer = () => {
@@ -2351,6 +2738,31 @@ export default function App() {
       return;
     }
     setContentEditorOpen(false);
+  };
+
+  const uploadMetadataCover = async (file: File) => {
+    if (!selectedMetadataTranslation || metadataCoverBusy || metadataSavingId) return;
+    setMetadataCoverBusy(true);
+    setMetadataCoverError(undefined);
+    try {
+      const imported = await invoke<ImportedMediaAsset>('import_media_asset_bytes', {
+        id: selectedMetadataTranslation.id,
+        fileName: file.name,
+        bytes: await fileBytes(file),
+      });
+      setMetadataDraft((current) => ({
+        ...current,
+        cover_url: imported.uri,
+        cover_source_type: 'image',
+      }));
+      setMetadataCoverLocalPreview(
+        imported.local_path ? toWebviewMediaUrl(imported.local_path) : URL.createObjectURL(file),
+      );
+    } catch (reason) {
+      setMetadataCoverError(String(reason));
+    } finally {
+      setMetadataCoverBusy(false);
+    }
   };
 
   const saveContentMetadata = async () => {
@@ -2377,6 +2789,9 @@ export default function App() {
           cover_website_url: selectedContentGroup.kind === 'project' ? metadataDraft.cover_website_url.trim() : null,
           github_url: selectedContentGroup.kind === 'project' ? metadataDraft.github_url.trim() : null,
           demo_url: selectedContentGroup.kind === 'project' ? metadataDraft.demo_url.trim() : null,
+          article_attribution: selectedContentGroup.kind === 'blog'
+            ? metadataDraft.article_attribution
+            : null,
         },
         expectedRevision: selectedMetadataTranslation.revision,
       });
@@ -2389,6 +2804,7 @@ export default function App() {
         cover_website_url: saved.cover_website_url || '',
         github_url: saved.github_url || '',
         demo_url: saved.demo_url || '',
+        article_attribution: saved.article_attribution || defaultArticleAttribution(),
       });
     } catch (reason) {
       setMetadataError(String(reason));
@@ -2775,7 +3191,7 @@ export default function App() {
                     <CheckCircle2 size={14} />
                     <span>
                       {deployVerification.verified
-                        ? `Remote verified at ${deployVerification.remote.content_commit.slice(0, 12)}`
+                        ? `Remote + SEO verified at ${deployVerification.remote.content_commit.slice(0, 12)}${deployedStaticRelease ? ` · release ${deployedStaticRelease}` : ''}`
                         : deployVerification.mismatch_reason || 'Remote content differs from local content'}
                     </span>
                   </div>
@@ -3198,13 +3614,19 @@ export default function App() {
                         })}
                       </div>
                       {selectedTranslation ? (
-                        <MarkdownEditor
+                        <MarkdownDocumentWorkspace
                           key={`${selectedTranslation.id}:shelf`}
                           ref={editorRef}
                           value={selectedTranslation.content}
                           ariaLabel={`${selected.title} ${selected.role} Markdown editor`}
+                          previewLabel={`${selected.title} · ${selected.role} · ${selectedTranslation.language}`}
+                          activity={workspaceActivity}
                           disabled={saving}
                           toolbarVisible={toolbarVisible}
+                          reviewFindings={selectedReviewFindings}
+                          onReviewFindingActivate={languageReview.openReport}
+                          onReviewFindingApplied={languageReview.resolveFinding}
+                          onSelectionAssist={requestSelectionAssist}
                           onChange={patchSelectedTranslationContent}
                         />
                       ) : (
@@ -3341,7 +3763,7 @@ export default function App() {
                 })}
               </div>
               <h3 id="deploy-confirm-title">Deploy content to production?</h3>
-              <p>This pushes committed public content and media to {deploymentPlan.deploy_target}. The remote content database will be replaced through the verified deployment pipeline.</p>
+              <p>This publishes committed content and media to {deploymentPlan.deploy_target}, then builds and atomically activates a fresh server-side SEO snapshot.</p>
               <div className="deploy-confirm-summary">
                 <span>Local commit</span>
                 <strong>{deploymentPlan.head}</strong>
@@ -3480,47 +3902,68 @@ export default function App() {
                 disabled: seriesEditorSaving,
                 closeLabel: 'Close series editor',
                 closeSize: 15,
+                closeText: 'Close',
                 onClose: closeSeriesEditor,
               })}
             </header>
 
-            <div className="resume-editor-body">
-              <aside className="resume-editor-outline" aria-label="Series editor sections">
-                <a href="#series-editor-basics">Basics</a>
-                <a href="#series-editor-presentation">Presentation</a>
-                <a href="#series-editor-publishing">Publishing</a>
-                <a href="#series-editor-source">Source</a>
+            <div className="resume-editor-body content-settings-body">
+              <aside className="resume-editor-outline content-settings-sidebar">
+                <SettingsPageNavigation
+                  items={seriesSettingsPages}
+                  activePage={seriesSettingsPage}
+                  onChange={setSeriesSettingsPage}
+                  label="Series settings pages"
+                />
               </aside>
               <main className="resume-editor-canvas">
                 <div className="resume-form resume-form--workspace content-settings-form">
-                  <section className="resume-editor-section content-settings-section" id="series-editor-basics">
-                    <h3>Basics</h3>
-                    <div className="content-settings-grid">
-                      <label className="content-settings-field content-settings-field--wide">
-                        <span>Title</span>
-                        <input
-                          type="text"
-                          value={seriesDraft.title}
-                          onChange={(event) => setSeriesDraft((current) => ({ ...current, title: event.target.value }))}
-                          disabled={seriesEditorLoading || seriesEditorSaving}
-                        />
-                      </label>
-                    </div>
-                  </section>
+                  {seriesSettingsPage === 'overview' && (
+                    <>
+                      <SettingsPageIntro
+                        eyebrow="Series settings"
+                        title="Overview"
+                        description="Set the name and short promise readers see before opening an episode."
+                      />
+                      <section className="resume-editor-section content-settings-section">
+                        <div className="content-settings-grid">
+                          <label className="content-settings-field content-settings-field--wide">
+                            <span>Series title</span>
+                            <small>The public name used on the series card, detail page, and episode navigation.</small>
+                            <input
+                              type="text"
+                              value={seriesDraft.title}
+                              onChange={(event) => setSeriesDraft((current) => ({ ...current, title: event.target.value }))}
+                              disabled={seriesEditorLoading || seriesEditorSaving}
+                            />
+                          </label>
+                          <label className="content-settings-field content-settings-field--wide">
+                            <span>Series summary</span>
+                            <small>Explain the concrete outcome of the series so readers can decide whether to start it.</small>
+                            <textarea
+                              value={seriesDraft.description}
+                              onChange={(event) => setSeriesDraft((current) => ({ ...current, description: event.target.value }))}
+                              disabled={seriesEditorLoading || seriesEditorSaving}
+                              rows={5}
+                            />
+                          </label>
+                        </div>
+                      </section>
+                    </>
+                  )}
 
-                  <section className="resume-editor-section content-settings-section" id="series-editor-presentation">
-                    <h3>Presentation</h3>
-                    <div className="content-settings-grid">
-                      <label className="content-settings-field content-settings-field--wide">
-                        <span>Description</span>
-                        <textarea
-                          value={seriesDraft.description}
-                          onChange={(event) => setSeriesDraft((current) => ({ ...current, description: event.target.value }))}
-                          disabled={seriesEditorLoading || seriesEditorSaving}
-                          rows={5}
-                        />
-                      </label>
-                      <div className="content-settings-field content-settings-field--wide">
+                  {seriesSettingsPage === 'cover' && (
+                    <>
+                      <SettingsPageIntro
+                        eyebrow="Series settings"
+                        title="Cover"
+                        description="Choose the image that helps readers recognize this series in the blog index."
+                      />
+                      <section className="resume-editor-section content-settings-section content-settings-cover-section">
+                        <div className="content-settings-section-heading">
+                          <h3>Current cover</h3>
+                          <p>Upload a replacement or remove the current cover. File storage is managed automatically.</p>
+                        </div>
                         <ResumeMediaField
                           fieldKey="cover_url"
                           value={seriesDraft.cover_url}
@@ -3528,6 +3971,8 @@ export default function App() {
                           saving={seriesEditorLoading || seriesEditorSaving}
                           busy={seriesCoverBusy}
                           error={seriesCoverError}
+                          previewSize="cover"
+                          showIcons={false}
                           onRemove={() => {
                             setSeriesDraft((current) => ({ ...current, cover_url: '' }));
                             setSeriesCoverError(undefined);
@@ -3554,40 +3999,89 @@ export default function App() {
                             }
                           }}
                         />
-                      </div>
-                    </div>
-                  </section>
+                      </section>
+                      <section className="resume-editor-section content-settings-section content-settings-cover-section">
+                        <div className="content-settings-section-heading">
+                          <h3>Generate a cover</h3>
+                          <p>Turn the series promise into an editorial brief, generate an image with OpenAI, then review it before selecting it.</p>
+                        </div>
+                        <AiCoverGenerator
+                          key={`series-cover:${seriesEditingSlug}`}
+                          target={{ uri: `silan://resources/episode/${seriesEditingSlug}` }}
+                          contentKind="series"
+                          title={seriesDraft.title}
+                          description={seriesDraft.description}
+                          language={chromeLanguage}
+                          disabled={seriesEditorLoading || seriesEditorSaving}
+                          onConfigureOpenAi={() => openWorkspaceSettings(true)}
+                          onUse={(asset) => {
+                            setSeriesDraft((current) => ({ ...current, cover_url: asset.uri }));
+                            setSeriesCoverLocalPreview(toWebviewMediaUrl(asset.local_path || asset.uri));
+                            setSeriesCoverError(undefined);
+                          }}
+                        />
+                      </section>
+                    </>
+                  )}
 
-                  <section className="resume-editor-section content-settings-section" id="series-editor-publishing">
-                    <h3>Publishing</h3>
-                    {editingSeries ? renderSeriesStateControls(editingSeries, 'header') : (
-                      <div className="version-loading">
-                        <LoaderCircle size={15} />
-                        <span>Reading series state...</span>
-                      </div>
-                    )}
-                  </section>
+                  {seriesSettingsPage === 'publishing' && (
+                    <>
+                      <SettingsPageIntro
+                        eyebrow="Series settings"
+                        title="Publishing"
+                        description="Change whether the episodes in this series are available on the public site."
+                      />
+                      <section className="resume-editor-section content-settings-section">
+                        <div className="content-settings-section-heading">
+                          <h3>Series availability</h3>
+                          <p>These actions update every episode together. Save any open episode edits before changing the series state.</p>
+                        </div>
+                        {editingSeries ? renderSeriesStateControls(editingSeries, 'header') : (
+                          <div className="version-loading">
+                          <span>Reading series state...</span>
+                          </div>
+                        )}
+                      </section>
+                    </>
+                  )}
 
-                  <section className="resume-editor-section content-settings-section" id="series-editor-source">
-                    <h3>Source</h3>
-                    <div className="content-settings-grid">
-                      <label className="content-settings-field content-settings-field--wide">
-                        <span>Metadata source</span>
-                        <input type="text" value={seriesSource?.relative_path || `content/resources/episode/${seriesEditingSlug}/series.toml`} disabled />
-                      </label>
-                    </div>
-                  </section>
+                  {seriesSettingsPage === 'source' && (
+                    <>
+                      <SettingsPageIntro
+                        eyebrow="Series settings"
+                        title="Source"
+                        description="Inspect the stable identifier and the file that owns this series metadata."
+                      />
+                      <section className="resume-editor-section content-settings-section">
+                        <div className="content-settings-grid">
+                          <label className="content-settings-field">
+                            <span>Series slug</span>
+                            <small>The stable folder and URL identifier. Rename it in source control to avoid broken episode links.</small>
+                            <input type="text" value={seriesEditingSlug} disabled />
+                          </label>
+                          <label className="content-settings-field">
+                            <span>Series metadata status</span>
+                            <small>The value stored in series.toml. Episode visibility is managed on the Publishing page.</small>
+                            <input type="text" value={seriesDraft.status} disabled />
+                          </label>
+                          <label className="content-settings-field content-settings-field--wide">
+                            <span>Metadata source</span>
+                            <small>The TOML file read and written by this settings editor.</small>
+                            <input type="text" value={seriesSource?.relative_path || `content/resources/episode/${seriesEditingSlug}/series.toml`} disabled />
+                          </label>
+                        </div>
+                      </section>
+                    </>
+                  )}
 
                   {seriesEditorLoading && (
                     <div className="version-loading">
-                      <LoaderCircle size={15} />
                       <span>Reading series...</span>
                     </div>
                   )}
 
                   {seriesEditorError && (
                     <div className="content-settings-error" role="alert">
-                      <AlertCircle size={14} />
                       <span>{seriesEditorError}</span>
                     </div>
                   )}
@@ -3602,7 +4096,6 @@ export default function App() {
                 disabled={!seriesSource || !seriesDraft.title.trim() || seriesEditorLoading || seriesEditorSaving}
                 onClick={() => void saveSeriesEditor()}
               >
-                {seriesEditorSaving || seriesEditorLoading ? <LoaderCircle size={14} className="spin" /> : <Save size={14} />}
                 {seriesEditorLoading ? 'Loading' : seriesEditorSaving ? 'Saving' : 'Save series'}
               </button>
             </div>
@@ -3639,6 +4132,18 @@ export default function App() {
                 </div>
                 {contentRailPanel === 'parts' && (
                   <div className="quick-dock content-editor-actions">
+                    {languageReviewAvailable && (
+                      <button
+                        type="button"
+                        className={`content-close content-language-review-toggle ${languageReview.state.visible ? 'active' : ''}`}
+                        onClick={runCurrentLanguageReview}
+                        title={dirty ? 'Save this language before review' : 'Review the current language with DeepSeek'}
+                        aria-label="Review current language with DeepSeek"
+                        disabled={dirty || reviewRunning}
+                      >
+                        {reviewRunning ? <LoaderCircle size={15} /> : <FileSearch size={15} />}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className={`content-close content-geo-toggle ${geoPanelOpen ? 'active' : ''}`}
@@ -3648,17 +4153,6 @@ export default function App() {
                       disabled={!selectedTranslation || geoLoading}
                     >
                       {geoLoading ? <LoaderCircle size={15} /> : <Search size={15} />}
-                    </button>
-                    <button
-                      type="button"
-                      className={`content-close content-ai-sync ${aiTranslationBusy ? 'active' : ''}`}
-                      onClick={() => void syncCounterpartTranslation()}
-                      title={counterpartDirty ? `Save ${counterpartLanguage} before syncing` : aiTranslationTitle}
-                      aria-label={counterpartDirty ? `Save ${counterpartLanguage} before syncing` : aiTranslationTitle}
-                      disabled={!selectedTranslation || saving || aiTranslationBusy || counterpartDirty}
-                    >
-                      {aiTranslationBusy ? <LoaderCircle size={15} /> : <Sparkles size={15} />}
-                      <span>{aiTranslationLabel}</span>
                     </button>
                     <button
                       type="button"
@@ -3687,6 +4181,7 @@ export default function App() {
                 fixed: true,
                 closeLabel: contentRailPanel === 'settings' ? 'Close settings' : 'Close content editor',
                 closeTitle: contentRailPanel === 'settings' ? 'Close settings' : 'Close content editor',
+                closeText: contentRailPanel === 'settings' ? 'Close' : undefined,
                 disabled: contentRailPanel === 'settings' && metadataSavingId === selectedContentGroup.id,
                 onClose: closeContentEditorLayer,
               })}
@@ -3699,7 +4194,10 @@ export default function App() {
                       type="button"
                       className="content-explorer-icon"
                       aria-label="Open content details"
-                      onClick={() => setContentRailPanel('settings')}
+                      onClick={() => {
+                        setContentSettingsPage('overview');
+                        setContentRailPanel('settings');
+                      }}
                     >
                       <Menu size={22} />
                     </button>
@@ -3776,28 +4274,98 @@ export default function App() {
                         )}
 
                         <div className="content-tree-section" role="group" aria-label="Markdown parts">
-                          {selectedContentGroup.documents.map((document) => (
+                          {selectedContentGroup.documents.map((document) => {
+                            const reviewFindingCount = languageReviewCountForDocument(document);
+                            const activeTranslationId = document.translations.find(
+                              (translation) => translation.language === languageByDocument[document.id],
+                            )?.id || document.translations[0]?.id || '';
+                            return (
+                              <button
+                                type="button"
+                                key={document.id}
+                                className={`content-tree-row ${contentRailPanel === 'parts' && document.id === selected?.id ? 'active' : ''}`}
+                                onClick={() => {
+                                  setContentRailMode('files');
+                                  setContentRailPanel('parts');
+                                  setSelectedId(document.id);
+                                }}
+                              >
+                                <span>{document.role}</span>
+                                <span className="content-tree-row-state">
+                                  {reviewFindingCount != null && (
+                                    <small
+                                      className="content-tree-review-count"
+                                      data-state={reviewFindingCount === 0 ? 'pass' : 'review'}
+                                      aria-label={`${reviewFindingCount} language review findings`}
+                                    >
+                                      {reviewFindingCount === 0 ? '✓' : reviewFindingCount}
+                                    </small>
+                                  )}
+                                  {dirtyIds.has(activeTranslationId) && <i aria-label="Unsaved changes" />}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {showTranslationSync && (
+                          <div className="content-sidebar-sync">
                             <button
                               type="button"
-                              key={document.id}
-                              className={`content-tree-row ${contentRailPanel === 'parts' && document.id === selected?.id ? 'active' : ''}`}
-                              onClick={() => {
-                                setContentRailMode('files');
-                                setContentRailPanel('parts');
-                                setSelectedId(document.id);
-                              }}
+                              className={aiTranslationBusy ? 'active' : ''}
+                              onClick={() => void syncCounterpartTranslation()}
+                              title={counterpartDirty ? `Save ${counterpartLanguage} before syncing it from ${selectedTranslation?.language}` : aiTranslationTitle}
+                              disabled={saving || aiTranslationBusy || counterpartDirty}
                             >
-                              <span>{document.role}</span>
-                              {dirtyIds.has(document.translations.find((translation) => translation.language === languageByDocument[document.id])?.id || document.translations[0]?.id || '') && (
-                                <i aria-label="Unsaved changes" />
-                              )}
+                              <strong>
+                                {aiTranslationBusy
+                                  ? `Syncing ${selectedTranslation?.language} → ${counterpartLanguage}`
+                                  : `Sync ${selectedTranslation?.language} → ${counterpartLanguage}`}
+                              </strong>
+                              <small>
+                                {counterpartDirty
+                                  ? `Save the current ${counterpartLanguage} changes first`
+                                  : counterpartTranslation
+                                    ? `${pendingSourceChanges?.affected || 0} changed block${pendingSourceChanges?.affected === 1 ? '' : 's'} · preserve the rest`
+                                    : `Save ${selectedTranslation?.language} and create ${counterpartLanguage}`}
+                              </small>
                             </button>
-                          ))}
-                        </div>
+                          </div>
+                        )}
                       </>
                     )}
                   </nav>
-
+                  {languageReviewAvailable && contentRailMode === 'files' && (
+                    <section className="content-sidebar-review" aria-label="DeepSeek language review">
+                      <div>
+                        <FileSearch size={14} />
+                        <span>Language review</span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={dirty || reviewRunning}
+                        title={dirty ? 'Save this language before review' : undefined}
+                        onClick={runCurrentLanguageReview}
+                      >
+                        <strong>{reviewRunning ? 'Reviewing…' : 'Current language'}</strong>
+                        <small>{selectedTranslation?.language} · saved source</small>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={reviewScopeDirty || reviewRunning}
+                        title={reviewScopeDirty ? 'Save all target documents before review' : undefined}
+                        onClick={runResourceLanguageReview}
+                      >
+                        <strong>
+                          {selected?.entity_type === 'episode' ? 'Complete series' : 'Complete article'}
+                        </strong>
+                        <small>
+                          {reviewScopeDirty
+                            ? 'Save pending changes first'
+                            : `${reviewScopeDocuments.length} Markdown part${reviewScopeDocuments.length === 1 ? '' : 's'}`}
+                        </small>
+                      </button>
+                    </section>
+                  )}
                 </aside>
                 )}
 
@@ -3818,34 +4386,33 @@ export default function App() {
 
                     <div className="editor-frame content-editor-frame" data-entity={selected.entity_type} data-toolbar={toolbarVisible ? 'visible' : 'hidden'}>
                       {selectedTranslation ? (
-                        <MarkdownEditor
+                        <MarkdownDocumentWorkspace
                           key={`${selectedTranslation.id}:overlay`}
                           ref={editorRef}
                           value={selectedTranslation.content}
                           ariaLabel={`${selected.title} ${selected.role} Markdown editor`}
+                          previewLabel={`${selected.title} · ${selected.role} · ${selectedTranslation.language}`}
+                          activity={workspaceActivity}
                           disabled={saving}
                           toolbarVisible={toolbarVisible}
+                          reviewFindings={selectedReviewFindings}
+                          onReviewFindingActivate={languageReview.openReport}
+                          onReviewFindingApplied={languageReview.resolveFinding}
+                          slashCommands={editorAssist.slashCommands}
+                          onSelectionAssist={requestSelectionAssist}
                           onChange={patchSelectedTranslationContent}
                         />
                       ) : (
                         <div className="empty large">Choose or generate a language representation.</div>
                       )}
+                      {editorAssist.fileInput}
                     </div>
-                    <EditorAssistDock
-                      disabled={!selectedTranslation || saving}
-                      importing={mediaImporting}
-                      generatingImage={mediaImporting && mediaOperation === 'generate'}
-                      references={editorAssistReferences}
-                      onAttachFiles={(files) => void attachFilesToSelected(files)}
-                      onInsertMarkdown={insertMarkdownAtCursor}
-                      onGenerateImage={(request) => void generateImageForSelected(request)}
-                    />
                     {mediaDragActive && (
                       <div className="media-drop-overlay" role="status">
                         <div>
                           <UploadCloud size={26} />
                           <strong>Drop into {selected.role}</strong>
-                          <span>assets/ · silan:// Markdown</span>
+                          <span>Attach and insert into this document</span>
                         </div>
                       </div>
                     )}
@@ -3854,8 +4421,8 @@ export default function App() {
                         {mediaDropError ? <AlertCircle size={14} /> : mediaImporting ? <LoaderCircle size={14} /> : <FileImage size={14} />}
                         <span>
                           {mediaDropError || (mediaImporting
-                            ? mediaOperation === 'generate' ? 'Generating image with OpenAI...' : 'Importing media asset...'
-                            : `${lastImportedAsset?.file_name} inserted as silan:// asset`)}
+                            ? 'Importing media asset...'
+                            : `${lastImportedAsset?.file_name} attached and inserted`)}
                         </span>
                       </div>
                     )}
@@ -3869,171 +4436,271 @@ export default function App() {
                           <em>{selectedContentGroup.slug}</em>
                         </div>
                       </header>
-                      <div className="resume-editor-body">
-                        <aside className="resume-editor-outline" aria-label="Settings sections">
-                          {selectedMetadataCoverLabel && <a href="#content-settings-cover">Cover</a>}
-                          <a href="#content-settings-identity">Identity</a>
-                          {selectedContentGroup.kind === 'project' && <a href="#content-settings-links">Links</a>}
-                          {selectedMetadataSummaryLabel && <a href="#content-settings-copy">Copy</a>}
-                          <a href="#content-settings-lifecycle">Lifecycle</a>
-                          <a href="#content-settings-source">Source</a>
+                      <div className="resume-editor-body content-settings-body">
+                        <aside className="resume-editor-outline content-settings-sidebar">
+                          <SettingsPageNavigation
+                            items={contentSettingsPages.filter((page) => (
+                              (page.id !== 'cover' || Boolean(selectedMetadataCoverLabel))
+                              && (page.id !== 'discovery' || selectedContentGroup.kind === 'blog')
+                              && (page.id !== 'links' || selectedContentGroup.kind === 'project')
+                            ))}
+                            activePage={contentSettingsPage}
+                            onChange={setContentSettingsPage}
+                            label={`${selected.entity_type} settings pages`}
+                          />
                         </aside>
                         <main className="resume-editor-canvas">
                           <div className="resume-form resume-form--workspace content-settings-form">
-                            {selectedMetadataCoverLabel && (
-                              <section id="content-settings-cover" className="resume-editor-section content-settings-section content-settings-cover-section">
-                                <h3>Cover</h3>
-                                <div className="content-cover-settings">
-                                  <div
-                                    className="content-cover-preview"
-                                    data-empty={!selectedCoverPreviewUrl}
-                                    data-mode={metadataDraft.cover_source_type}
-                                    aria-hidden="true"
-                                  >
-                                    {selectedCoverPreviewUrl ? (
-                                      <img src={selectedCoverPreviewUrl} alt="" loading="lazy" />
-                                    ) : (
-                                      <span>{selectedContentGroup.title.trim()[0]?.toUpperCase() || 'S'}</span>
-                                    )}
-                                  </div>
-                                  <div className="content-cover-controls">
-                                    <div className="content-cover-type-group" role="radiogroup" aria-label="Cover type">
-                                      <button
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={metadataDraft.cover_source_type === 'image'}
-                                        className={metadataDraft.cover_source_type === 'image' ? 'active' : ''}
-                                        disabled={metadataSavingId === selectedContentGroup.id}
-                                        onClick={() => setMetadataDraft((current) => ({ ...current, cover_source_type: 'image' }))}
-                                      >
-                                        <FileImage size={14} />
-                                        Image
-                                      </button>
-                                      <button
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={metadataDraft.cover_source_type === 'website'}
-                                        className={metadataDraft.cover_source_type === 'website' ? 'active' : ''}
-                                        disabled={metadataSavingId === selectedContentGroup.id}
-                                        onClick={() => setMetadataDraft((current) => ({ ...current, cover_source_type: 'website' }))}
-                                      >
-                                        <Globe2 size={14} />
-                                        Website
-                                      </button>
-                                    </div>
+                            {contentSettingsPage === 'overview' && (
+                              <>
+                                <SettingsPageIntro
+                                  eyebrow={`${selected.entity_type} settings`}
+                                  title="Overview"
+                                  description="Set the promise readers see in listings, search results, and the page header."
+                                />
+                                <section className="resume-editor-section content-settings-section">
+                                  <div className="content-settings-grid">
                                     <label className="content-settings-field content-settings-field--wide">
-                                      <span>{selectedMetadataCoverLabel}</span>
+                                      <span>Title</span>
+                                      <small>The public name shown on cards, page headings, and browser metadata.</small>
                                       <input
                                         type="text"
-                                        value={metadataDraft.cover_url}
-                                        onChange={(event) => setMetadataDraft((current) => ({ ...current, cover_url: event.target.value }))}
+                                        value={metadataDraft.title}
+                                        onChange={(event) => setMetadataDraft((current) => ({ ...current, title: event.target.value }))}
                                         disabled={metadataSavingId === selectedContentGroup.id}
-                                        placeholder="silan:// or https://image.png"
                                       />
                                     </label>
-                                    {selectedContentGroup.kind === 'project' && metadataDraft.cover_source_type === 'website' && (
+                                    {selectedMetadataSummaryLabel && (
                                       <label className="content-settings-field content-settings-field--wide">
-                                        <span>Website URL</span>
-                                        <input
-                                          type="text"
-                                          value={metadataDraft.cover_website_url}
-                                          onChange={(event) => setMetadataDraft((current) => ({ ...current, cover_website_url: event.target.value }))}
+                                        <span>{selectedMetadataSummaryLabel}</span>
+                                        <small>A concise explanation of the problem and outcome, used where readers decide whether to open this page.</small>
+                                        <textarea
+                                          rows={5}
+                                          value={metadataDraft.description}
+                                          onChange={(event) => setMetadataDraft((current) => ({ ...current, description: event.target.value }))}
                                           disabled={metadataSavingId === selectedContentGroup.id}
-                                          placeholder="https://silan.tech"
                                         />
                                       </label>
                                     )}
                                   </div>
-                                </div>
-                              </section>
+                                </section>
+                              </>
                             )}
 
-                            <section id="content-settings-identity" className="resume-editor-section content-settings-section">
-                              <h3>Identity</h3>
-                              <div className="content-settings-grid">
-                                <label className="content-settings-field content-settings-field--wide">
-                                  <span>Title</span>
-                                  <input
-                                    type="text"
-                                    value={metadataDraft.title}
-                                    onChange={(event) => setMetadataDraft((current) => ({ ...current, title: event.target.value }))}
-                                    disabled={metadataSavingId === selectedContentGroup.id}
-                                  />
-                                </label>
-                                <label className="content-settings-field">
-                                  <span>Slug</span>
-                                  <input type="text" value={selectedContentGroup.slug} disabled />
-                                </label>
-                                <label className="content-settings-field">
-                                  <span>Type</span>
-                                  <input type="text" value={selected.entity_type} disabled />
-                                </label>
-                              </div>
-                            </section>
-
-                            {selectedContentGroup.kind === 'project' && (
-                              <section id="content-settings-links" className="resume-editor-section content-settings-section">
-                                <h3>Links</h3>
-                                <div className="content-settings-grid">
-                                  <label className="content-settings-field content-settings-field--wide">
-                                    <span>github_url</span>
-                                    <input
-                                      type="text"
-                                      value={metadataDraft.github_url}
-                                      onChange={(event) => setMetadataDraft((current) => ({ ...current, github_url: event.target.value }))}
-                                      disabled={metadataSavingId === selectedContentGroup.id}
-                                      placeholder="https://github.com/owner/repo"
+                            {contentSettingsPage === 'cover' && selectedMetadataCoverLabel && (
+                              <>
+                                <SettingsPageIntro
+                                  eyebrow={`${selected.entity_type} settings`}
+                                  title="Cover"
+                                  description="Choose the visual readers use to recognize this page before they open it."
+                                />
+                                <section className="resume-editor-section content-settings-section content-settings-cover-section">
+                                  <div className="content-settings-section-heading">
+                                    <h3>
+                                      {selectedContentGroup.kind === 'project' && metadataDraft.cover_source_type === 'website'
+                                        ? 'Website cover'
+                                        : 'Current cover'}
+                                    </h3>
+                                    <p>
+                                      {selectedContentGroup.kind === 'project' && metadataDraft.cover_source_type === 'website'
+                                        ? 'Enter the fixed website address used for this project cover.'
+                                        : 'Upload a replacement or remove the current cover. File storage is managed automatically.'}
+                                    </p>
+                                  </div>
+                                  {selectedContentGroup.kind === 'project' && (
+                                    <div className="content-settings-control">
+                                      <span>Cover source</span>
+                                      <small>Use an uploaded image, or keep the cover tied to a live website.</small>
+                                      <div className="content-cover-type-group" role="radiogroup" aria-label="Cover source">
+                                        <button
+                                          type="button"
+                                          role="radio"
+                                          aria-checked={metadataDraft.cover_source_type === 'image'}
+                                          className={metadataDraft.cover_source_type === 'image' ? 'active' : ''}
+                                          disabled={metadataSavingId === selectedContentGroup.id}
+                                          onClick={() => setMetadataDraft((current) => ({ ...current, cover_source_type: 'image' }))}
+                                        >
+                                          Image
+                                        </button>
+                                        <button
+                                          type="button"
+                                          role="radio"
+                                          aria-checked={metadataDraft.cover_source_type === 'website'}
+                                          className={metadataDraft.cover_source_type === 'website' ? 'active' : ''}
+                                          disabled={metadataSavingId === selectedContentGroup.id}
+                                          onClick={() => setMetadataDraft((current) => ({ ...current, cover_source_type: 'website' }))}
+                                        >
+                                          Website
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {metadataDraft.cover_source_type === 'image' ? (
+                                    <ResumeMediaField
+                                      fieldKey="cover_url"
+                                      value={metadataDraft.cover_url}
+                                      previewUrl={selectedCoverPreviewUrl}
+                                      saving={metadataSavingId === selectedContentGroup.id}
+                                      busy={metadataCoverBusy}
+                                      error={metadataCoverError}
+                                      previewSize="cover"
+                                      showIcons={false}
+                                      onUpload={(file) => void uploadMetadataCover(file)}
+                                      onRemove={() => {
+                                        setMetadataDraft((current) => ({ ...current, cover_url: '' }));
+                                        setMetadataCoverError(undefined);
+                                        setMetadataCoverLocalPreview('');
+                                      }}
                                     />
-                                  </label>
-                                  <label className="content-settings-field content-settings-field--wide">
-                                    <span>demo_url</span>
-                                    <input
-                                      type="text"
-                                      value={metadataDraft.demo_url}
-                                      onChange={(event) => setMetadataDraft((current) => ({ ...current, demo_url: event.target.value }))}
+                                  ) : selectedContentGroup.kind === 'project' ? (
+                                    <label className="content-settings-field content-settings-field--wide">
+                                      <span>Website address</span>
+                                      <small>The live website used when the project cover is refreshed.</small>
+                                      <input
+                                        type="url"
+                                        value={metadataDraft.cover_website_url}
+                                        onChange={(event) => setMetadataDraft((current) => ({ ...current, cover_website_url: event.target.value }))}
+                                        disabled={metadataSavingId === selectedContentGroup.id}
+                                        placeholder="https://example.com"
+                                      />
+                                    </label>
+                                  ) : null}
+                                </section>
+                                {selectedContentGroup.kind === 'blog' && selectedMetadataTranslation && (
+                                  <section className="resume-editor-section content-settings-section content-settings-cover-section">
+                                    <div className="content-settings-section-heading">
+                                      <h3>Generate a cover</h3>
+                                      <p>Turn the article promise into an editorial brief, generate with OpenAI, and select the result only after review.</p>
+                                    </div>
+                                    <AiCoverGenerator
+                                      key={`blog-cover:${selectedContentGroup.id}:${selectedMetadataTranslation.language}`}
+                                      target={{ uri: `silan://resources/blog/${selectedContentGroup.slug}` }}
+                                      contentKind="blog"
+                                      title={metadataDraft.title}
+                                      description={metadataDraft.description}
+                                      language={selectedMetadataTranslation.language}
                                       disabled={metadataSavingId === selectedContentGroup.id}
-                                      placeholder="https://example.com"
+                                      onConfigureOpenAi={() => openWorkspaceSettings(true)}
+                                      onUse={(asset) => {
+                                        setMetadataDraft((current) => ({
+                                          ...current,
+                                          cover_url: asset.uri,
+                                          cover_source_type: 'image',
+                                        }));
+                                        setMetadataError(null);
+                                      }}
                                     />
-                                  </label>
-                                </div>
-                              </section>
+                                  </section>
+                                )}
+                              </>
                             )}
 
-                          {selectedMetadataSummaryLabel && (
-                            <section id="content-settings-copy" className="resume-editor-section content-settings-section">
-                              <h3>Copy</h3>
-                              <div className="content-settings-grid">
-                                <label className="content-settings-field content-settings-field--wide">
-                                  <span>{selectedMetadataSummaryLabel}</span>
-                                  <textarea
-                                    rows={4}
-                                    value={metadataDraft.description}
-                                    onChange={(event) => setMetadataDraft((current) => ({ ...current, description: event.target.value }))}
-                                    disabled={metadataSavingId === selectedContentGroup.id}
-                                  />
-                                </label>
-                              </div>
-                            </section>
-                          )}
+                            {contentSettingsPage === 'links' && selectedContentGroup.kind === 'project' && (
+                              <>
+                                <SettingsPageIntro
+                                  eyebrow="Project settings"
+                                  title="Links"
+                                  description="Connect the project page to the places where readers can inspect the work or try it."
+                                />
+                                <section className="resume-editor-section content-settings-section">
+                                  <div className="content-settings-grid">
+                                    <label className="content-settings-field content-settings-field--wide">
+                                      <span>Repository</span>
+                                      <small>The source repository opened from the project page.</small>
+                                      <input
+                                        type="text"
+                                        value={metadataDraft.github_url}
+                                        onChange={(event) => setMetadataDraft((current) => ({ ...current, github_url: event.target.value }))}
+                                        disabled={metadataSavingId === selectedContentGroup.id}
+                                        placeholder="https://github.com/owner/repo"
+                                      />
+                                    </label>
+                                    <label className="content-settings-field content-settings-field--wide">
+                                      <span>Live demo</span>
+                                      <small>The working product, paper companion, or deployed result readers can open directly.</small>
+                                      <input
+                                        type="text"
+                                        value={metadataDraft.demo_url}
+                                        onChange={(event) => setMetadataDraft((current) => ({ ...current, demo_url: event.target.value }))}
+                                        disabled={metadataSavingId === selectedContentGroup.id}
+                                        placeholder="https://example.com"
+                                      />
+                                    </label>
+                                  </div>
+                                </section>
+                              </>
+                            )}
 
-                          <section id="content-settings-lifecycle" className="resume-editor-section content-settings-section">
-                            <h3>Lifecycle</h3>
-                            {renderStateControls(selectedContentGroup, 'header')}
-                          </section>
+                            {contentSettingsPage === 'discovery' && selectedContentGroup.kind === 'blog' && (
+                              <>
+                                <SettingsPageIntro
+                                  eyebrow="Blog discovery"
+                                  title="Project, resources, and image credit"
+                                  description="Connect this article to the work behind it, then preserve that identity across the page, search previews, and downloaded images."
+                                />
+                                <ArticleDiscoverySettings
+                                  targetUri={`silan://resources/blog/${selectedContentGroup.slug}`}
+                                  slug={selectedContentGroup.slug}
+                                  coverUrl={metadataDraft.cover_url}
+                                  value={metadataDraft.article_attribution}
+                                  dirty={metadataDirty}
+                                  disabled={metadataSavingId === selectedContentGroup.id}
+                                  onChange={(articleAttribution) => setMetadataDraft((current) => ({
+                                    ...current,
+                                    article_attribution: articleAttribution,
+                                  }))}
+                                />
+                              </>
+                            )}
 
-                          <section id="content-settings-source" className="resume-editor-section content-settings-section">
-                            <h3>Source</h3>
-                            <div className="content-settings-grid">
-                              <label className="content-settings-field content-settings-field--wide">
-                                <span>Metadata source</span>
-                                <input type="text" value={selectedMetadataTranslation?.source_path || ''} disabled />
-                              </label>
-                            </div>
-                          </section>
+                            {contentSettingsPage === 'publishing' && (
+                              <>
+                                <SettingsPageIntro
+                                  eyebrow={`${selected.entity_type} settings`}
+                                  title="Publishing"
+                                  description="Control whether this page is a draft, publicly available, hidden, or archived."
+                                />
+                                <section className="resume-editor-section content-settings-section">
+                                  <div className="content-settings-section-heading">
+                                    <h3>Availability</h3>
+                                    <p>Publishing actions change the content lifecycle immediately. Save open Markdown edits before changing state.</p>
+                                  </div>
+                                  {renderStateControls(selectedContentGroup, 'header')}
+                                </section>
+                              </>
+                            )}
+
+                            {contentSettingsPage === 'source' && (
+                              <>
+                                <SettingsPageIntro
+                                  eyebrow={`${selected.entity_type} settings`}
+                                  title="Source"
+                                  description="Inspect the stable identifiers and authored file behind this page."
+                                />
+                                <section className="resume-editor-section content-settings-section">
+                                  <div className="content-settings-grid">
+                                    <label className="content-settings-field">
+                                      <span>Slug</span>
+                                      <small>The stable URL and resource identifier. Rename it in source control to avoid broken links.</small>
+                                      <input type="text" value={selectedContentGroup.slug} disabled />
+                                    </label>
+                                    <label className="content-settings-field">
+                                      <span>Content type</span>
+                                      <small>Determines the schema, editor behavior, and public rendering used for this resource.</small>
+                                      <input type="text" value={selected.entity_type} disabled />
+                                    </label>
+                                    <label className="content-settings-field content-settings-field--wide">
+                                      <span>Metadata source</span>
+                                      <small>The Markdown file read and written by this settings editor.</small>
+                                      <input type="text" value={selectedMetadataTranslation?.source_path || ''} disabled />
+                                    </label>
+                                  </div>
+                                </section>
+                              </>
+                            )}
 
                           {metadataError && (
                             <div className="content-settings-error" role="alert">
-                              <AlertCircle size={14} />
                               <span>{metadataError}</span>
                             </div>
                           )}
@@ -4047,7 +4714,6 @@ export default function App() {
                           disabled={!metadataDirty || !selectedMetadataTranslation || metadataSavingId === selectedContentGroup.id}
                           onClick={() => void saveContentMetadata()}
                         >
-                          {metadataSavingId === selectedContentGroup.id ? <LoaderCircle size={14} className="spin" /> : <Save size={14} />}
                           {metadataSavingId === selectedContentGroup.id ? 'Saving' : 'Save settings'}
                         </button>
                       </div>
@@ -4130,6 +4796,14 @@ export default function App() {
             </div>
           </section>
         )}
+
+        <LanguageReviewPanel
+          state={languageReview.state}
+          onClose={languageReview.close}
+          onRetry={languageReview.retry}
+          onFindingOpen={(result, finding) => queueReviewFindingAction(result, finding, 'focus')}
+          onFindingApply={(result, finding) => queueReviewFindingAction(result, finding, 'apply')}
+        />
 
         {geoPanelOpen && (
           <div className="dialog-overlay" role="presentation" onClick={() => setGeoPanelOpen(false)}>
@@ -4221,7 +4895,6 @@ export default function App() {
         error={captureError}
         inputRef={captureInputRef}
         onAttachFiles={attachFilesToCapture}
-        onInsertMarkdown={insertCaptureMarkdown}
         onRequestClose={requestCaptureClose}
         onDiscard={discardCapture}
         onKeepWriting={() => setCapturePhase('editing')}

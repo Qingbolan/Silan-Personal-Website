@@ -101,12 +101,19 @@ const BlogDetail: React.FC = () => {
   const seoDescription =
     (language === 'zh' && blog.summaryZh ? blog.summaryZh : blog.summary) || '';
   const seoImage = blog.coverImage || blog.vlogCover || blog.videoThumbnail;
+  const seoImageAlt = [
+    blog.projectName || seoTitle,
+    blog.publicationVenue,
+    blog.author ? `${language === 'zh' ? '作者' : 'Author'}: ${blog.author}` : undefined,
+    'silan.tech',
+  ].filter(Boolean).join(' · ');
   const seo = (
     <Seo
       title={seoTitle}
       description={seoDescription}
       path={`/blog/${blog.slug || blog.id}/`}
       image={seoImage}
+      imageAlt={seoImageAlt}
       type="article"
       lang={language as 'en' | 'zh'}
       author={blog.author}
@@ -115,9 +122,14 @@ const BlogDetail: React.FC = () => {
         description: seoDescription,
         path: `/blog/${blog.slug || blog.id}/`,
         image: seoImage,
+        imageAlt: seoImageAlt,
         datePublished: blog.publishDate,
         dateModified: blog.updatedAt || blog.publishDate,
         author: blog.author,
+        projectName: blog.projectName,
+        projectUrl: blog.projectUrl,
+        publicationVenue: blog.publicationVenue,
+        externalResources: blog.externalResources,
         lang: language as 'en' | 'zh',
         seriesTitle: blog.seriesId
           ? (language === 'zh' && blog.seriesTitleZh ? blog.seriesTitleZh : blog.seriesTitle)

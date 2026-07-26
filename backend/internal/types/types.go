@@ -58,38 +58,49 @@ type BlogContent struct {
 	ID         string `json:"id"`
 }
 
+type BlogResource struct {
+	Kind  string `json:"kind"`
+	Label string `json:"label,omitempty"`
+	URL   string `json:"url"`
+}
+
 type BlogData struct {
-	ID                  string        `json:"id"`
-	Title               string        `json:"title"`
-	TitleZh             string        `json:"title_zh,omitempty"`
-	Slug                string        `json:"slug,omitempty"`
-	Author              string        `json:"author"`
-	PublishDate         string        `json:"publish_date"`
-	UpdatedAt           string        `json:"updated_at,omitempty"`
-	ReadTime            string        `json:"read_time"`
-	Category            string        `json:"category"`
-	Tags                []string      `json:"tags"`
-	Content             []BlogContent `json:"content"`
-	Likes               int64         `json:"likes"`
-	IsLikedByUser       bool          `json:"is_liked_by_user"`
-	Likers              []UpdateLiker `json:"likers"`
-	Views               int64         `json:"views"`
-	Summary             string        `json:"summary"`
-	SummaryZh           string        `json:"summary_zh,omitempty"`
-	FeaturedImageURL    string        `json:"featured_image_url,omitempty"`
-	Type                string        `json:"type,omitempty"`
-	VideoURL            string        `json:"video_url,omitempty"`
-	VideoDuration       string        `json:"video_duration,omitempty"`
-	VideoThumbnail      string        `json:"video_thumbnail,omitempty"`
-	SeriesID            string        `json:"series_id,omitempty"`
-	SeriesSlug          string        `json:"series_slug,omitempty"`
-	SeriesTitle         string        `json:"series_title,omitempty"`
-	SeriesTitleZh       string        `json:"series_title_zh,omitempty"`
-	SeriesDescription   string        `json:"series_description,omitempty"`
-	SeriesDescriptionZh string        `json:"series_description_zh,omitempty"`
-	EpisodeNumber       int           `json:"episode_number,omitempty"`
-	TotalEpisodes       int           `json:"total_episodes,omitempty"`
-	SeriesImage         string        `json:"series_image,omitempty"`
+	ID                  string            `json:"id"`
+	Title               string            `json:"title"`
+	TitleZh             string            `json:"title_zh,omitempty"`
+	Slug                string            `json:"slug,omitempty"`
+	Author              string            `json:"author"`
+	PublishDate         string            `json:"publish_date"`
+	UpdatedAt           string            `json:"updated_at,omitempty"`
+	ReadTime            string            `json:"read_time"`
+	Category            string            `json:"category"`
+	Tags                []string          `json:"tags"`
+	Content             []BlogContent     `json:"content"`
+	Likes               int64             `json:"likes"`
+	IsLikedByUser       bool              `json:"is_liked_by_user"`
+	Likers              []UpdateLiker     `json:"likers"`
+	Views               int64             `json:"views"`
+	Summary             string            `json:"summary"`
+	SummaryZh           string            `json:"summary_zh,omitempty"`
+	FeaturedImageURL    string            `json:"featured_image_url,omitempty"`
+	FeaturedImageURLs   map[string]string `json:"featured_image_urls,omitempty"`
+	ProjectName         string            `json:"project_name,omitempty"`
+	PublicationVenue    string            `json:"publication_venue,omitempty"`
+	ProjectURL          string            `json:"project_url,omitempty"`
+	ExternalResources   []BlogResource    `json:"external_resources,omitempty"`
+	Type                string            `json:"type,omitempty"`
+	VideoURL            string            `json:"video_url,omitempty"`
+	VideoDuration       string            `json:"video_duration,omitempty"`
+	VideoThumbnail      string            `json:"video_thumbnail,omitempty"`
+	SeriesID            string            `json:"series_id,omitempty"`
+	SeriesSlug          string            `json:"series_slug,omitempty"`
+	SeriesTitle         string            `json:"series_title,omitempty"`
+	SeriesTitleZh       string            `json:"series_title_zh,omitempty"`
+	SeriesDescription   string            `json:"series_description,omitempty"`
+	SeriesDescriptionZh string            `json:"series_description_zh,omitempty"`
+	EpisodeNumber       int               `json:"episode_number,omitempty"`
+	TotalEpisodes       int               `json:"total_episodes,omitempty"`
+	SeriesImage         string            `json:"series_image,omitempty"`
 }
 
 type BlogListRequest struct {

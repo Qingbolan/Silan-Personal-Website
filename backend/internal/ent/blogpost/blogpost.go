@@ -39,6 +39,14 @@ const (
 	FieldIsFeatured = "is_featured"
 	// FieldFeaturedImageURL holds the string denoting the featured_image_url field in the database.
 	FieldFeaturedImageURL = "featured_image_url"
+	// FieldProjectName holds the string denoting the project_name field in the database.
+	FieldProjectName = "project_name"
+	// FieldPublicationVenue holds the string denoting the publication_venue field in the database.
+	FieldPublicationVenue = "publication_venue"
+	// FieldProjectURL holds the string denoting the project_url field in the database.
+	FieldProjectURL = "project_url"
+	// FieldExternalResources holds the string denoting the external_resources field in the database.
+	FieldExternalResources = "external_resources"
 	// FieldReadingTimeMinutes holds the string denoting the reading_time_minutes field in the database.
 	FieldReadingTimeMinutes = "reading_time_minutes"
 	// FieldViewCount holds the string denoting the view_count field in the database.
@@ -83,6 +91,10 @@ var Columns = []string{
 	FieldVisibility,
 	FieldIsFeatured,
 	FieldFeaturedImageURL,
+	FieldProjectName,
+	FieldPublicationVenue,
+	FieldProjectURL,
+	FieldExternalResources,
 	FieldReadingTimeMinutes,
 	FieldViewCount,
 	FieldLikeCount,
@@ -112,6 +124,12 @@ var (
 	DefaultIsFeatured bool
 	// FeaturedImageURLValidator is a validator for the "featured_image_url" field. It is called by the builders before save.
 	FeaturedImageURLValidator func(string) error
+	// ProjectNameValidator is a validator for the "project_name" field. It is called by the builders before save.
+	ProjectNameValidator func(string) error
+	// PublicationVenueValidator is a validator for the "publication_venue" field. It is called by the builders before save.
+	PublicationVenueValidator func(string) error
+	// ProjectURLValidator is a validator for the "project_url" field. It is called by the builders before save.
+	ProjectURLValidator func(string) error
 	// DefaultViewCount holds the default value on creation for the "view_count" field.
 	DefaultViewCount int
 	// DefaultLikeCount holds the default value on creation for the "like_count" field.
@@ -276,6 +294,26 @@ func ByIsFeatured(opts ...sql.OrderTermOption) OrderOption {
 // ByFeaturedImageURL orders the results by the featured_image_url field.
 func ByFeaturedImageURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFeaturedImageURL, opts...).ToFunc()
+}
+
+// ByProjectName orders the results by the project_name field.
+func ByProjectName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProjectName, opts...).ToFunc()
+}
+
+// ByPublicationVenue orders the results by the publication_venue field.
+func ByPublicationVenue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPublicationVenue, opts...).ToFunc()
+}
+
+// ByProjectURL orders the results by the project_url field.
+func ByProjectURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProjectURL, opts...).ToFunc()
+}
+
+// ByExternalResources orders the results by the external_resources field.
+func ByExternalResources(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExternalResources, opts...).ToFunc()
 }
 
 // ByReadingTimeMinutes orders the results by the reading_time_minutes field.

@@ -353,7 +353,7 @@ export default {
   corePlugins: {
     // The desktop shell owns its base element styles in styles.css. Keeping
     // Preflight disabled prevents framework resets from competing with the
-    // workbench controls and Milkdown's headless ProseMirror surface.
+    // workbench controls and TipTap's headless ProseMirror surface.
     preflight: false,
   },
   plugins: [],

@@ -245,6 +245,7 @@ mod tests {
             name: name.to_owned(),
             type_decl: type_decl.to_owned(),
             required: false,
+            translatable: name == "title" || type_decl == "text",
             column: crate::schema::FieldColumn::None,
         }
     }

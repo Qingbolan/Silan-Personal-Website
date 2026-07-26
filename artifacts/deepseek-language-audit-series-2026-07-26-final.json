@@ -1,0 +1,318 @@
+{
+  "state": "complete",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "min_confidence": 0.8,
+  "scope": "episode_series",
+  "documents_total": 9,
+  "documents_completed": 9,
+  "documents_failed": 0,
+  "findings_total": 18,
+  "major_findings": 1,
+  "results": [
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/getting-the-lay-of-the-land",
+      "source_path": "resources/episode/using-silan-viking/getting-the-lay-of-the-land/parts/body/en.md",
+      "language": "en",
+      "title": "Episode 1 - Choose one result",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is clear and well-structured, with no concrete problems in the specified categories.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 1136,
+        "completion_tokens": 30,
+        "total_tokens": 1166
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/getting-the-lay-of-the-land",
+      "source_path": "resources/episode/using-silan-viking/getting-the-lay-of-the-land/parts/body/zh.md",
+      "language": "zh",
+      "title": "Episode 1 - Choose one result",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体清晰，但存在几处可改进的表达和逻辑问题。",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "选一项你一直搁置的研究结果。",
+          "explanation": "“搁置的研究结果”搭配略显生硬，更自然的说法是“搁置的研究成果”或“一直没处理的研究结果”。",
+          "suggestion": "选一项你一直搁置的研究成果。",
+          "confidence": 0.85,
+          "source_line": 22
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "第一次成功只需要一页私人内容，写清楚判断、证据和不确定性。",
+          "explanation": "“写清楚判断、证据和不确定性”中“不确定性”作为并列宾语略显抽象，更自然的表达是“写清楚判断、证据和不确定之处”。",
+          "suggestion": "第一次成功只需要一页私人内容，写清楚判断、证据和不确定之处。",
+          "confidence": 0.8,
+          "source_line": 22
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "选一项已经让“你知道的事实”和“公开页面”产生差异的结果",
+          "explanation": "“让……产生差异”搭配稍显别扭，更自然的说法是“导致……不一致”或“使……出现差异”。",
+          "suggestion": "选一项已经导致“你知道的事实”和“公开页面”不一致的结果",
+          "confidence": 0.82,
+          "source_line": 39
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "这个指南只负责确保一项更新小到确实能够完成。",
+          "explanation": "“小到确实能够完成”表达稍显啰嗦，可简化为“小到足以完成”。",
+          "suggestion": "这个指南只负责确保一项更新小到足以完成。",
+          "confidence": 0.85,
+          "source_line": 47
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "还不能公开声称",
+          "explanation": "“声称”一词在上下文中略显正式，更自然的说法是“宣称”或“声明”。",
+          "suggestion": "还不能公开宣称",
+          "confidence": 0.8,
+          "source_line": 63
+        },
+        {
+          "category": "logical_gap",
+          "severity": "minor",
+          "quote": "这些动作保持分离，所以编辑或接受 Agent 提案不会意外暴露私人内容。",
+          "explanation": "“接受 Agent 提案”在前文未定义，读者可能不清楚“Agent 提案”指什么，存在指代不明。",
+          "suggestion": "这些动作保持分离，所以编辑或接受自动提案不会意外暴露私人内容。",
+          "confidence": 0.85,
+          "source_line": 94
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1102,
+        "completion_tokens": 644,
+        "total_tokens": 1746
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/installing-the-engine",
+      "source_path": "resources/episode/using-silan-viking/installing-the-engine/parts/body/en.md",
+      "language": "en",
+      "title": "Episode 2 - Create a CLI workspace",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is clear and well-structured, with no concrete problems in the reader-facing prose.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 1161,
+        "completion_tokens": 31,
+        "total_tokens": 1192
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/installing-the-engine",
+      "source_path": "resources/episode/using-silan-viking/installing-the-engine/parts/body/zh.md",
+      "language": "zh",
+      "title": "Episode 2 - Create a CLI workspace",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体清晰，但存在少量表达和术语问题。",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "能校验自身内容的本地工作区",
+          "explanation": "“校验自身内容”表述略显生硬，读者可能理解为工作区自己校验自己，实际是用户通过命令校验。",
+          "suggestion": "能让你校验内容的本地工作区",
+          "confidence": 0.85,
+          "source_line": 23
+        },
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "普通文件",
+          "explanation": "“普通文件”在此语境下不够明确，可能指普通文本文件，但读者可能期待更具体的描述。",
+          "suggestion": "Markdown 和 TOML 文件",
+          "confidence": 0.8,
+          "source_line": 23
+        },
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "只有当汇总显示 `0 fatal` 且 `index sync` 成功时，才继续下一步。",
+          "explanation": "“汇总显示 `0 fatal`” 中的 `0 fatal` 是英文表达，中文中通常说“0 个致命错误”或“无致命错误”。",
+          "suggestion": "只有当汇总显示“0 个致命错误”且 `index sync` 成功时，才继续下一步。",
+          "confidence": 0.9,
+          "source_line": 72
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1163,
+        "completion_tokens": 334,
+        "total_tokens": 1497
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking",
+      "source_path": "resources/episode/using-silan-viking/series.toml",
+      "language": "en",
+      "title": "One Research Update with Silan Viking",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "No concrete problems found; the document is a metadata block with no reader-facing prose.",
+      "findings": [],
+      "usage": {
+        "prompt_tokens": 555,
+        "completion_tokens": 30,
+        "total_tokens": 585
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/sync-and-publish",
+      "source_path": "resources/episode/using-silan-viking/sync-and-publish/parts/body/en.md",
+      "language": "en",
+      "title": "Episode 4 - Review, publish, and preview",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is clear and well-structured, with only minor issues in phrasing and terminology.",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "Read feedback narrowly",
+          "explanation": "The phrase 'Read feedback narrowly' is ambiguous; it could be interpreted as 'read feedback in a narrow sense' or 'read only a narrow subset of feedback'. The intended meaning is likely 'interpret feedback with caution'.",
+          "suggestion": "Interpret feedback cautiously",
+          "confidence": 0.85,
+          "source_line": 141
+        },
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "a request classified as a search-engine or AI crawler",
+          "explanation": "The term 'AI crawler' is not standard; typically 'AI crawler' is not a distinct category from 'search-engine crawler'. It may confuse readers.",
+          "suggestion": "a request classified as a search-engine or other automated crawler",
+          "confidence": 0.8,
+          "source_line": 147
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1466,
+        "completion_tokens": 238,
+        "total_tokens": 1704
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/sync-and-publish",
+      "source_path": "resources/episode/using-silan-viking/sync-and-publish/parts/body/zh.md",
+      "language": "zh",
+      "title": "Episode 4 - Review, publish, and preview",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体流畅，但存在少量表达不自然和术语不一致的问题。",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "一项边界清楚的 Agent 请求开始产生价值",
+          "explanation": "“边界清楚”搭配“Agent 请求”略显生硬，更像是直译，不符合中文自然表达。",
+          "suggestion": "一个边界明确的 Agent 请求开始产生价值",
+          "confidence": 0.85,
+          "source_line": 111
+        },
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "silan skill emit",
+          "explanation": "“emit”在中文上下文中未翻译，读者可能不理解其含义。",
+          "suggestion": "silan skill emit（触发技能）",
+          "confidence": 0.8,
+          "source_line": 118
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1443,
+        "completion_tokens": 200,
+        "total_tokens": 1643
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/writing-your-first-piece",
+      "source_path": "resources/episode/using-silan-viking/writing-your-first-piece/parts/body/en.md",
+      "language": "en",
+      "title": "Episode 3 - Write the private article",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "The document is a clear tutorial with minor issues in phrasing and a logical gap in the provenance section.",
+      "findings": [
+        {
+          "category": "unnatural_expression",
+          "severity": "minor",
+          "quote": "Write up the result selected in Episode 1 as a private article.",
+          "explanation": "'Write up' is slightly informal and could be replaced with 'Write' or 'Document' for consistency with the tutorial tone.",
+          "suggestion": "Write the result selected in Episode 1 as a private article.",
+          "confidence": 0.85,
+          "source_line": 23
+        },
+        {
+          "category": "logical_gap",
+          "severity": "major",
+          "quote": "The public v1.0 release uses the earlier `idea` and `update` content kinds. Current silan.tech screenshots may show `update` renamed to `moment`, but that name exists only on the main branch and requires a source build. Because this guide uses the public release, keep using an `update` URI.",
+          "explanation": "The paragraph introduces a distinction between public release and main branch, but the instruction 'keep using an `update` URI' is unclear because the reader may not know what an 'update URI' is or how to use it in context. The logical connection between the release version and the URI usage is missing.",
+          "suggestion": "The public v1.0 release uses the earlier `idea` and `update` content kinds. Current silan.tech screenshots may show `update` renamed to `moment`, but that name exists only on the main branch and requires a source build. Because this guide uses the public release, keep using `update` as the content kind in your article.",
+          "confidence": 0.9,
+          "source_line": 104
+        },
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "keep using an `update` URI",
+          "explanation": "'update URI' is not defined earlier in the document; the term 'URI' is used without explanation, and it's unclear whether it refers to a URL, a content kind, or something else. This may confuse readers unfamiliar with the system.",
+          "suggestion": "keep using `update` as the content kind",
+          "confidence": 0.85,
+          "source_line": 107
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1190,
+        "completion_tokens": 498,
+        "total_tokens": 1688
+      }
+    },
+    {
+      "target_uri": "silan://resources/episode/using-silan-viking/writing-your-first-piece",
+      "source_path": "resources/episode/using-silan-viking/writing-your-first-piece/parts/body/zh.md",
+      "language": "zh",
+      "title": "Episode 3 - Write the private article",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "summary": "文档整体清晰，但存在一处术语不一致和一处逻辑跳跃，均属次要问题。",
+      "findings": [
+        {
+          "category": "terminology",
+          "severity": "minor",
+          "quote": "当前 silan.tech 截图可能显示 `update` 已更名为 `moment`，但这个名称只存在于 main 分支，并且需要从源码构建。由于本指南基于尚未包含这项变更的公开版本，请继续使用 `update` URI。",
+          "explanation": "读者可能困惑：既然指南基于公开版本，为何要提及 main 分支的变更？这引入了与当前指南无关的未来状态，分散注意力。",
+          "suggestion": "删除该段，或将其移至脚注或附录，避免打断正文流程。",
+          "confidence": 0.85,
+          "source_line": 97
+        },
+        {
+          "category": "logical_gap",
+          "severity": "minor",
+          "quote": "第 4 集会改变公开状态；届时如果有 Docker，可以生成本地预览，并说明得到生产网址还需要什么。",
+          "explanation": "从“改变公开状态”突然跳到“如果有 Docker，可以生成本地预览”，缺少过渡。读者不清楚 Docker 与公开状态的关系，以及为何此时提及 Docker。",
+          "suggestion": "改为：“第 4 集会改变公开状态。届时，如果你有 Docker，可以生成本地预览，并了解从预览到生产网址还需要哪些步骤。”",
+          "confidence": 0.9,
+          "source_line": 110
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1186,
+        "completion_tokens": 333,
+        "total_tokens": 1519
+      }
+    }
+  ],
+  "failures": []
+}

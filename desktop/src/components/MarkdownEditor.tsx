@@ -1,15 +1,23 @@
 import React from 'react';
+import type { Editor } from '@tiptap/core';
+import {
+  EditorBubble,
+  EditorBubbleItem,
+  EditorContent,
+  EditorRoot,
+  handleCommandNavigation,
+  ImageResizer,
+  type JSONContent,
+  useEditor as useNovelEditor,
+} from 'novel';
 import {
   type LucideIcon,
   Bold,
+  Bot,
   Braces,
-  CalendarDays,
-  CheckSquare,
   Code2,
-  FileText,
-  Hash,
+  Copy,
   Heading2,
-  Image,
   Italic,
   Link2,
   List,
@@ -17,45 +25,33 @@ import {
   Minus,
   Quote,
   Redo2,
+  MessageSquareWarning,
+  Sparkles,
   Strikethrough,
   Table2,
   Undo2,
 } from 'lucide-react';
+import { coreMarkdownPlugin } from './editor/coreMarkdownPlugin';
+import { deepSeekReviewPlugin } from './editor/deepSeekReviewPlugin';
 import {
-  defaultValueCtx,
-  Editor,
-  editorViewCtx,
-  editorViewOptionsCtx,
-  rootAttrsCtx,
-  rootCtx,
-} from '@milkdown/kit/core';
-import { clipboard } from '@milkdown/kit/plugin/clipboard';
-import { cursor } from '@milkdown/kit/plugin/cursor';
-import { history, redoCommand, undoCommand } from '@milkdown/kit/plugin/history';
-import { indent } from '@milkdown/kit/plugin/indent';
-import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
+  type EditorReviewFinding,
+  type MarkdownEditorPlugin,
+  type SlashCommandDefinition,
+  NovelEditorPluginRegistry,
+} from './editor/novelEditorPluginRegistry';
+import { highlightMarkdownSource } from './editor/markdownSourceHighlight';
 import {
-  commonmark,
-  createCodeBlockCommand,
-  insertHrCommand,
-  toggleEmphasisCommand,
-  toggleInlineCodeCommand,
-  toggleLinkCommand,
-  toggleStrongCommand,
-  wrapInBlockquoteCommand,
-  wrapInBulletListCommand,
-  wrapInHeadingCommand,
-  wrapInOrderedListCommand,
-} from '@milkdown/kit/preset/commonmark';
-import {
-  gfm,
-  insertTableCommand,
-  toggleStrikethroughCommand,
-} from '@milkdown/kit/preset/gfm';
-import { TextSelection } from '@milkdown/kit/prose/state';
-import { callCommand, getMarkdown, insert, replaceAll } from '@milkdown/kit/utils';
+  NovelSlashCommandMenu,
+  slashCommandPlugin,
+} from './editor/slashCommandPlugin';
 
-type EditorPhase = 'idle' | 'creating' | 'ready' | 'failed';
+export type {
+  EditorReviewFinding,
+  MarkdownEditorPlugin,
+  SlashCommandDefinition,
+} from './editor/novelEditorPluginRegistry';
+
+type EditorPhase = 'creating' | 'ready';
 type ToolbarCommand =
   | 'heading'
   | 'bold'
@@ -71,24 +67,30 @@ type ToolbarCommand =
   | 'undo'
   | 'redo';
 
-type SlashCommand = {
-  id: string;
-  title: string;
-  description: string;
-  keywords: string[];
-  icon: LucideIcon;
-  markdown: string;
-  inline?: boolean;
-};
-
 export type MarkdownEditorHandle = {
   focus: () => void;
   getMarkdown: () => string;
   insertMarkdown: (markdown: string) => string | null;
   replaceMarkdown: (markdown: string) => string | null;
+  focusReviewFinding: (findingId: string) => boolean;
+  applyReviewSuggestion: (findingId: string) => string | null;
 };
 
-type MarkdownEditorProps = {
+export type MarkdownEditingMode = 'rich' | 'source';
+export type MarkdownSelectionAssistAction = 'agent_edit' | 'optimize_expression' | 'comment_issue';
+export type MarkdownSelectionAssistRequest = {
+  action: MarkdownSelectionAssistAction;
+  selectedText: string;
+  beforeContext: string;
+  afterContext: string;
+  instruction?: string;
+};
+export type MarkdownSelectionAssistResult = {
+  replacement?: string;
+  comment?: string;
+};
+
+export type MarkdownEditorProps = {
   value: string;
   className?: string;
   ariaLabel?: string;
@@ -96,19 +98,21 @@ type MarkdownEditorProps = {
   readOnly?: boolean;
   toolbarVisible?: boolean;
   autoFocus?: boolean;
-  showStatus?: boolean;
   placeholder?: string;
+  editingMode?: MarkdownEditingMode;
+  plugins?: MarkdownEditorPlugin[];
+  slashCommands?: SlashCommandDefinition[];
+  reviewFindings?: EditorReviewFinding[];
   onChange?: (value: string) => void;
+  onEditingModeChange?: (mode: MarkdownEditingMode) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+  onSelectionAssist?: (request: MarkdownSelectionAssistRequest) => Promise<MarkdownSelectionAssistResult>;
+  onReviewFindingActivate?: (findingId: string) => void;
+  onReviewFindingApplied?: (findingId: string) => void;
 };
 
-type ToolbarProps = {
-  disabled: boolean;
-  sourceMode: boolean;
-  onCommand: (command: ToolbarCommand) => void;
-  onLink: (href: string) => void;
-  onSourceModeChange: (sourceMode: boolean) => void;
-};
+const emptyPlugins: MarkdownEditorPlugin[] = [];
+const emptySlashCommands: SlashCommandDefinition[] = [];
 
 const toolbarButtons: Array<{
   command: ToolbarCommand;
@@ -131,203 +135,58 @@ const toolbarButtons: Array<{
   { command: 'redo', label: 'Redo', icon: Redo2 },
 ];
 
-const slashCommands: SlashCommand[] = [
-  {
-    id: 'heading',
-    title: 'Heading',
-    description: 'Start a section title.',
-    keywords: ['h2', 'heading', 'title', 'section'],
-    icon: Heading2,
-    markdown: '## ',
-  },
-  {
-    id: 'todo',
-    title: 'Task',
-    description: 'Add a checkbox action item.',
-    keywords: ['todo', 'task', 'checkbox', 'action'],
-    icon: CheckSquare,
-    markdown: '- [ ] ',
-  },
-  {
-    id: 'quote',
-    title: 'Quote',
-    description: 'Capture a quote or important sentence.',
-    keywords: ['quote', 'blockquote', 'citation'],
-    icon: Quote,
-    markdown: '> ',
-  },
-  {
-    id: 'event',
-    title: 'Event record',
-    description: 'Structured moment: what changed, evidence, next action.',
-    keywords: ['event', 'moment', 'status', '记录', '事件'],
-    icon: CalendarDays,
-    markdown: '## Event\n\n- Time: \n- What changed: \n- Evidence: \n- Next action: \n',
-  },
-  {
-    id: 'decision',
-    title: 'Decision',
-    description: 'Record the choice, reason, and follow-up.',
-    keywords: ['decision', 'decide', 'choice', '决定'],
-    icon: FileText,
-    markdown: '## Decision\n\n- Decision: \n- Reason: \n- Tradeoff: \n- Follow-up: \n',
-  },
-  {
-    id: 'internal-link',
-    title: 'Internal link',
-    description: 'Obsidian-style placeholder for linking knowledge.',
-    keywords: ['link', 'wiki', 'obsidian', 'backlink', '双链'],
-    icon: Link2,
-    markdown: '[[Untitled]]',
-    inline: true,
-  },
-  {
-    id: 'tag',
-    title: 'Tag',
-    description: 'Add a lightweight knowledge tag.',
-    keywords: ['tag', 'hash', 'label'],
-    icon: Hash,
-    markdown: '#topic ',
-    inline: true,
-  },
-  {
-    id: 'table',
-    title: 'Table',
-    description: 'Insert a small Markdown table.',
-    keywords: ['table', 'grid'],
-    icon: Table2,
-    markdown: '| Field | Value |\n| --- | --- |\n|  |  |\n',
-  },
-  {
-    id: 'divider',
-    title: 'Divider',
-    description: 'Separate two blocks.',
-    keywords: ['hr', 'divider', 'line'],
-    icon: Minus,
-    markdown: '---\n',
-  },
-  {
-    id: 'image-prompt',
-    title: 'Image prompt',
-    description: 'Inline image-generation request block.',
-    keywords: ['image', 'media', 'ai', 'generate'],
-    icon: Image,
-    markdown: '```silan-ai-image\nprompt: \nstyle: editorial documentary\nratio: 1:1\n```\n',
-  },
-];
+function getMarkdown(editor: Editor) {
+  return editor.storage.markdown.getMarkdown() as string;
+}
 
-const commandMatches = (command: SlashCommand, query: string) => {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return true;
-  return [command.title, command.description, ...command.keywords]
-    .join(' ')
-    .toLowerCase()
-    .includes(needle);
-};
+function useEditorRevision(editor: Editor | null) {
+  const [, rerender] = React.useReducer((current) => current + 1, 0);
 
-const commandInsertion = (current: string, command: SlashCommand) => {
-  const markdown = command.markdown;
-  if (command.inline) return markdown;
-  if (!current.trim()) return markdown;
-  if (/^\s*$/.test(markdown)) return markdown;
-  if (markdown.startsWith('\n') || current.endsWith('\n\n')) return markdown;
-  if (current.endsWith('\n')) return `\n${markdown}`;
-  return `\n\n${markdown}`;
-};
-
-const escapeHtml = (value: string) => value
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
-
-const inlineTokenPattern = /(`[^`\n]+`)|(!?\[[^\]\n]+\]\([^)]+\))|(\[\[[^\]\n]+\]\])|(^|[\s([{])(#[-\p{L}\p{N}_/]+)|(\*\*[^*\n]+\*\*)|(__[^_\n]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)/gu;
-
-const span = (className: string, value: string) => (
-  `<span class="${className}">${escapeHtml(value)}</span>`
-);
-
-const highlightInlineMarkdown = (line: string) => {
-  let highlighted = '';
-  let lastIndex = 0;
-
-  for (const match of line.matchAll(inlineTokenPattern)) {
-    const matchText = match[0];
-    const index = match.index ?? 0;
-    highlighted += escapeHtml(line.slice(lastIndex, index));
-
-    if (match[1]) highlighted += span('md-src-inline-code', match[1]);
-    else if (match[2]) highlighted += span(match[2].startsWith('!') ? 'md-src-image' : 'md-src-link', match[2]);
-    else if (match[3]) highlighted += span('md-src-wiki-link', match[3]);
-    else if (match[5]) {
-      highlighted += escapeHtml(match[4] ?? '');
-      highlighted += span('md-src-tag', match[5]);
-    } else if (match[6] || match[7]) highlighted += span('md-src-strong', matchText);
-    else if (match[8] || match[9]) highlighted += span('md-src-emphasis', matchText);
-    else highlighted += escapeHtml(matchText);
-
-    lastIndex = index + matchText.length;
-  }
-
-  highlighted += escapeHtml(line.slice(lastIndex));
-  return highlighted || '&nbsp;';
-};
-
-const highlightMarkdownSource = (markdown: string) => {
-  const lines = markdown.split('\n');
-  let inCodeFence = false;
-
-  return lines.map((line) => {
-    const fence = line.match(/^(\s*)(`{3,}|~{3,})(.*)$/);
-    if (fence) {
-      inCodeFence = !inCodeFence;
-      return `${escapeHtml(fence[1])}${span('md-src-fence', fence[2])}${span('md-src-code-info', fence[3])}`;
-    }
-
-    if (inCodeFence) return span('md-src-code-line', line || ' ');
-
-    const heading = line.match(/^(#{1,6})(\s+.*)$/);
-    if (heading) {
-      return `${span('md-src-heading-marker', heading[1])}${span('md-src-heading-text', heading[2])}`;
-    }
-
-    const quote = line.match(/^(\s*>+)(\s?.*)$/);
-    if (quote) {
-      return `${span('md-src-quote-marker', quote[1])}${span('md-src-quote-text', quote[2])}`;
-    }
-
-    const task = line.match(/^(\s*)([-+*])(\s+\[[ xX]\]\s+)(.*)$/);
-    if (task) {
-      return `${escapeHtml(task[1])}${span('md-src-list-marker', task[2])}${span('md-src-task-marker', task[3])}${highlightInlineMarkdown(task[4])}`;
-    }
-
-    const unordered = line.match(/^(\s*)([-+*])(\s+)(.*)$/);
-    if (unordered) {
-      return `${escapeHtml(unordered[1])}${span('md-src-list-marker', unordered[2])}${escapeHtml(unordered[3])}${highlightInlineMarkdown(unordered[4])}`;
-    }
-
-    const ordered = line.match(/^(\s*)(\d+\.)(\s+)(.*)$/);
-    if (ordered) {
-      return `${escapeHtml(ordered[1])}${span('md-src-list-marker', ordered[2])}${escapeHtml(ordered[3])}${highlightInlineMarkdown(ordered[4])}`;
-    }
-
-    if (/^\s*\|.*\|\s*$/.test(line)) return span('md-src-table', line || ' ');
-    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) return span('md-src-hr', line);
-
-    return highlightInlineMarkdown(line);
-  }).join('\n');
-};
+  React.useEffect(() => {
+    if (!editor) return undefined;
+    const update = () => rerender();
+    editor.on('transaction', update);
+    return () => {
+      editor.off('transaction', update);
+    };
+  }, [editor]);
+}
 
 function MarkdownToolbar({
+  editor,
   disabled,
   sourceMode,
   onCommand,
   onLink,
   onSourceModeChange,
-}: ToolbarProps) {
+}: {
+  editor: Editor | null;
+  disabled: boolean;
+  sourceMode: boolean;
+  onCommand: (command: ToolbarCommand) => void;
+  onLink: (href: string) => void;
+  onSourceModeChange: (sourceMode: boolean) => void;
+}) {
   const [linkOpen, setLinkOpen] = React.useState(false);
   const [href, setHref] = React.useState('https://');
+  useEditorRevision(editor);
+
+  const activeCommands = editor ? {
+    heading: editor.isActive('heading', { level: 2 }),
+    bold: editor.isActive('bold'),
+    italic: editor.isActive('italic'),
+    strike: editor.isActive('strike'),
+    'bullet-list': editor.isActive('bulletList'),
+    'ordered-list': editor.isActive('orderedList'),
+    quote: editor.isActive('blockquote'),
+    'code-block': editor.isActive('codeBlock'),
+    'inline-code': editor.isActive('code'),
+    divider: false,
+    table: editor.isActive('table'),
+    undo: false,
+    redo: false,
+    link: editor.isActive('link'),
+  } satisfies Record<ToolbarCommand, boolean> & { link: boolean } : null;
 
   const submitLink = (event: React.FormEvent) => {
     event.preventDefault();
@@ -339,15 +198,17 @@ function MarkdownToolbar({
   };
 
   return (
-    <div className="milkdown-toolbar" role="toolbar" aria-label="Markdown formatting">
+    <div className="novel-toolbar" role="toolbar" aria-label="Markdown formatting">
       {toolbarButtons.map(({ command, label, icon: Icon, dividerBefore }) => (
         <React.Fragment key={command}>
-          {dividerBefore && <span className="milkdown-toolbar-divider" aria-hidden="true" />}
+          {dividerBefore && <span className="novel-toolbar-divider" aria-hidden="true" />}
           <button
             type="button"
             disabled={disabled || sourceMode}
+            className={activeCommands?.[command] ? 'active' : ''}
             title={label}
             aria-label={label}
+            aria-pressed={activeCommands?.[command] || undefined}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onCommand(command)}
           >
@@ -355,11 +216,11 @@ function MarkdownToolbar({
           </button>
         </React.Fragment>
       ))}
-      <span className="milkdown-toolbar-divider" aria-hidden="true" />
+      <span className="novel-toolbar-divider" aria-hidden="true" />
       <button
         type="button"
         disabled={disabled || sourceMode}
-        className={linkOpen ? 'active' : ''}
+        className={linkOpen || activeCommands?.link ? 'active' : ''}
         title="Link"
         aria-label="Link"
         aria-expanded={linkOpen}
@@ -368,7 +229,7 @@ function MarkdownToolbar({
       >
         <Link2 size={15} />
       </button>
-      <span className="milkdown-toolbar-divider" aria-hidden="true" />
+      <span className="novel-toolbar-divider" aria-hidden="true" />
       <button
         type="button"
         disabled={disabled}
@@ -382,11 +243,11 @@ function MarkdownToolbar({
         <Code2 size={15} />
       </button>
       {linkOpen && (
-        <form className="milkdown-link-popover" onSubmit={submitLink}>
-          <label htmlFor="milkdown-link-href">Link destination</label>
+        <form className="novel-link-popover" onSubmit={submitLink}>
+          <label htmlFor="novel-link-href">Link destination</label>
           <div>
             <input
-              id="milkdown-link-href"
+              id="novel-link-href"
               value={href}
               inputMode="url"
               autoComplete="url"
@@ -401,53 +262,245 @@ function MarkdownToolbar({
   );
 }
 
-function SlashCommandMenu({
-  query,
-  selectedIndex,
-  commands,
-  onSelect,
+const bubbleItems: Array<{
+  label: string;
+  icon: LucideIcon;
+  active: (editor: Editor) => boolean;
+  run: (editor: Editor) => void;
+}> = [
+  {
+    label: 'Bold',
+    icon: Bold,
+    active: (editor) => editor.isActive('bold'),
+    run: (editor) => { editor.chain().focus().toggleBold().run(); },
+  },
+  {
+    label: 'Italic',
+    icon: Italic,
+    active: (editor) => editor.isActive('italic'),
+    run: (editor) => { editor.chain().focus().toggleItalic().run(); },
+  },
+  {
+    label: 'Strikethrough',
+    icon: Strikethrough,
+    active: (editor) => editor.isActive('strike'),
+    run: (editor) => { editor.chain().focus().toggleStrike().run(); },
+  },
+  {
+    label: 'Inline code',
+    icon: Code2,
+    active: (editor) => editor.isActive('code'),
+    run: (editor) => { editor.chain().focus().toggleCode().run(); },
+  },
+];
+
+function selectionText(editor: Editor) {
+  const { from, to } = editor.state.selection;
+  return editor.state.doc.textBetween(from, to, '\n').trim();
+}
+
+function selectionContext(editor: Editor) {
+  const { from, to } = editor.state.selection;
+  const documentEnd = editor.state.doc.content.size;
+  return {
+    from,
+    to,
+    selectedText: editor.state.doc.textBetween(from, to, '\n').trim(),
+    beforeContext: editor.state.doc.textBetween(Math.max(0, from - 1600), from, '\n').trim(),
+    afterContext: editor.state.doc.textBetween(to, Math.min(documentEnd, to + 1600), '\n').trim(),
+  };
+}
+
+const quoteComment = (comment: string) => {
+  const body = comment
+    .trim()
+    .split('\n')
+    .map((line) => `> ${line.trim()}`)
+    .join('\n');
+  return `\n\n> [!note] Issue\n${body}\n`;
+};
+
+function NovelSelectionBubble({
+  disabled,
+  onSelectionAssist,
 }: {
-  query: string;
-  selectedIndex: number;
-  commands: SlashCommand[];
-  onSelect: (command: SlashCommand) => void;
+  disabled: boolean;
+  onSelectionAssist?: MarkdownEditorProps['onSelectionAssist'];
 }) {
+  const { editor } = useNovelEditor();
+  const [linkOpen, setLinkOpen] = React.useState(false);
+  const [href, setHref] = React.useState('');
+  const [busyAction, setBusyAction] = React.useState<MarkdownSelectionAssistAction | 'copy' | null>(null);
+  const [assistError, setAssistError] = React.useState('');
+  useEditorRevision(editor);
+
+  if (!editor || disabled) return null;
+
+  const submitLink = (event: React.FormEvent) => {
+    event.preventDefault();
+    const nextHref = href.trim();
+    if (!nextHref) return;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: nextHref }).run();
+    setHref('');
+    setLinkOpen(false);
+  };
+
+  const copySelection = async () => {
+    const text = selectionText(editor);
+    if (!text) return;
+    setAssistError('');
+    setBusyAction('copy');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      setAssistError('Copy failed');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const runAssist = async (action: MarkdownSelectionAssistAction) => {
+    const context = selectionContext(editor);
+    if (!context.selectedText) return;
+    const instruction = action === 'agent_edit'
+      ? window.prompt('Local instruction for the selected text', 'Improve this selected passage without changing surrounding text.')?.trim()
+      : undefined;
+    if (action === 'agent_edit' && !instruction) return;
+
+    setAssistError('');
+    setBusyAction(action);
+    try {
+      const result = onSelectionAssist
+        ? await onSelectionAssist({ action, ...context, instruction })
+        : { comment: 'Review this selected passage.' };
+      if (action === 'comment_issue') {
+        const comment = result.comment?.trim() || 'Review this selected passage.';
+        editor
+          .chain()
+          .focus()
+          .setTextSelection(context.to)
+          .insertContent(quoteComment(comment))
+          .run();
+        return;
+      }
+      const replacement = result.replacement?.trim();
+      if (!replacement) {
+        setAssistError('No local edit returned');
+        return;
+      }
+      editor
+        .chain()
+        .focus()
+        .insertContentAt({ from: context.from, to: context.to }, replacement)
+        .run();
+    } catch (reason) {
+      setAssistError(String(reason));
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   return (
-    <div
-      className="milkdown-slash-menu"
-      role="listbox"
-      aria-label="Slash commands"
-      aria-activedescendant={commands[selectedIndex] ? `slash-command-${commands[selectedIndex].id}` : undefined}
-      onMouseDown={(event) => event.preventDefault()}
+    <EditorBubble
+      className="novel-bubble-menu"
+      tippyOptions={{ placement: 'top', duration: [120, 90] }}
     >
-      <div className="milkdown-slash-query">
-        <span>/</span>
-        <strong>{query || 'command'}</strong>
-        <small>Enter to insert · Esc to close</small>
-      </div>
-      {commands.length === 0 ? (
-        <div className="milkdown-slash-empty">No matching block.</div>
-      ) : commands.map((command, index) => {
-        const Icon = command.icon;
-        return (
+      {bubbleItems.map(({ label, icon: Icon, active, run }) => (
+        <EditorBubbleItem
+          key={label}
+          asChild
+          onSelect={run}
+        >
           <button
-            id={`slash-command-${command.id}`}
-            key={command.id}
             type="button"
-            role="option"
-            aria-selected={index === selectedIndex}
-            className={index === selectedIndex ? 'active' : ''}
-            onClick={() => onSelect(command)}
+            className={active(editor) ? 'active' : ''}
+            aria-label={label}
+            title={label}
+            onMouseDown={(event) => event.preventDefault()}
           >
-            <Icon size={16} />
-            <span>
-              <strong>{command.title}</strong>
-              <small>{command.description}</small>
-            </span>
+            <Icon size={14} />
           </button>
-        );
-      })}
-    </div>
+        </EditorBubbleItem>
+      ))}
+      <span className="novel-bubble-divider" aria-hidden="true" />
+      <button
+        type="button"
+        aria-label="Copy"
+        title="Copy"
+        disabled={Boolean(busyAction)}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => void copySelection()}
+      >
+        <Copy size={14} />
+      </button>
+      {onSelectionAssist && (
+        <>
+          <button
+            type="button"
+            aria-label="Optimize expression"
+            title="Optimize expression"
+            disabled={Boolean(busyAction)}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => void runAssist('optimize_expression')}
+          >
+            <Sparkles size={14} />
+          </button>
+          <button
+            type="button"
+            aria-label="Agent local edit"
+            title="Agent local edit"
+            disabled={Boolean(busyAction)}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => void runAssist('agent_edit')}
+          >
+            <Bot size={14} />
+          </button>
+        </>
+      )}
+      <button
+        type="button"
+        aria-label="Comment issue"
+        title="Comment issue"
+        disabled={Boolean(busyAction)}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => void runAssist('comment_issue')}
+      >
+        <MessageSquareWarning size={14} />
+      </button>
+      <span className="novel-bubble-divider" aria-hidden="true" />
+      <button
+        type="button"
+        className={editor.isActive('link') || linkOpen ? 'active' : ''}
+        aria-label="Link"
+        title="Link"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => {
+          if (editor.isActive('link')) {
+            editor.chain().focus().unsetLink().run();
+            return;
+          }
+          setHref('');
+          setLinkOpen((current) => !current);
+        }}
+      >
+        <Link2 size={14} />
+      </button>
+      {linkOpen && (
+        <form className="novel-bubble-link" onSubmit={submitLink}>
+          <input
+            value={href}
+            inputMode="url"
+            autoComplete="url"
+            autoFocus
+            aria-label="Link destination"
+            placeholder="Paste a URL"
+            onChange={(event) => setHref(event.target.value)}
+          />
+          <button type="submit" disabled={!href.trim()}>Apply</button>
+        </form>
+      )}
+      {assistError && <span className="novel-bubble-error">{assistError}</span>}
+    </EditorBubble>
   );
 }
 
@@ -460,30 +513,78 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
     readOnly = false,
     toolbarVisible = false,
     autoFocus = true,
-    showStatus = true,
-    placeholder,
+    placeholder = '',
+    editingMode,
+    plugins = emptyPlugins,
+    slashCommands = emptySlashCommands,
+    reviewFindings = [],
     onChange,
+    onEditingModeChange,
     onKeyDown,
+    onSelectionAssist,
+    onReviewFindingActivate,
+    onReviewFindingApplied,
   }, forwardedRef) {
-    const rootRef = React.useRef<HTMLDivElement | null>(null);
     const sourceRef = React.useRef<HTMLTextAreaElement | null>(null);
     const sourceHighlightRef = React.useRef<HTMLPreElement | null>(null);
-    const editorRef = React.useRef<Editor | null>(null);
     const valueRef = React.useRef(value);
     const onChangeRef = React.useRef(onChange);
+    const reviewFindingsRef = React.useRef(reviewFindings);
+    const onReviewFindingActivateRef = React.useRef(onReviewFindingActivate);
+    const onReviewFindingAppliedRef = React.useRef(onReviewFindingApplied);
     const disabledRef = React.useRef(disabled || readOnly);
-    const [phase, setPhase] = React.useState<EditorPhase>('idle');
-    const [failure, setFailure] = React.useState('');
-    const [slashOpen, setSlashOpen] = React.useState(false);
-    const [slashQuery, setSlashQuery] = React.useState('');
-    const [slashIndex, setSlashIndex] = React.useState(0);
-    const [sourceMode, setSourceMode] = React.useState(false);
+    const placeholderRef = React.useRef(placeholder);
+    const slashCommandProviderRef = React.useRef<SlashCommandDefinition[]>([]);
+    const [phase, setPhase] = React.useState<EditorPhase>('creating');
+    const [uncontrolledMode, setUncontrolledMode] = React.useState<MarkdownEditingMode>('rich');
+    const [editor, setEditor] = React.useState<Editor | null>(null);
+    const [sourceSelection, setSourceSelection] = React.useState<{
+      start: number;
+      end: number;
+      text: string;
+    } | null>(null);
+    const [sourceAssistBusy, setSourceAssistBusy] = React.useState<MarkdownSelectionAssistAction | 'copy' | null>(null);
+    const [sourceAssistError, setSourceAssistError] = React.useState('');
+    const contextualSlashCommandPlugin = React.useMemo<MarkdownEditorPlugin | null>(() => {
+      if (slashCommands.length === 0) return null;
+      return {
+        id: 'contextual-slash-commands',
+        priority: 450,
+        slashCommands,
+        createExtensions: () => [],
+      };
+    }, [slashCommands]);
+    const composition = React.useMemo(() => (
+      new NovelEditorPluginRegistry([
+        coreMarkdownPlugin,
+        slashCommandPlugin,
+        deepSeekReviewPlugin,
+        ...plugins,
+        ...(contextualSlashCommandPlugin ? [contextualSlashCommandPlugin] : []),
+      ])
+    ), [contextualSlashCommandPlugin, plugins]);
+    const extensions = React.useMemo(() => composition.extensions({
+      placeholder: () => placeholderRef.current,
+      readOnly,
+      resolveSlashCommands: () => slashCommandProviderRef.current,
+      onReviewFindingActivate: (findingId) => {
+        onReviewFindingActivateRef.current?.(findingId);
+      },
+    }), [composition, readOnly]);
+    const availableSlashCommands = React.useMemo(() => composition.slashCommands(), [composition]);
+    const activeEditingMode = editingMode ?? uncontrolledMode;
+    const sourceMode = activeEditingMode === 'source';
 
-    const visibleSlashCommands = React.useMemo(
-      () => slashCommands.filter((command) => commandMatches(command, slashQuery)).slice(0, 8),
-      [slashQuery],
+    placeholderRef.current = placeholder;
+    reviewFindingsRef.current = reviewFindings;
+    onReviewFindingActivateRef.current = onReviewFindingActivate;
+    onReviewFindingAppliedRef.current = onReviewFindingApplied;
+    slashCommandProviderRef.current = availableSlashCommands;
+
+    const highlightedSource = React.useMemo(
+      () => highlightMarkdownSource(value, reviewFindings),
+      [reviewFindings, value],
     );
-    const highlightedSource = React.useMemo(() => highlightMarkdownSource(value), [value]);
 
     React.useEffect(() => {
       onChangeRef.current = onChange;
@@ -491,102 +592,37 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
 
     React.useEffect(() => {
       disabledRef.current = disabled || readOnly;
-      const editor = editorRef.current;
-      if (!editor || phase !== 'ready') return;
-      editor.action((ctx) => {
-        const view = ctx.get(editorViewCtx);
-        view.setProps({ editable: () => !disabledRef.current });
-      });
-    }, [disabled, phase, readOnly]);
+      editor?.setEditable(!disabledRef.current);
+    }, [disabled, editor, readOnly]);
 
     React.useEffect(() => {
-      const root = rootRef.current;
-      if (!root) return undefined;
-
-      let disposed = false;
-      valueRef.current = value;
-      setPhase('creating');
-      setFailure('');
-
-      const editor = Editor.make()
-        .config((ctx) => {
-          ctx.set(rootCtx, root);
-          ctx.set(defaultValueCtx, value);
-          ctx.set(rootAttrsCtx, {
-            'data-milkdown-surface': readOnly ? 'preview' : 'editor',
-          });
-          ctx.update(editorViewOptionsCtx, (previous) => ({
-            ...previous,
-            editable: () => !disabledRef.current,
-            attributes: {
-              ...previous.attributes,
-              'aria-label': ariaLabel,
-              ...(readOnly ? {} : { 'aria-multiline': 'true' }),
-              role: readOnly ? 'document' : 'textbox',
-            },
-          }));
-          ctx.get(listenerCtx).markdownUpdated((_ctx, markdown, previousMarkdown) => {
-            if (markdown === previousMarkdown || markdown === valueRef.current) return;
-            valueRef.current = markdown;
-            onChangeRef.current?.(markdown);
-          });
-        })
-        .use(commonmark)
-        .use(gfm)
-        .use(history)
-        .use(clipboard)
-        .use(cursor)
-        .use(indent)
-        .use(listener);
-
-      editorRef.current = editor;
-      void editor.create()
-        .then(() => {
-          if (disposed) {
-            return editor.destroy();
-          }
-          setPhase('ready');
-          if (autoFocus && !readOnly) {
-            editor.action((ctx) => ctx.get(editorViewCtx).focus());
-          }
-          return undefined;
-        })
-        .catch((reason: unknown) => {
-          if (disposed) return;
-          setFailure(reason instanceof Error ? reason.message : String(reason));
-          setPhase('failed');
-        });
-
-      return () => {
-        disposed = true;
-        if (editorRef.current === editor) editorRef.current = null;
-        void editor.destroy();
-      };
-    }, [ariaLabel, autoFocus, readOnly]);
+      if (!editor || phase !== 'ready') return;
+      editor.commands.setDeepSeekReviewFindings(reviewFindings);
+    }, [editor, phase, reviewFindings]);
 
     React.useEffect(() => {
-      const editor = editorRef.current;
       if (!editor || phase !== 'ready') return;
-      const current = editor.action(getMarkdown());
+      const current = getMarkdown(editor);
       if (current === value) {
         valueRef.current = value;
         return;
       }
       valueRef.current = value;
-      editor.action(replaceAll(value));
-    }, [phase, value]);
+      editor.commands.setContent(value, false);
+    }, [editor, phase, value]);
 
     const focus = React.useCallback(() => {
       if (sourceMode) {
         sourceRef.current?.focus();
         return;
       }
-      editorRef.current?.action((ctx) => ctx.get(editorViewCtx).focus());
-    }, [sourceMode]);
+      editor?.commands.focus();
+    }, [editor, sourceMode]);
 
-    const currentMarkdown = React.useCallback(() => (
-      sourceMode ? valueRef.current : (editorRef.current?.action(getMarkdown()) ?? valueRef.current)
-    ), [sourceMode]);
+    const currentMarkdown = React.useCallback(
+      () => (sourceMode ? valueRef.current : editor ? getMarkdown(editor) : valueRef.current),
+      [editor, sourceMode],
+    );
 
     const applySourceValue = React.useCallback((nextValue: string) => {
       valueRef.current = nextValue;
@@ -611,16 +647,10 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
         return nextValue;
       }
 
-      const editor = editorRef.current;
       if (!editor || phase !== 'ready' || disabledRef.current) return null;
-      editor.action(insert(markdown));
-      const nextValue = editor.action(getMarkdown());
-      if (nextValue !== valueRef.current) {
-        valueRef.current = nextValue;
-        onChangeRef.current?.(nextValue);
-      }
-      return nextValue;
-    }, [applySourceValue, phase, sourceMode]);
+      editor.chain().focus().insertContent(markdown).run();
+      return getMarkdown(editor);
+    }, [applySourceValue, editor, phase, sourceMode]);
 
     const replaceMarkdown = React.useCallback((markdown: string) => {
       if (sourceMode) {
@@ -633,204 +663,153 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
         return markdown;
       }
 
-      const editor = editorRef.current;
       if (!editor || phase !== 'ready' || disabledRef.current) return null;
-      editor.action(replaceAll(markdown));
-      const nextValue = editor.action(getMarkdown());
-      valueRef.current = nextValue;
-      onChangeRef.current?.(nextValue);
-      return nextValue;
-    }, [applySourceValue, phase, sourceMode]);
+      editor.commands.setContent(markdown, true);
+      return getMarkdown(editor);
+    }, [applySourceValue, editor, phase, sourceMode]);
+
+    const focusReviewFinding = React.useCallback((findingId: string) => {
+      const finding = reviewFindingsRef.current.find((candidate) => candidate.id === findingId);
+      if (!finding) return false;
+      if (sourceMode) {
+        const offset = valueRef.current.indexOf(finding.quote);
+        if (offset < 0) return false;
+        sourceRef.current?.focus();
+        sourceRef.current?.setSelectionRange(offset, offset + finding.quote.length);
+        return true;
+      }
+      if (!editor || phase !== 'ready') return false;
+      editor.commands.focus();
+      return editor.commands.focusDeepSeekReviewFinding(findingId);
+    }, [editor, phase, sourceMode]);
+
+    const applyReviewSuggestion = React.useCallback((findingId: string) => {
+      if (disabledRef.current) return null;
+      const finding = reviewFindingsRef.current.find((candidate) => candidate.id === findingId);
+      if (!finding) return null;
+      if (sourceMode) {
+        const current = valueRef.current;
+        const offset = current.indexOf(finding.quote);
+        if (offset < 0) return null;
+        const next = `${current.slice(0, offset)}${finding.suggestion}${current.slice(offset + finding.quote.length)}`;
+        applySourceValue(next);
+        onReviewFindingAppliedRef.current?.(findingId);
+        window.requestAnimationFrame(() => {
+          const caret = offset + finding.suggestion.length;
+          sourceRef.current?.focus();
+          sourceRef.current?.setSelectionRange(caret, caret);
+        });
+        return next;
+      }
+      if (!editor || phase !== 'ready') return null;
+      if (!editor.commands.applyDeepSeekReviewSuggestion(findingId)) return null;
+      const next = getMarkdown(editor);
+      onReviewFindingAppliedRef.current?.(findingId);
+      return next;
+    }, [applySourceValue, editor, phase, sourceMode]);
 
     React.useImperativeHandle(forwardedRef, () => ({
       focus,
       getMarkdown: currentMarkdown,
       insertMarkdown,
       replaceMarkdown,
-    }), [currentMarkdown, focus, insertMarkdown, replaceMarkdown]);
+      focusReviewFinding,
+      applyReviewSuggestion,
+    }), [
+      applyReviewSuggestion,
+      currentMarkdown,
+      focus,
+      focusReviewFinding,
+      insertMarkdown,
+      replaceMarkdown,
+    ]);
 
     const runCommand = React.useCallback((command: ToolbarCommand) => {
-      const editor = editorRef.current;
       if (!editor || phase !== 'ready' || disabledRef.current) return;
       switch (command) {
         case 'heading':
-          editor.action(callCommand(wrapInHeadingCommand.key, 2));
+          editor.chain().focus().toggleHeading({ level: 2 }).run();
           break;
         case 'bold':
-          editor.action(callCommand(toggleStrongCommand.key));
+          editor.chain().focus().toggleBold().run();
           break;
         case 'italic':
-          editor.action(callCommand(toggleEmphasisCommand.key));
+          editor.chain().focus().toggleItalic().run();
           break;
         case 'strike':
-          editor.action(callCommand(toggleStrikethroughCommand.key));
+          editor.chain().focus().toggleStrike().run();
           break;
         case 'bullet-list':
-          editor.action(callCommand(wrapInBulletListCommand.key));
+          editor.chain().focus().toggleBulletList().run();
           break;
         case 'ordered-list':
-          editor.action(callCommand(wrapInOrderedListCommand.key));
+          editor.chain().focus().toggleOrderedList().run();
           break;
         case 'quote':
-          editor.action(callCommand(wrapInBlockquoteCommand.key));
+          editor.chain().focus().toggleBlockquote().run();
           break;
         case 'code-block':
-          editor.action(callCommand(createCodeBlockCommand.key));
+          editor.chain().focus().toggleCodeBlock().run();
           break;
         case 'inline-code':
-          editor.action(callCommand(toggleInlineCodeCommand.key));
+          editor.chain().focus().toggleCode().run();
           break;
         case 'divider':
-          editor.action(callCommand(insertHrCommand.key));
+          editor.chain().focus().setHorizontalRule().run();
           break;
         case 'table':
-          editor.action(callCommand(insertTableCommand.key, { row: 3, col: 3 }));
+          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
           break;
         case 'undo':
-          editor.action(callCommand(undoCommand.key));
+          editor.chain().focus().undo().run();
           break;
         case 'redo':
-          editor.action(callCommand(redoCommand.key));
+          editor.chain().focus().redo().run();
           break;
       }
-      focus();
-    }, [focus, phase]);
+    }, [editor, phase]);
 
     const applyLink = React.useCallback((href: string) => {
-      const editor = editorRef.current;
       if (!editor || phase !== 'ready' || disabledRef.current) return;
-      editor.action(callCommand(toggleLinkCommand.key, { href }));
-      focus();
-    }, [focus, phase]);
-
-    const closeSlashMenu = React.useCallback(() => {
-      setSlashOpen(false);
-      setSlashQuery('');
-      setSlashIndex(0);
-    }, []);
+      editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    }, [editor, phase]);
 
     const updateSourceMode = React.useCallback((nextSourceMode: boolean) => {
-      closeSlashMenu();
-      setSourceMode(nextSourceMode);
+      if (!nextSourceMode && editor && getMarkdown(editor) !== valueRef.current) {
+        editor.commands.setContent(valueRef.current, false);
+      }
+      const nextMode = nextSourceMode ? 'source' : 'rich';
+      if (editingMode === undefined) {
+        setUncontrolledMode(nextMode);
+      }
+      onEditingModeChange?.(nextMode);
       window.requestAnimationFrame(() => {
-        if (nextSourceMode) {
-          sourceRef.current?.focus();
-          return;
-        }
-        editorRef.current?.action((ctx) => ctx.get(editorViewCtx).focus());
+        if (nextSourceMode) sourceRef.current?.focus();
+        else editor?.commands.focus();
       });
-    }, [closeSlashMenu]);
-
-    const insertSlashCommand = React.useCallback((command: SlashCommand) => {
-      const current = currentMarkdown();
-      insertMarkdown(commandInsertion(current, command));
-      closeSlashMenu();
-      focus();
-    }, [closeSlashMenu, currentMarkdown, focus, insertMarkdown]);
-
-    React.useEffect(() => {
-      setSlashIndex(0);
-    }, [slashQuery]);
-
-    React.useEffect(() => {
-      if (slashIndex < visibleSlashCommands.length) return;
-      setSlashIndex(Math.max(0, visibleSlashCommands.length - 1));
-    }, [slashIndex, visibleSlashCommands.length]);
+    }, [editingMode, editor, onEditingModeChange]);
 
     const focusDocumentEnd = React.useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-      if (sourceMode) return;
-      if (readOnly || disabledRef.current || phase !== 'ready') return;
+      if (sourceMode || readOnly || disabledRef.current || phase !== 'ready') return;
       const target = event.target as HTMLElement;
       if (
         target !== event.currentTarget
-        && !target.classList.contains('milkdown-editor-root')
-        && !target.classList.contains('milkdown')
+        && !target.classList.contains('novel-editor-root')
+        && !target.classList.contains('tiptap')
       ) {
         return;
       }
       event.preventDefault();
-      editorRef.current?.action((ctx) => {
-        const view = ctx.get(editorViewCtx);
-        view.dispatch(view.state.tr.setSelection(TextSelection.atEnd(view.state.doc)));
-        view.focus();
-      });
-    }, [phase, readOnly, sourceMode]);
-
-    const characterCount = Array.from(value).length;
+      editor?.commands.focus('end');
+    }, [editor, phase, readOnly, sourceMode]);
 
     const handleKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!sourceMode && !readOnly && !disabledRef.current && phase === 'ready') {
-        if (slashOpen) {
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            closeSlashMenu();
-            return;
-          }
-          if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            setSlashIndex((current) => (
-              visibleSlashCommands.length === 0 ? 0 : (current + 1) % visibleSlashCommands.length
-            ));
-            return;
-          }
-          if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            setSlashIndex((current) => (
-              visibleSlashCommands.length === 0
-                ? 0
-                : (current - 1 + visibleSlashCommands.length) % visibleSlashCommands.length
-            ));
-            return;
-          }
-          if (event.key === 'Enter' || event.key === 'Tab') {
-            const command = visibleSlashCommands[slashIndex];
-            if (command) {
-              event.preventDefault();
-              insertSlashCommand(command);
-              return;
-            }
-          }
-          if (event.key === 'Backspace') {
-            event.preventDefault();
-            if (!slashQuery) closeSlashMenu();
-            else setSlashQuery((current) => current.slice(0, -1));
-            return;
-          }
-          if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
-            event.preventDefault();
-            setSlashQuery((current) => `${current}${event.key}`);
-            return;
-          }
-        } else if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey) {
-          event.preventDefault();
-          setSlashOpen(true);
-          setSlashQuery('');
-          setSlashIndex(0);
-          return;
-        }
-      }
-
       onKeyDown?.(event);
-    }, [
-      closeSlashMenu,
-      insertSlashCommand,
-      onKeyDown,
-      phase,
-      readOnly,
-      slashIndex,
-      slashOpen,
-      slashQuery,
-      sourceMode,
-      visibleSlashCommands,
-    ]);
+    }, [onKeyDown]);
 
     const handleSourceKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       onKeyDown?.(event as unknown as React.KeyboardEvent<HTMLDivElement>);
     }, [onKeyDown]);
-
-    const updateSourceText = React.useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      applySourceValue(event.target.value);
-    }, [applySourceValue]);
 
     const syncSourceHighlightScroll = React.useCallback((event: React.UIEvent<HTMLTextAreaElement>) => {
       const highlight = sourceHighlightRef.current;
@@ -839,16 +818,84 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
       highlight.scrollLeft = event.currentTarget.scrollLeft;
     }, []);
 
+    const updateSourceSelection = React.useCallback(() => {
+      const textarea = sourceRef.current;
+      if (!textarea) {
+        setSourceSelection(null);
+        return;
+      }
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = valueRef.current.slice(start, end);
+      setSourceSelection(text.trim() ? { start, end, text } : null);
+    }, []);
+
+    const copySourceSelection = React.useCallback(async () => {
+      if (!sourceSelection) return;
+      setSourceAssistError('');
+      setSourceAssistBusy('copy');
+      try {
+        await navigator.clipboard.writeText(sourceSelection.text);
+      } catch {
+        setSourceAssistError('Copy failed');
+      } finally {
+        setSourceAssistBusy(null);
+      }
+    }, [sourceSelection]);
+
+    const runSourceSelectionAssist = React.useCallback(async (action: MarkdownSelectionAssistAction) => {
+      if (!sourceSelection) return;
+      const instruction = action === 'agent_edit'
+        ? window.prompt('Local instruction for the selected text', 'Improve this selected passage without changing surrounding text.')?.trim()
+        : undefined;
+      if (action === 'agent_edit' && !instruction) return;
+
+      setSourceAssistError('');
+      setSourceAssistBusy(action);
+      try {
+        const result = onSelectionAssist
+          ? await onSelectionAssist({
+            action,
+            selectedText: sourceSelection.text,
+            beforeContext: valueRef.current.slice(Math.max(0, sourceSelection.start - 1600), sourceSelection.start),
+            afterContext: valueRef.current.slice(sourceSelection.end, sourceSelection.end + 1600),
+            instruction,
+          })
+          : { comment: 'Review this selected passage.' };
+        const insertion = action === 'comment_issue'
+          ? quoteComment(result.comment?.trim() || 'Review this selected passage.')
+          : result.replacement?.trim();
+        if (!insertion) {
+          setSourceAssistError('No local edit returned');
+          return;
+        }
+        const insertAt = action === 'comment_issue' ? sourceSelection.end : sourceSelection.start;
+        const replaceEnd = action === 'comment_issue' ? sourceSelection.end : sourceSelection.end;
+        const nextValue = `${valueRef.current.slice(0, insertAt)}${insertion}${valueRef.current.slice(replaceEnd)}`;
+        applySourceValue(nextValue);
+        window.requestAnimationFrame(() => {
+          const caret = insertAt + insertion.length;
+          sourceRef.current?.focus();
+          sourceRef.current?.setSelectionRange(caret, caret);
+          setSourceSelection(null);
+        });
+      } catch (reason) {
+        setSourceAssistError(String(reason));
+      } finally {
+        setSourceAssistBusy(null);
+      }
+    }, [applySourceValue, onSelectionAssist, sourceSelection]);
+
     return (
       <div
         className={[
           'editor-host',
-          'milkdown-editor',
-          readOnly ? 'milkdown-editor--preview' : '',
+          'novel-editor',
+          readOnly ? 'novel-editor--preview' : '',
           className,
         ].filter(Boolean).join(' ')}
         data-state={phase}
-        data-mode={sourceMode ? 'source' : 'rich'}
+        data-mode={activeEditingMode}
         data-disabled={disabled || readOnly ? 'true' : 'false'}
         data-empty={value.trim() ? 'false' : 'true'}
         onMouseDown={focusDocumentEnd}
@@ -856,6 +903,7 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
       >
         {!readOnly && toolbarVisible && (
           <MarkdownToolbar
+            editor={editor}
             disabled={disabled || phase !== 'ready'}
             sourceMode={sourceMode}
             onCommand={runCommand}
@@ -863,52 +911,130 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
             onSourceModeChange={updateSourceMode}
           />
         )}
-        <div ref={rootRef} className="milkdown-editor-root" />
+        <EditorRoot>
+          <EditorContent
+            className="novel-editor-root"
+            initialContent={value as unknown as JSONContent}
+            extensions={extensions}
+            editable={!(disabled || readOnly)}
+            editorProps={{
+              attributes: {
+                'aria-label': ariaLabel,
+                ...(readOnly ? {} : { 'aria-multiline': 'true' }),
+                role: readOnly ? 'document' : 'textbox',
+                'data-novel-surface': readOnly ? 'preview' : 'editor',
+              },
+              handleDOMEvents: {
+                keydown: (_, event) => handleCommandNavigation(event) || false,
+              },
+            }}
+            onBeforeCreate={() => {
+              setPhase('creating');
+            }}
+            onCreate={({ editor: createdEditor }) => {
+              setEditor(createdEditor);
+              setPhase('ready');
+              if (autoFocus && !readOnly) {
+                window.requestAnimationFrame(() => {
+                  if (sourceMode) sourceRef.current?.focus();
+                  else createdEditor.commands.focus('end');
+                });
+              }
+            }}
+            onDestroy={() => {
+              setEditor(null);
+            }}
+            onUpdate={({ editor: updatedEditor }) => {
+              const markdown = getMarkdown(updatedEditor);
+              if (markdown === valueRef.current) return;
+              valueRef.current = markdown;
+              onChangeRef.current?.(markdown);
+            }}
+          >
+            {!readOnly && !sourceMode && (
+              <>
+                <NovelSlashCommandMenu commands={availableSlashCommands} />
+                <NovelSelectionBubble disabled={disabled} onSelectionAssist={onSelectionAssist} />
+                <ImageResizer />
+              </>
+            )}
+          </EditorContent>
+        </EditorRoot>
         {!readOnly && sourceMode && (
-          <>
+          <div className="novel-source-surface">
             <pre
               ref={sourceHighlightRef}
-              className="milkdown-source-highlight"
+              className="novel-source-highlight"
               aria-hidden="true"
               dangerouslySetInnerHTML={{ __html: highlightedSource }}
             />
             <textarea
               ref={sourceRef}
-              className="milkdown-source-editor"
+              className="novel-source-editor"
               value={value}
               disabled={disabled}
               spellCheck={false}
               aria-label={`${ariaLabel} source`}
               placeholder={placeholder}
-              onChange={updateSourceText}
+              onChange={(event) => applySourceValue(event.target.value)}
               onKeyDown={handleSourceKeyDown}
+              onKeyUp={updateSourceSelection}
+              onMouseUp={updateSourceSelection}
+              onSelect={updateSourceSelection}
               onScroll={syncSourceHighlightScroll}
             />
-          </>
-        )}
-        {!readOnly && !sourceMode && slashOpen && (
-          <SlashCommandMenu
-            query={slashQuery}
-            selectedIndex={slashIndex}
-            commands={visibleSlashCommands}
-            onSelect={insertSlashCommand}
-          />
-        )}
-        {placeholder && !sourceMode && value.trim() === '' && phase !== 'failed' && (
-          <div className="milkdown-editor-placeholder" aria-hidden="true">{placeholder}</div>
-        )}
-        {phase === 'creating' && <div className="milkdown-editor-state">Preparing editor…</div>}
-        {phase === 'failed' && (
-          <div className="milkdown-editor-state is-error" role="alert">
-            Editor could not start{failure ? `: ${failure}` : '.'}
+            {sourceSelection && (
+              <div className="novel-source-selection-menu" role="toolbar" aria-label="Selected text actions">
+                <button
+                  type="button"
+                  aria-label="Copy"
+                  title="Copy"
+                  disabled={Boolean(sourceAssistBusy)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => void copySourceSelection()}
+                >
+                  <Copy size={14} />
+                </button>
+                {onSelectionAssist && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Optimize expression"
+                      title="Optimize expression"
+                      disabled={Boolean(sourceAssistBusy)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => void runSourceSelectionAssist('optimize_expression')}
+                    >
+                      <Sparkles size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Agent local edit"
+                      title="Agent local edit"
+                      disabled={Boolean(sourceAssistBusy)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => void runSourceSelectionAssist('agent_edit')}
+                    >
+                      <Bot size={14} />
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  aria-label="Comment issue"
+                  title="Comment issue"
+                  disabled={Boolean(sourceAssistBusy)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => void runSourceSelectionAssist('comment_issue')}
+                >
+                  <MessageSquareWarning size={14} />
+                </button>
+                {sourceAssistError && <span>{sourceAssistError}</span>}
+              </div>
+            )}
           </div>
         )}
-        {!readOnly && showStatus && (
-          <footer className="milkdown-editor-status" aria-label="Editor status">
-            <span>{sourceMode ? 'Source · Markdown / GFM' : 'Milkdown · Markdown / GFM'}</span>
-            <span>{characterCount.toLocaleString()} characters</span>
-          </footer>
-        )}
+        {phase === 'creating' && <div className="novel-editor-state">Preparing editor…</div>}
       </div>
     );
   },

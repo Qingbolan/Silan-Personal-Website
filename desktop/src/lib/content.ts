@@ -46,6 +46,7 @@ export const groupDocumentsByResource = (documents: EditorDocument[]) => {
         coverWebsiteUrl: document.cover_website_url || undefined,
         githubUrl: document.github_url || undefined,
         demoUrl: document.demo_url || undefined,
+        articleAttribution: document.article_attribution || undefined,
         engagement: document.engagement,
         documents: [],
         cardKind: document.entity_type === 'blog' ? 'article' : undefined,

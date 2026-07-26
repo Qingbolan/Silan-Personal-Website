@@ -68,6 +68,20 @@ func (BlogPost) Fields() []ent.Field {
 		field.String("featured_image_url").
 			Optional().
 			MaxLen(500),
+		field.String("project_name").
+			Optional().
+			MaxLen(500),
+		field.String("publication_venue").
+			Optional().
+			MaxLen(300),
+		field.String("project_url").
+			Optional().
+			MaxLen(1000),
+		// JSON array of {kind,label,url} objects authored in Blog
+		// frontmatter. It stays on the Blog row because the destinations are
+		// language-neutral identities; clients localize labels by `kind`.
+		field.Text("external_resources").
+			Optional(),
 		field.Int("reading_time_minutes").
 			Optional(),
 		field.Int("view_count").

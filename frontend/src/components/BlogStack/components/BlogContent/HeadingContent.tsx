@@ -39,8 +39,24 @@ export const HeadingContent: React.FC<HeadingContentProps> = ({
   // Font scale — wide-screen bumps each level up a notch. Font weight steps
   // down as level increases (h1 bold, h2 semibold, h3+ medium).
   const sizeClass = isWideScreen
-    ? ['', 'text-[2.25rem]', 'text-[2rem]', 'text-[1.55rem]', 'text-[1.28rem]', 'text-[1.1rem]', 'text-[0.98rem]'][level]
-    : ['', 'text-[1.9rem]', 'text-[1.72rem]', 'text-[1.35rem]', 'text-[1.12rem]', 'text-[0.98rem]', 'text-[0.9rem]'][level];
+    ? [
+        '',
+        'text-[2rem] sm:text-[2.25rem]',
+        'text-[1.65rem] sm:text-[2rem]',
+        'text-[1.35rem] sm:text-[1.55rem]',
+        'text-[1.15rem] sm:text-[1.28rem]',
+        'text-[1rem] sm:text-[1.1rem]',
+        'text-[0.94rem] sm:text-[0.98rem]',
+      ][level]
+    : [
+        '',
+        'text-[1.75rem] sm:text-[1.9rem]',
+        'text-[1.55rem] sm:text-[1.72rem]',
+        'text-[1.25rem] sm:text-[1.35rem]',
+        'text-[1.05rem] sm:text-[1.12rem]',
+        'text-[0.94rem] sm:text-[0.98rem]',
+        'text-[0.88rem] sm:text-[0.9rem]',
+      ][level];
   const weightClass = level <= 2 ? 'font-bold' : level === 3 ? 'font-semibold' : 'font-medium';
   const leadingClass = level <= 2 ? 'leading-[1.16]' : 'leading-[1.26]';
 
@@ -50,30 +66,28 @@ export const HeadingContent: React.FC<HeadingContentProps> = ({
   // title) skips the top gap since it has nothing above it to separate
   // from; deeper levels (h3+) get a smaller break since they're
   // sub-divisions of the section, not a fresh one.
-  const marginTop = level === 1 ? '0' : level === 2 ? '3.25rem' : '2.35rem';
-  const marginBottom = level === 1 ? '1.35rem' : level === 2 ? '1.05rem' : '0.9rem';
+  const spacingClass = level === 1
+    ? 'mt-0 mb-[1.35rem]'
+    : level === 2
+      ? 'mt-10 mb-[1.05rem] sm:mt-[3.25rem]'
+      : 'mt-8 mb-[0.9rem] sm:mt-[2.35rem]';
   const headingStyle: React.CSSProperties = {
     color: 'var(--color-textPrimary, #171717)',
-    fontSize: isWideScreen
-      ? ['', '2.25rem', '2rem', '1.55rem', '1.28rem', '1.1rem', '0.98rem'][level]
-      : ['', '1.9rem', '1.72rem', '1.35rem', '1.12rem', '0.98rem', '0.9rem'][level],
     fontWeight: level <= 2 ? 760 : level === 3 ? 680 : 560,
     lineHeight: level <= 2 ? 1.16 : 1.26,
-    letterSpacing: level <= 3 ? '-0.012em' : 0,
+    letterSpacing: 0,
   };
 
   return (
     <div
       id={anchorId}
-      className={`heading-content group relative ${isWideScreen ? 'wide-screen' : ''}`}
+      className={`heading-content group relative ${spacingClass} ${isWideScreen ? 'wide-screen' : ''}`}
       style={{
-        scrollMarginTop: '100px',
-        marginTop,
-        marginBottom
+        scrollMarginTop: '100px'
       }}
     >
       <Tag
-        className={`font-display pr-9 text-theme-text-primary tracking-[-0.01em] ${sizeClass} ${weightClass} ${leadingClass}`}
+        className={`break-words font-display pr-9 text-theme-text-primary tracking-normal ${sizeClass} ${weightClass} ${leadingClass}`}
         style={headingStyle}
       >
         {item.content}

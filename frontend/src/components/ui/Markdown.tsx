@@ -78,10 +78,15 @@ const unwrapSoftBreaks = (markdown: string): string => {
   return out.join('\n');
 };
 
+const normalizeStrongLabelSpacing = (markdown: string): string =>
+  markdown.replace(/\*\*([^*\r\n]{1,80}?[：:])\*\*(?=\S)/g, '**$1** ');
+
 const prepareMarkdown = (markdown: string, documentTitle?: string, sectionTitle?: string): string =>
-  unwrapSoftBreaks(
-    shiftLocalOutline(
-      stripLeadingHeading(stripLeadingHeading(markdown ?? '', documentTitle), sectionTitle),
+  normalizeStrongLabelSpacing(
+    unwrapSoftBreaks(
+      shiftLocalOutline(
+        stripLeadingHeading(stripLeadingHeading(markdown ?? '', documentTitle), sectionTitle),
+      ),
     ),
   );
 

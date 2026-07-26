@@ -8,6 +8,7 @@ import { type PaginationRequest, type ListResponse } from '../config';
 import { mapContentParts } from '../contentParts';
 import { isPrerenderRuntime } from '../../utils/runtimeContext';
 import { normalizeProjectCoverSourceType } from '../../utils/projectCover';
+import { normalizeContentTimestamp } from '../../utils/contentTimestamp';
 
 // Backend API request/response types
 interface ProjectListRequest extends PaginationRequest {
@@ -26,12 +27,6 @@ interface ProjectListResponse extends ListResponse<Project> {
   size: number;
   total_pages: number;
 }
-
-const normalizeContentTimestamp = (value: unknown): string | undefined => {
-  if (typeof value !== 'string' || !value) return undefined;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1 ? undefined : value;
-};
 
 const normalizeProject = (raw: any): Project => {
   const rawThumbnailUrl = raw.thumbnailUrl || raw.thumbnail_url || undefined;

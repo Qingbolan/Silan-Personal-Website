@@ -5,7 +5,8 @@ use crate::model::{
     DashboardItem, DeliverySyncStatus, DeployRunStatus, DeployVerificationResult, DeployedStats,
     DeploymentPlan, DeploymentScopeStatus, DocumentStateInput, EditorDocument, EditorTranslation,
     EngagementStats, EngagementStatsInput, EpisodeSeriesInput, EpisodeSeriesSource, GeoAction,
-    GeoEvidence, GeoInsightReport, GeoMetric, ImportedMediaAsset, MomentsCover, MomentsProfile,
+    GeoEvidence, GeoInsightReport, GeoMetric, ImportedMediaAsset, MarkdownSelectionAssistAction,
+    MarkdownSelectionAssistInput, MarkdownSelectionAssistResult, MomentsCover, MomentsProfile,
     MomentsSettings, RemoteContentVersion, ResumeEntryInput, ResumePartSource, ResumeProfile,
     ResumeProfileSource, ResumeSection, ResumeSocialLink, StatsSyncReport, TopContentItem,
     TrafficCountry, TrafficEvidence, TrafficSource, VersionChange, VersionCommit, VersionStatus,
@@ -13,13 +14,16 @@ use crate::model::{
 };
 use serde::Deserialize;
 use silan_viking_app::{
-    api_base_url, ContentCreator, ContentEditor, ContentKind, CreateTranslationInput,
-    DeliveryControl, EditableDocument, EditablePart, EditableSection, GeoAdvisor, IdeaCategory,
-    ImageGenerationRequest, ImageOutputFormat, ImageQuality, ImageSize, MarkdownTranslationRequest,
-    MarkdownTranslationSyncRequest, MediaLibrary, OpenAiApiKey, OpenAiImageGenerator,
-    OpenAiMarkdownTranslator, ReleaseScope, ResumeProfileUpdate, SaveLifecycleInput,
-    SaveMetadataInput, SaveTranslationInput, StatsCache, StatsError, WebsiteInsights,
-    WorkspaceContent,
+    api_base_url, ArticleImageAttributionPlan, ArticleImageAttributionResult,
+    ArticleImageAttributionWorkspace, ContentCreator, ContentEditor, ContentKind, CoverBrief,
+    CoverGenerationInput, CoverWorkspace, CreateTranslationInput, DeepSeekApiKey, DeliveryControl,
+    EditableDocument, EditablePart, EditableSection, GeneratedImageAsset, GeoAdvisor, IdeaCategory,
+    ImageGenerationRequest, ImageOutputFormat, ImageQuality, ImageSize, LanguageAuditReport,
+    LanguageAuditScope, LanguageAuditWorkflow, MarkdownSelectionEditAction,
+    MarkdownSelectionEditRequest, MarkdownTranslationRequest, MarkdownTranslationSyncRequest,
+    MediaAssetRef, MediaLibrary, OpenAiApiKey, OpenAiImageGenerator, OpenAiMarkdownTranslator,
+    ReleaseScope, ResumeProfileUpdate, SaveLifecycleInput, SaveMetadataInput, SaveTranslationInput,
+    StatsCache, StatsError, WebsiteInsights, WorkspaceContent,
 };
 use std::collections::BTreeMap;
 use std::env;
@@ -33,6 +37,18 @@ const DEFAULT_MOMENTS_COVER_HEIGHT_PX: u16 = 420;
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct GenerateImageAssetInput {
     pub(crate) prompt: String,
+    pub(crate) size: String,
+    pub(crate) quality: String,
+    pub(crate) output_format: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct GenerateCoverAssetInput {
+    pub(crate) language: String,
+    pub(crate) headline: String,
+    pub(crate) audience: String,
+    pub(crate) value: String,
+    pub(crate) visual_direction: String,
     pub(crate) size: String,
     pub(crate) quality: String,
     pub(crate) output_format: String,
@@ -100,6 +116,8 @@ pub(crate) struct DesktopWorkspace {
     creator: ContentCreator,
     workspace_content: WorkspaceContent,
     media_library: MediaLibrary,
+    cover_workspace: CoverWorkspace,
+    image_attribution: ArticleImageAttributionWorkspace,
     geo_advisor: GeoAdvisor,
     delivery_control: DeliveryControl,
 }
@@ -117,6 +135,10 @@ impl DesktopWorkspace {
             workspace_content: WorkspaceContent::open(&content_root)
                 .map_err(|error| error.to_string())?,
             media_library: MediaLibrary::open(&content_root).map_err(|error| error.to_string())?,
+            cover_workspace: CoverWorkspace::open(&content_root)
+                .map_err(|error| error.to_string())?,
+            image_attribution: ArticleImageAttributionWorkspace::open(&content_root)
+                .map_err(|error| error.to_string())?,
             geo_advisor: GeoAdvisor::open(&content_root, &db_path)
                 .map_err(|error| error.to_string())?,
             delivery_control: DeliveryControl::open(
@@ -428,6 +450,8 @@ impl DesktopWorkspace {
         Ok(DeployRunStatus {
             success: status.success,
             content_commit: status.content_commit,
+            static_published: status.static_published,
+            static_release: status.static_release,
             stdout: status.stdout,
             stderr: status.stderr,
         })
@@ -461,6 +485,45 @@ impl DesktopWorkspace {
             .into_iter()
             .flat_map(|document| map_editable_document(document, &stats))
             .collect())
+    }
+
+    pub(crate) fn review_document_language(
+        &self,
+        translation_id: &str,
+        api_key: &DeepSeekApiKey,
+    ) -> Result<LanguageAuditReport, String> {
+        LanguageAuditWorkflow::open(&self.content_root)
+            .map_err(|error| error.to_string())?
+            .review_translation(api_key, translation_id)
+            .map_err(|error| error.to_string())
+    }
+
+    pub(crate) fn review_blog_language(
+        &self,
+        slug: &str,
+        api_key: &DeepSeekApiKey,
+    ) -> Result<LanguageAuditReport, String> {
+        self.review_language_scope(LanguageAuditScope::Blog, slug, api_key)
+    }
+
+    pub(crate) fn review_episode_series_language(
+        &self,
+        series_slug: &str,
+        api_key: &DeepSeekApiKey,
+    ) -> Result<LanguageAuditReport, String> {
+        self.review_language_scope(LanguageAuditScope::EpisodeSeries, series_slug, api_key)
+    }
+
+    fn review_language_scope(
+        &self,
+        scope: LanguageAuditScope,
+        selector: &str,
+        api_key: &DeepSeekApiKey,
+    ) -> Result<LanguageAuditReport, String> {
+        LanguageAuditWorkflow::open(&self.content_root)
+            .map_err(|error| error.to_string())?
+            .review_scope(api_key, scope, Some(selector))
+            .map_err(|error| error.to_string())
     }
 
     pub(crate) fn resume_sections(&self, language: &str) -> Result<Vec<ResumeSection>, String> {
@@ -740,6 +803,7 @@ impl DesktopWorkspace {
         &self,
         source_translation_id: &str,
         target_language: &str,
+        previous_source_body: Option<&str>,
         api_key: &OpenAiApiKey,
     ) -> Result<EditorDocument, String> {
         let target_language = target_language.trim();
@@ -758,6 +822,13 @@ impl DesktopWorkspace {
         if source.language == target.language {
             return Err("Source and target languages must be different.".to_owned());
         }
+        let supported_pair = matches!(
+            (source.language.as_str(), target.language.as_str()),
+            ("en", "zh") | ("zh", "en")
+        );
+        if !supported_pair {
+            return Err("Language sync only supports en <-> zh Markdown translations.".to_owned());
+        }
         if source.content.trim().is_empty() || target.content.trim().is_empty() {
             return Err("Both source and target Markdown must exist before syncing.".to_owned());
         }
@@ -770,6 +841,9 @@ impl DesktopWorkspace {
                     source_language: source.language.clone(),
                     target_language: target.language.clone(),
                     title: document.title.clone(),
+                    previous_source_body: previous_source_body
+                        .map(str::to_owned)
+                        .filter(|body| !body.trim().is_empty()),
                     source_body: source.content.clone(),
                     existing_target_body: target.content.clone(),
                 },
@@ -798,6 +872,41 @@ impl DesktopWorkspace {
             .ok_or_else(|| format!("synced translation `{}` was not returned", target.id))
     }
 
+    pub(crate) fn edit_markdown_selection(
+        &self,
+        input: MarkdownSelectionAssistInput,
+        api_key: &OpenAiApiKey,
+    ) -> Result<MarkdownSelectionAssistResult, String> {
+        let action = match input.action {
+            MarkdownSelectionAssistAction::AgentEdit => MarkdownSelectionEditAction::AgentEdit,
+            MarkdownSelectionAssistAction::OptimizeExpression => {
+                MarkdownSelectionEditAction::OptimizeExpression
+            }
+            MarkdownSelectionAssistAction::CommentIssue => {
+                MarkdownSelectionEditAction::CommentIssue
+            }
+        };
+        let editor = OpenAiMarkdownTranslator::from_environment();
+        let output = editor
+            .edit_selection(
+                api_key,
+                &MarkdownSelectionEditRequest {
+                    language: input.language,
+                    title: input.title,
+                    selected_text: input.selected_text,
+                    before_context: input.before_context,
+                    after_context: input.after_context,
+                    instruction: input.instruction,
+                    action,
+                },
+            )
+            .map_err(|error| error.to_string())?;
+        Ok(MarkdownSelectionAssistResult {
+            replacement: output.replacement,
+            comment: output.comment,
+        })
+    }
+
     pub(crate) fn import_media_asset(
         &self,
         translation_id: &str,
@@ -811,19 +920,7 @@ impl DesktopWorkspace {
             .media_library
             .import_asset(&document.id, source_path)
             .map_err(|error| error.to_string())?;
-        let local_path = self
-            .media_library
-            .resolve_local_reference(&asset.uri)
-            .ok()
-            .map(|path| path.to_string_lossy().to_string());
-        Ok(ImportedMediaAsset {
-            markdown: asset.markdown,
-            uri: asset.uri,
-            relative_path: asset.relative_path,
-            file_name: asset.file_name,
-            byte_count: asset.byte_count,
-            local_path,
-        })
+        Ok(self.imported_media_asset(asset))
     }
 
     pub(crate) fn import_media_asset_bytes(
@@ -840,19 +937,7 @@ impl DesktopWorkspace {
             .media_library
             .import_asset_bytes(&document.id, file_name, bytes)
             .map_err(|error| error.to_string())?;
-        let local_path = self
-            .media_library
-            .resolve_local_reference(&asset.uri)
-            .ok()
-            .map(|path| path.to_string_lossy().to_string());
-        Ok(ImportedMediaAsset {
-            markdown: asset.markdown,
-            uri: asset.uri,
-            relative_path: asset.relative_path,
-            file_name: asset.file_name,
-            byte_count: asset.byte_count,
-            local_path,
-        })
+        Ok(self.imported_media_asset(asset))
     }
 
     pub(crate) fn generate_image_asset(
@@ -865,33 +950,45 @@ impl DesktopWorkspace {
             .workspace_content
             .translation(translation_id)
             .map_err(|error| error.to_string())?;
-        let request = ImageGenerationRequest {
-            prompt: input.prompt,
-            size: ImageSize::parse(&input.size).map_err(|error| error.to_string())?,
-            quality: ImageQuality::parse(&input.quality).map_err(|error| error.to_string())?,
-            output_format: ImageOutputFormat::parse(&input.output_format)
-                .map_err(|error| error.to_string())?,
-        };
-        let generated = OpenAiImageGenerator::default()
-            .generate(api_key, &request)
-            .map_err(|error| error.to_string())?;
+        let generated = generate_image(input, api_key)?;
         let asset = self
             .media_library
             .import_asset_bytes(&document.id, &generated.file_name, &generated.bytes)
             .map_err(|error| error.to_string())?;
-        let local_path = self
-            .media_library
-            .resolve_local_reference(&asset.uri)
-            .ok()
-            .map(|path| path.to_string_lossy().to_string());
-        Ok(ImportedMediaAsset {
-            markdown: asset.markdown,
-            uri: asset.uri,
-            relative_path: asset.relative_path,
-            file_name: asset.file_name,
-            byte_count: asset.byte_count,
-            local_path,
-        })
+        Ok(self.imported_media_asset(asset))
+    }
+
+    pub(crate) fn generate_cover_asset(
+        &self,
+        target_uri: &str,
+        input: GenerateCoverAssetInput,
+        api_key: &OpenAiApiKey,
+    ) -> Result<ImportedMediaAsset, String> {
+        let generated = self
+            .cover_workspace
+            .generate_cover(
+                api_key,
+                &CoverGenerationInput {
+                    target_uri: target_uri.to_owned(),
+                    brief: CoverBrief {
+                        language: input.language,
+                        headline: input.headline,
+                        audience: input.audience,
+                        value: input.value,
+                        visual_direction: input.visual_direction,
+                    },
+                    prompt_override: None,
+                    size: ImageSize::parse(&input.size).map_err(|error| error.to_string())?,
+                    quality: ImageQuality::parse(&input.quality)
+                        .map_err(|error| error.to_string())?,
+                    output_format: ImageOutputFormat::parse(&input.output_format)
+                        .map_err(|error| error.to_string())?,
+                    apply: false,
+                },
+                &self.db_path,
+            )
+            .map_err(|error| error.to_string())?;
+        Ok(self.imported_media_asset(generated.asset))
     }
 
     pub(crate) fn import_resume_media_asset(
@@ -899,7 +996,11 @@ impl DesktopWorkspace {
         file_name: &str,
         bytes: &[u8],
     ) -> Result<ImportedMediaAsset, String> {
-        self.import_asset_into("resume/assets", file_name, bytes)
+        let asset = self
+            .media_library
+            .import_resume_asset_bytes(file_name, bytes)
+            .map_err(|error| error.to_string())?;
+        Ok(self.imported_media_asset(asset))
     }
 
     pub(crate) fn import_episode_series_media_asset(
@@ -908,60 +1009,27 @@ impl DesktopWorkspace {
         file_name: &str,
         bytes: &[u8],
     ) -> Result<ImportedMediaAsset, String> {
-        self.import_asset_into(&format!("episode/{series_slug}/assets"), file_name, bytes)
+        let asset = self
+            .media_library
+            .import_episode_series_asset_bytes(series_slug, file_name, bytes)
+            .map_err(|error| error.to_string())?;
+        Ok(self.imported_media_asset(asset))
     }
 
-    fn import_asset_into(
-        &self,
-        relative_dir: &str,
-        file_name: &str,
-        bytes: &[u8],
-    ) -> Result<ImportedMediaAsset, String> {
-        let extension = Path::new(file_name)
-            .extension()
-            .and_then(|value| value.to_str())
-            .map(str::to_ascii_lowercase)
-            .ok_or_else(|| "media file must have an extension".to_owned())?;
-        const SUPPORTED_EXTENSIONS: &[&str] =
-            &["png", "jpg", "jpeg", "gif", "svg", "webp", "avif", "ico"];
-        if !SUPPORTED_EXTENSIONS.contains(&extension.as_str()) {
-            return Err(format!("unsupported media extension `{extension}`"));
+    fn imported_media_asset(&self, asset: MediaAssetRef) -> ImportedMediaAsset {
+        let local_path = self
+            .media_library
+            .resolve_local_reference(&asset.uri)
+            .ok()
+            .map(|path| path.to_string_lossy().to_string());
+        ImportedMediaAsset {
+            markdown: asset.markdown,
+            uri: asset.uri,
+            relative_path: asset.relative_path,
+            file_name: asset.file_name,
+            byte_count: asset.byte_count,
+            local_path,
         }
-
-        let stem = sanitize_asset_stem(
-            Path::new(file_name)
-                .file_stem()
-                .and_then(|value| value.to_str())
-                .unwrap_or("asset"),
-        );
-        let assets_dir = self.content_root.join("resources").join(relative_dir);
-        fs::create_dir_all(&assets_dir)
-            .map_err(|error| format!("cannot create `{}`: {error}", assets_dir.display()))?;
-
-        let mut target = assets_dir.join(format!("{stem}.{extension}"));
-        let mut suffix = 2usize;
-        while target.exists() {
-            target = assets_dir.join(format!("{stem}-{suffix}.{extension}"));
-            suffix += 1;
-        }
-        fs::write(&target, bytes)
-            .map_err(|error| format!("cannot write `{}`: {error}", target.display()))?;
-
-        let file_name = target
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("asset")
-            .to_owned();
-        let relative_path = format!("{relative_dir}/{file_name}");
-        let uri = format!("silan://resources/{relative_path}");
-        Ok(ImportedMediaAsset {
-            markdown: format!("![{}]({uri})", alt_text_for_asset(&file_name)),
-            uri,
-            relative_path,
-            file_name,
-            byte_count: bytes.len() as u64,
-            local_path: Some(target.to_string_lossy().to_string()),
-        })
     }
 
     pub(crate) fn geo_insights(&self, translation_id: &str) -> Result<GeoInsightReport, String> {
@@ -1056,6 +1124,7 @@ impl DesktopWorkspace {
                     cover_website_url: metadata.cover_website_url,
                     github_url: metadata.github_url,
                     demo_url: metadata.demo_url,
+                    article_attribution: metadata.article_attribution,
                     expected_revision: expected_revision.to_owned(),
                 },
                 &self.db_path,
@@ -1070,6 +1139,24 @@ impl DesktopWorkspace {
                     .any(|value| value.id == translation_id)
             })
             .ok_or_else(|| format!("saved metadata `{translation_id}` was not returned"))
+    }
+
+    pub(crate) fn preview_article_image_attribution(
+        &self,
+        target_uri: &str,
+    ) -> Result<ArticleImageAttributionPlan, String> {
+        self.image_attribution
+            .plan(target_uri, None, None)
+            .map_err(|error| error.to_string())
+    }
+
+    pub(crate) fn apply_article_image_attribution(
+        &self,
+        target_uri: &str,
+    ) -> Result<ArticleImageAttributionResult, String> {
+        self.image_attribution
+            .apply(target_uri, None, None)
+            .map_err(|error| error.to_string())
     }
 
     pub(crate) fn save_engagement_stats(
@@ -1299,6 +1386,22 @@ impl DesktopWorkspace {
     }
 }
 
+fn generate_image(
+    input: GenerateImageAssetInput,
+    api_key: &OpenAiApiKey,
+) -> Result<GeneratedImageAsset, String> {
+    let request = ImageGenerationRequest {
+        prompt: input.prompt,
+        size: ImageSize::parse(&input.size).map_err(|error| error.to_string())?,
+        quality: ImageQuality::parse(&input.quality).map_err(|error| error.to_string())?,
+        output_format: ImageOutputFormat::parse(&input.output_format)
+            .map_err(|error| error.to_string())?,
+    };
+    OpenAiImageGenerator::default()
+        .generate(api_key, &request)
+        .map_err(|error| error.to_string())
+}
+
 #[derive(Debug, Clone)]
 struct DesktopWorkspacePaths {
     content_root: PathBuf,
@@ -1518,33 +1621,6 @@ fn json_text<'a>(value: &'a serde_json::Value, key: &str) -> Option<&'a str> {
         .filter(|text| !text.is_empty())
 }
 
-fn sanitize_asset_stem(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for ch in value.chars() {
-        if ch.is_ascii_alphanumeric() {
-            out.push(ch.to_ascii_lowercase());
-        } else if matches!(ch, '-' | '_' | '.') {
-            out.push(ch);
-        } else if ch.is_whitespace() {
-            out.push('-');
-        }
-    }
-    let out = out.trim_matches(['-', '_', '.']).to_owned();
-    if out.is_empty() {
-        "asset".to_owned()
-    } else {
-        out
-    }
-}
-
-fn alt_text_for_asset(file_name: &str) -> String {
-    Path::new(file_name)
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .unwrap_or("asset")
-        .replace(['-', '_'], " ")
-}
-
 fn avatar_label(display_name: &str) -> String {
     display_name
         .split_whitespace()
@@ -1596,6 +1672,7 @@ fn map_editable_document(
         cover_website_url,
         github_url,
         demo_url,
+        article_attribution,
         date,
         pinned,
         parts,
@@ -1638,6 +1715,7 @@ fn map_editable_document(
                 cover_website_url: cover_website_url.clone(),
                 github_url: github_url.clone(),
                 demo_url: demo_url.clone(),
+                article_attribution: article_attribution.clone(),
                 engagement: item_engagement.clone(),
                 translations: translations
                     .into_iter()

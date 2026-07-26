@@ -2,7 +2,11 @@ package blog
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/url"
+	"sort"
+	"strings"
 
 	"silan-backend/internal/ent"
 	"silan-backend/internal/ent/itempart"
@@ -80,28 +84,109 @@ func blogDetailData(
 	}
 
 	return &types.BlogData{
-		ID:               post.ID,
-		Title:            title,
-		Slug:             post.Slug,
-		Author:           author,
-		PublishDate:      post.PublishedAt,
-		UpdatedAt:        post.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		ReadTime:         readTime,
-		Category:         post.CategoryID,
-		Tags:             tags,
-		Content:          []types.BlogContent{{Type: "text", Content: body, ID: post.ID + "-content"}},
-		Likes:            int64(counts.Likes),
-		IsLikedByUser:    liked,
-		Likers:           UpdateLikers(likers),
-		Views:            int64(counts.Views),
-		Summary:          excerpt,
-		FeaturedImageURL: post.FeaturedImageURL,
-		Type:             string(post.ContentType),
-		SeriesID:         seriesID,
-		SeriesSlug:       seriesID,
-		SeriesTitle:      seriesTitle,
-		EpisodeNumber:    post.SeriesOrder,
+		ID:                post.ID,
+		Title:             title,
+		Slug:              post.Slug,
+		Author:            author,
+		PublishDate:       post.PublishedAt,
+		UpdatedAt:         post.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ReadTime:          readTime,
+		Category:          post.CategoryID,
+		Tags:              tags,
+		Content:           []types.BlogContent{{Type: "text", Content: body, ID: post.ID + "-content"}},
+		Likes:             int64(counts.Likes),
+		IsLikedByUser:     liked,
+		Likers:            UpdateLikers(likers),
+		Views:             int64(counts.Views),
+		Summary:           excerpt,
+		FeaturedImageURL:  blogFeaturedImageURL(post, language),
+		FeaturedImageURLs: blogFeaturedImageURLs(post),
+		ProjectName:       post.ProjectName,
+		PublicationVenue:  post.PublicationVenue,
+		ProjectURL:        post.ProjectURL,
+		ExternalResources: parseBlogResources(post.ExternalResources),
+		Type:              string(post.ContentType),
+		SeriesID:          seriesID,
+		SeriesSlug:        seriesID,
+		SeriesTitle:       seriesTitle,
+		EpisodeNumber:     post.SeriesOrder,
 	}, nil
+}
+
+// parseBlogResources turns the source-authored JSON projection into the
+// public typed contract. Malformed or unsafe rows are omitted individually so
+// one stale attachment never prevents the article itself from loading.
+func parseBlogResources(raw string) []types.BlogResource {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	var resources []types.BlogResource
+	if err := json.Unmarshal([]byte(raw), &resources); err != nil {
+		return nil
+	}
+	filtered := make([]types.BlogResource, 0, len(resources))
+	seen := make(map[string]struct{}, len(resources))
+	for _, resource := range resources {
+		resource.Kind = strings.TrimSpace(resource.Kind)
+		resource.Label = strings.TrimSpace(resource.Label)
+		resource.URL = strings.TrimSpace(resource.URL)
+		parsed, err := url.ParseRequestURI(resource.URL)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+			continue
+		}
+		if _, exists := seen[resource.URL]; exists {
+			continue
+		}
+		seen[resource.URL] = struct{}{}
+		filtered = append(filtered, resource)
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
+	return filtered
+}
+
+// blogFeaturedImageURLs exposes only explicitly authored locale variants.
+// The main-table value is a migration fallback, not a language assignment.
+func blogFeaturedImageURLs(post *ent.BlogPost) map[string]string {
+	images := make(map[string]string)
+	for _, translation := range post.Edges.Translations {
+		if translation.FeaturedImageURL != "" {
+			images[translation.LanguageCode] = translation.FeaturedImageURL
+		}
+	}
+	if len(images) == 0 {
+		return nil
+	}
+	return images
+}
+
+// blogFeaturedImageURL resolves the cover for one response language. The
+// requested language wins, then English, then the legacy shared cover. A
+// final deterministic translation fallback keeps older partial datasets
+// usable without assigning the wrong locale when a shared cover exists.
+func blogFeaturedImageURL(post *ent.BlogPost, language string) string {
+	byLanguage := blogFeaturedImageURLs(post)
+	requested := resolveLang(language)
+	if image := byLanguage[requested]; image != "" {
+		return image
+	}
+	if image := byLanguage["en"]; image != "" {
+		return image
+	}
+	if post.FeaturedImageURL != "" {
+		return post.FeaturedImageURL
+	}
+
+	languages := make([]string, 0, len(byLanguage))
+	for languageCode := range byLanguage {
+		languages = append(languages, languageCode)
+	}
+	sort.Strings(languages)
+	if len(languages) > 0 {
+		return byLanguage[languages[0]]
+	}
+	return ""
 }
 
 // pickBlogTranslation selects the best blog translation for a language:

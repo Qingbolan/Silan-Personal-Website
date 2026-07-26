@@ -36,6 +36,7 @@
 | [`15-agent-self-evolution.md`](./15-agent-self-evolution.md) | Three-layer design + gates for agents that evolve a project on their own; the E1–E3 stages (wired into `04`) | settled |
 | [`16-terminal-artifact-delivery-deploy.md`](./16-terminal-artifact-delivery-deploy.md) | Delivery and deployment of the terminal-state artefact | settled |
 | [`17-single-source-of-truth.md`](./17-single-source-of-truth.md) | **SSOT** — drift-prone global definitions pinned in one place + the consistency self-check checklist (cures doc drift) | settled |
+| [`18-language-review-workflow.md`](./18-language-review-workflow.md) | Fixed DeepSeek language-review workflow shared by CLI and Desktop, including target, state, privacy, and authority contracts | settled |
 
 ## Reading order
 

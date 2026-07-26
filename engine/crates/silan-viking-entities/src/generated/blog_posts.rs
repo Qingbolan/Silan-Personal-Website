@@ -26,6 +26,14 @@ pub struct Model {
     pub is_featured: String,
     #[sea_orm(column_type = "Text", nullable)]
     pub featured_image_url: Option<String>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub project_name: Option<String>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub publication_venue: Option<String>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub project_url: Option<String>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub external_resources: Option<String>,
     pub reading_time_minutes: Option<i32>,
     pub view_count: i32,
     pub like_count: i32,

@@ -1,16 +1,21 @@
 //! Thin Tauri command adapter.
 
-use crate::application::{DesktopWorkspace, GenerateImageAssetInput};
+use crate::application::{DesktopWorkspace, GenerateCoverAssetInput, GenerateImageAssetInput};
+use crate::credential_store::ApiCredentialStatus;
+use crate::deepseek_credentials::DesktopDeepSeekCredentials;
 use crate::model::{
     ContentMetadataInput, DashboardData, DeliverySyncStatus, DeployRunStatus,
     DeployVerificationResult, DeploymentPlan, DocumentStateInput, EditorDocument, EngagementStats,
     EngagementStatsInput, EpisodeSeriesInput, EpisodeSeriesSource, GeoInsightReport,
-    ImportedMediaAsset, MomentsSettings, ResumeEntryInput, ResumePartSource, ResumeProfile,
-    ResumeProfileSource, ResumeSection, StatsSyncReport, VersionStatus, WorkspaceFileChange,
-    WorkspacePreferences,
+    ImportedMediaAsset, MarkdownSelectionAssistInput, MarkdownSelectionAssistResult,
+    MomentsSettings, ResumeEntryInput, ResumePartSource, ResumeProfile, ResumeProfileSource,
+    ResumeSection, StatsSyncReport, VersionStatus, WorkspaceFileChange, WorkspacePreferences,
 };
-use crate::openai_credentials::{DesktopOpenAiCredentials, OpenAiCredentialStatus};
-use silan_viking_app::{AudioTranscriptionRequest, OpenAiAudioTranscriber};
+use crate::openai_credentials::DesktopOpenAiCredentials;
+use silan_viking_app::{
+    ArticleImageAttributionPlan, ArticleImageAttributionResult, AudioTranscriptionRequest,
+    LanguageAuditReport, OpenAiAudioTranscriber,
+};
 
 #[tauri::command]
 pub(crate) fn list_documents() -> Result<Vec<EditorDocument>, String> {
@@ -23,14 +28,14 @@ pub(crate) fn get_dashboard() -> Result<DashboardData, String> {
 }
 
 #[tauri::command]
-pub(crate) async fn get_openai_credentials() -> Result<OpenAiCredentialStatus, String> {
+pub(crate) async fn get_openai_credentials() -> Result<ApiCredentialStatus, String> {
     run_background("OpenAI credential status", DesktopOpenAiCredentials::status).await
 }
 
 #[tauri::command]
 pub(crate) async fn save_openai_credentials(
     api_key: String,
-) -> Result<OpenAiCredentialStatus, String> {
+) -> Result<ApiCredentialStatus, String> {
     run_background("OpenAI credential verification", move || {
         DesktopOpenAiCredentials::verify_and_store(api_key)
     })
@@ -38,7 +43,7 @@ pub(crate) async fn save_openai_credentials(
 }
 
 #[tauri::command]
-pub(crate) async fn test_openai_credentials() -> Result<OpenAiCredentialStatus, String> {
+pub(crate) async fn test_openai_credentials() -> Result<ApiCredentialStatus, String> {
     run_background(
         "OpenAI credential verification",
         DesktopOpenAiCredentials::verify_stored,
@@ -47,11 +52,77 @@ pub(crate) async fn test_openai_credentials() -> Result<OpenAiCredentialStatus, 
 }
 
 #[tauri::command]
-pub(crate) async fn remove_openai_credentials() -> Result<OpenAiCredentialStatus, String> {
+pub(crate) async fn remove_openai_credentials() -> Result<ApiCredentialStatus, String> {
     run_background(
         "OpenAI credential removal",
         DesktopOpenAiCredentials::remove,
     )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn get_deepseek_credentials() -> Result<ApiCredentialStatus, String> {
+    run_background(
+        "DeepSeek credential status",
+        DesktopDeepSeekCredentials::status,
+    )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn save_deepseek_credentials(
+    api_key: String,
+) -> Result<ApiCredentialStatus, String> {
+    run_background("DeepSeek credential verification", move || {
+        DesktopDeepSeekCredentials::verify_and_store(api_key)
+    })
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn test_deepseek_credentials() -> Result<ApiCredentialStatus, String> {
+    run_background(
+        "DeepSeek credential verification",
+        DesktopDeepSeekCredentials::verify_stored,
+    )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn remove_deepseek_credentials() -> Result<ApiCredentialStatus, String> {
+    run_background(
+        "DeepSeek credential removal",
+        DesktopDeepSeekCredentials::remove,
+    )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn review_document_language(id: String) -> Result<LanguageAuditReport, String> {
+    run_background("DeepSeek document language review", move || {
+        let api_key = DesktopDeepSeekCredentials::load_key()?;
+        DesktopWorkspace::from_environment()?.review_document_language(&id, &api_key)
+    })
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn review_blog_language(slug: String) -> Result<LanguageAuditReport, String> {
+    run_background("DeepSeek Blog language review", move || {
+        let api_key = DesktopDeepSeekCredentials::load_key()?;
+        DesktopWorkspace::from_environment()?.review_blog_language(&slug, &api_key)
+    })
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn review_episode_series_language(
+    series_slug: String,
+) -> Result<LanguageAuditReport, String> {
+    run_background("DeepSeek episode-series language review", move || {
+        let api_key = DesktopDeepSeekCredentials::load_key()?;
+        DesktopWorkspace::from_environment()?.review_episode_series_language(&series_slug, &api_key)
+    })
     .await
 }
 
@@ -187,14 +258,27 @@ pub(crate) async fn generate_missing_translation(
 pub(crate) async fn sync_counterpart_translation(
     id: String,
     target_language: String,
+    previous_source_body: Option<String>,
 ) -> Result<EditorDocument, String> {
     run_background("AI translation sync", move || {
         let api_key = DesktopOpenAiCredentials::load_key()?;
         DesktopWorkspace::from_environment()?.sync_counterpart_translation(
             &id,
             &target_language,
+            previous_source_body.as_deref(),
             &api_key,
         )
+    })
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn edit_markdown_selection(
+    input: MarkdownSelectionAssistInput,
+) -> Result<MarkdownSelectionAssistResult, String> {
+    run_background("AI local Markdown selection edit", move || {
+        let api_key = DesktopOpenAiCredentials::load_key()?;
+        DesktopWorkspace::from_environment()?.edit_markdown_selection(input, &api_key)
     })
     .await
 }
@@ -224,6 +308,38 @@ pub(crate) async fn generate_image_asset(
 }
 
 #[tauri::command]
+pub(crate) async fn generate_cover_asset(
+    target_uri: String,
+    language: String,
+    headline: String,
+    audience: String,
+    value: String,
+    visual_direction: Option<String>,
+    size: Option<String>,
+    quality: Option<String>,
+    output_format: Option<String>,
+) -> Result<ImportedMediaAsset, String> {
+    run_background("AI cover generation", move || {
+        let api_key = DesktopOpenAiCredentials::load_key()?;
+        DesktopWorkspace::from_environment()?.generate_cover_asset(
+            &target_uri,
+            GenerateCoverAssetInput {
+                language,
+                headline,
+                audience,
+                value,
+                visual_direction: visual_direction.unwrap_or_default(),
+                size: size.unwrap_or_else(|| "1536x1024".to_owned()),
+                quality: quality.unwrap_or_else(|| "medium".to_owned()),
+                output_format: output_format.unwrap_or_else(|| "png".to_owned()),
+            },
+            &api_key,
+        )
+    })
+    .await
+}
+
+#[tauri::command]
 pub(crate) fn save_document_state(
     id: String,
     state: DocumentStateInput,
@@ -239,6 +355,23 @@ pub(crate) fn save_content_metadata(
     expected_revision: String,
 ) -> Result<EditorDocument, String> {
     DesktopWorkspace::from_environment()?.save_content_metadata(&id, metadata, &expected_revision)
+}
+
+#[tauri::command]
+pub(crate) fn preview_article_image_attribution(
+    target_uri: String,
+) -> Result<ArticleImageAttributionPlan, String> {
+    DesktopWorkspace::from_environment()?.preview_article_image_attribution(&target_uri)
+}
+
+#[tauri::command]
+pub(crate) async fn apply_article_image_attribution(
+    target_uri: String,
+) -> Result<ArticleImageAttributionResult, String> {
+    run_background("article image attribution", move || {
+        DesktopWorkspace::from_environment()?.apply_article_image_attribution(&target_uri)
+    })
+    .await
 }
 
 #[tauri::command]

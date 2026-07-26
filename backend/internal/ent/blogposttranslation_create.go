@@ -62,6 +62,20 @@ func (bptc *BlogPostTranslationCreate) SetNillableExcerpt(s *string) *BlogPostTr
 	return bptc
 }
 
+// SetFeaturedImageURL sets the "featured_image_url" field.
+func (bptc *BlogPostTranslationCreate) SetFeaturedImageURL(s string) *BlogPostTranslationCreate {
+	bptc.mutation.SetFeaturedImageURL(s)
+	return bptc
+}
+
+// SetNillableFeaturedImageURL sets the "featured_image_url" field if the given value is not nil.
+func (bptc *BlogPostTranslationCreate) SetNillableFeaturedImageURL(s *string) *BlogPostTranslationCreate {
+	if s != nil {
+		bptc.SetFeaturedImageURL(*s)
+	}
+	return bptc
+}
+
 // SetContent sets the "content" field.
 func (bptc *BlogPostTranslationCreate) SetContent(s string) *BlogPostTranslationCreate {
 	bptc.mutation.SetContent(s)
@@ -183,6 +197,11 @@ func (bptc *BlogPostTranslationCreate) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "BlogPostTranslation.title": %w`, err)}
 		}
 	}
+	if v, ok := bptc.mutation.FeaturedImageURL(); ok {
+		if err := blogposttranslation.FeaturedImageURLValidator(v); err != nil {
+			return &ValidationError{Name: "featured_image_url", err: fmt.Errorf(`ent: validator failed for field "BlogPostTranslation.featured_image_url": %w`, err)}
+		}
+	}
 	if len(bptc.mutation.BlogPostIDs()) == 0 {
 		return &ValidationError{Name: "blog_post", err: errors.New(`ent: missing required edge "BlogPostTranslation.blog_post"`)}
 	}
@@ -231,6 +250,10 @@ func (bptc *BlogPostTranslationCreate) createSpec() (*BlogPostTranslation, *sqlg
 	if value, ok := bptc.mutation.Excerpt(); ok {
 		_spec.SetField(blogposttranslation.FieldExcerpt, field.TypeString, value)
 		_node.Excerpt = value
+	}
+	if value, ok := bptc.mutation.FeaturedImageURL(); ok {
+		_spec.SetField(blogposttranslation.FieldFeaturedImageURL, field.TypeString, value)
+		_node.FeaturedImageURL = value
 	}
 	if value, ok := bptc.mutation.Content(); ok {
 		_spec.SetField(blogposttranslation.FieldContent, field.TypeString, value)

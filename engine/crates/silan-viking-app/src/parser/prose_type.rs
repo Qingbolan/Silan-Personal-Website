@@ -16,17 +16,6 @@ use super::parsed::{Parsed, ParsedBuilder};
 use crate::schema::{Schema, TypeSpec};
 use silan_viking_content::{ContentKind, Identified, Item, Part};
 
-/// Whether a SCHEMA field is translatable (lands in a `*_translation` row)
-/// or language-neutral (lands in the main table).
-///
-/// Per `10` §10.3: `title` and any `text`-typed field carry per-language
-/// content; everything else (slug, status, dates, enums, urls, bools,
-/// numbers, lists) is language-neutral. `relations` is handled separately
-/// and never flows through this classifier.
-fn is_translatable(field_name: &str, type_decl: &str) -> bool {
-    field_name == "title" || type_decl == "text"
-}
-
 /// The shared prose-type parsing engine.
 ///
 /// It holds a reference to the loaded [`Schema`]; each call is driven by the
@@ -47,7 +36,7 @@ impl<'s> ProseTypeParser<'s> {
     /// 1. find the canonical-language file of the first Part and read the
     ///    frontmatter from it;
     /// 2. split frontmatter fields into language-neutral (`main`) and
-    ///    translatable (per-language) by [`is_translatable`];
+    ///    translatable (per-language) according to the SCHEMA field spec;
     /// 3. for every Part, store each language's body as a prose body;
     /// 4. collect declared `relations`.
     pub fn parse(&self, expected: ContentKind, item: &Item) -> Result<Parsed, ParseError> {
@@ -140,7 +129,7 @@ impl<'s> ProseTypeParser<'s> {
                     continue;
                 }
                 if let Some(value) = frontmatter::coerce(&map, field) {
-                    if is_translatable(&field.name, &field.type_decl) {
+                    if field.translatable {
                         builder.put_lang_field(
                             part.canonical_lang().clone(),
                             field.name.clone(),
@@ -166,7 +155,7 @@ impl<'s> ProseTypeParser<'s> {
                 if field.name == "relations" {
                     continue;
                 }
-                if !is_translatable(&field.name, &field.type_decl) {
+                if !field.translatable {
                     continue;
                 }
                 if let Some(value) = frontmatter::coerce(&map, field) {

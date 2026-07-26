@@ -22,6 +22,8 @@ const (
 	FieldTitle = "title"
 	// FieldExcerpt holds the string denoting the excerpt field in the database.
 	FieldExcerpt = "excerpt"
+	// FieldFeaturedImageURL holds the string denoting the featured_image_url field in the database.
+	FieldFeaturedImageURL = "featured_image_url"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldLanguageCode,
 	FieldTitle,
 	FieldExcerpt,
+	FieldFeaturedImageURL,
 	FieldContent,
 	FieldCreatedAt,
 }
@@ -76,6 +79,8 @@ var (
 	LanguageCodeValidator func(string) error
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	TitleValidator func(string) error
+	// FeaturedImageURLValidator is a validator for the "featured_image_url" field. It is called by the builders before save.
+	FeaturedImageURLValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -108,6 +113,11 @@ func ByTitle(opts ...sql.OrderTermOption) OrderOption {
 // ByExcerpt orders the results by the excerpt field.
 func ByExcerpt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExcerpt, opts...).ToFunc()
+}
+
+// ByFeaturedImageURL orders the results by the featured_image_url field.
+func ByFeaturedImageURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeaturedImageURL, opts...).ToFunc()
 }
 
 // ByContent orders the results by the content field.

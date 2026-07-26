@@ -1,149 +1,192 @@
-# VISION — terminal-state polestar
+# VISION — Keep the Public Record Current
 
-> This is Silan Personal Website's polestar document.
-> Every architectural decision, every PR, every trade-off answers the
-> same question: **does it bring us closer to this terminal state, or
-> further from it?**
->
-> This document is "what we are building" and "why"; the numbered
-> documents under `docs/silan-viking/` are "how" — start at
-> `OVERVIEW.md`, then object model, CLI/MCP, milestones. When they
-> conflict, this document wins.
+> A new research result should become an accurate public explanation before
+> its context goes cold.
 
----
+Silan Viking exists to shorten that update. A technical researcher who is
+comfortable with Markdown, Git, Docker, and self-hosted tooling should be able
+to record one result, connect it to the right project and résumé evidence,
+review every public claim, publish deliberately, and verify what reached the
+web without rebuilding the website workflow for every update.
 
-## 1. One sentence
+This document describes the product direction and its non-negotiable
+boundaries. The numbered documents under `docs/silan-viking/` describe the
+implementation.
 
-> **One person and one agent, jointly tending a knowledge body that
-> grows by itself.**
-> Outward, it is a personal website; inward, it is a second brain.
+## 1. The Recurring Job
 
-This is not a "personal website project" and not a "CMS". It is a
-**knowledge organism** — it has a lifecycle, evolves, can be searched,
-can tidy itself. The website is just the public-facing cross-section.
+The product starts from one event:
 
----
+- an experiment changes the conclusion;
+- a paper is accepted;
+- a benchmark, archive, or release provides stronger evidence;
+- a project ships a meaningful milestone;
+- a résumé claim becomes stale or gains proof.
 
-## 2. What it looks like in three years
+The researcher does not want to rebuild a site. They want the current claim,
+evidence, uncertainty, and next step to be findable by the people who need
+them.
 
-Imagine an evening in 2029:
+Today that update is fragmented across notes, an article draft, project page,
+résumé, images, language variants, search metadata, deployment, and a fresh
+Agent conversation. None of the steps is individually difficult. The setup
+cost across all of them is enough to delay the public record.
 
-- An idea pops up; you write three lines of markdown into
-  `content/resources/ideas/`.
-- A few months later it has grown into a blog post; a year later into
-  a project; you also recorded a vlog series in between. These are not
-  four orphaned pieces of content — there are **directed evolution
-  edges** between them: `project --evolved-from--> idea`. On the site,
-  visitors can follow the chain and see how an idea took shape.
-- You never hand-write the site's summaries, translations, indexes,
-  or changelogs. An agent does that — it is the **gardener** of this
-  knowledge body: it searches, lints, drafts, settles your working
-  sessions into memory.
-- The agent can only **propose** changes to your published content;
-  you review and merge — you are always the author.
-- The agent's own memory **self-evolves**: at the end of each session
-  it writes what it learned into `silan://agent/`.
-- The truth of the whole organism is **plain text, in Git**. Any post
-  on any day can be diffed, rolled back, replayed.
-- All of this runs on one Rust engine, `silan-viking`; the addressing
-  language is `silan://`. Outward it drives the website; inward it is
-  a skill an agent can mount.
+## 2. The End State
 
-**That evening, you do not "manage" this system. You live alongside it.**
+Imagine a Friday afternoon after a useful result:
 
----
+1. The researcher dictates the first accurate sentence while the evidence is
+   still open.
+2. The sentence becomes a dated moment with stable identity, not a disposable
+   chat message.
+3. A separate article explains what changed, what supports it, and what
+   remains uncertain.
+4. The article links to the project and the résumé evidence without forcing
+   one paragraph to serve every reader.
+5. An Agent can recover related records and prepare a maintenance proposal.
+6. The researcher reviews the diff and decides what becomes public.
+7. The system validates and deploys the reviewed state.
+8. The researcher can see whether that content version reached the site and
+   whether people or classified crawlers requested it.
 
-## 3. What "elegant" means — the terminal-state rubric
+The end state is not "a website that grows by itself." It is a public research
+record that is easier to keep honest than to neglect.
 
-Elegant is not pretty UI. Elegant = **the whole knowledge body follows
-one ontology** — no special cases, no patches, no "for historical
-reasons". Five concrete tests:
+## 3. The Product Boundary
 
-### 3.1 Content is an object, not a row in a table
+### Primary user
 
-blog / idea / project / series are not four tables in a database, they
-are **domain objects** — with identity, methods, and encapsulation
-boundaries. They share an abstract `ContextNode`. Adding a new content
-type = implement a trait, not "add a table and edit ten places".
+An AI, ML, or systems researcher, PhD student, or research engineer who:
 
-### 3.2 Relations are first-class, directed, typed
+- has several public research or engineering artifacts;
+- updates work more than once a year;
+- maintains a personal site, project pages, and résumé;
+- can use Markdown, Git, Docker, and self-hosted infrastructure;
+- cares whether search engines and answer engines can retrieve an accurate
+  explanation.
 
-"This blog documents that idea" or "this project evolved from that
-idea" — these are **directed, typed edges**, as important as the
-content itself (Karpathy: "the links are as valuable as the documents").
-Not a meaningless `links: [...]` list.
+### Public v1.0 release
 
-### 3.3 Memory and publication, one engine, two worlds
+- Rust CLI for macOS and Linux.
+- Earlier `idea` / `update` content naming plus articles, projects, episodes,
+  résumé, relations, proposals, indexing, site tooling, stats, and MCP.
+- A clean workspace can create and validate a private article with ordinary
+  files.
 
-Outward-facing content (`silan://resources/`) and the agent's inward
-memory (`silan://agent/`) are **two trees, one engine**. Same search,
-same layering, same abilities. The only difference is one property:
-`is_mutable` — published content is read-only, memory updates itself.
+### Current main branch
 
-### 3.4 Human and agent collaborate through the same abilities
+- Versioned Markdown/TOML content source and rebuildable SQLite projection.
+- Moments, articles, projects, episode series, media, and résumé data.
+- Structured desktop editing, dictation, language variants, and publication
+  state from a source checkout.
+- Local preview and configured production deployment.
+- Stable routes, metadata, sitemap, `llms.txt`, and structured data.
+- Deployed-version checks, interaction data, and heuristic crawler
+  attribution.
+- MCP retrieval and reviewable change proposals.
 
-The agent is not a side-script. It uses **exactly the same ability
-surface** as you do: search, lint, draft, propose. The difference is
-the **authority boundary**: certain verbs (`accept` / `reject` /
-`deploy`) belong to the human, enforced by encapsulation, not by
-prompt wording.
+The main-branch Moment/Desktop/onboarding capabilities are source-only until a
+post-v1.0 release is published.
 
-### 3.5 Truth is plain text; derived artefacts are rebuildable
+### Current limits
 
-`content/*.md` is the only source of truth. The database, summaries,
-indexes, the website — all derived. Any of them can be deleted and
-rebuilt from markdown. This guarantees: Git is the version control,
-rollback is deterministic, no state hides in a database somewhere.
+- Git is the practical cross-machine synchronization path.
+- Packaged desktop onboarding is not yet the default installation experience.
+- Search and AI signals measure machine reachability, not understanding,
+  ranking, citation, or share of voice.
+- New workspaces need explicit hosting and deployment configuration.
+- Agent proposals do not carry publication or production-deployment authority.
 
-> **One-sentence test for "elegant":** when adding something new to
-> this system, if you find yourself patching, special-casing, or
-> writing "for historical reasons", it is not elegant yet. Elegant =
-> the new thing falls naturally into the existing ontology.
+### Future directions
 
----
+- Packaged desktop onboarding.
+- Direct cross-device continuation without rebuilding context.
+- ORCID, DOI, arXiv, BibTeX, and GitHub evidence import.
+- Claim/evidence consistency checks across article, project, and résumé.
+- External prompt, mention, citation, and answer-accuracy monitoring.
 
-## 4. Three non-negotiable principles
+Future directions stay labeled as such until a user can complete them in a
+clean workspace.
 
-No matter how the implementation changes, these three do not give way:
+## 4. The Three Invariants
 
-1. **Markdown is the source of truth.** You write markdown; everything
-   else is derived. The agent cannot bypass it.
-2. **You are the author, the agent is the gardener.** The agent can
-   search, organise, draft, propose; whether something enters the
-   source of truth is always your `accept`.
-3. **Back-cast from the terminal state; don't forecast from today.**
-   Every decision asks "what does the terminal state need?" first,
-   then "how do we land that today?" "We'll just make do for now" is
-   forbidden — making do is drifting from the terminal state.
+### 4.1 Authored truth remains inspectable
 
----
+Markdown/TOML and media are the authored source. Databases, indexes, public
+pages, and machine-readable files are derived and rebuildable.
 
-## 5. Where we are, where we are going
+**Failure prevented:** a public claim exists only in an opaque database or
+interface and cannot be diffed, reviewed, or restored.
 
-| | Today | Terminal state |
-|---|---|---|
-| Content | scattered markdown + manual sync via Python `silan` | `silan://` knowledge body, object-shaped, with relations |
-| Backend | Go API (security-fixed) reading SQLite | unchanged — SQLite is a read-only derived artefact emitted by the engine |
-| Engine | Python `silan` (procedural, conventions buried in code) | Rust `silan-viking` (OOP, SCHEMA is the contract) |
-| Agent | none | through MCP / EasyNet skill, gardener role |
-| Memory | none | `silan://agent/` self-evolving |
-| Versioning | plain Git | content in its own repo + release tags + deterministic rollback |
+**Recovery:** rebuild derived state from the source commit.
 
-**Route**: `docs/silan-viking/` is the authoritative design —
-`OVERVIEW.md` gives the one-glance picture; `00`–`09` expand each
-piece (object model / CLI / MCP / tests / end-to-end / observability);
-`04-milestones.md` lays out the implementation track. Every milestone
-is independently shippable, and every step moves toward that 2029
-evening in §2.
+### 4.2 Related records keep separate identities
 
----
+A moment, article, project update, and résumé claim serve different readers.
+They remain separate records connected by typed relationships.
 
-## 6. How to use this document
+**Failure prevented:** copy-pasted explanations drift while their provenance
+disappears.
 
-- Before a new PR or new design, re-read the five tests in §3 and
-  check that you are making the system more elegant.
-- When a trade-off feels unclear, re-read the three principles in §4.
-- Wondering "should we build this feature?" — ask whether it serves
-  the evening in §2.
-- This document should evolve as understanding deepens, but §1 and §4
-  are the foundation; changing them needs a very strong reason.
+**Recovery:** follow stable identities and relations back to the evidence and
+review the affected surfaces.
+
+### 4.3 Authority is enforced by the workflow
+
+An Agent may search, summarize, translate, and propose. Accepting source
+changes, publishing content, and deploying production are distinct actions.
+
+**Failure prevented:** a plausible draft silently becomes a public research
+claim.
+
+**Recovery:** reject or revert the proposal/source commit without changing the
+deployed state.
+
+## 5. What Makes the System Worth Building
+
+The system is successful only if it improves a repeated user outcome:
+
+- shorter time from fresh evidence to public explanation;
+- fewer inconsistencies between article, project, résumé, and deployed page;
+- visible evidence and uncertainty for public claims;
+- zero private-content leaks;
+- a clear next action when delivery or discovery fails;
+- repeated use for the second and third update, not just the first site setup.
+
+The initial benchmark is the **Research Update Roundtrip**:
+
+```text
+new evidence
+  -> reviewed article/project/résumé changes
+  -> machine-readable public output
+  -> verified deployed version
+```
+
+Compare the time, inconsistency rate, evidence coverage, private leakage, and
+deployment correctness against a manual Markdown/Git or CMS workflow.
+
+## 6. Category Direction
+
+The user-facing category is **local-first research publishing workspace**.
+It names the job without asking a new user to understand the architecture.
+
+The longer-term category hypothesis is **Research Presence OS**: a system of
+record for a researcher's evidence, public claims, review history, and
+deployed versions. `Personal Context System` remains the architectural
+description for the linked source and Agent context underneath.
+
+The larger category is not earned by adding features. It is earned if years
+of update history create a trustworthy claim/evidence graph that is costly to
+reconstruct elsewhere and useful to the researcher, readers, search systems,
+and future Agents.
+
+## 7. Decision Rule
+
+Every product or architecture decision should answer:
+
+> Does this make the next real research update easier to capture, explain,
+> review, publish, and verify without weakening provenance or owner control?
+
+If the answer is no, it is outside the current wedge even if the capability is
+technically impressive.

@@ -51,10 +51,10 @@ const EngagementFAB: React.FC<EngagementFABProps> = ({
   onCommentClick,
 }) => {
   return (
-    // Mobile clears the floating MobileTabBar dock (fixed bottom-3, ~46px
-    // tall) with extra bottom offset; sm+ drops back to sitting directly
-    // above the viewport edge since the dock is desktop-hidden there.
-    <div className="fixed bottom-20 right-4 z-30 flex flex-col gap-3 sm:bottom-6 sm:right-6">
+    // The mobile reading column uses the canonical ArticleFooter for these
+    // actions; a second fixed stack would cover text. Desktop keeps the
+    // shortcuts where the wider viewport has room for them.
+    <div className="fixed bottom-6 right-6 z-30 hidden flex-col gap-3 sm:flex">
       {typeof likes === 'number' && (
         <FabPill
           icon={<ThumbsUp size={18} />}

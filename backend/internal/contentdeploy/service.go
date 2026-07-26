@@ -60,20 +60,23 @@ func (e *MediaRequiredError) Error() string {
 }
 
 type Result struct {
-	Success       bool   `json:"success"`
-	State         State  `json:"state"`
-	ContentCommit string `json:"content_commit"`
-	ContentHash   string `json:"content_hash"`
-	GeneratedAt   string `json:"generated_at"`
-	MediaRootOK   bool   `json:"media_root_ok"`
+	Success         bool   `json:"success"`
+	State           State  `json:"state"`
+	ContentCommit   string `json:"content_commit"`
+	ContentHash     string `json:"content_hash"`
+	GeneratedAt     string `json:"generated_at"`
+	MediaRootOK     bool   `json:"media_root_ok"`
+	StaticPublished bool   `json:"static_published,omitempty"`
+	StaticRelease   string `json:"static_release,omitempty"`
 }
 
 type Config struct {
-	Driver         string
-	ImporterPath   string
-	DatabaseEnv    string
-	MediaRoot      string
-	MaxBundleBytes int64
+	Driver          string
+	ImporterPath    string
+	DatabaseEnv     string
+	MediaRoot       string
+	MaxBundleBytes  int64
+	StaticPublisher StaticPublisher
 }
 
 type Service struct {
@@ -153,6 +156,14 @@ func (s *Service) Deploy(ctx context.Context, body io.Reader) (_ *Result, err er
 	// deliberately best-effort: a historical root-owned backup must not turn
 	// a successful atomic promotion into a false deployment failure.
 	_ = finalizeMedia()
+	if s.config.StaticPublisher != nil {
+		release, publishErr := s.config.StaticPublisher.Publish(ctx)
+		if publishErr != nil {
+			return nil, fmt.Errorf("publish static release: %w", publishErr)
+		}
+		result.StaticPublished = true
+		result.StaticRelease = release
+	}
 	return result, nil
 }
 

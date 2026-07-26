@@ -139,10 +139,12 @@ fn render_skill_md(content_root: &Path) -> String {
          | silan wants to… | the verb is… |\n\
          |---|---|\n\
          | accept an agent proposal into `content/` | `silan-viking proposal accept <id>` (after `proposal show <id>` to review the diff) |\n\
-         | push edited content to the live backend | `silan-viking site update-content --dry-run` then `--confirm` (the narrow path: stops backend, .prev backup, md5-verifies, restarts) |\n\
+         | push edited content and refresh its SEO snapshot | `silan-viking site update-content --dry-run` then `--confirm` (content transaction, API health check, server-side SEO build, atomic static release) |\n\
          | ship a full stack change (content + frontend + backend) | `silan-viking site deploy --confirm` |\n\
          | undo the last content push | `silan-viking site rollback` (restores `portfolio.db.prev`) |\n\
          | flip an Item to public *locally* | `silan-viking site publish <uri>` (this only edits frontmatter; still needs `update-content` to reach prod) |\n\
+         | find the Blog or series that needs a cover | `silan-viking cover find <query> --type blog|series --json` |\n\
+         | generate and apply its cover | review `silan-viking cover generate <target-uri> --dry-run --json`, then rerun without `--dry-run` |\n\
          \n\
          ## Reference\n\
          \n\

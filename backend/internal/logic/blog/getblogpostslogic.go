@@ -148,40 +148,17 @@ func (l *GetBlogPostsLogic) GetBlogPosts(req *types.BlogListRequest) (resp *type
 		// owner is the author of everything; the frontend supplies that.
 		var author string
 
-		// Resolve language-variant fields. The content engine keeps title /
-		// excerpt in blog_post_translations for every language (the main
-		// blog_posts row leaves them empty), so always consult translations:
-		// prefer the requested language, then "en", then any available.
+		// Resolve language-variant fields. The content engine keeps title,
+		// excerpt, and featured image metadata in blog_post_translations.
 		title := post.Title
 		excerpt := post.Excerpt
 
-		if post.Edges.Translations != nil {
-			lang := req.Language
-			if lang == "" {
-				lang = "en"
+		if translation := pickBlogTranslation(post.Edges.Translations, req.Language); translation != nil {
+			if translation.Title != "" {
+				title = translation.Title
 			}
-			pick := func(code string) *ent.BlogPostTranslation {
-				for _, t := range post.Edges.Translations {
-					if t.LanguageCode == code {
-						return t
-					}
-				}
-				return nil
-			}
-			tr := pick(lang)
-			if tr == nil {
-				tr = pick("en")
-			}
-			if tr == nil && len(post.Edges.Translations) > 0 {
-				tr = post.Edges.Translations[0]
-			}
-			if tr != nil {
-				if tr.Title != "" {
-					title = tr.Title
-				}
-				if tr.Excerpt != "" {
-					excerpt = tr.Excerpt
-				}
+			if translation.Excerpt != "" {
+				excerpt = translation.Excerpt
 			}
 		}
 
@@ -210,7 +187,12 @@ func (l *GetBlogPostsLogic) GetBlogPosts(req *types.BlogListRequest) (resp *type
 			Likes:               int64(counts.Likes),
 			Views:               int64(counts.Views),
 			Summary:             excerpt,
-			FeaturedImageURL:    post.FeaturedImageURL,
+			FeaturedImageURL:    blogFeaturedImageURL(post, req.Language),
+			FeaturedImageURLs:   blogFeaturedImageURLs(post),
+			ProjectName:         post.ProjectName,
+			PublicationVenue:    post.PublicationVenue,
+			ProjectURL:          post.ProjectURL,
+			ExternalResources:   parseBlogResources(post.ExternalResources),
 			Type:                contentType,
 			SeriesID:            seriesID,
 			SeriesSlug:          seriesSlug,

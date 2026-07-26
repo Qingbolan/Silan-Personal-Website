@@ -39,6 +39,9 @@ func (BlogPostTranslation) Fields() []ent.Field {
 			Optional(),
 		field.Text("excerpt").
 			Optional(),
+		field.String("featured_image_url").
+			Optional().
+			MaxLen(500),
 		// The blog body lives in `item_part_translation` (the prose Part of
 		// the silan-viking content model); this column is legacy and stays
 		// empty, so it must be optional.

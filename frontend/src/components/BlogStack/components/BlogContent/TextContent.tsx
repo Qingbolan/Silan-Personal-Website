@@ -306,7 +306,9 @@ export const TextContent: React.FC<TextContentProps> = ({
   const renderMarkdownText = (markdown: string, inline = false) => (
     <Markdown
       inline={inline}
-      className="text-theme-text-primary selection:bg-theme-accent/20"
+      className={`text-theme-text-primary selection:bg-theme-accent/20 ${
+        isWideScreen ? 'text-[17px] sm:text-[18px]' : 'text-[16px]'
+      }`}
     >
       {markdown}
     </Markdown>
@@ -404,13 +406,12 @@ export const TextContent: React.FC<TextContentProps> = ({
             } else {
               // Render regular text with <p> wrapper
               return (
-                <p className={`font-article text-theme-text-primary/85 leading-[1.74] font-normal
+                <p className={`font-article text-theme-text-primary/85 text-[17px] leading-[1.74] font-normal sm:text-[18px]
                                selection:bg-theme-accent/20
                                ${
                                  isFirstParagraph ? 'first-letter:text-theme-accent first-letter:font-bold' : ''
                                }`}
                    style={{
-                     fontSize: isWideScreen ? '18px' : '16px',
                      color: 'color-mix(in oklch, var(--color-textPrimary) 76%, var(--color-textSecondary))',
                      textRendering: 'optimizeLegibility',
                      WebkitFontSmoothing: 'antialiased',

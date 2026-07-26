@@ -12,7 +12,7 @@ use std::time::Duration;
 use thiserror::Error;
 
 const DEFAULT_API_BASE: &str = "https://api.openai.com";
-pub const DEFAULT_OPENAI_IMAGE_MODEL: &str = "gpt-image-1.5";
+pub const DEFAULT_OPENAI_IMAGE_MODEL: &str = "gpt-image-2";
 const MAX_PROMPT_CHARS: usize = 4_000;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -120,7 +120,7 @@ impl ImageOutputFormat {
         }
     }
 
-    fn extension(self) -> &'static str {
+    pub fn extension(self) -> &'static str {
         self.as_api_value()
     }
 
@@ -378,7 +378,7 @@ mod tests {
             output_format: ImageOutputFormat::Png.as_api_value(),
         };
         let value = serde_json::to_value(payload).expect("serializable payload");
-        assert_eq!(value["model"], serde_json::json!("gpt-image-1.5"));
+        assert_eq!(value["model"], serde_json::json!("gpt-image-2"));
         assert_eq!(value["n"], serde_json::json!(1));
         assert_eq!(value["output_format"], serde_json::json!("png"));
     }

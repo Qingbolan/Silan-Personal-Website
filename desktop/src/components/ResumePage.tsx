@@ -209,7 +209,7 @@ function EntryView({ role, entry }: { role: string; entry: ResumeEntry }) {
   );
 
   // Description and detail bullets carry inline Markdown (bold, links) —
-  // render them through the shared Milkdown schema as one block.
+  // render them through the shared Novel schema as one block.
   const bodyMarkdown = [
     description,
     details.map((detail) => `- ${detail}`).join('\n'),
@@ -259,6 +259,8 @@ export function ResumeMediaField({
   error,
   onUpload,
   onRemove,
+  previewSize = 'compact',
+  showIcons = true,
 }: {
   fieldKey: string;
   value: string;
@@ -268,22 +270,25 @@ export function ResumeMediaField({
   error?: string;
   onUpload: (file: File) => void;
   onRemove: () => void;
+  previewSize?: 'compact' | 'cover';
+  showIcons?: boolean;
 }) {
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const hasAsset = Boolean(value || previewUrl);
 
   return (
-    <div className="resume-media-field">
+    <div className="resume-media-field" data-preview-size={previewSize}>
       <div className="resume-media-label">
         <span>{fieldLabel(fieldKey).replace(/ url$/i, '')}</span>
-        {value && <code>{value}</code>}
       </div>
       <div className="resume-media-control">
         <div className="resume-media-preview" data-empty={!previewUrl}>
           {previewUrl ? (
             <img src={previewUrl} alt="" aria-hidden="true" />
-          ) : (
+          ) : showIcons ? (
             <FileImage size={20} aria-hidden="true" />
+          ) : (
+            <span>No cover</span>
           )}
         </div>
         <div className="resume-media-actions">
@@ -293,8 +298,8 @@ export function ResumeMediaField({
             disabled={saving || busy}
             onClick={() => inputRef.current?.click()}
           >
-            {busy ? <LoaderCircle size={13} className="spin" /> : <UploadCloud size={13} />}
-            {hasAsset ? 'Change' : 'Upload'}
+            {showIcons && (busy ? <LoaderCircle size={13} className="spin" /> : <UploadCloud size={13} />)}
+            {busy ? 'Uploading' : hasAsset ? 'Change' : 'Upload'}
           </button>
           {hasAsset && (
             <button
@@ -303,7 +308,7 @@ export function ResumeMediaField({
               disabled={saving || busy}
               onClick={onRemove}
             >
-              <Trash2 size={13} />
+              {showIcons && <Trash2 size={13} />}
               Remove
             </button>
           )}

@@ -17,6 +17,7 @@ const prepareBlogForRender = (blogData: BlogData, language: 'en' | 'zh'): BlogDa
 const readPrerenderedBlog = (id: string | undefined, language: 'en' | 'zh'): BlogData | null => {
   const prerendered = normalizeBlogResponse(
     readPrerenderResource('blog', id, language),
+    language,
   );
   return prerendered ? prepareBlogForRender(prerendered, language) : null;
 };

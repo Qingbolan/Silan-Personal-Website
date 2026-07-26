@@ -1,271 +1,292 @@
-# Silan Personal Website
+# Silan Viking
 
-A local-first content workspace and public site behind
-[silan.tech](https://silan.tech).
+**Turn one research update into a current public presence.**
 
-![Silan Context System banner](output/imagegen/silan-context-system-banner.png)
+Silan Viking is a local-first research publishing workspace for technical
+researchers. It connects research notes, articles, project pages, résumé
+evidence, and AI/search metadata in one owner-reviewed workflow, then verifies
+what actually reached the web.
 
-Silan Context System turns scattered personal material into a versioned
-workspace, an indexed context model, and a repeatable publishing workflow.
-Instead of treating the website as a CMS, this repo treats the website as the
-rendered output of a local content system.
+A research result should not spend weeks trapped in notes while the project
+page, résumé, and public explanation stay stale. The product starts from that
+concrete maintenance problem rather than from website generation: capture the
+result once, keep each public form honest, and preserve the evidence and review
+history around it.
 
-![Status](https://img.shields.io/badge/status-active-success.svg)
-![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
-![Release](https://img.shields.io/github/v/release/Qingbolan/Silan-Personal-Website)
+![Silan Viking dashboard showing local/deployed version status, human visits, and crawler requests](docs/images/silan-viking-dashboard.png)
 
-![EasyNet Native](https://img.shields.io/badge/EasyNet-native-111827)
-![CLI Support](https://img.shields.io/badge/CLI-supported-2563eb)
-![MCP Support](https://img.shields.io/badge/MCP-supported-7c3aed)
-![Skill Support](https://img.shields.io/badge/Skill-supported-059669)
-![Rust](https://img.shields.io/badge/Rust-engine-b7410e?logo=rust&logoColor=white)
-![Go](https://img.shields.io/badge/Go-API-00add8?logo=go&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-frontend-3178c6?logo=typescript&logoColor=white)
-![Tauri](https://img.shields.io/badge/Tauri-desktop-24c8db?logo=tauri&logoColor=white)
-![Markdown](https://img.shields.io/badge/Markdown%20%2B%20YAML-content-4b5563?logo=markdown&logoColor=white)
+[![Status](https://img.shields.io/badge/status-active-success.svg)](https://github.com/Qingbolan/Silan-Context-System)
+[![Release](https://img.shields.io/github/v/release/Qingbolan/Silan-Context-System)](https://github.com/Qingbolan/Silan-Context-System/releases/tag/v1.0.0)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](License)
+[![Rust](https://img.shields.io/badge/Rust-engine-b7410e?logo=rust&logoColor=white)](engine/)
+[![Tauri](https://img.shields.io/badge/Tauri-desktop-24c8db?logo=tauri&logoColor=white)](desktop/)
+[![MCP](https://img.shields.io/badge/MCP-reviewable%20proposals-7c3aed)](docs/silan-viking/03-mcp-service.md)
 
-- **Live demo**: <https://silan.tech>
-- **Latest release**: [v1.0.0](https://github.com/Qingbolan/Silan-Personal-Website/releases/tag/v1.0.0)
-- **Implementation map**: Rust engine/CLI/MCP/site tooling, Go API,
-  TypeScript web and desktop UI, Tauri desktop shell, Markdown + YAML content.
+- **Example public output:** [silan.tech](https://silan.tech)
+- **Product page:** [silan.tech/projects/silan-viking](https://silan.tech/projects/silan-viking/)
+- **Practical guide:** [Using Silan Viking](https://silan.tech/episodes/getting-the-lay-of-the-land/)
+- **Latest release:** [v1.0.0](https://github.com/Qingbolan/Silan-Context-System/releases/tag/v1.0.0)
 
----
+The desktop workbench is the control surface; the website is one public output
+of the system, not the product itself.
 
-## Who This Is For
+## The Research Update Problem
 
-Use this when your personal website is no longer just a page, but the public
-interface for a growing body of work.
+Silan Viking begins with an AI, ML, or systems researcher who already has work
+to show, is comfortable with Markdown/Git and self-hosted tooling, and wants to
+keep an academic website, project record, and résumé current without turning
+each new result into a small website project. The trigger is concrete: an
+experiment changes the conclusion, a paper is accepted, a release ships, or a
+résumé claim gains better evidence.
 
-- A researcher wants paper notes, experiments, talks, project logs, and résumé
-  evidence to stay connected when they become public pages.
-- An independent creator wants scripts, long-form posts, release notes, media
-  context, and project write-ups to move through one repeatable publishing
-  workflow.
-- A one-person company/operator (OPC) wants proof of work, positioning,
-  contact surfaces, public updates, and technical history to read as one
-  coherent portfolio instead of several disconnected artifacts.
+The same fact now needs several honest forms:
 
-## When It Starts To Hurt
+- a dated private note while the context is fresh;
+- an article that explains the evidence and uncertainty;
+- a project update that places it in the larger line of work;
+- a résumé statement that compresses the contribution;
+- a public page with a stable URL, summary, language metadata, and related
+  links.
 
-The project exists for the moment when simple static pages stop being enough:
+Silan Viking does not force one paragraph onto every surface and does not
+silently rewrite them. It gives each record a stable identity, connects the
+records, and keeps their review and publication states visible.
 
-- The material is already there, but it is spread across notes, folders,
-  drafts, repos, and old pages.
-- Every publish requires a private checklist: update the page, rebuild the
-  index, check language variants, touch sitemap/OpenGraph, sync mirrors, and
-  make sure analytics still point at the right content.
-- SEO/GEO work happens after writing, so public metadata drifts away from the
-  actual content.
-- The website starts acting like the CMS, mixing private work-in-progress
-  material with what visitors should see.
-- Related work is hard to follow because posts, projects, ideas, and résumé
-  bullets describe the same thing without explicit links.
+## One Research Update, One Reviewable Workflow
 
-## What You Can Do Today
-
-The current repo supports the core loop end to end:
-
-- **Write** research notes, project records, blog posts, updates, and résumé
-  material as versioned Markdown.
-- **Link** related material with stable `silan://` references instead of
-  copying context between pages.
-- **Review** the local workspace through **Silan Context System** before it
-  becomes public.
-- **Preview** the public site from the same indexed state that deployment will
-  use.
-- **Publish** the site, API data, sitemap, structured metadata, language
-  variants, and deploy artifact through the same workflow.
-
-Cross-material indexing is already represented by `silan://` references and
-the local SQLite projection. The broader cross-device material index is being
-linked through EasyNet, so the current boundary is explicit: local content is
-canonical; external indexing is an extension.
-
-## What It Is Not
-
-- It is not a generic CMS for teams.
-- It is not a portfolio theme where the source of truth lives in the UI.
-- It is not a replacement for note-taking, writing, or media-production tools.
-- It is not claiming that every EasyNet indexing path is finished today.
-
-Technical details are kept in
-[`docs/TECHNICAL-OVERVIEW.md`](docs/TECHNICAL-OVERVIEW.md); this README stays
-focused on what the system is for and what a user should expect from it.
-
----
-
-## A Typical Workflow
-
-### 1. Install the CLI
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/Qingbolan/Silan-Personal-Website/main/engine/install.sh | sh
+```text
+capture -> structure -> connect -> review -> publish -> deploy -> verify
 ```
 
-The installer detects your platform (macOS arm64 / x86_64, Linux glibc
-arm64 / x86_64), pulls the matching binary from
-[Releases](https://github.com/Qingbolan/Silan-Personal-Website/releases),
-and drops it into `~/.local/bin/silan-viking`. If no prebuilt asset exists
-for your platform, it falls back to `cargo install` from source.
+1. **Capture.** Save the first useful sentence as a dated moment by typing or
+   dictating it.
+2. **Structure.** Turn it into a private article or project update while the
+   evidence and uncertainty are still close.
+3. **Connect.** Link the article, project, moment, and résumé evidence instead
+   of maintaining consistency by copy and paste.
+4. **Review.** Edit the rendered page or inspect an Agent proposal and its
+   source diff.
+5. **Publish.** Move the reviewed item from private source to an explicitly
+   public content state.
+6. **Deploy.** Project the reviewed source into the public site through a
+   separate, explicit operation.
+7. **Verify.** Check that the intended content version reached the site, then
+   observe human visits and classified crawler requests as diagnostic signals.
 
-See [`engine/INSTALL.md`](engine/INSTALL.md) for the install-dir override,
-version pinning, SHA256 verification, and uninstall.
+The practical value is not "more content." It is a shorter and more reliable
+round trip from new evidence to an accurate public explanation.
 
-### 2. Create a local content workspace
+## Release and Main-Branch Boundary
+
+The public `v1.0.0` release provides the CLI foundation: initialize a
+workspace, manage the earlier `idea` / `update` / article / project / episode /
+résumé schema, validate and index source, use relations and proposals, and run
+the site/MCP adapters.
+
+The current main branch contains post-release work used by silan.tech,
+including the renamed Moment model, the Tauri desktop workbench, guided
+onboarding, dictation, richer delivery checks, and the current screenshots.
+Those capabilities require a source build until a newer release is published.
+The quickstart below intentionally uses commands available in the public
+release.
+
+## What Works in the Current Source
+
+| Surface | Current boundary |
+| --- | --- |
+| Content | Versioned Markdown/TOML for moments, articles, projects, episode series, media, and résumé data |
+| Editing | Main-branch CLI plus a source-checkout Tauri/React desktop workbench with structured editing, dictation, media, and language variants |
+| Relationships | Stable `silan://` identities and typed links between related records |
+| Validation | Schema checks, source linting, a rebuildable SQLite projection, and guided next steps |
+| Publication | Explicit private/public state, local preview, and configured Docker deployment |
+| Machine readability | Stable routes, summaries, structured data, sitemap, robots rules, `llms.txt`, and language metadata |
+| Observation | Deployed-version checks, human activity, comments, and heuristic search/AI crawler attribution |
+| Agent help | MCP operations over the Silan content workspace and reviewable change proposals |
+| Cross-machine work | Git is the supported source synchronization path |
+
+Two boundaries matter:
+
+- A crawler request proves that a URL was requested. It does **not** prove
+  indexing, understanding, ranking, or citation.
+- The desktop workbench and current Moment/onboarding command surface run from
+  the source checkout. Packaged desktop onboarding, a post-v1.0 release, and
+  direct cross-device synchronization are still in progress.
+
+## Start With One Postponed Result
+
+Install the released CLI on macOS or Linux:
 
 ```sh
-mkdir my-site && cd my-site
-
-silan-viking init            # scaffold content/, silan-viking.toml, SCHEMA.md
-silan-viking guide           # inspect current project state and next step
-silan-viking index sync      # build the derived database from content/
-silan-viking site preview    # build the site and open a local preview
+curl -fsSL https://raw.githubusercontent.com/Qingbolan/Silan-Context-System/main/engine/install.sh | sh
+silan --version
 ```
 
-`init` lays down a `content/` tree with six content types and seed examples.
-From there, `guide` reads project state and tells you the next operation:
-sync before preview, preview before deploy, and deploy only after the indexed
-state is current.
+The installer exposes equivalent commands at `silan`, `svk`, and
+`silan-viking`. The examples use `silan`.
 
-### 3. Add or update material
+Create a workspace and one private article:
 
 ```sh
-silan-viking blog new my-first-post
-silan-viking project new my-cool-project
-silan-viking idea new what-if-we-tried-this
-silan-viking episode series new my-tutorial-series
-silan-viking update new shipped-the-thing
+mkdir my-research-site
+cd my-research-site
 
-silan-viking index sync      # validate and re-derive the database
-silan-viking site preview    # inspect the public rendering
+silan init
+silan blog new new-research-result
+silan content lint
+silan index sync
+silan blog show new-research-result
 ```
 
-Each item can carry `en.md` + `zh.md` + any other locale. The engine wires
-language variants into the same record so public pages, search metadata, and
-cross-links stay aligned.
+Edit:
 
-### 4. Open the desktop app
+```text
+content/resources/blog/new-research-result/parts/body/en.md
+```
+
+Lead with four things: what changed, why it matters, what evidence supports
+it, and what remains uncertain. Linting and indexing do not publish the item.
+
+When the claim is ready:
 
 ```sh
-silan-viking desktop
+silan blog publish new-research-result
+silan content lint
+silan index sync
 ```
 
-The desktop app is named **Silan Context System**. It is a local authoring
-surface over the same `content/` workspace and derived
-`_deploy/api/portfolio.db` projection. The app reads runtime insights from
-SQLite and writes editorial changes back to Markdown through the Rust engine,
-then refreshes the projection.
+Local site preview needs Docker. The first command prints the plan; the second
+executes it:
 
-For local development from a checkout:
+```sh
+silan site preview
+silan site preview --confirm
+```
+
+Production deployment needs an explicit `[deploy]` configuration, credentials,
+a reachable host, and Docker on the target:
+
+```sh
+silan site deploy --dry-run
+silan site deploy --confirm
+```
+
+The v1.0.0 Linux binary supports the CLI authoring and validation path above,
+but its release archive does not include every production deployment artifact.
+Use a full source checkout for that deployment path.
+
+See [engine/INSTALL.md](engine/INSTALL.md) for supported targets, version
+pinning, checksums, installation directories, and uninstall instructions.
+
+## Silan Viking Desktop
+
+Silan Viking Desktop is the working authoring and operations surface over this
+repository's content workspace. It can edit articles and résumé parts, capture
+moments, manage media and language variants, inspect publication state, and
+compare local and deployed content.
+
+From a full source checkout:
 
 ```sh
 ./engine/target/debug/silan-viking desktop
 ```
 
-Do not launch `desktop/` directly with `npm run desktop` unless you provide
-`SILAN_DESKTOP_CONTENT` and `SILAN_DESKTOP_DB`; the CLI injects those paths.
+The CLI injects the content and database paths expected by the Tauri app.
+Running `desktop/` directly is a development workflow and requires the
+corresponding environment variables.
 
-### 5. Index and link context
+## Owner-Reviewed Agent Help
 
-```sh
-silan-viking content tree                       # entire content layout
-silan-viking content show silan://blog/foo      # one item, resolved
-silan-viking relation graph silan://project/x   # cross-item links
-silan-viking relation link silan://blog/foo \
-                          silan://project/x --type references
-```
-
-Everything is addressable by a `silan://` URI. Relations are first-class:
-a blog post can reference a project, a project can grow out of an idea, and a
-résumé bullet can point at the concrete work behind it.
-
-### 6. Publish the current state
+Agent integration is useful for bounded work inside the Silan content
+workspace: find related records, draft a project update, prepare another
+language, add a missing relation, or report which content records appear
+stale.
 
 ```sh
-silan-viking site deploy --dry-run    # preview the bundle
-silan-viking site deploy --confirm    # roll to the host in silan-viking.toml
+silan skill emit
+silan mcp serve --stdio
+
+silan proposal list
+silan proposal show <id>
+silan proposal accept <id>
 ```
 
-Configure `[deploy]` in `silan-viking.toml` once: host, SSH key path, remote
-dir, and compose file. After that, deploy is a repeatable publish step instead
-of a hand-maintained checklist. The target host only needs Docker.
+The default authority boundary is deliberate:
 
-Private analytics and deployed-content verification use one machine
-credential without restricting public pages or crawler access. Generate a
-high-entropy token, store it as `STATS_SYNC_TOKEN` in `.env` beside the
-server's deployed `docker-compose.yml`, and expose the same value as
-`SILAN_STATS_SYNC_TOKEN` to the local CLI/Desktop process, or keep either
-name in the project-root `.env`:
+- the Agent can read, recall, capture, and prepare a proposal;
+- the owner inspects and accepts source changes;
+- publication and production deployment remain separate owner actions.
 
-```sh
-token="$(openssl rand -hex 32)"
-printf 'STATS_SYNC_TOKEN=%s\n' "$token" > .env
-export SILAN_STATS_SYNC_TOKEN="$token"
+In short: an Agent has proposal authority, not publication authority.
+
+## System Shape
+
+Markdown/TOML and media in `content/` are the authored source of truth. The
+SQLite database, API, public website, sitemap, structured metadata, and
+`llms.txt` are derived outputs and can be rebuilt.
+
+```text
+content/                         authored source
+  resources/
+    blog/
+    projects/
+    episode/
+    moment/
+    resume/
+
+engine/                          Silan Viking Engine: model, CLI, MCP, delivery
+desktop/                         Silan Viking Desktop: Tauri + React workbench
+backend/                         runtime insights and public API
+frontend/                        Silan Viking Site: public and machine-readable output
 ```
 
-The CLI and Desktop read only `SILAN_STATS_SYNC_TOKEN`/`STATS_SYNC_TOKEN` from
-the project `.env`; they do not import unrelated values into the process.
-`.env` is ignored by git; `deploy/.env.example` documents the required
-variable and can be copied into the configured remote deployment directory.
-The token protects full-site statistics, crawler/visitor details, and
-`/api/v1/content/status`. Public content, media, health, sitemap, robots, and
-per-item aggregate statistics remain unauthenticated.
+This separation gives Git a useful role: review, provenance, rollback, and
+cross-machine transport remain ordinary file operations rather than hidden
+database state.
 
-### 7. Optional assisted drafting
+## Product Boundary
 
-```sh
-silan-viking skill emit            # write an assistant skill descriptor
-silan-viking mcp                   # start the MCP server (port 7700)
-silan-viking proposal list         # inspect suggested changes
-silan-viking proposal accept <id>  # merge the proposal into content/
-```
+The current product category is a **local-first research publishing
+workspace**. Silan Viking is for a technical researcher who wants to maintain
+an evolving public body of work and accepts a self-hosted toolchain. It is not:
 
-MCP and proposals are optional. They exist for assisted drafting and bulk
-maintenance, but they do not define the product. Suggested changes enter a
-proposal queue and only reach `content/` after review.
+- a general-purpose note-taking app;
+- a team CMS or enterprise SEO/GEO suite;
+- a generic personal-context or Agent-memory database;
+- a one-click hosted academic website;
+- proof that a crawler understood or cited a page;
+- an autonomous Agent with authority to publish private work.
 
----
+The longer-term category hypothesis is **Research Presence OS**: a system of
+record for research evidence, public claims, review history, and deployed
+versions. `Personal Context System` describes the underlying architecture; it
+is not the primary user-facing category. Research Presence OS only earns its
+name if repeated real updates become faster, more consistent, and safer than
+the current Markdown/Git or CMS workflow.
 
-## Technical Reference
+## Documentation
 
-Implementation details are documented separately:
-
-- [Technical overview](docs/TECHNICAL-OVERVIEW.md) — stack, architecture,
-  repository layout, source builds, desktop bundle, static mirror, and release
-  cross-compilation.
-- [silan-viking design docs](docs/silan-viking/README.md) — engine
-  architecture, service boundaries, testing, delivery, and design decisions.
-
----
+- [Product positioning and fact boundary](docs/silan-viking/POSITIONING.md)
+- [Technical overview](docs/TECHNICAL-OVERVIEW.md)
+- [Vision and success criteria](docs/VISION.md)
+- [Silan Viking design documents](docs/silan-viking/README.md)
+- [Docker and desktop E2E report](docs/silan-viking/e2e-reports/2026-07-24-docker-preview-and-desktop.md)
 
 ## Contributing
 
-1. Fork the repository
-2. Branch off `main`
-3. Conventional commits (`feat`, `fix`, `chore`, `docs`)
-4. Open a PR — include a `## Test plan` checklist
-
-Engine work happens under `engine/`. Each layer has its own design doc
-under `docs/silan-viking/`. Bug fixes that pay off a sharp edge should
-mention the cost they paid for in the PR description, so the next person
-knows why the rule exists.
-
----
+1. Fork the repository.
+2. Branch from `main`.
+3. Use conventional commit prefixes such as `feat`, `fix`, `docs`, or
+   `chore`.
+4. Open a pull request with a `## Test plan`.
 
 ## License
 
-Apache License 2.0 — see [`License`](License).
+Apache License 2.0. See [License](License).
 
 ## Author
 
-**Silan Hu** — AI Researcher & Full Stack Developer
+**Silan Hu** — NUS Computer Science PhD student and AI systems researcher
 
-- Website: <https://silan.tech>
+- Website: [silan.tech](https://silan.tech)
 - GitHub: [@Qingbolan](https://github.com/Qingbolan)
-- Email: <silan.hu@u.nus.edu>
-
----
-
-If this project helps you build your own site, please give it a star ★.
-Questions or suggestions?
-[Open an issue](https://github.com/Qingbolan/Silan-Personal-Website/issues).
+- Email: [silan.hu@comp.nus.edu.sg](mailto:silan.hu@comp.nus.edu.sg)

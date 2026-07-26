@@ -1,6 +1,6 @@
 //! Canonical media import and URI resolution use cases.
 
-use crate::{WorkspaceContent, WorkspaceContentError};
+use crate::{Slug, WorkspaceContent, WorkspaceContentError};
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -66,14 +66,7 @@ impl MediaLibrary {
         source_path: impl AsRef<Path>,
     ) -> Result<MediaAssetRef, MediaLibraryError> {
         let source = canonical_file(source_path.as_ref())?;
-        let extension = source
-            .extension()
-            .and_then(|value| value.to_str())
-            .map(str::to_ascii_lowercase)
-            .ok_or_else(|| MediaLibraryError::UnsupportedExtension(String::new()))?;
-        if !EXTENSIONS.contains(&extension.as_str()) {
-            return Err(MediaLibraryError::UnsupportedExtension(extension));
-        }
+        let extension = supported_extension(&source.to_string_lossy())?;
         let item_dir = self.find_item_dir(document_id)?;
         let assets = item_dir.join("assets");
         fs::create_dir_all(&assets).map_err(|error| io_error(&assets, error))?;
@@ -100,26 +93,45 @@ impl MediaLibrary {
         file_name: &str,
         bytes: &[u8],
     ) -> Result<MediaAssetRef, MediaLibraryError> {
-        let extension = Path::new(file_name)
-            .extension()
-            .and_then(|value| value.to_str())
-            .map(str::to_ascii_lowercase)
-            .ok_or_else(|| MediaLibraryError::UnsupportedExtension(String::new()))?;
-        if !EXTENSIONS.contains(&extension.as_str()) {
-            return Err(MediaLibraryError::UnsupportedExtension(extension));
-        }
         let item_dir = self.find_item_dir(document_id)?;
-        let assets = item_dir.join("assets");
-        fs::create_dir_all(&assets).map_err(|error| io_error(&assets, error))?;
-        let stem = sanitize_stem(
-            Path::new(file_name)
-                .file_stem()
-                .and_then(|value| value.to_str())
-                .unwrap_or("asset"),
-        );
-        let target = allocate_new_target(&assets, &stem, &extension)?;
-        fs::write(&target, bytes).map_err(|error| io_error(&target, error))?;
-        self.asset_ref(&target)
+        self.import_asset_bytes_into(&item_dir, file_name, bytes)
+    }
+
+    /// Import media owned by an episode series container.
+    ///
+    /// Series metadata lives in `series.toml`, not an Item manifest, so it
+    /// cannot use [`Self::import_asset_bytes`]. The typed slug and metadata
+    /// existence checks keep adapters from constructing arbitrary resource
+    /// paths.
+    pub fn import_episode_series_asset_bytes(
+        &self,
+        series_slug: &str,
+        file_name: &str,
+        bytes: &[u8],
+    ) -> Result<MediaAssetRef, MediaLibraryError> {
+        let slug = Slug::new(series_slug)
+            .map_err(|_| MediaLibraryError::InvalidUri(series_slug.to_owned()))?;
+        let series_dir = self.resources_root.join("episode").join(slug.as_str());
+        if !series_dir.join("series.toml").is_file() {
+            return Err(MediaLibraryError::DocumentNotFound(format!(
+                "episode series {}",
+                slug.as_str()
+            )));
+        }
+        self.import_asset_bytes_into(&series_dir, file_name, bytes)
+    }
+
+    /// Import media owned by the singleton Resume source.
+    pub fn import_resume_asset_bytes(
+        &self,
+        file_name: &str,
+        bytes: &[u8],
+    ) -> Result<MediaAssetRef, MediaLibraryError> {
+        let resume_dir = self.resources_root.join("resume");
+        if !resume_dir.is_dir() {
+            return Err(MediaLibraryError::DocumentNotFound("resume".to_owned()));
+        }
+        self.import_asset_bytes_into(&resume_dir, file_name, bytes)
     }
 
     pub fn resolve_uri(&self, uri: &str) -> Result<MediaAssetRef, MediaLibraryError> {
@@ -181,6 +193,26 @@ impl MediaLibrary {
             .ok_or_else(|| MediaLibraryError::DocumentNotFound(document_id.to_owned()))
     }
 
+    fn import_asset_bytes_into(
+        &self,
+        owner_dir: &Path,
+        file_name: &str,
+        bytes: &[u8],
+    ) -> Result<MediaAssetRef, MediaLibraryError> {
+        let extension = supported_extension(file_name)?;
+        let assets = owner_dir.join("assets");
+        fs::create_dir_all(&assets).map_err(|error| io_error(&assets, error))?;
+        let stem = sanitize_stem(
+            Path::new(file_name)
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .unwrap_or("asset"),
+        );
+        let target = allocate_new_target(&assets, &stem, &extension)?;
+        fs::write(&target, bytes).map_err(|error| io_error(&target, error))?;
+        self.asset_ref(&target)
+    }
+
     fn asset_ref(&self, path: &Path) -> Result<MediaAssetRef, MediaLibraryError> {
         let root = canonical_dir(&self.resources_root)?;
         let path = path.canonicalize().map_err(|error| io_error(path, error))?;
@@ -233,7 +265,7 @@ fn valid_uri_tail(uri: &str) -> Result<&str, MediaLibraryError> {
     let safe = !segments
         .iter()
         .any(|segment| segment.is_empty() || *segment == "." || *segment == "..");
-    let is_asset = segments.iter().any(|segment| *segment == "assets");
+    let is_asset = segments.contains(&"assets");
     let supported = Path::new(tail)
         .extension()
         .and_then(|value| value.to_str())
@@ -242,6 +274,19 @@ fn valid_uri_tail(uri: &str) -> Result<&str, MediaLibraryError> {
         Ok(tail)
     } else {
         Err(MediaLibraryError::InvalidUri(uri.to_owned()))
+    }
+}
+
+fn supported_extension(file_name: &str) -> Result<String, MediaLibraryError> {
+    let extension = Path::new(file_name)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(str::to_ascii_lowercase)
+        .ok_or_else(|| MediaLibraryError::UnsupportedExtension(String::new()))?;
+    if EXTENSIONS.contains(&extension.as_str()) {
+        Ok(extension)
+    } else {
+        Err(MediaLibraryError::UnsupportedExtension(extension))
     }
 }
 

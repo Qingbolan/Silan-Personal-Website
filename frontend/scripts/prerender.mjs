@@ -3,6 +3,7 @@
 // Post-build static prerender. A target is a named build profile:
 // `--target <name>` loads `.env.<name>` and uses its public base/origin and API
 // origin. The default target preserves the existing silan.tech build flow.
+/* global document, fetch, URL, window */
 import { spawn } from 'node:child_process';
 import http from 'node:http';
 import { createServer } from 'node:http';
@@ -112,6 +113,26 @@ const PRERENDER_ROUTE_ROOTS = ['blog', 'projects', 'moments', 'contact', 'search
 const PRERENDER_ROUTE_DATA_SCRIPT_ID = '__SILAN_ROUTE_DATA__';
 const ROUTE_DATA_LANGUAGES = ['en', 'zh'];
 const CONTENT_TEXT_LIMIT = 1800;
+const routeLastModified = new Map();
+const publicListData = {
+  blogList: { en: [], zh: [] },
+  projectList: { en: [], zh: [] },
+  momentList: { en: [], zh: [] },
+};
+const normalizeContentTimestamp = (value) => {
+  if (typeof value !== 'string' || !value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1 ? undefined : value;
+};
+const sanitizeContentTimestamps = (record) => ({
+  ...record,
+  publish_date: normalizeContentTimestamp(record?.publish_date),
+  updated_at: normalizeContentTimestamp(record?.updated_at),
+  created_at: normalizeContentTimestamp(record?.created_at),
+  publishDate: normalizeContentTimestamp(record?.publishDate),
+  updatedAt: normalizeContentTimestamp(record?.updatedAt),
+  createdAt: normalizeContentTimestamp(record?.createdAt),
+});
 const GEO_PROFILE = {
   ...siteProfile,
   identity:
@@ -206,6 +227,38 @@ const shortSummary = (...values) => {
   return '';
 };
 
+const projectDetailText = (detail, project) => {
+  const parts = asArray(detail?.parts);
+  if (parts.length > 0) return clipText(parts);
+  return clipText([
+    detail?.detailed_description,
+    detail?.goals,
+    detail?.challenges,
+    detail?.solutions,
+    detail?.lessons,
+    detail?.quick_start,
+    project?.description,
+  ]);
+};
+
+const projectAvailabilityContext = (slug) => slug === 'silan-viking'
+  ? [
+      'Availability boundary:',
+      '- Public v1.0.0: CLI workspace initialization, the earlier idea/update content model, articles, projects, episodes, resume data, validation, indexing, relations, proposals, and site/MCP adapters.',
+      '- Current main source only: the renamed Moment model, Tauri desktop workbench, guided onboarding, dictation, and richer delivery checks shown on silan.tech.',
+      '- Packaged desktop onboarding and direct cross-device synchronization are not released.',
+    ].join('\n')
+  : '';
+
+const absolutePublicUrl = (value) => {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  if (/^https?:\/\//i.test(value)) return value;
+  const path = value.startsWith('/') ? value : `/${value}`;
+  return value.startsWith('/api/')
+    ? `${trimTrailingSlash(config.publicOrigin)}${path}`
+    : publicUrl(path);
+};
+
 const routeDir = (route) => (route === '/' ? DIST : join(DIST, trimSlashes(route)));
 
 const withTrailingSlash = (route) => {
@@ -235,37 +288,111 @@ const localizedRoute = (route, language) => {
     : withTrailingSlash(`${CHINESE_ROUTE_PREFIX}${logical}`);
 };
 
+const recordLastModified = (record) => {
+  const value = normalizeContentTimestamp(
+    record?.updated_at ||
+    record?.updatedAt ||
+    record?.publish_date ||
+    record?.publishDate ||
+    record?.date,
+  );
+  return value ? value.slice(0, 10) : undefined;
+};
+
+const registerPublicRoute = (routes, route, language, record) => {
+  const localized = localizedRoute(route, language);
+  routes.push(localized);
+  const lastModified = recordLastModified(record);
+  if (lastModified) routeLastModified.set(localized, lastModified);
+};
+
 async function detailRoutes() {
   const routes = [];
-  try {
-    const blogs = asArray(await fetchJson('/api/v1/blog/posts?lang=en'));
-    for (const b of blogs) {
-      const seg = b.slug || b.id;
-      if (seg) routes.push(`/blog/${seg}/`);
-    }
-  } catch (e) {
-    log(`could not list blog posts: ${e.message}`);
-  }
-  try {
-    const projects = asArray(await fetchJson('/api/v1/projects?lang=en'));
-    for (const p of projects) {
-      const seg = p.slug || p.id;
-      if (seg) routes.push(`/projects/${seg}/`);
-    }
-  } catch (e) {
-    log(`could not list projects: ${e.message}`);
-  }
-  try {
-    const series = asArray(await fetchJson('/api/v1/episodes/series?lang=en'));
-    for (const s of series) {
-      for (const episode of asArray(s.episodes)) {
-        if (episode.slug) routes.push(`/episodes/${episode.slug}/`);
+  for (const language of LANGUAGES) {
+    try {
+      const localizedBlogs = asArray(
+        await fetchJson(`/api/v1/blog/posts?lang=${language}&size=100`),
+      );
+      publicListData.blogList[language] =
+        localizedBlogs.map(sanitizeContentTimestamps);
+      for (const blog of localizedBlogs) {
+        const segment = blog.slug || blog.id;
+        if (segment) registerPublicRoute(routes, `/blog/${segment}/`, language, blog);
       }
+    } catch (e) {
+      log(`could not list ${language} blog posts: ${e.message}`);
     }
-  } catch (e) {
-    log(`could not list episodes: ${e.message}`);
   }
-  return routes;
+
+  for (const language of LANGUAGES) {
+    try {
+      const localizedProjects = asArray(
+        await fetchJson(`/api/v1/projects?lang=${language}&size=100`),
+      );
+      publicListData.projectList[language] =
+        localizedProjects.map(sanitizeContentTimestamps);
+      for (const project of localizedProjects) {
+        const segment = project.slug || project.id;
+        if (segment) {
+          registerPublicRoute(routes, `/projects/${segment}/`, language, project);
+        }
+      }
+    } catch (e) {
+      log(`could not list ${language} projects: ${e.message}`);
+    }
+  }
+
+  for (const language of LANGUAGES) {
+    try {
+      const series = asArray(
+        await fetchJson(`/api/v1/episodes/series?lang=${language}`),
+      );
+      for (const item of series) {
+        for (const episode of asArray(item.episodes)) {
+          if (episode.slug) {
+            registerPublicRoute(
+              routes,
+              `/episodes/${episode.slug}/`,
+              language,
+              episode,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      log(`could not list ${language} episodes: ${e.message}`);
+    }
+  }
+
+  for (const language of LANGUAGES) {
+    try {
+      const moments = asArray(await fetchJson(`/api/v1/moments?lang=${language}`));
+      publicListData.momentList[language] = moments.map((moment) => ({
+        ...sanitizeContentTimestamps(moment),
+        related_outputs: asArray(moment.related_outputs)
+          .filter((output) => {
+            const list = output.kind === 'blog'
+              ? publicListData.blogList[language]
+              : output.kind === 'project'
+                ? publicListData.projectList[language]
+                : [];
+            return list.some((entry) =>
+              [entry.id, entry.slug].filter(Boolean).some((key) =>
+                key === output.id || key === output.slug,
+              ),
+            );
+          })
+          .map((output) => ({
+            ...output,
+            date: normalizeContentTimestamp(output.date),
+          })),
+      }));
+    } catch (e) {
+      log(`could not list ${language} moments: ${e.message}`);
+    }
+  }
+
+  return [...new Set(routes)];
 }
 
 const detailEndpointForBlogRoute = (route) => {
@@ -283,18 +410,21 @@ async function routeDataFor(route) {
   const blogEndpoint = detailEndpointForBlogRoute(logical);
   if (!blogEndpoint) return null;
 
+  const resources = {};
   const blog = {};
   for (const lang of ROUTE_DATA_LANGUAGES) {
     try {
-      blog[lang] = await fetchJson(`${blogEndpoint}?lang=${lang}`);
+      const resource = sanitizeContentTimestamps(
+        await fetchJson(`${blogEndpoint}?lang=${lang}`),
+      );
+      if (resource) blog[lang] = resource;
     } catch (e) {
       log(`could not embed ${lang} blog route data for ${logical}: ${e.message}`);
     }
   }
 
-  return Object.keys(blog).length
-    ? { route: withTrailingSlash(logical), resources: { blog } }
-    : null;
+  if (Object.keys(blog).length) resources.blog = blog;
+  return { route: withTrailingSlash(logical), resources };
 }
 
 const HTML_JSON_ESCAPE = {
@@ -313,6 +443,66 @@ function injectRouteData(html, routeData) {
   const payload = escapeJsonForHtml(routeData);
   const script = `<script id="${PRERENDER_ROUTE_DATA_SCRIPT_ID}" type="application/json">${payload}</script>`;
   return html.includes('</body>') ? html.replace('</body>', `${script}</body>`) : `${html}${script}`;
+}
+
+const filteredListForRequest = (entries, url, kind) => {
+  let filtered = [...entries];
+  const status = url.searchParams.get('status');
+  const featured = url.searchParams.get('featured');
+  const search = url.searchParams.get('search')?.trim().toLowerCase();
+  if (status) filtered = filtered.filter((entry) => entry.status === status);
+  if (featured === 'true') {
+    filtered = filtered.filter((entry) => Boolean(entry.is_featured ?? entry.isFeatured));
+  }
+  if (search) {
+    filtered = filtered.filter((entry) => {
+      const title = kind === 'projects' ? entry.name || entry.title : entry.title;
+      return [title, entry.description, entry.summary, entry.excerpt]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(search));
+    });
+  }
+  return filtered;
+};
+
+async function installPublicListInterception(page) {
+  const blogLists = publicListData.blogList;
+  const projectLists = publicListData.projectList;
+  const momentLists = publicListData.momentList;
+  if (!blogLists && !projectLists && !momentLists) return;
+
+  await page.setRequestInterception(true);
+  page.on('request', async (request) => {
+    if (request.method() !== 'GET') {
+      await request.continue();
+      return;
+    }
+    const url = new URL(request.url());
+    const language = url.searchParams.get('lang')?.startsWith('zh') ? 'zh' : 'en';
+    const config = url.pathname === '/api/v1/blog/posts'
+      ? { entries: blogLists?.[language], key: 'posts' }
+      : url.pathname === '/api/v1/projects'
+        ? { entries: projectLists?.[language], key: 'projects' }
+        : url.pathname === '/api/v1/moments'
+          ? { entries: momentLists?.[language], key: 'moments' }
+        : null;
+    if (!config?.entries) {
+      await request.continue();
+      return;
+    }
+    const entries = filteredListForRequest(config.entries, url, config.key);
+    await request.respond({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        [config.key]: entries,
+        total: entries.length,
+        page: 1,
+        size: entries.length,
+        total_pages: entries.length ? 1 : 0,
+      }),
+    });
+  });
 }
 
 async function preparePrerenderedPage(page, route) {
@@ -388,19 +578,48 @@ async function llmsEntries() {
     for (const project of projects) {
       const slug = project.slug || project.id;
       if (!slug) continue;
-      let detail = project;
+      let basic = project;
       try {
-        detail = await fetchJson(`/api/v1/projects/${encodeURIComponent(slug)}?lang=en`);
+        basic = await fetchJson(`/api/v1/projects/${encodeURIComponent(slug)}?lang=en`);
       } catch (e) {
-        log(`could not fetch project detail for ${slug}: ${e.message}`);
+        log(`could not fetch project record for ${slug}: ${e.message}`);
+      }
+      let detail = {};
+      const projectId = basic.id || project.id;
+      if (projectId) {
+        try {
+          detail = await fetchJson(
+            `/api/v1/projects/${encodeURIComponent(projectId)}/detail?lang=en`,
+          );
+        } catch (e) {
+          log(`could not fetch project detail for ${slug}: ${e.message}`);
+        }
       }
       entries.push({
         kind: 'Project',
-        title: detail.name || detail.title || project.name || slug,
+        slug,
+        title: basic.name || basic.title || project.name || slug,
         path: `/projects/${slug}/`,
-        summary: shortSummary(detail.summary, detail.description, project.summary, project.description),
-        tags: detail.tags || project.tags || [],
-        text: clipText(detail.parts || detail.details || detail.description || project.description),
+        summary: shortSummary(
+          basic.summary,
+          basic.description,
+          project.summary,
+          project.description,
+        ),
+        tags: basic.tags || project.tags || [],
+        text: [
+          projectAvailabilityContext(slug),
+          projectDetailText(detail, basic),
+        ].filter(Boolean).join('\n\n'),
+        repository: basic.github_url || project.github_url,
+        documentation: basic.documentation_url || project.documentation_url,
+        demo: basic.demo_url || project.demo_url,
+        version: detail.version,
+        license: detail.license,
+        image: basic.thumbnail_url || project.thumbnail_url,
+        dateModified: normalizeContentTimestamp(
+          basic.updated_at || detail.updated_at || project.updated_at,
+        ),
       });
     }
   } catch (e) {
@@ -462,6 +681,124 @@ async function llmsEntries() {
   return entries;
 }
 
+const structuredLicenseUrl = (license) => {
+  if (typeof license !== 'string' || !license.trim()) return undefined;
+  if (/^https?:\/\//i.test(license)) return license;
+  return /^apache(?: license)?[- ]?2(?:\.0)?$/i.test(license.trim())
+    ? 'https://www.apache.org/licenses/LICENSE-2.0'
+    : license;
+};
+
+function writeSiteIndex(entries) {
+  const personId = `${publicUrl('/')}#person`;
+  const websiteId = `${publicUrl('/')}#website`;
+  const contentIndexId = `${publicUrl('/site-index.jsonld')}#public-content`;
+  const project = entries.find(
+    (entry) => entry.kind === 'Project' && entry.slug === 'silan-viking',
+  );
+
+  const graph = [
+    {
+      '@type': 'Person',
+      '@id': personId,
+      name: GEO_PROFILE.canonicalName,
+      alternateName: Array.from(new Set([
+        ...GEO_PROFILE.aliases,
+        GEO_PROFILE.chineseName,
+      ])),
+      url: publicUrl('/'),
+      image: publicUrl('/image.png'),
+      jobTitle: GEO_PROFILE.jobTitle,
+      description: GEO_PROFILE.positioning,
+      sameAs: GEO_PROFILE.sameAs,
+      affiliation: {
+        '@type': 'CollegeOrUniversity',
+        name: GEO_PROFILE.affiliation.name,
+        url: GEO_PROFILE.affiliation.url,
+      },
+      knowsAbout: GEO_PROFILE.topics,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      name: GEO_PROFILE.homeTitle,
+      url: publicUrl('/'),
+      description: GEO_PROFILE.homeDescription,
+      inLanguage: ['en', 'zh-Hans'],
+      author: { '@id': personId },
+      publisher: { '@id': personId },
+      mainEntity: { '@id': personId },
+      hasPart: { '@id': contentIndexId },
+    },
+    {
+      '@type': 'ItemList',
+      '@id': contentIndexId,
+      name: 'Public research, projects, and writing by Silan Hu',
+      numberOfItems: entries.length,
+      itemListElement: entries.map((entry, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': entry.kind === 'Project' ? 'SoftwareSourceCode' : 'CreativeWork',
+          name: entry.title,
+          url: publicUrl(entry.path),
+          ...(entry.summary && { description: entry.summary }),
+          author: { '@id': personId },
+          isPartOf: { '@id': websiteId },
+        },
+      })),
+    },
+  ];
+
+  if (project) {
+    const projectUrl = publicUrl(project.path);
+    graph.push({
+      '@type': ['SoftwareApplication', 'SoftwareSourceCode'],
+      '@id': `${projectUrl}#software`,
+      name: project.title,
+      alternateName: ['Silan Viking', 'Silan-Viking'],
+      url: projectUrl,
+      description: project.summary,
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'macOS, Linux',
+      ...(project.version && { softwareVersion: project.version }),
+      ...(project.repository && { codeRepository: project.repository }),
+      ...(project.documentation && {
+        subjectOf: {
+          '@type': 'TechArticle',
+          url: project.documentation,
+        },
+      }),
+      ...(project.demo && project.demo !== projectUrl && { sameAs: [project.demo] }),
+      ...(project.license && { license: structuredLicenseUrl(project.license) }),
+      ...(project.image && { image: absolutePublicUrl(project.image) }),
+      ...(project.dateModified && { dateModified: project.dateModified }),
+      featureList: [
+        'Local Markdown and TOML content source',
+        'Schema validation and local indexing',
+        'Explicit private and public content states',
+        'Typed relations across articles, projects, episodes, and resume evidence',
+        'Local preview and configured deployment workflow',
+        'MCP context retrieval and reviewable change proposals',
+        'Machine-readable public output including sitemap, structured data, and llms.txt',
+      ],
+      author: { '@id': personId },
+      creator: { '@id': personId },
+      isPartOf: { '@id': websiteId },
+    });
+  }
+
+  const document = {
+    '@context': 'https://schema.org',
+    '@graph': graph,
+  };
+  writeFileSync(
+    join(DIST, 'site-index.jsonld'),
+    `${JSON.stringify(document, null, 2)}\n`,
+    'utf8',
+  );
+}
+
 async function writeLlmsText() {
   const entries = await llmsEntries();
   const lines = [
@@ -497,6 +834,10 @@ async function writeLlmsText() {
     lines.push(`Reproduction: ${GEO_PROFILE.reproductionNotice}`);
     if (entry.summary) lines.push(`Summary: ${entry.summary}`);
     if (entry.tags?.length) lines.push(`Tags: ${entry.tags.join(', ')}`);
+    if (entry.version) lines.push(`Version: ${entry.version}`);
+    if (entry.license) lines.push(`License: ${entry.license}`);
+    if (entry.repository) lines.push(`Repository: ${entry.repository}`);
+    if (entry.documentation) lines.push(`Documentation: ${entry.documentation}`);
     if (entry.text) {
       lines.push('');
       lines.push(entry.text);
@@ -505,6 +846,7 @@ async function writeLlmsText() {
   }
   writeFileSync(join(DIST, 'llms.txt'), `${lines.join('\n').trim()}\n`, 'utf8');
   writeFileSync(join(DIST, 'about.txt'), `${crawlerProfileText(entries).trim()}\n`, 'utf8');
+  writeSiteIndex(entries);
 }
 
 function crawlerProfileText(entries) {
@@ -551,18 +893,45 @@ const escapeXml = (value) =>
     .replaceAll('>', '&gt;');
 
 function writeSitemap(routes) {
-  const today = new Date().toISOString().slice(0, 10);
+  const routeSet = new Set(routes.map(withTrailingSlash));
+  const latestDetailDate = (route) => {
+    const language = routeLanguage(route);
+    const logical = logicalRoute(route);
+    const prefix = logical === '/'
+      ? '/'
+      : /^\/(blog|projects)\/?$/.test(logical)
+        ? withTrailingSlash(logical)
+        : null;
+    if (!prefix) return undefined;
+    const dates = [...routeLastModified.entries()]
+      .filter(([detailRoute]) =>
+        routeLanguage(detailRoute) === language &&
+        (prefix === '/' || logicalRoute(detailRoute).startsWith(prefix)))
+      .map(([, date]) => date)
+      .sort();
+    return dates.at(-1);
+  };
   const urls = routes
     .filter((route) => logicalRoute(route) !== '/search/')
     .map(
       (route) => {
-        const englishUrl = escapeXml(publicUrl(localizedRoute(route, 'en')));
-        const chineseUrl = escapeXml(publicUrl(localizedRoute(route, 'zh')));
+        const englishRoute = localizedRoute(route, 'en');
+        const chineseRoute = localizedRoute(route, 'zh');
+        const alternateLinks = [
+          routeSet.has(englishRoute) &&
+            `    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(publicUrl(englishRoute))}" />`,
+          routeSet.has(chineseRoute) &&
+            `    <xhtml:link rel="alternate" hreflang="zh-Hans" href="${escapeXml(publicUrl(chineseRoute))}" />`,
+          routeSet.has(englishRoute) &&
+            `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(publicUrl(englishRoute))}" />`,
+        ].filter(Boolean).join('\n');
+        const lastModified = routeLastModified.get(withTrailingSlash(route)) || latestDetailDate(route);
+        const lastModifiedTag = lastModified
+          ? `    <lastmod>${lastModified}</lastmod>\n`
+          : '';
         return `  <url>\n    <loc>${escapeXml(publicUrl(withTrailingSlash(route)))}</loc>\n` +
-        `    <xhtml:link rel="alternate" hreflang="en" href="${englishUrl}" />\n` +
-        `    <xhtml:link rel="alternate" hreflang="zh-Hans" href="${chineseUrl}" />\n` +
-        `    <xhtml:link rel="alternate" hreflang="x-default" href="${englishUrl}" />\n` +
-        `    <lastmod>${today}</lastmod>\n` +
+        `${alternateLinks}\n` +
+        lastModifiedTag +
         `    <changefreq>weekly</changefreq>\n` +
         `    <priority>${priorityFor(route)}</priority>\n  </url>`;
       },
@@ -590,9 +959,9 @@ function rewriteManifest() {
   manifest.icons = Array.isArray(manifest.icons)
     ? manifest.icons.map((icon) => ({ ...icon, src: prefixPublicPath(icon.src) }))
     : manifest.icons;
-  manifest.id = `${basePath}/` || '/';
-  manifest.start_url = `${basePath}/` || '/';
-  manifest.scope = `${basePath}/` || '/';
+  manifest.id = `${basePath}/`;
+  manifest.start_url = `${basePath}/`;
+  manifest.scope = `${basePath}/`;
   writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 }
 
@@ -851,23 +1220,25 @@ async function main() {
   log(`serving dist/ on http://localhost:${SERVE_PORT}${config.base}`);
 
   const detail = backendUp ? await detailRoutes() : [];
-  const logicalRoutes = [...new Set([...LOGICAL_STATIC_ROUTES, ...detail].map(withTrailingSlash))];
-  const routes = logicalRoutes.flatMap((route) =>
+  const localizedStaticRoutes = LOGICAL_STATIC_ROUTES.flatMap((route) =>
     LANGUAGES.map((language) => localizedRoute(route, language)),
   );
-  log(`${routes.length} localized routes to prerender (${detail.length} logical detail pages).`);
+  const routes = [...new Set([...localizedStaticRoutes, ...detail])];
+  log(`${routes.length} public localized routes to prerender.`);
 
   let browser = await launchBrowser();
   const failedRoutes = [];
   for (const route of routes) {
     let routeRendered = false;
     let routeFailure = null;
+    const routeData = backendUp ? await routeDataFor(route) : null;
     for (let attempt = 1; attempt <= 2 && !routeRendered; attempt += 1) {
       let page = null;
       const url = `http://localhost:${SERVE_PORT}${basePath}${route}`;
       log(`rendering ${route}${attempt > 1 ? ` (attempt ${attempt})` : ''}`);
       try {
         page = await browser.newPage();
+        await installPublicListInterception(page);
         await page.evaluateOnNewDocument(() => {
           window.__SILAN_PRERENDER__ = true;
         });
@@ -889,7 +1260,6 @@ async function main() {
         );
         await new Promise((r) => setTimeout(r, 300));
         await preparePrerenderedPage(page, route);
-        const routeData = backendUp ? await routeDataFor(route) : null;
         const html = injectRouteData(await page.content(), routeData);
         const outDir = routeDir(route);
         mkdirSync(outDir, { recursive: true });
@@ -934,7 +1304,7 @@ async function main() {
   rewriteManifest();
   writeRobots();
   rewriteBuiltAssetPaths();
-  log('wrote sitemap.xml, robots.txt, llms.txt, about.txt and manifest.json');
+  log('wrote sitemap.xml, robots.txt, llms.txt, about.txt, site-index.jsonld and manifest.json');
 
   await closeBrowser(browser);
   await new Promise((resolve) => server.close(resolve));

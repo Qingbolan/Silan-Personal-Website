@@ -4,11 +4,12 @@
 //! deliberately exposes source identities and editable DTOs, never projection
 //! rows or database schema details.
 
-use crate::parser::EntryValue;
+use crate::parser::{EntryValue, Parsed};
 use crate::{ContentEditor, EditorError, TranslationLocator, Workspace};
 use serde::{Deserialize, Serialize};
 use silan_viking_base::HasMeta;
 use silan_viking_content::{ContentKind, PartShape};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -26,6 +27,8 @@ pub enum WorkspaceContentError {
     NotFound(String),
     #[error("invalid translation id `{0}`; expected `<part_id>:<language>`")]
     InvalidTranslationId(String),
+    #[error("invalid content metadata: {0}")]
+    InvalidMetadata(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -51,9 +54,39 @@ pub struct EditableDocument {
     pub cover_website_url: Option<String>,
     pub github_url: Option<String>,
     pub demo_url: Option<String>,
+    pub article_attribution: Option<ArticleAttribution>,
     pub date: Option<String>,
     pub pinned: bool,
     pub parts: Vec<EditablePart>,
+}
+
+/// One external destination surfaced with a Blog as a compact attachment.
+///
+/// `kind` is a stable semantic key (`website`, `github`, `paper`, `doi`, …);
+/// presentation adapters localize the visible kind label while `label`
+/// preserves an optional author override.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleResource {
+    pub kind: String,
+    pub label: String,
+    pub url: String,
+}
+
+/// Blog-level project identity and image attribution authored in frontmatter.
+///
+/// This data stays independent from the Markdown body so the desktop editor,
+/// CLI watermark workflow, website resource strip, and SEO renderer consume
+/// one source contract.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleAttribution {
+    pub project_name: String,
+    pub publication_venue: String,
+    pub project_url: String,
+    pub external_resources: Vec<ArticleResource>,
+    pub image_author: String,
+    pub image_site_url: String,
+    pub image_watermark_mode: String,
+    pub image_watermark_position: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -103,6 +136,7 @@ pub struct SaveMetadataInput {
     pub cover_website_url: Option<String>,
     pub github_url: Option<String>,
     pub demo_url: Option<String>,
+    pub article_attribution: Option<ArticleAttribution>,
     pub expected_revision: String,
 }
 
@@ -264,6 +298,13 @@ impl WorkspaceContent {
                     .or_else(|| parsed.main().text("cover_image"))
                     .or_else(|| parsed.main().text("featured_image_url"))
                     .or_else(|| parsed.main().text("thumbnail_url"))
+                    .or_else(|| {
+                        parsed
+                            .langs()
+                            .iter()
+                            .find(|(language, _)| language.to_string() == canonical_language)
+                            .and_then(|(_, variant)| variant.text("featured_image_url"))
+                    })
                     .map(str::to_owned),
                 cover_source_type: match item.kind() {
                     ContentKind::Project => Some(normalize_cover_source_type(
@@ -285,6 +326,8 @@ impl WorkspaceContent {
                     ContentKind::Project => parsed.main().text("demo_url").map(str::to_owned),
                     _ => None,
                 },
+                article_attribution: (item.kind() == ContentKind::Blog)
+                    .then(|| article_attribution(&parsed)),
                 date: parsed
                     .main()
                     .text("date")
@@ -472,68 +515,48 @@ impl WorkspaceContent {
         let kind = ContentKind::from_frontmatter_value(&document.content_type)
             .map_err(|_| WorkspaceContentError::NotFound(document.id.clone()))?;
         let locator = locator(&document, &part, &translation.language)?;
-        let mut owned_fields: Vec<(&'static str, String)> =
-            vec![("title", input.title.trim().to_owned())];
+        let mut fields = vec![yaml_text("title", input.title.trim())];
         if let Some(field) = summary_field_for(kind) {
-            owned_fields.push((
+            fields.push(yaml_text(
                 field,
-                input
-                    .description
-                    .as_deref()
-                    .unwrap_or_default()
-                    .trim()
-                    .to_owned(),
+                input.description.as_deref().unwrap_or_default().trim(),
             ));
         }
         if let Some(field) = cover_field_for(kind) {
-            owned_fields.push((
+            fields.push(yaml_text(
                 field,
-                input
-                    .cover_url
-                    .as_deref()
-                    .unwrap_or_default()
-                    .trim()
-                    .to_owned(),
+                input.cover_url.as_deref().unwrap_or_default().trim(),
             ));
         }
         if kind == ContentKind::Project {
-            owned_fields.push((
+            fields.push(yaml_text(
                 "cover_source_type",
-                normalize_cover_source_type(input.cover_source_type.as_deref()),
+                &normalize_cover_source_type(input.cover_source_type.as_deref()),
             ));
-            owned_fields.push((
+            fields.push(yaml_text(
                 "cover_website_url",
                 input
                     .cover_website_url
                     .as_deref()
                     .unwrap_or_default()
-                    .trim()
-                    .to_owned(),
+                    .trim(),
             ));
-            owned_fields.push((
+            fields.push(yaml_text(
                 "github_url",
-                input
-                    .github_url
-                    .as_deref()
-                    .unwrap_or_default()
-                    .trim()
-                    .to_owned(),
+                input.github_url.as_deref().unwrap_or_default().trim(),
             ));
-            owned_fields.push((
+            fields.push(yaml_text(
                 "demo_url",
-                input
-                    .demo_url
-                    .as_deref()
-                    .unwrap_or_default()
-                    .trim()
-                    .to_owned(),
+                input.demo_url.as_deref().unwrap_or_default().trim(),
             ));
         }
-        let fields = owned_fields
-            .iter()
-            .map(|(key, value)| (*key, value.as_str()))
-            .collect::<Vec<_>>();
-        self.editor.save_frontmatter_fields_and_sync(
+        if kind == ContentKind::Blog {
+            if let Some(attribution) = input.article_attribution.clone() {
+                let attribution = normalize_article_attribution(attribution)?;
+                fields.extend(article_attribution_yaml(&attribution));
+            }
+        }
+        self.editor.save_frontmatter_values_and_sync(
             &locator,
             &fields,
             &input.expected_revision,
@@ -649,7 +672,207 @@ fn normalize_cover_source_type(value: Option<&str>) -> String {
     }
 }
 
-fn entry_map_json(fields: &std::collections::BTreeMap<String, EntryValue>) -> serde_json::Value {
+fn article_attribution(parsed: &Parsed) -> ArticleAttribution {
+    let resources = parsed
+        .main()
+        .get("external_resources")
+        .and_then(|value| value.as_records())
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|record| {
+            let url = record_text(record, "url");
+            (!url.is_empty()).then(|| ArticleResource {
+                kind: record_text(record, "kind"),
+                label: record_text(record, "label"),
+                url,
+            })
+        })
+        .collect();
+    ArticleAttribution {
+        project_name: parsed
+            .main()
+            .text("project_name")
+            .unwrap_or_default()
+            .to_owned(),
+        publication_venue: parsed
+            .main()
+            .text("publication_venue")
+            .unwrap_or_default()
+            .to_owned(),
+        project_url: parsed
+            .main()
+            .text("project_url")
+            .unwrap_or_default()
+            .to_owned(),
+        external_resources: resources,
+        image_author: parsed
+            .main()
+            .text("image_author")
+            .unwrap_or_default()
+            .to_owned(),
+        image_site_url: parsed
+            .main()
+            .text("image_site_url")
+            .unwrap_or_default()
+            .to_owned(),
+        image_watermark_mode: parsed
+            .main()
+            .text("image_watermark_mode")
+            .unwrap_or("off")
+            .to_owned(),
+        image_watermark_position: parsed
+            .main()
+            .text("image_watermark_position")
+            .unwrap_or("bottom-right")
+            .to_owned(),
+    }
+}
+
+fn record_text(record: &BTreeMap<String, String>, key: &str) -> String {
+    record
+        .get(key)
+        .map(|value| value.trim().to_owned())
+        .unwrap_or_default()
+}
+
+fn normalize_article_attribution(
+    attribution: ArticleAttribution,
+) -> Result<ArticleAttribution, WorkspaceContentError> {
+    let mode = attribution.image_watermark_mode.trim();
+    if !matches!(mode, "" | "off" | "metadata" | "visible" | "both") {
+        return Err(WorkspaceContentError::InvalidMetadata(format!(
+            "unsupported image watermark mode `{mode}`"
+        )));
+    }
+    let position = attribution.image_watermark_position.trim();
+    if !matches!(position, "" | "bottom-left" | "bottom-right") {
+        return Err(WorkspaceContentError::InvalidMetadata(format!(
+            "unsupported image watermark position `{position}`"
+        )));
+    }
+
+    let mut resources = Vec::new();
+    let mut seen_urls = std::collections::BTreeSet::new();
+    for resource in attribution.external_resources {
+        let url = normalize_external_url("external resource URL", &resource.url)?;
+        if url.is_empty() || !seen_urls.insert(url.clone()) {
+            continue;
+        }
+        let kind = normalize_resource_kind(&resource.kind);
+        if kind.is_empty() {
+            return Err(WorkspaceContentError::InvalidMetadata(
+                "every external resource requires a kind".to_owned(),
+            ));
+        }
+        resources.push(ArticleResource {
+            kind,
+            label: resource.label.trim().to_owned(),
+            url,
+        });
+    }
+
+    let image_author = attribution.image_author.trim().to_owned();
+    let image_site_url = normalize_external_url("image site URL", &attribution.image_site_url)?;
+    let resolved_mode = if mode.is_empty() { "off" } else { mode };
+    if !matches!(resolved_mode, "off") && (image_author.is_empty() || image_site_url.is_empty()) {
+        return Err(WorkspaceContentError::InvalidMetadata(
+            "visible or metadata watermarks require both image_author and image_site_url"
+                .to_owned(),
+        ));
+    }
+
+    Ok(ArticleAttribution {
+        project_name: attribution.project_name.trim().to_owned(),
+        publication_venue: attribution.publication_venue.trim().to_owned(),
+        project_url: normalize_external_url("project URL", &attribution.project_url)?,
+        external_resources: resources,
+        image_author,
+        image_site_url,
+        image_watermark_mode: resolved_mode.to_owned(),
+        image_watermark_position: if position.is_empty() {
+            "bottom-right".to_owned()
+        } else {
+            position.to_owned()
+        },
+    })
+}
+
+fn normalize_external_url(field: &str, value: &str) -> Result<String, WorkspaceContentError> {
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(String::new());
+    }
+    let parsed = url::Url::parse(value).map_err(|error| {
+        WorkspaceContentError::InvalidMetadata(format!("{field} `{value}` is invalid: {error}"))
+    })?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err(WorkspaceContentError::InvalidMetadata(format!(
+            "{field} must use http or https"
+        )));
+    }
+    Ok(parsed.to_string())
+}
+
+fn normalize_resource_kind(value: &str) -> String {
+    let mut normalized = String::with_capacity(value.len());
+    let mut separator = true;
+    for ch in value.trim().chars() {
+        if ch.is_ascii_alphanumeric() {
+            normalized.push(ch.to_ascii_lowercase());
+            separator = false;
+        } else if !separator {
+            normalized.push('-');
+            separator = true;
+        }
+    }
+    while normalized.ends_with('-') {
+        normalized.pop();
+    }
+    normalized
+}
+
+fn yaml_text(key: &str, value: &str) -> (String, serde_yaml::Value) {
+    (key.to_owned(), serde_yaml::Value::String(value.to_owned()))
+}
+
+fn article_attribution_yaml(attribution: &ArticleAttribution) -> Vec<(String, serde_yaml::Value)> {
+    let resources = attribution
+        .external_resources
+        .iter()
+        .map(|resource| {
+            let mut record = serde_yaml::Mapping::new();
+            for (key, value) in [
+                ("kind", resource.kind.as_str()),
+                ("label", resource.label.as_str()),
+                ("url", resource.url.as_str()),
+            ] {
+                record.insert(
+                    serde_yaml::Value::String(key.to_owned()),
+                    serde_yaml::Value::String(value.to_owned()),
+                );
+            }
+            serde_yaml::Value::Mapping(record)
+        })
+        .collect();
+    vec![
+        yaml_text("project_name", &attribution.project_name),
+        yaml_text("publication_venue", &attribution.publication_venue),
+        yaml_text("project_url", &attribution.project_url),
+        (
+            "external_resources".to_owned(),
+            serde_yaml::Value::Sequence(resources),
+        ),
+        yaml_text("image_author", &attribution.image_author),
+        yaml_text("image_site_url", &attribution.image_site_url),
+        yaml_text("image_watermark_mode", &attribution.image_watermark_mode),
+        yaml_text(
+            "image_watermark_position",
+            &attribution.image_watermark_position,
+        ),
+    ]
+}
+
+fn entry_map_json(fields: &BTreeMap<String, EntryValue>) -> serde_json::Value {
     serde_json::Value::Object(
         fields
             .iter()

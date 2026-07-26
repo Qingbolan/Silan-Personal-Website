@@ -86,7 +86,7 @@ importers:
         version: 8.63.0(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.3(jiti@1.21.7))
+        version: 4.7.0(vite@6.4.3(jiti@1.21.7)(yaml@2.9.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.5.2(postcss@8.5.16)
@@ -110,7 +110,7 @@ importers:
         version: 3.0.2
       tailwindcss:
         specifier: ^3.4.17
-        version: 3.4.19
+        version: 3.4.19(yaml@2.9.0)
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -119,7 +119,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^6.0.1
-        version: 6.4.3(jiti@1.21.7)
+        version: 6.4.3(jiti@1.21.7)(yaml@2.9.0)
+      yaml:
+        specifier: ^2.8.1
+        version: 2.9.0
 
 packages:
 
@@ -2088,6 +2091,11 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
+  yaml@2.9.0:
+    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yargs-parser@22.0.0:
     resolution: {integrity: sha512-rwu/ClNdSMpkSrUb+d6BRsSkLUq1fmfsY6TOpYzTwvwkg1/NRG85KBy3kq++A8LKQwX6lsu+aWad+2khvuXrqw==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=23}
@@ -2678,7 +2686,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.3': {}
 
-  '@vitejs/plugin-react@4.7.0(vite@6.4.3(jiti@1.21.7))':
+  '@vitejs/plugin-react@4.7.0(vite@6.4.3(jiti@1.21.7)(yaml@2.9.0))':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/plugin-transform-react-jsx-self': 7.29.7(@babel/core@7.29.7)
@@ -2686,7 +2694,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.4.3(jiti@1.21.7)
+      vite: 6.4.3(jiti@1.21.7)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -3710,12 +3718,13 @@ snapshots:
       camelcase-css: 2.0.1
       postcss: 8.5.16
 
-  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.16):
+  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.16)(yaml@2.9.0):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
       jiti: 1.21.7
       postcss: 8.5.16
+      yaml: 2.9.0
 
   postcss-nested@6.2.0(postcss@8.5.16):
     dependencies:
@@ -4041,7 +4050,7 @@ snapshots:
 
   tailwind-merge@3.6.0: {}
 
-  tailwindcss@3.4.19:
+  tailwindcss@3.4.19(yaml@2.9.0):
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
@@ -4060,7 +4069,7 @@ snapshots:
       postcss: 8.5.16
       postcss-import: 15.1.0(postcss@8.5.16)
       postcss-js: 4.1.0(postcss@8.5.16)
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.16)
+      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.16)(yaml@2.9.0)
       postcss-nested: 6.2.0(postcss@8.5.16)
       postcss-selector-parser: 6.1.4
       resolve: 1.22.12
@@ -4186,7 +4195,7 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
-  vite@6.4.3(jiti@1.21.7):
+  vite@6.4.3(jiti@1.21.7)(yaml@2.9.0):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.5)
@@ -4197,6 +4206,7 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
       jiti: 1.21.7
+      yaml: 2.9.0
 
   void-elements@3.1.0: {}
 
@@ -4221,6 +4231,8 @@ snapshots:
   y18n@5.0.8: {}
 
   yallist@3.1.1: {}
+
+  yaml@2.9.0: {}
 
   yargs-parser@22.0.0: {}
 

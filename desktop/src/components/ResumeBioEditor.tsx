@@ -1,6 +1,6 @@
 import { FileText, LoaderCircle, Save, Type } from 'lucide-react';
 import { LanguageCloseControls } from './LanguageCloseControls';
-import MarkdownEditor from './MarkdownEditor';
+import { MarkdownDocumentWorkspace } from './MarkdownDocumentWorkspace';
 
 export function ResumeBioEditor({
   value,
@@ -101,10 +101,11 @@ export function ResumeBioEditor({
               </div>
             </header>
             <div className="editor-frame content-editor-frame" data-entity="resume" data-toolbar={toolbarVisible ? 'visible' : 'hidden'}>
-              <MarkdownEditor
+              <MarkdownDocumentWorkspace
                 key={language}
                 value={value}
                 ariaLabel={`Resume bio editor (${language})`}
+                previewLabel={`Bio · ${language}`}
                 disabled={disabled}
                 toolbarVisible={toolbarVisible}
                 onChange={onChange}

@@ -72,7 +72,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
   ], [commentsCount, language, likes, summary]);
 
   return (
-    <div id={id} className="prose-content markdown-body w-full scroll-mt-24">
+    <div data-ds id={id} className="prose-content markdown-body w-full scroll-mt-24">
       <header id={SERIES_HEADER_ID} className="scroll-mt-24 pb-8 pt-6">
         <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] leading-5 text-ds-fg-subtle">
           <span>{eyebrow}</span>
@@ -92,13 +92,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
         </div>
 
         <h1
-          className="max-w-[70rem] text-balance font-display text-ds-fg"
-          style={{
-            fontSize: 'clamp(3.8rem, 5.8vw, 5.6rem)',
-            lineHeight: 1.04,
-            fontWeight: 520,
-            letterSpacing: '-0.034em',
-          }}
+          className="max-w-[70rem] break-words text-balance font-display text-[2.5rem] font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-[3.25rem] lg:text-[4.5rem]"
         >
           {title}
         </h1>
@@ -144,7 +138,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
           id={SERIES_SUMMARY_ID}
           className="scroll-mt-24 rounded-b-ds-lg bg-ds-surface-2 px-6 py-6 sm:px-8"
         >
-          <p className="max-w-[58rem] text-pretty text-[19px] font-medium leading-[1.55] text-ds-fg">
+          <p className="max-w-[58rem] text-pretty text-[17px] font-medium leading-7 text-ds-fg sm:text-[19px] sm:leading-[1.55]">
             {summary}
           </p>
         </section>

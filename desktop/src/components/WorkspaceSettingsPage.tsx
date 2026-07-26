@@ -21,7 +21,7 @@ import { selectPrimaryDocument } from '../lib/content';
 import { contentLifecycleFor, contentStateSummary } from '../lib/contentLifecycle';
 import { formatShortDate } from '../lib/format';
 import { toWebviewMediaUrl } from '../lib/media';
-import { useOpenAiCredentials } from '../lib/openAiCredentials';
+import { useApiCredentials, type ApiCredentialProvider } from '../lib/apiCredentials';
 import type { ContentGroup, WorkspacePreferences } from '../types';
 
 type SettingsTab = 'profile' | 'connection' | 'archive';
@@ -261,8 +261,32 @@ function WorkspaceProfileSettings({
   );
 }
 
-function OpenAiConnectionSettings() {
-  const { state, setDraft, save, test, remove } = useOpenAiCredentials();
+const apiProviderMeta: Record<ApiCredentialProvider, {
+  displayName: string;
+  description: string;
+  modelLabel: string;
+  keyLabel: string;
+  placeholder: string;
+}> = {
+  openai: {
+    displayName: 'OpenAI',
+    description: 'Translation and voice capture share one Platform API key stored in macOS Keychain.',
+    modelLabel: 'Translation model',
+    keyLabel: 'OpenAI Platform API key',
+    placeholder: 'sk-…',
+  },
+  deepseek: {
+    displayName: 'DeepSeek',
+    description: 'Language review checks Blog and episode-series prose without modifying source files.',
+    modelLabel: 'Language review model',
+    keyLabel: 'DeepSeek API key',
+    placeholder: 'DeepSeek API key',
+  },
+};
+
+function ApiProviderConnectionSettings({ provider }: { provider: ApiCredentialProvider }) {
+  const meta = apiProviderMeta[provider];
+  const { state, setDraft, save, test, remove } = useApiCredentials(provider);
   const busy = state.phase === 'loading'
     || state.phase === 'saving'
     || state.phase === 'testing'
@@ -279,13 +303,13 @@ function OpenAiConnectionSettings() {
         : 'Not configured';
 
   return (
-    <section className="workspace-settings-section" aria-labelledby="workspace-connection-heading">
+    <section className="workspace-settings-section" aria-labelledby={`${provider}-connection-heading`}>
       <header className="workspace-settings-section-header">
-        <h2 id="workspace-connection-heading">AI connection</h2>
-        <p>Translation and voice capture share one Platform API key stored in macOS Keychain.</p>
+        <h2 id={`${provider}-connection-heading`}>{meta.displayName}</h2>
+        <p>{meta.description}</p>
       </header>
 
-      <div className="openai-connection-status" data-state={state.status?.state || 'loading'}>
+      <div className="api-connection-status" data-state={state.status?.state || 'loading'}>
         {state.phase === 'loading'
           ? <LoaderCircle size={16} className="spin" />
           : configured
@@ -293,23 +317,23 @@ function OpenAiConnectionSettings() {
             : <AlertCircle size={16} />}
         <div>
           <strong>{state.phase === 'loading' ? 'Reading Keychain…' : statusLabel}</strong>
-          <span>Translation model · {state.status?.model || 'gpt-5-nano'}</span>
+          <span>{meta.modelLabel} · {state.status?.model || '—'}</span>
         </div>
       </div>
 
       <form
-        className="openai-settings-form"
+        className="api-settings-form"
         onSubmit={(event) => {
           event.preventDefault();
           if (state.draft.trim() && !busy) void save();
         }}
       >
-        <label className="openai-key-field">
-          <span>{configured ? 'Replace API key' : 'OpenAI Platform API key'}</span>
+        <label className="api-key-field">
+          <span>{configured ? `Replace ${meta.displayName} API key` : meta.keyLabel}</span>
           <input
             type="password"
             value={state.draft}
-            placeholder="sk-…"
+            placeholder={meta.placeholder}
             autoComplete="new-password"
             spellCheck={false}
             disabled={busy}
@@ -319,25 +343,25 @@ function OpenAiConnectionSettings() {
         </label>
 
         {(state.error || state.status?.detail) && (
-          <div className="dialog-error openai-settings-error" role="alert">
+          <div className="dialog-error api-settings-error" role="alert">
             <AlertCircle size={14} />
             <span>{state.error || state.status?.detail}</span>
           </div>
         )}
 
         {state.status?.request_id && !state.error && (
-          <div className="openai-verification-result">
+          <div className="api-verification-result">
             <ShieldCheck size={14} />
-            <span>Verified with OpenAI · request {state.status.request_id}</span>
+            <span>Verified with {meta.displayName} · request {state.status.request_id}</span>
           </div>
         )}
 
-        <footer className="openai-settings-actions">
+        <footer className="api-settings-actions">
           <div>
             {(configured || invalid) && (
               <button
                 type="button"
-                className="openai-remove-button"
+                className="api-remove-button"
                 disabled={busy}
                 onClick={() => void remove()}
               >
@@ -541,7 +565,12 @@ export function WorkspaceSettingsPage({
             onPreferencesChange={onPreferencesChange}
           />
         )}
-        {activeTab === 'connection' && <OpenAiConnectionSettings />}
+        {activeTab === 'connection' && (
+          <div className="api-provider-settings">
+            <ApiProviderConnectionSettings provider="openai" />
+            <ApiProviderConnectionSettings provider="deepseek" />
+          </div>
+        )}
         {activeTab === 'archive' && (
           <ArchivedResourceSettings
             resources={archivedResources}

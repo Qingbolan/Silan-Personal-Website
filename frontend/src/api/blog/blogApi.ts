@@ -4,6 +4,7 @@ import { type PaginationRequest } from '../config';
 import { processRawContent } from '../../utils/markdownParser';
 import { getClientFingerprint } from '../../utils/fingerprint';
 import { isPrerenderRuntime } from '../../utils/runtimeContext';
+import { normalizeContentTimestamp } from '../../utils/contentTimestamp';
 
 // Backend API request/response types
 interface BlogListRequest extends PaginationRequest {
@@ -24,17 +25,34 @@ export interface UpdateBlogLikesResponse {
 
 // API functions
 
-export const normalizeBlogData = (post: any, content?: BlogData['content']): BlogData => {
-  const featuredImageUrl = post.featured_image_url ?? post.featuredImageUrl;
+type BlogLanguage = 'en' | 'zh';
+
+export const normalizeBlogData = (
+  post: any,
+  content?: BlogData['content'],
+  language: BlogLanguage = 'en',
+): BlogData => {
+  const rawFeaturedImageUrls = post.featured_image_urls ?? post.featuredImageUrls ?? {};
+  const featuredImageUrls = Object.fromEntries(
+    Object.entries(rawFeaturedImageUrls)
+      .filter(([, value]) => typeof value === 'string' && value.length > 0)
+      .map(([locale, value]) => [locale, mediaUrl(value as string)]),
+  ) as BlogData['featuredImageUrls'];
+  const selectedFeaturedImage = featuredImageUrls?.[language]
+    ?? post.featured_image_url
+    ?? post.featuredImageUrl;
   const videoThumbnail = post.video_thumbnail ?? post.videoThumbnail;
   const vlogCover = post.vlog_cover ?? post.vlogCover;
-  const coverImage = featuredImageUrl || vlogCover || videoThumbnail;
+  const coverImage = selectedFeaturedImage || vlogCover || videoThumbnail;
+  const publishDate = normalizeContentTimestamp(post.publish_date ?? post.publishDate);
+  const updatedAt = normalizeContentTimestamp(post.updated_at ?? post.updatedAt);
 
   return {
     ...post,
     tags: post.tags || [],
     ...(content ? { content } : {}),
-    featuredImageUrl: featuredImageUrl ? mediaUrl(featuredImageUrl) : undefined,
+    featuredImageUrls,
+    featuredImageUrl: selectedFeaturedImage ? mediaUrl(selectedFeaturedImage) : undefined,
     coverImage: coverImage ? mediaUrl(coverImage) : undefined,
     vlogCover: vlogCover ? mediaUrl(vlogCover) : undefined,
     videoThumbnail: videoThumbnail ? mediaUrl(videoThumbnail) : undefined,
@@ -47,17 +65,26 @@ export const normalizeBlogData = (post: any, content?: BlogData['content']): Blo
     episodeNumber: post.episode_number,
     totalEpisodes: post.total_episodes,
     seriesImage: post.series_image ? mediaUrl(post.series_image) : undefined,
-    publishDate: post.publish_date,
-    updatedAt: post.updated_at ?? post.updatedAt,
+    projectName: post.project_name ?? post.projectName,
+    publicationVenue: post.publication_venue ?? post.publicationVenue,
+    projectUrl: post.project_url ?? post.projectUrl,
+    externalResources: post.external_resources ?? post.externalResources ?? [],
+    publish_date: publishDate,
+    updated_at: updatedAt,
+    publishDate,
+    updatedAt,
     readTime: post.read_time,
     isLikedByUser: Boolean(post.is_liked_by_user ?? post.isLikedByUser),
   } as BlogData;
 };
 
-export const normalizeBlogResponse = (post: any): BlogData | null => {
+export const normalizeBlogResponse = (
+  post: any,
+  language: BlogLanguage = 'en',
+): BlogData | null => {
   if (!post) return null;
   const processedContent = post.content ? processRawContent(post.content) : [];
-  return normalizeBlogData(post, processedContent);
+  return normalizeBlogData(post, processedContent, language);
 };
 
 /**
@@ -73,7 +100,9 @@ export const fetchBlogPosts = async (
   });
   
   // Ensure consistent data structure and map fields
-  const posts = (response.posts || []).map((post: any) => normalizeBlogData(post));
+  const posts = (response.posts || []).map(
+    (post: any) => normalizeBlogData(post, undefined, language),
+  );
   
   return posts;
 };
@@ -91,7 +120,7 @@ export const fetchBlogById = async (slugOrId: string, language: 'en' | 'zh' = 'e
     fingerprint: getClientFingerprint(),
   });
   if (!response) return null;
-  return normalizeBlogResponse(response);
+  return normalizeBlogResponse(response, language);
 };
 
 /**

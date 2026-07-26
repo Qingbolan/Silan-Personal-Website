@@ -44,7 +44,7 @@ impl ProseMapper {
 
         rows.push(main_row(expected, &item_id, parsed, type_spec, media));
         push_side_rows(expected, &item_id, parsed, type_spec, media, &mut rows);
-        push_translation_rows(expected, &item_id, parsed, media, &mut rows);
+        push_translation_rows(expected, &item_id, parsed, type_spec, media, &mut rows);
         push_item_part_rows(expected, &item_id, parsed, type_spec, &mut rows);
         push_part_rows(parsed, media, &mut rows);
         push_relation_rows(expected, parsed, &mut rows);
@@ -146,6 +146,7 @@ fn push_translation_rows(
     kind: ContentKind,
     item_id: &str,
     parsed: &Parsed,
+    type_spec: &TypeSpec,
     media: &MediaCatalog,
     rows: &mut RowSet,
 ) {
@@ -163,10 +164,12 @@ fn push_translation_rows(
                 SqlValue::Text(item_id.to_owned()),
             )
             .with("language_code", SqlValue::Text(lang.to_string()));
-        // The translatable scalar fields of this language (`title`, …).
-        for name in ["title", "excerpt", "abstract", "description"] {
-            if let Some(value) = variant.get(name) {
-                row = row.with(name.to_owned(), sql_value(value, media));
+        // SCHEMA owns the language boundary. This includes prose metadata
+        // such as title/excerpt and locale-specific visual metadata such as
+        // a blog's featured image.
+        for field in type_spec.fields.iter().filter(|field| field.translatable) {
+            if let Some(value) = variant.get(&field.name) {
+                row = row.with(field.name.clone(), sql_value(value, media));
             }
         }
         rows.push(row);
@@ -404,7 +407,9 @@ fn tag_slug(label: &str) -> String {
 /// Convert a parser [`FieldValue`] into a [`SqlValue`]. Scalars map directly;
 /// a `List` that reaches here is a non-join list field and is joined with
 /// `, ` (join-table lists — `tags` — are routed away by [`JOIN_TABLE_FIELDS`]
-/// before `sql_value` is ever called on them).
+/// before `sql_value` is ever called on them). Record lists are stored as
+/// deterministic JSON when SCHEMA routes them to a scalar JSON/Text column;
+/// fan-out record fields are intercepted before this function.
 ///
 /// A `Text` value is passed through [`media_uri::rewrite_reference`]: a field
 /// holding a `silan://resources/…` resource reference (`featured_image_url`,
@@ -417,7 +422,8 @@ fn sql_value(value: &FieldValue, media: &MediaCatalog) -> SqlValue {
         FieldValue::Float(f) => SqlValue::Float(*f),
         FieldValue::Bool(b) => SqlValue::Bool(*b),
         FieldValue::List(items) => SqlValue::Text(items.join(", ")),
-        // Record lists fan out to side tables, never a scalar column.
-        FieldValue::Records(_) => SqlValue::Null,
+        FieldValue::Records(records) => {
+            SqlValue::Text(serde_json::to_string(records).unwrap_or_else(|_| "[]".to_owned()))
+        }
     }
 }

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use silan_viking_app::ArticleAttribution;
 
 #[derive(Debug, Serialize)]
 pub(crate) struct EditorDocument {
@@ -27,6 +28,7 @@ pub(crate) struct EditorDocument {
     pub(crate) cover_website_url: Option<String>,
     pub(crate) github_url: Option<String>,
     pub(crate) demo_url: Option<String>,
+    pub(crate) article_attribution: Option<ArticleAttribution>,
     pub(crate) engagement: EngagementStats,
     pub(crate) translations: Vec<EditorTranslation>,
 }
@@ -53,6 +55,31 @@ pub(crate) struct EditorTranslation {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum MarkdownSelectionAssistAction {
+    AgentEdit,
+    OptimizeExpression,
+    CommentIssue,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct MarkdownSelectionAssistInput {
+    pub(crate) action: MarkdownSelectionAssistAction,
+    pub(crate) language: String,
+    pub(crate) title: String,
+    pub(crate) selected_text: String,
+    pub(crate) before_context: String,
+    pub(crate) after_context: String,
+    pub(crate) instruction: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct MarkdownSelectionAssistResult {
+    pub(crate) replacement: String,
+    pub(crate) comment: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub(crate) struct ContentMetadataInput {
     pub(crate) title: String,
     pub(crate) description: Option<String>,
@@ -61,6 +88,7 @@ pub(crate) struct ContentMetadataInput {
     pub(crate) cover_website_url: Option<String>,
     pub(crate) github_url: Option<String>,
     pub(crate) demo_url: Option<String>,
+    pub(crate) article_attribution: Option<ArticleAttribution>,
 }
 
 #[derive(Debug, Serialize)]
@@ -303,6 +331,8 @@ pub(crate) struct DeploymentScopeStatus {
 pub(crate) struct DeployRunStatus {
     pub(crate) success: bool,
     pub(crate) content_commit: String,
+    pub(crate) static_published: bool,
+    pub(crate) static_release: String,
     pub(crate) stdout: String,
     pub(crate) stderr: String,
 }

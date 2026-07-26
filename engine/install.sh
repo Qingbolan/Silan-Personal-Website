@@ -3,7 +3,7 @@
 # install.sh — install the silan-viking CLI.
 #
 # One-liner:
-#   curl -fsSL https://raw.githubusercontent.com/Qingbolan/Silan-Personal-Website/main/engine/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/Qingbolan/Silan-Context-System/main/engine/install.sh | sh
 #
 # It detects your OS/architecture, downloads the matching prebuilt binary from
 # the project's GitHub Releases, and installs it to ~/.local/bin. If no prebuilt
@@ -17,7 +17,7 @@
 
 set -eu
 
-REPO="Qingbolan/Silan-Personal-Website"
+REPO="Qingbolan/Silan-Context-System"
 BIN="silan-viking"
 INSTALL_DIR="${SILAN_INSTALL_DIR:-${HOME}/.local/bin}"
 VERSION="${SILAN_VERSION:-latest}"

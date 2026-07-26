@@ -4,9 +4,11 @@
 //! CLI). This module owns only the credential value object and the bounded
 //! verification request, keeping OS concerns out of the application layer.
 
-use serde::Deserialize;
+use crate::api_credentials::{
+    normalize_api_key, validate_api_key_has_no_whitespace, verify_bearer_credential,
+    ApiCredentialVerificationError,
+};
 use std::fmt;
-use std::time::Duration;
 use thiserror::Error;
 
 const DEFAULT_API_BASE: &str = "https://api.openai.com";
@@ -22,24 +24,14 @@ pub struct OpenAiApiKey(String);
 impl OpenAiApiKey {
     /// Validate the local shape without making a network request.
     pub fn parse(value: impl Into<String>) -> Result<Self, OpenAiCredentialError> {
-        let value = value.into();
-        let value = value.trim();
-        if value.is_empty() {
-            return Err(OpenAiCredentialError::InvalidFormat(
-                "the API key is empty".to_owned(),
-            ));
-        }
+        let value = normalize_api_key(value).map_err(OpenAiCredentialError::InvalidFormat)?;
         if !value.starts_with("sk-") {
             return Err(OpenAiCredentialError::InvalidFormat(
                 "an OpenAI API key must start with `sk-`".to_owned(),
             ));
         }
-        if value.chars().any(char::is_whitespace) {
-            return Err(OpenAiCredentialError::InvalidFormat(
-                "the API key must not contain whitespace".to_owned(),
-            ));
-        }
-        Ok(Self(value.to_owned()))
+        validate_api_key_has_no_whitespace(&value).map_err(OpenAiCredentialError::InvalidFormat)?;
+        Ok(Self(value))
     }
 
     /// Expose the key only to a credential adapter or authenticated request.
@@ -97,57 +89,31 @@ impl OpenAiCredentialVerifier {
         &self,
         api_key: &OpenAiApiKey,
     ) -> Result<OpenAiVerification, OpenAiCredentialError> {
-        let url = format!("{}/v1/models", self.api_base);
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(4))
-            .timeout_read(Duration::from_secs(10))
-            .timeout_write(Duration::from_secs(4))
-            .build();
-        match agent
-            .get(&url)
-            .set(
-                "Authorization",
-                &format!("Bearer {}", api_key.expose_secret()),
-            )
-            .call()
-        {
-            Ok(response) => {
-                let request_id = response.header("x-request-id").map(str::to_owned);
-                response
-                    .into_json::<ModelsResponse>()
-                    .map_err(|error| OpenAiCredentialError::InvalidResponse(error.to_string()))?;
-                Ok(OpenAiVerification { request_id })
-            }
-            Err(ureq::Error::Status(status, response)) => {
-                let message = response
-                    .into_json::<ApiErrorEnvelope>()
-                    .ok()
-                    .map(|body| body.error.message)
-                    .filter(|message| !message.trim().is_empty())
-                    .unwrap_or_else(|| "authentication or project access failed".to_owned());
-                Err(OpenAiCredentialError::Rejected { status, message })
-            }
-            Err(ureq::Error::Transport(error)) => {
-                Err(OpenAiCredentialError::Unavailable(error.to_string()))
-            }
-        }
+        verify_bearer_credential(
+            &self.api_base,
+            "/v1/models",
+            api_key.expose_secret(),
+            "authentication or project access failed",
+        )
+        .map(|verification| OpenAiVerification {
+            request_id: verification.request_id,
+        })
+        .map_err(map_verification_error)
     }
 }
 
-#[derive(Deserialize)]
-struct ModelsResponse {
-    #[serde(rename = "object")]
-    _object: String,
-}
-
-#[derive(Deserialize)]
-struct ApiErrorEnvelope {
-    error: ApiErrorBody,
-}
-
-#[derive(Deserialize)]
-struct ApiErrorBody {
-    message: String,
+fn map_verification_error(error: ApiCredentialVerificationError) -> OpenAiCredentialError {
+    match error {
+        ApiCredentialVerificationError::Rejected { status, message } => {
+            OpenAiCredentialError::Rejected { status, message }
+        }
+        ApiCredentialVerificationError::Unavailable(message) => {
+            OpenAiCredentialError::Unavailable(message)
+        }
+        ApiCredentialVerificationError::InvalidResponse(message) => {
+            OpenAiCredentialError::InvalidResponse(message)
+        }
+    }
 }
 
 #[cfg(test)]

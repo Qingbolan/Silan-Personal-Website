@@ -200,6 +200,44 @@ silan content show <uri>   show any item by silan:// URI (type-agnostic)
 > full URI and doesn't need to know the type; the latter is shorter
 > when the type is already known.
 
+### `silan media <verb>` — article image attribution
+
+```
+silan media watermark <blog-uri> --dry-run
+    resolve the Blog's persisted policy and preview every affected asset
+
+silan media watermark <blog-uri>
+    atomically apply, update, or remove visible credit and embedded metadata
+    for every supported PNG / JPEG / WebP asset owned by the Blog
+
+silan media watermark <blog-uri> --mode metadata|visible|both|off
+                                      --position bottom-left|bottom-right
+    temporarily override the source policy for this run
+
+silan media inspect <asset-uri> [--json]
+    read the machine-readable attribution embedded in one image
+```
+
+The SDK use case behind CLI and Desktop is
+`ArticleImageAttributionWorkspace`; adapters do not implement image mutation
+themselves. The source policy lives in canonical Blog frontmatter:
+`project_name`, `publication_venue`, `project_url`, `external_resources`,
+`image_author`, `image_site_url`, `image_watermark_mode`, and
+`image_watermark_position`.
+
+The visible treatment is a small, background-free gray signature with a light
+one-pixel halo, matching the low-interference pattern used by social image
+credits. Every apply stores a private clean bottom strip under
+`assets/.silan-attribution/*.state`. Desktop and CLI use that state to restore
+the source pixels before moving, editing, or disabling a watermark, so repeated
+edits never stack. These non-image sidecars remain source artifacts and are not
+published as media.
+
+Embedded PNG text/XMP, JPEG APP/XMP, or WebP metadata survives direct download.
+Neither representation replaces HTML discovery metadata: the website
+separately publishes Open Graph image alt text and `BlogPosting` / `ImageObject`
+JSON-LD because crawlers are not required to inspect image chunks.
+
 ### `silan index <verb>` — index and sync (serves #1)
 
 ```
@@ -314,6 +352,45 @@ silan skill rm       remove the installed skill bundle
 > `silan mcp serve` server — the full mechanism, the SKILL.md
 > shape, and the auto-trigger manual live in
 > `13-skill-distribution.md`.
+
+### `silan credentials <provider> <verb>` — external API credentials
+
+```
+silan credentials openai set|rotate|status|test|remove
+silan credentials deepseek set|rotate|status|test|remove
+silan credentials google set|rotate|status|remove [--profile <name>]
+silan credentials github set|rotate|status|remove [--profile <name>]
+```
+
+> OpenAI and DeepSeek `set` validate the entered key before storing it in the
+> current user's macOS Keychain; `test` repeats the read-only validation.
+> `OPENAI_API_KEY` and `DEEPSEEK_API_KEY` take precedence over Keychain
+> entries, including on non-macOS systems. Secrets never enter project config,
+> workspace source, command arguments, or CLI output.
+
+### DeepSeek language-quality review
+
+```
+silan blog language-check [<slug>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]
+silan episode series language-check [<series>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]
+```
+
+> With no slug, the Blog command reviews every Blog language source. With no
+> series slug, the series command reviews every `series.toml` plus every
+> episode language source. The read-only review detects unnatural expression,
+> internal logical gaps, concept misuse, and odd or inconsistent terminology;
+> it emits exact quotes, source lines, explanations, and suggested repairs.
+> The default model is `deepseek-v4-flash`, and the default minimum confidence
+> is `0.80`; pass `--min-confidence 0` to retain every model candidate. Running
+> either command explicitly sends the selected authored source to DeepSeek,
+> but never mutates it.
+
+The CLI and Desktop use the same fixed application workflow. In Desktop, open
+a Blog or episode and use the document column to review the current saved
+language, the complete article, or the complete episode series. The column
+shows pass/finding counts after completion, while the report panel retains
+quotes, source lines, explanations, and suggested repairs. See
+[`18-language-review-workflow.md`](./18-language-review-workflow.md).
 
 ### Top-level commands
 

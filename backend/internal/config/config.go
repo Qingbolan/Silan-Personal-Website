@@ -19,9 +19,10 @@ type Config struct {
 }
 
 type ContentDeployConfig struct {
-	ImporterPath   string `json:"importer_path,env=CONTENT_DEPLOY_IMPORTER_PATH,optional"`
-	DatabaseEnv    string `json:"database_env,env=CONTENT_DEPLOY_DATABASE_ENV,optional"`
-	MaxBundleBytes int64  `json:"max_bundle_bytes,env=CONTENT_DEPLOY_MAX_BUNDLE_BYTES,optional"`
+	ImporterPath        string `json:"importer_path,env=CONTENT_DEPLOY_IMPORTER_PATH,optional"`
+	DatabaseEnv         string `json:"database_env,env=CONTENT_DEPLOY_DATABASE_ENV,optional"`
+	MaxBundleBytes      int64  `json:"max_bundle_bytes,env=CONTENT_DEPLOY_MAX_BUNDLE_BYTES,optional"`
+	StaticPublisherPath string `json:"static_publisher_path,env=CONTENT_DEPLOY_STATIC_PUBLISHER,optional"`
 }
 
 func (c *Config) ContentDeployImporterPath() string {
@@ -45,6 +46,10 @@ func (c *Config) ContentDeployMaxBundleBytes() int64 {
 	return 128 << 20
 }
 
+func (c *Config) ContentDeployStaticPublisher() string {
+	return c.ContentDeploy.StaticPublisherPath
+}
+
 // ApplyRuntimeLimits keeps the server-wide go-zero guards compatible with the
 // authenticated content deployment route. The framework applies these guards
 // before route middleware, so a handler cannot raise them locally.
@@ -52,8 +57,8 @@ func (c *Config) ApplyRuntimeLimits() {
 	if required := c.ContentDeployMaxBundleBytes(); c.MaxBytes < required {
 		c.MaxBytes = required
 	}
-	if c.Timeout < 130_000 {
-		c.Timeout = 130_000
+	if c.Timeout < 300_000 {
+		c.Timeout = 300_000
 	}
 }
 
@@ -179,6 +184,9 @@ func (c *Config) LoadConfigFromEnv() {
 		if parsed, err := strconv.ParseInt(value, 10, 64); err == nil && parsed > 0 {
 			c.ContentDeploy.MaxBundleBytes = parsed
 		}
+	}
+	if value := os.Getenv("CONTENT_DEPLOY_STATIC_PUBLISHER"); value != "" {
+		c.ContentDeploy.StaticPublisherPath = value
 	}
 	if value := os.Getenv("TRAFFIC_AI_USER_AGENTS"); value != "" {
 		c.Traffic.AIUserAgents = csvList(value)

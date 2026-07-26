@@ -7,6 +7,20 @@ import type {
 } from '../blog/blogApi';
 import { getClientFingerprint } from '../../utils/fingerprint';
 import { isPrerenderRuntime } from '../../utils/runtimeContext';
+import { normalizeContentTimestamp } from '../../utils/contentTimestamp';
+
+const normalizeEpisode = (episode: EpisodeData): EpisodeData => ({
+  ...episode,
+  publish_date: normalizeContentTimestamp(episode.publish_date),
+  updated_at: normalizeContentTimestamp(episode.updated_at),
+});
+
+const normalizeEpisodeSeries = (series: EpisodeSeriesData): EpisodeSeriesData => ({
+  ...series,
+  episodes: (series.episodes || []).map(normalizeEpisode),
+  created_at: normalizeContentTimestamp(series.created_at),
+  updated_at: normalizeContentTimestamp(series.updated_at),
+});
 
 export const fetchEpisodeSeriesList = async (
   language: 'en' | 'zh' = 'en',
@@ -14,7 +28,7 @@ export const fetchEpisodeSeriesList = async (
   const response = await get<EpisodeSeriesListResponse>('/api/v1/episodes/series', {
     lang: formatLanguage(language),
   });
-  return response?.series ?? [];
+  return (response?.series ?? []).map(normalizeEpisodeSeries);
 };
 
 export const fetchEpisodeSeries = async (
@@ -22,9 +36,10 @@ export const fetchEpisodeSeries = async (
   language: 'en' | 'zh' = 'en',
 ): Promise<EpisodeSeriesData | null> => {
   if (!seriesSlug) return null;
-  return get<EpisodeSeriesData>(`/api/v1/episodes/series/${seriesSlug}`, {
+  const series = await get<EpisodeSeriesData>(`/api/v1/episodes/series/${seriesSlug}`, {
     lang: formatLanguage(language),
   });
+  return series ? normalizeEpisodeSeries(series) : null;
 };
 
 export const fetchEpisode = async (
@@ -32,10 +47,11 @@ export const fetchEpisode = async (
   language: 'en' | 'zh' = 'en',
 ): Promise<EpisodeData | null> => {
   if (!slug) return null;
-  return get<EpisodeData>(`/api/v1/episodes/${slug}`, {
+  const episode = await get<EpisodeData>(`/api/v1/episodes/${slug}`, {
     lang: formatLanguage(language),
     fingerprint: getClientFingerprint(),
   });
+  return episode ? normalizeEpisode(episode) : null;
 };
 
 export const updateEpisodeLikes = async (

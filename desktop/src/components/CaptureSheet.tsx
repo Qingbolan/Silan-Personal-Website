@@ -1,10 +1,21 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { AlertCircle, Check, LoaderCircle, Mic, Sparkles, Square } from 'lucide-react';
-import { EditorAssistDock, type EditorAssistReference } from './EditorAssistDock';
 import { LanguageCloseControls } from './LanguageCloseControls';
-import MarkdownEditor, { type MarkdownEditorHandle } from './MarkdownEditor';
-import type { CapturePhase, CaptureTarget, IdeaCategory } from '../types';
+import MarkdownEditor, {
+  type MarkdownEditorHandle,
+  type MarkdownSelectionAssistRequest,
+} from './MarkdownEditor';
+import {
+  type EditorAssistReference,
+  useEditorAssistSlashCommands,
+} from './editor/useEditorAssistSlashCommands';
+import type {
+  CapturePhase,
+  CaptureTarget,
+  IdeaCategory,
+  MarkdownSelectionAssistResult,
+} from '../types';
 
 type CaptureCategoryOption = { value: IdeaCategory; label: string; Icon: typeof Sparkles };
 
@@ -24,7 +35,6 @@ type CaptureSheetProps = {
   error: string | null;
   inputRef: React.Ref<MarkdownEditorHandle>;
   onAttachFiles: (files: File[]) => void;
-  onInsertMarkdown: (markdown: string) => void;
   onRequestClose: () => void;
   onDiscard: () => void;
   onKeepWriting: () => void;
@@ -52,7 +62,6 @@ export function CaptureSheet({
   error,
   inputRef,
   onAttachFiles,
-  onInsertMarkdown,
   onRequestClose,
   onDiscard,
   onKeepWriting,
@@ -70,6 +79,25 @@ export function CaptureSheet({
   const recordingDeadlineRef = React.useRef<number | null>(null);
   const recordingClockRef = React.useRef<number | null>(null);
   const waveformCanvasRef = React.useRef<HTMLCanvasElement | null>(null);
+  const editorAssist = useEditorAssistSlashCommands({
+    disabled: phase === 'submitting',
+    importing: phase === 'submitting',
+    references,
+    onAttachFiles,
+  });
+  const requestSelectionAssist = React.useCallback(async (
+    request: MarkdownSelectionAssistRequest,
+  ) => invoke<MarkdownSelectionAssistResult>('edit_markdown_selection', {
+    input: {
+      action: request.action,
+      language,
+      title: target === 'moment' ? 'Moment capture' : 'Article draft capture',
+      selected_text: request.selectedText,
+      before_context: request.beforeContext,
+      after_context: request.afterContext,
+      instruction: request.instruction,
+    },
+  }), [language, target]);
 
   const clearRecordingTimers = () => {
     if (recordingDeadlineRef.current !== null) window.clearTimeout(recordingDeadlineRef.current);
@@ -281,14 +309,16 @@ export function CaptureSheet({
             value={note}
             disabled={phase === 'submitting'}
             toolbarVisible
-            showStatus={false}
+            slashCommands={editorAssist.slashCommands}
             ariaLabel={target === 'moment' ? '事件内容' : '文章草稿'}
             placeholder={target === 'moment'
               ? '记录刚发生的进展、事件或状态变化... 输入 / 插入事件模板，[[ 连接已有内容'
               : '先把文章草稿写下来... 输入 / 插入结构块，[[ 连接已有内容'}
             onChange={onNoteChange}
             onKeyDown={onKeyDown}
+            onSelectionAssist={requestSelectionAssist}
           />
+          {editorAssist.fileInput}
         </div>
 
         {(error || voiceError) && (
@@ -298,15 +328,6 @@ export function CaptureSheet({
           </div>
         )}
       </div>
-
-      <EditorAssistDock
-        disabled={phase === 'submitting'}
-        importing={phase === 'submitting'}
-        attachmentCount={attachments.length}
-        references={references}
-        onAttachFiles={onAttachFiles}
-        onInsertMarkdown={onInsertMarkdown}
-      />
 
       <div className="capture-action-dock" aria-label="Capture actions">
         <button

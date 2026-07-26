@@ -181,6 +181,62 @@ func (bpc *BlogPostCreate) SetNillableFeaturedImageURL(s *string) *BlogPostCreat
 	return bpc
 }
 
+// SetProjectName sets the "project_name" field.
+func (bpc *BlogPostCreate) SetProjectName(s string) *BlogPostCreate {
+	bpc.mutation.SetProjectName(s)
+	return bpc
+}
+
+// SetNillableProjectName sets the "project_name" field if the given value is not nil.
+func (bpc *BlogPostCreate) SetNillableProjectName(s *string) *BlogPostCreate {
+	if s != nil {
+		bpc.SetProjectName(*s)
+	}
+	return bpc
+}
+
+// SetPublicationVenue sets the "publication_venue" field.
+func (bpc *BlogPostCreate) SetPublicationVenue(s string) *BlogPostCreate {
+	bpc.mutation.SetPublicationVenue(s)
+	return bpc
+}
+
+// SetNillablePublicationVenue sets the "publication_venue" field if the given value is not nil.
+func (bpc *BlogPostCreate) SetNillablePublicationVenue(s *string) *BlogPostCreate {
+	if s != nil {
+		bpc.SetPublicationVenue(*s)
+	}
+	return bpc
+}
+
+// SetProjectURL sets the "project_url" field.
+func (bpc *BlogPostCreate) SetProjectURL(s string) *BlogPostCreate {
+	bpc.mutation.SetProjectURL(s)
+	return bpc
+}
+
+// SetNillableProjectURL sets the "project_url" field if the given value is not nil.
+func (bpc *BlogPostCreate) SetNillableProjectURL(s *string) *BlogPostCreate {
+	if s != nil {
+		bpc.SetProjectURL(*s)
+	}
+	return bpc
+}
+
+// SetExternalResources sets the "external_resources" field.
+func (bpc *BlogPostCreate) SetExternalResources(s string) *BlogPostCreate {
+	bpc.mutation.SetExternalResources(s)
+	return bpc
+}
+
+// SetNillableExternalResources sets the "external_resources" field if the given value is not nil.
+func (bpc *BlogPostCreate) SetNillableExternalResources(s *string) *BlogPostCreate {
+	if s != nil {
+		bpc.SetExternalResources(*s)
+	}
+	return bpc
+}
+
 // SetReadingTimeMinutes sets the "reading_time_minutes" field.
 func (bpc *BlogPostCreate) SetReadingTimeMinutes(i int) *BlogPostCreate {
 	bpc.mutation.SetReadingTimeMinutes(i)
@@ -446,6 +502,21 @@ func (bpc *BlogPostCreate) check() error {
 			return &ValidationError{Name: "featured_image_url", err: fmt.Errorf(`ent: validator failed for field "BlogPost.featured_image_url": %w`, err)}
 		}
 	}
+	if v, ok := bpc.mutation.ProjectName(); ok {
+		if err := blogpost.ProjectNameValidator(v); err != nil {
+			return &ValidationError{Name: "project_name", err: fmt.Errorf(`ent: validator failed for field "BlogPost.project_name": %w`, err)}
+		}
+	}
+	if v, ok := bpc.mutation.PublicationVenue(); ok {
+		if err := blogpost.PublicationVenueValidator(v); err != nil {
+			return &ValidationError{Name: "publication_venue", err: fmt.Errorf(`ent: validator failed for field "BlogPost.publication_venue": %w`, err)}
+		}
+	}
+	if v, ok := bpc.mutation.ProjectURL(); ok {
+		if err := blogpost.ProjectURLValidator(v); err != nil {
+			return &ValidationError{Name: "project_url", err: fmt.Errorf(`ent: validator failed for field "BlogPost.project_url": %w`, err)}
+		}
+	}
 	if _, ok := bpc.mutation.ViewCount(); !ok {
 		return &ValidationError{Name: "view_count", err: errors.New(`ent: missing required field "BlogPost.view_count"`)}
 	}
@@ -537,6 +608,22 @@ func (bpc *BlogPostCreate) createSpec() (*BlogPost, *sqlgraph.CreateSpec) {
 	if value, ok := bpc.mutation.FeaturedImageURL(); ok {
 		_spec.SetField(blogpost.FieldFeaturedImageURL, field.TypeString, value)
 		_node.FeaturedImageURL = value
+	}
+	if value, ok := bpc.mutation.ProjectName(); ok {
+		_spec.SetField(blogpost.FieldProjectName, field.TypeString, value)
+		_node.ProjectName = value
+	}
+	if value, ok := bpc.mutation.PublicationVenue(); ok {
+		_spec.SetField(blogpost.FieldPublicationVenue, field.TypeString, value)
+		_node.PublicationVenue = value
+	}
+	if value, ok := bpc.mutation.ProjectURL(); ok {
+		_spec.SetField(blogpost.FieldProjectURL, field.TypeString, value)
+		_node.ProjectURL = value
+	}
+	if value, ok := bpc.mutation.ExternalResources(); ok {
+		_spec.SetField(blogpost.FieldExternalResources, field.TypeString, value)
+		_node.ExternalResources = value
 	}
 	if value, ok := bpc.mutation.ReadingTimeMinutes(); ok {
 		_spec.SetField(blogpost.FieldReadingTimeMinutes, field.TypeInt, value)

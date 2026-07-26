@@ -62,6 +62,42 @@ fn sync_writes_translation_rows_for_bilingual_items() {
 }
 
 #[test]
+fn sync_keeps_blog_covers_language_specific() {
+    let ws = workspace();
+    let mut sink = SqliteSink::open_in_memory().expect("in-memory sink");
+    ws.sync_into(&mut sink).expect("sync succeeds");
+
+    let mut statement = sink
+        .connection()
+        .prepare(
+            "SELECT language_code, featured_image_url \
+             FROM blog_post_translations ORDER BY language_code",
+        )
+        .expect("localized cover query prepares");
+    let covers = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .expect("localized covers query")
+        .collect::<Result<Vec<_>, _>>()
+        .expect("localized covers read");
+
+    assert_eq!(
+        covers,
+        vec![
+            (
+                "en".to_owned(),
+                "https://example.com/cover-en.png".to_owned()
+            ),
+            (
+                "zh".to_owned(),
+                "https://example.com/cover-zh.png".to_owned()
+            ),
+        ]
+    );
+}
+
+#[test]
 fn sync_records_sync_meta_provenance() {
     let ws = workspace();
     let mut sink = SqliteSink::open_in_memory().expect("in-memory sink");

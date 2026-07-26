@@ -41,6 +41,14 @@ type BlogPost struct {
 	IsFeatured bool `json:"is_featured,omitempty"`
 	// FeaturedImageURL holds the value of the "featured_image_url" field.
 	FeaturedImageURL string `json:"featured_image_url,omitempty"`
+	// ProjectName holds the value of the "project_name" field.
+	ProjectName string `json:"project_name,omitempty"`
+	// PublicationVenue holds the value of the "publication_venue" field.
+	PublicationVenue string `json:"publication_venue,omitempty"`
+	// ProjectURL holds the value of the "project_url" field.
+	ProjectURL string `json:"project_url,omitempty"`
+	// ExternalResources holds the value of the "external_resources" field.
+	ExternalResources string `json:"external_resources,omitempty"`
 	// ReadingTimeMinutes holds the value of the "reading_time_minutes" field.
 	ReadingTimeMinutes int `json:"reading_time_minutes,omitempty"`
 	// ViewCount holds the value of the "view_count" field.
@@ -90,7 +98,7 @@ func (*BlogPost) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case blogpost.FieldReadingTimeMinutes, blogpost.FieldViewCount, blogpost.FieldLikeCount, blogpost.FieldCommentCount, blogpost.FieldSeriesOrder:
 			values[i] = new(sql.NullInt64)
-		case blogpost.FieldID, blogpost.FieldUserID, blogpost.FieldCategoryID, blogpost.FieldSeriesID, blogpost.FieldTitle, blogpost.FieldSlug, blogpost.FieldExcerpt, blogpost.FieldContent, blogpost.FieldContentType, blogpost.FieldStatus, blogpost.FieldVisibility, blogpost.FieldFeaturedImageURL, blogpost.FieldPublishedAt:
+		case blogpost.FieldID, blogpost.FieldUserID, blogpost.FieldCategoryID, blogpost.FieldSeriesID, blogpost.FieldTitle, blogpost.FieldSlug, blogpost.FieldExcerpt, blogpost.FieldContent, blogpost.FieldContentType, blogpost.FieldStatus, blogpost.FieldVisibility, blogpost.FieldFeaturedImageURL, blogpost.FieldProjectName, blogpost.FieldPublicationVenue, blogpost.FieldProjectURL, blogpost.FieldExternalResources, blogpost.FieldPublishedAt:
 			values[i] = new(sql.NullString)
 		case blogpost.FieldCreatedAt, blogpost.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -186,6 +194,30 @@ func (bp *BlogPost) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field featured_image_url", values[i])
 			} else if value.Valid {
 				bp.FeaturedImageURL = value.String
+			}
+		case blogpost.FieldProjectName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field project_name", values[i])
+			} else if value.Valid {
+				bp.ProjectName = value.String
+			}
+		case blogpost.FieldPublicationVenue:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field publication_venue", values[i])
+			} else if value.Valid {
+				bp.PublicationVenue = value.String
+			}
+		case blogpost.FieldProjectURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field project_url", values[i])
+			} else if value.Valid {
+				bp.ProjectURL = value.String
+			}
+		case blogpost.FieldExternalResources:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field external_resources", values[i])
+			} else if value.Valid {
+				bp.ExternalResources = value.String
 			}
 		case blogpost.FieldReadingTimeMinutes:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -311,6 +343,18 @@ func (bp *BlogPost) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("featured_image_url=")
 	builder.WriteString(bp.FeaturedImageURL)
+	builder.WriteString(", ")
+	builder.WriteString("project_name=")
+	builder.WriteString(bp.ProjectName)
+	builder.WriteString(", ")
+	builder.WriteString("publication_venue=")
+	builder.WriteString(bp.PublicationVenue)
+	builder.WriteString(", ")
+	builder.WriteString("project_url=")
+	builder.WriteString(bp.ProjectURL)
+	builder.WriteString(", ")
+	builder.WriteString("external_resources=")
+	builder.WriteString(bp.ExternalResources)
 	builder.WriteString(", ")
 	builder.WriteString("reading_time_minutes=")
 	builder.WriteString(fmt.Sprintf("%v", bp.ReadingTimeMinutes))

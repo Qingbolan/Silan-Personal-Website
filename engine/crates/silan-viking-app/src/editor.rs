@@ -342,6 +342,33 @@ impl ContentEditor {
         expected_revision: &str,
         db_path: impl AsRef<Path>,
     ) -> Result<SourceDocument, EditorError> {
+        let values = fields
+            .iter()
+            .map(|(key, value)| {
+                let value = match *value {
+                    "true" => serde_yaml::Value::Bool(true),
+                    "false" => serde_yaml::Value::Bool(false),
+                    value => serde_yaml::Value::String(value.to_owned()),
+                };
+                ((*key).to_owned(), value)
+            })
+            .collect::<Vec<_>>();
+        self.save_frontmatter_values_and_sync(locator, &values, expected_revision, db_path)
+    }
+
+    /// Update arbitrary YAML frontmatter values and refresh the projection.
+    ///
+    /// Structured article resources use sequences of mappings, while the
+    /// original scalar editor remains a convenience wrapper above. Keeping
+    /// both paths inside one atomic mutation prevents resource metadata from
+    /// drifting away from title, cover, or lifecycle edits.
+    pub fn save_frontmatter_values_and_sync(
+        &self,
+        locator: &TranslationLocator,
+        fields: &[(String, serde_yaml::Value)],
+        expected_revision: &str,
+        db_path: impl AsRef<Path>,
+    ) -> Result<SourceDocument, EditorError> {
         let path = self.source_path(locator);
         let relative_path = self.relative_path(&path);
         let _save_guard = source_lock::acquire().map_err(|detail| EditorError::Io {
@@ -359,12 +386,7 @@ impl ContentEditor {
         let doc = frontmatter::split(&original);
         let mut map = parse_frontmatter_mapping(&doc.frontmatter, &relative_path)?;
         for (key, value) in fields {
-            let value = match *value {
-                "true" => serde_yaml::Value::Bool(true),
-                "false" => serde_yaml::Value::Bool(false),
-                value => serde_yaml::Value::String(value.to_owned()),
-            };
-            map.insert(serde_yaml::Value::String((*key).to_owned()), value);
+            map.insert(serde_yaml::Value::String(key.clone()), value.clone());
         }
         let frontmatter =
             serde_yaml::to_string(&serde_yaml::Value::Mapping(map)).map_err(|error| {

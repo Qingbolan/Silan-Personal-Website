@@ -2,6 +2,8 @@
 
 mod application;
 mod commands;
+mod credential_store;
+mod deepseek_credentials;
 mod model;
 mod openai_credentials;
 use std::path::Path;
@@ -20,11 +22,14 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::capture_blog,
             commands::capture_moment,
+            commands::apply_article_image_attribution,
             commands::commit_workspace_changes,
             commands::create_project,
             commands::deploy_content,
+            commands::edit_markdown_selection,
             commands::get_episode_series_source,
             commands::get_dashboard,
+            commands::get_deepseek_credentials,
             commands::get_deployment_plan,
             commands::get_delivery_sync_status,
             commands::get_geo_insights,
@@ -39,17 +44,21 @@ fn main() {
             commands::get_workspace_preferences,
             commands::generate_missing_translation,
             commands::generate_image_asset,
+            commands::generate_cover_asset,
             commands::import_episode_series_media_asset,
             commands::import_media_asset,
             commands::import_media_asset_bytes,
             commands::import_resume_media_asset,
             commands::list_documents,
+            commands::preview_article_image_attribution,
             commands::release_scope,
+            commands::remove_deepseek_credentials,
             commands::remove_openai_credentials,
             commands::remove_workspace_avatar,
             commands::save_content_metadata,
             commands::save_document,
             commands::save_document_state,
+            commands::save_deepseek_credentials,
             commands::save_engagement_stats,
             commands::save_episode_series,
             commands::save_openai_credentials,
@@ -58,9 +67,13 @@ fn main() {
             commands::save_resume_entries,
             commands::save_resume_profile,
             commands::save_resume_summary,
+            commands::review_blog_language,
+            commands::review_document_language,
+            commands::review_episode_series_language,
             commands::stage_workspace_paths,
             commands::sync_counterpart_translation,
             commands::sync_stats,
+            commands::test_deepseek_credentials,
             commands::test_openai_credentials,
             commands::transcribe_audio,
             commands::unstage_workspace_paths,
