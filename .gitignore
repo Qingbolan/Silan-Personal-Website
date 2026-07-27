@@ -89,3 +89,4 @@ pr/
 # Local/remote deployment credentials. Commit only deploy/.env.example.
 /.env
 /deploy/.env
+/.secrets/

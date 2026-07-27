@@ -46,9 +46,9 @@ site_url    = "https://silan.tech/"
 sitemap_url = "https://silan.tech/sitemap.xml"
 strict      = false
 
-# [search_submit.google]
-# credentials_file = "/etc/silan-backend/search-console-service-account.json"
-#
+[search_submit.google]
+credentials_file = "/etc/silan-backend/search-console-service-account.json"
+
 [search_submit.indexnow]
 key = "af2e52c6b9b6f992f5163482ca2a8835"
 #
