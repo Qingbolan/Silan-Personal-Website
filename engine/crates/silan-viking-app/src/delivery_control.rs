@@ -447,6 +447,18 @@ impl DeliveryControl {
         run(&repo, ["diff", "--", path])
     }
 
+    /// Unified diff for exactly the index content that `commit_workspace`
+    /// would commit. This is the read model used by AI commit-message
+    /// generation, so generated text cannot describe unstaged edits.
+    pub fn staged_diff(&self) -> Result<String, DeliveryControlError> {
+        let repo = self.repo()?;
+        let staged = run(&repo, ["diff", "--cached", "--name-only"])?;
+        if staged.trim().is_empty() {
+            return Err(DeliveryControlError::NothingStaged);
+        }
+        run(&repo, ["diff", "--cached"])
+    }
+
     /// Stage the given paths (`git add`), so they will be included the next
     /// time `commit_workspace` runs.
     pub fn stage_paths(&self, paths: &[String]) -> Result<(), DeliveryControlError> {
@@ -1132,5 +1144,21 @@ mod tests {
             control.remote_content_version(),
             Err(DeliveryControlError::MissingCredential)
         ));
+    }
+
+    #[test]
+    fn staged_diff_excludes_unstaged_edits() {
+        let (_directory, content, db) = fixture("http://127.0.0.1:1");
+        let path = content.join("resources/note.md");
+        std::fs::write(&path, "staged version\n").expect("write staged file");
+        git(&content, &["add", "resources/note.md"]);
+        std::fs::write(&path, "unstaged version\n").expect("write unstaged file");
+
+        let control = DeliveryControl::open(&content, &db, content.parent().expect("repo root"))
+            .expect("open");
+        let diff = control.staged_diff().expect("staged diff");
+
+        assert!(diff.contains("+staged version"));
+        assert!(!diff.contains("unstaged version"));
     }
 }

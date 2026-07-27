@@ -10,15 +10,16 @@
 
 ## 1. One sentence
 
-**silan-viking is silan's one-person context system.**
-markdown is the source of truth; the Rust engine (`silan`) incrementally
-syncs it into a SQLite derived cache that feeds the website; collaborating
-agents read and write the context through MCP; the personal website is an
-outward projection of the `visibility=public` slice of that context.
-**Single-tenant, single-device, content-driven, agent-native.**
+**Silan Viking is a local-first research publishing workspace.**
+Markdown/TOML is the source of truth; the Rust engine (`silan`) incrementally
+syncs it into a SQLite derived cache; the desktop and CLI help the owner
+capture, review, publish, deploy, and verify research updates; collaborating
+agents read context and prepare proposals through MCP; the website is the
+public projection of the reviewed `visibility=public` slice.
+**Single-tenant, owner-reviewed, content-driven, agent-native.**
 
 **Non-goals (here to block drift)**
-- ❌ Not a CMS — the owner manages "ideas", not "a website"
+- ❌ Not a CMS — the owner manages research evidence, claims, and review state, not "a website"
 - ❌ Not a multi-tenant SaaS — single-tenant is nailed (`17` §17.3)
 - ❌ Not a cross-device consistency system — multi-device relies on manual `git push/pull`
 - ❌ Not a compatibility layer for the legacy Python `silan` — the old repo is archive only
@@ -30,16 +31,17 @@ outward projection of the `visibility=public` slice of that context.
 ```
 $ cargo install silan-viking         # or curl|sh / pip install silan-viking
 $ silan init                          # lay content/ + toml + git under ~/.silan-viking/
-$ silan idea new "kv-store-on-iouring"
-$ vim .../parts/overview/zh.md
+$ silan blog new "kv-store-on-iouring"
+$ vim .../parts/body/zh.md
 $ silan index sync                    # incremental sync into _deploy/portfolio.db
+$ silan blog publish "kv-store-on-iouring"
 $ silan site deploy --confirm         # local or remote Docker deploy, zero Node, zero Go
 ```
 
 On the agent side (a Claude with the silan skill installed):
 voice a thought → `recall` finds the old idea → `ctx_write` adds to it
 → days later `capture` drafts → proposal branch → owner `silan proposal accept <ulid>`
-→ content matures → agent proposes `visibility=public` → accept → `silan site deploy`
+→ content matures → agent proposes public-state/source changes → accept → `silan site deploy`
 → site goes live (sitemap / robots / JSON-LD / per-page meta / pre-rendered HTML all there)
 → visitor comments/views land only on the server
 → owner `silan stats <slug>` queries the visitor fingerprint + traffic source remotely.

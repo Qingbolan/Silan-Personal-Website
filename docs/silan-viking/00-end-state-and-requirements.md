@@ -4,39 +4,44 @@
 
 ## §0.1 End state
 
-silan-viking is not a website, and it is not a content engine.
+silan-viking is not a website, and it is not a generic content engine.
 
-> **It is silan's one-person context system: it continually captures and
-> structures his ideas — from a fleeting spark, to an article in
-> progress, to a project that has taken shape — and lets any
-> collaborating agent understand him. The personal website is a
-> selective outward projection of the mature content inside that
-> context.**
+> **It is a local-first research publishing workspace: it helps a researcher
+> with a public body of work capture one new result, structure it into the
+> right public forms, connect the supporting evidence, review owner-controlled
+> changes, publish deliberately, deploy explicitly, and verify what reached
+> the web.**
+>
+> The personal context layer still exists, but it is the underlying
+> architecture. The user-facing job is keeping a researcher's public record
+> current when evidence changes.
 
 ### The picture of the end state
 
-silan speaks to a device that has silan-viking installed, or to an
-agent that carries this skill. He doesn't "enter content"; he just
-**thinks**:
+silan speaks to a device that has silan-viking installed, writes in the
+desktop/CLI, or works with an agent that carries this skill. He does not
+"manage a website" first; he starts from a research update:
 
-- He voices a half-formed thought → the agent captures it into context.
-- A few days later he mentions it again → the agent recognises it isn't
-  new, helps him think it through, and it becomes an article.
-- It matures → the agent helps him turn it into a project and tracks
-  progress.
-- He says "this can go public" → the agent **selectively projects** it
-  onto the personal website.
-- At the same time, any new agent that comes to collaborate → reads
-  his context first and understands him on day one.
+- A thought or experiment result is captured while the context is fresh.
+- The result becomes a moment, article, project update, or résumé evidence
+  without forcing one paragraph to serve every reader.
+- Related records keep stable identities and typed relations.
+- An agent may recover context and prepare a proposal, but source acceptance,
+  publication, and production deployment remain owner actions.
+- The reviewed state is projected to the public site with metadata that search
+  and AI systems can read.
+- The owner verifies which content version reached the web and inspects human
+  and crawler activity as diagnostic signals.
 
-There is **no "manage the website"** in this picture. The website is a
-skin that grows over the context once it is mature. silan only ever
-manages "his ideas".
+There is **no "manage the website"** as the primary job in this picture. The
+website is one public output of reviewed source. The thing being managed is
+the evidence, claims, relationships, review state, and deployed version around
+the research record.
 
 ### Three faces
 
-silan-viking = the **carrier** of ideas + a **service layer** of ideas
-for agents + a **projection layer** of ideas onto the world.
+silan-viking = the **source workspace** for research evidence + a **service
+layer** for agents + a **projection layer** onto the public web.
 Mapped to implementation:
 
 - carrier → `content/` + database (see `01-oop-structure.md`)
@@ -58,7 +63,7 @@ Mapped to implementation:
 | 9 | Naming: project/binary/crate = `silan-viking` (`silan-viking-*`); user command = `silan`; protocol = `silan://` |
 | 10 | The agent can search / update memory / update published content (through proposals) |
 | 11 | The agent can maintain the website (lint / draft / summarise + selective deploy) |
-| 12 | End state: communicate with a device/agent to capture an idea → assist writing an article → turn it into a project → selectively deploy; meanwhile improve the collaborating agent's understanding of the owner (context enrichment) |
+| 12 | End state: capture a research update → structure it into article/project/résumé evidence → connect relations → review owner-controlled proposals → publish deliberately → deploy explicitly → verify the web version; meanwhile improve the collaborating agent's usable context |
 | 13 | Single-tenant — serves only the owner |
 | 14 | When `silan site` or MCP deploys, automatically generate frontend crawler-visibility artefacts: sitemap.xml + robots.txt, JSON-LD structured data, pre-rendered static HTML for public pages, per-page meta (including OG / Twitter Card) |
 | 15 | CLI and MCP can query live interaction data for a specific item — view / comment stats for an idea/blog page or a chapter; can look up a visitor's browser fingerprint and IP; can identify visitor kind (human / search-engine crawler / AI crawler) and traffic source kind (search / social / AI chat / direct / on-site referral) |

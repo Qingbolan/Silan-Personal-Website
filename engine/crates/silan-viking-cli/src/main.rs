@@ -57,6 +57,7 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
             "blog add-part <slug> <role> · blog add-lang <slug> <lang>",
             "blog publish|unpublish <slug>",
             "blog list [--status <status>|--tag <tag>]",
+            "blog reader-review [<slug>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]",
             "blog language-check [<slug>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]",
         ],
         "project" => &[
@@ -73,6 +74,7 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
         ],
         "episode" => &[
             "episode series new|list|show|reorder|archive|rm <series>",
+            "episode series reader-review [<series>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]",
             "episode series language-check [<series>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]",
             "episode new <series> <slug>",
             "episode show|edit|publish|unpublish|archive|rm <series> <slug>",
@@ -127,7 +129,10 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
         ],
         "mcp" => &["mcp serve [--stdio] · mcp status"],
         "uninstall" => &["uninstall [--purge] [--dry-run|--yes]"],
-        "skill" => &["skill emit|status [--path PATH]", "skill rm [--path PATH]"],
+        "skill" => &[
+            "skill emit|status [--path PATH|--codex]",
+            "skill rm [--path PATH|--codex]",
+        ],
         "config" => &["config · config edit [--global]"],
         "credentials" => &[
             "credentials openai set|rotate",
@@ -364,21 +369,27 @@ fn run(args: Vec<String>) -> Result<(), String> {
             relation_link(&opts.content_root, from, to, kind)
         }
         ["skill", "emit"] => skill::emit(&opts.content_root, &skill::default_skill_dir()),
+        ["skill", "emit", "--codex"] => skill::emit(&opts.content_root, &skill::codex_skill_dir()),
         ["skill", "emit", "--path", path] | ["skill", "emit", path] => {
             skill::emit(&opts.content_root, Path::new(path))
         }
         ["skill", "status"] => skill::status(&opts.content_root, &skill::default_skill_dir()),
+        ["skill", "status", "--codex"] => {
+            skill::status(&opts.content_root, &skill::codex_skill_dir())
+        }
         ["skill", "status", "--path", path] | ["skill", "status", path] => {
             skill::status(&opts.content_root, Path::new(path))
         }
         ["skill", "rm"] => skill::remove(&skill::default_skill_dir()),
+        ["skill", "rm", "--codex"] => skill::remove(&skill::codex_skill_dir()),
         ["skill", "rm", "--path", path] | ["skill", "rm", path] => skill::remove(Path::new(path)),
 
         // -- episode: series sub-group (must precede the per-episode arms) --
         ["episode", "series", "new", series] => episode_series_new(&opts.content_root, series),
         ["episode", "series", "list"] => episode_series_list(&opts.content_root),
         ["episode", "series", "show", series] => episode_series_show(&opts.content_root, series),
-        ["episode", "series", "language-check", rest @ ..] => language_check::run(
+        ["episode", "series", "language-check", rest @ ..]
+        | ["episode", "series", "reader-review", rest @ ..] => language_check::run(
             &opts.content_root,
             silan_viking_app::LanguageAuditScope::EpisodeSeries,
             rest,
@@ -434,11 +445,13 @@ fn run(args: Vec<String>) -> Result<(), String> {
             // Reverse: status back to draft AND visibility back to private.
             type_set_lifecycle_state(&opts.content_root, "blog", slug, "draft", "private")
         }
-        ["blog", "language-check", rest @ ..] => language_check::run(
-            &opts.content_root,
-            silan_viking_app::LanguageAuditScope::Blog,
-            rest,
-        ),
+        ["blog", "language-check", rest @ ..] | ["blog", "reader-review", rest @ ..] => {
+            language_check::run(
+                &opts.content_root,
+                silan_viking_app::LanguageAuditScope::Blog,
+                rest,
+            )
+        }
         ["project", "progress", slug] => project_progress(&opts.content_root, slug),
         ["project", "feature", slug] => {
             type_set_field(&opts.content_root, "project", slug, "is_featured", "true")
@@ -924,7 +937,7 @@ fn print_help(content_root: &Path) {
     );
     println!(
         "  {}",
-        d("blog language-check [<slug>] [--min-confidence N] [--report PATH] [--json]")
+        d("blog reader-review|language-check [<slug>] [--min-confidence N] [--report PATH] [--json]")
     );
     println!(
         "  {}",
@@ -940,7 +953,7 @@ fn print_help(content_root: &Path) {
     );
     println!(
         "  {}",
-        d("episode series language-check [<series>] [--min-confidence N] [--report PATH] [--json]")
+        d("episode series reader-review|language-check [<series>] [--min-confidence N] [--report PATH] [--json]")
     );
     println!(
         "  {}",
@@ -1038,7 +1051,24 @@ fn default_config(content_dir: &str) -> String {
          # host         = \"example.com\"\n\
          # user         = \"deploy\"\n\
          # ssh_key_path = \"~/.ssh/silan_deploy_ed25519\"  # path only, never the key\n\
-         # remote_dir   = \"/srv/silan-viking\"\n"
+         # remote_dir   = \"/srv/silan-viking\"\n\
+         # \n\
+         # [search_submit] — optional; `silan site deploy` projects this into\n\
+         # the remote frontend publisher after sitemap generation.\n\
+         # providers   = [\"google\", \"indexnow\", \"baidu\"]\n\
+         # site_url    = \"https://example.com/\"\n\
+         # sitemap_url = \"https://example.com/sitemap.xml\"\n\
+         # strict      = false\n\
+         # \n\
+         # [search_submit.google]\n\
+         # credentials_file = \"/etc/silan/search-console-service-account.json\"\n\
+         # \n\
+         # [search_submit.indexnow]\n\
+         # key = \"replace-with-indexnow-key\"\n\
+         # \n\
+         # [search_submit.baidu]\n\
+         # site  = \"example.com\"\n\
+         # token = \"replace-with-baidu-token\"\n"
     )
 }
 
@@ -2996,6 +3026,26 @@ struct DeployConfig {
     /// Selects the OAuth credential set for this deployment. Different
     /// domains may isolate credentials or intentionally share a profile.
     credential_profile: CredentialProfile,
+    /// Optional search-engine submission settings. These are projected into
+    /// the remote frontend publish environment; provider secrets should still
+    /// be scoped to this deploy profile rather than hard-coded in scripts.
+    search_submit: SearchSubmitConfig,
+}
+
+#[derive(Debug, Clone, Default)]
+struct SearchSubmitConfig {
+    providers: Vec<String>,
+    site_url: Option<String>,
+    sitemap_url: Option<String>,
+    strict: Option<bool>,
+    google_credentials_file: Option<String>,
+    google_credentials_json: Option<String>,
+    indexnow_key: Option<String>,
+    indexnow_key_location: Option<String>,
+    indexnow_endpoint: Option<String>,
+    baidu_site: Option<String>,
+    baidu_token: Option<String>,
+    baidu_endpoint: Option<String>,
 }
 
 /// Read and validate `[deploy]` from the project config. A missing section or
@@ -3124,6 +3174,7 @@ fn deploy_config(content_root: &Path) -> Result<DeployConfig, String> {
             .unwrap_or(silan_viking_app::DEFAULT_CREDENTIAL_PROFILE),
     )
     .map_err(|error| format!("[deploy].credential_profile: {error}"))?;
+    let search_submit = parse_search_submit_config(config.get("search_submit"))?;
 
     Ok(DeployConfig {
         mode,
@@ -3141,6 +3192,103 @@ fn deploy_config(content_root: &Path) -> Result<DeployConfig, String> {
         systemd_unit,
         nginx_extension_dir,
         credential_profile,
+        search_submit,
+    })
+}
+
+fn search_submit_table<'a>(
+    root: &'a toml::Value,
+    name: &str,
+) -> Option<&'a toml::map::Map<String, toml::Value>> {
+    root.get(name).and_then(|value| value.as_table())
+}
+
+fn search_submit_string(
+    table: Option<&toml::map::Map<String, toml::Value>>,
+    key: &str,
+    path: &str,
+) -> Result<Option<String>, String> {
+    let Some(value) = table.and_then(|table| table.get(key)) else {
+        return Ok(None);
+    };
+    match value.as_str() {
+        Some(raw) if raw.contains('\n') || raw.contains('\r') => {
+            Err(format!("{path}.{key} must not contain line breaks"))
+        }
+        Some(raw) if raw.trim().is_empty() => Ok(None),
+        Some(raw) => Ok(Some(raw.trim().to_owned())),
+        None => Err(format!("{path}.{key} must be a string")),
+    }
+}
+
+fn search_submit_bool(
+    table: Option<&toml::map::Map<String, toml::Value>>,
+    key: &str,
+    path: &str,
+) -> Result<Option<bool>, String> {
+    let Some(value) = table.and_then(|table| table.get(key)) else {
+        return Ok(None);
+    };
+    value
+        .as_bool()
+        .map(Some)
+        .ok_or_else(|| format!("{path}.{key} must be true or false"))
+}
+
+fn parse_search_submit_config(root: Option<&toml::Value>) -> Result<SearchSubmitConfig, String> {
+    let Some(root) = root else {
+        return Ok(SearchSubmitConfig::default());
+    };
+    let table = root
+        .as_table()
+        .ok_or("[search_submit] must be a TOML table")?;
+    let root_table = Some(table);
+    let google = search_submit_table(root, "google");
+    let indexnow = search_submit_table(root, "indexnow");
+    let baidu = search_submit_table(root, "baidu");
+
+    let providers = match table.get("providers") {
+        None => Vec::new(),
+        Some(value) => value
+            .as_array()
+            .ok_or("[search_submit].providers must be an array of strings")?
+            .iter()
+            .map(|entry| {
+                entry
+                    .as_str()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_owned)
+                    .ok_or("[search_submit].providers entries must be non-empty strings".to_owned())
+            })
+            .collect::<Result<Vec<_>, _>>()?,
+    };
+
+    Ok(SearchSubmitConfig {
+        providers,
+        site_url: search_submit_string(root_table, "site_url", "[search_submit]")?,
+        sitemap_url: search_submit_string(root_table, "sitemap_url", "[search_submit]")?,
+        strict: search_submit_bool(root_table, "strict", "[search_submit]")?,
+        google_credentials_file: search_submit_string(
+            google,
+            "credentials_file",
+            "[search_submit.google]",
+        )?,
+        google_credentials_json: search_submit_string(
+            google,
+            "credentials_json",
+            "[search_submit.google]",
+        )?,
+        indexnow_key: search_submit_string(indexnow, "key", "[search_submit.indexnow]")?,
+        indexnow_key_location: search_submit_string(
+            indexnow,
+            "key_location",
+            "[search_submit.indexnow]",
+        )?,
+        indexnow_endpoint: search_submit_string(indexnow, "endpoint", "[search_submit.indexnow]")?,
+        baidu_site: search_submit_string(baidu, "site", "[search_submit.baidu]")?,
+        baidu_token: search_submit_string(baidu, "token", "[search_submit.baidu]")?,
+        baidu_endpoint: search_submit_string(baidu, "endpoint", "[search_submit.baidu]")?,
     })
 }
 
@@ -5017,6 +5165,65 @@ fn remote_frontend_current_dir(cfg: &DeployConfig) -> String {
 
 const REMOTE_FRONTEND_PUBLISHER: &str = "/usr/local/libexec/silan-viking-publish-frontend";
 
+fn search_submit_env_pairs(cfg: &DeployConfig) -> Vec<(&'static str, String)> {
+    let search = &cfg.search_submit;
+    let mut pairs = Vec::new();
+    if !search.providers.is_empty() {
+        pairs.push(("SEARCH_ENGINE_SUBMIT_PROVIDERS", search.providers.join(",")));
+    }
+    if let Some(value) = &search.site_url {
+        pairs.push(("SEARCH_ENGINE_SITE_URL", value.clone()));
+    }
+    if let Some(value) = &search.sitemap_url {
+        pairs.push(("SEARCH_ENGINE_SITEMAP_URL", value.clone()));
+    }
+    if let Some(value) = search.strict {
+        pairs.push((
+            "SEARCH_ENGINE_SUBMIT_STRICT",
+            if value { "true" } else { "false" }.to_owned(),
+        ));
+    }
+    if let Some(value) = &search.google_credentials_file {
+        pairs.push(("GOOGLE_SEARCH_CONSOLE_CREDENTIALS_FILE", value.clone()));
+    }
+    if let Some(value) = &search.google_credentials_json {
+        pairs.push(("GOOGLE_SEARCH_CONSOLE_CREDENTIALS_JSON", value.clone()));
+    }
+    if let Some(value) = &search.indexnow_key {
+        pairs.push(("INDEXNOW_KEY", value.clone()));
+    }
+    if let Some(value) = &search.indexnow_key_location {
+        pairs.push(("INDEXNOW_KEY_LOCATION", value.clone()));
+    }
+    if let Some(value) = &search.indexnow_endpoint {
+        pairs.push(("INDEXNOW_ENDPOINT", value.clone()));
+    }
+    if let Some(value) = &search.baidu_site {
+        pairs.push(("BAIDU_SITE", value.clone()));
+    }
+    if let Some(value) = &search.baidu_token {
+        pairs.push(("BAIDU_TOKEN", value.clone()));
+    }
+    if let Some(value) = &search.baidu_endpoint {
+        pairs.push(("BAIDU_SUBMIT_ENDPOINT", value.clone()));
+    }
+    pairs
+}
+
+fn search_submit_shell_exports(cfg: &DeployConfig) -> String {
+    search_submit_env_pairs(cfg)
+        .into_iter()
+        .map(|(key, value)| format!("export {key}={}; ", shell_quote(&value)))
+        .collect::<String>()
+}
+
+fn search_submit_wrapper_exports(cfg: &DeployConfig) -> String {
+    search_submit_env_pairs(cfg)
+        .into_iter()
+        .map(|(key, value)| format!("export {key}={}\n", shell_quote(&value)))
+        .collect::<String>()
+}
+
 /// Install a project-owned Node runtime on the server. The archive is checked
 /// against nodejs.org's signed release checksum list before extraction, and no
 /// system Node/npm package is required.
@@ -5076,6 +5283,7 @@ fn run_remote_frontend_stage(cfg: &DeployConfig, stage: &str) -> Result<(), Stri
         .public_url
         .clone()
         .unwrap_or_else(|| format!("https://{}", cfg.host));
+    let search_submit_exports = search_submit_shell_exports(cfg);
     let state_root = remote_frontend_state_root(cfg);
     let source_dir = remote_frontend_source_dir(cfg);
     let command = format!(
@@ -5083,11 +5291,13 @@ fn run_remote_frontend_stage(cfg: &DeployConfig, stage: &str) -> Result<(), Stri
          export PATH=/opt/silan-viking/node/bin:$PATH && \
          export SILAN_FRONTEND_STATE_ROOT={state_root} && \
          export SILAN_PUBLIC_ORIGIN={public_origin} && \
+         {search_submit_exports}\
          cd {source_dir} && \
          test -f scripts/server-publish.sh && \
          bash scripts/server-publish.sh {stage}",
         state_root = shell_quote(&state_root),
         public_origin = shell_quote(public_origin.trim_end_matches('/')),
+        search_submit_exports = search_submit_exports,
         source_dir = shell_quote(&source_dir),
     );
     let output = ssh_exec(cfg, &command)?;
@@ -5112,17 +5322,20 @@ fn provision_nginx_frontend_publisher(
         .public_url
         .clone()
         .unwrap_or_else(|| format!("https://{}", cfg.host));
+    let search_submit_exports = search_submit_wrapper_exports(cfg);
     let wrapper = format!(
         r#"#!/usr/bin/env bash
 set -euo pipefail
 export PATH=/opt/silan-viking/node/bin:$PATH
 export SILAN_FRONTEND_STATE_ROOT={state_root}
 export SILAN_PUBLIC_ORIGIN={public_origin}
+{search_submit_exports}
 cd {source_dir}
 exec bash scripts/server-publish.sh publish
 "#,
         state_root = shell_quote(&state_root),
         public_origin = shell_quote(public_origin.trim_end_matches('/')),
+        search_submit_exports = search_submit_exports,
         source_dir = shell_quote(&source_dir),
     );
     let drop_in = format!(
@@ -6905,7 +7118,8 @@ fn resume_add_part(content_root: &Path, role: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        media_generation_hash, stamp_content_commit, validate_stats_token,
+        media_generation_hash, parse_search_submit_config, search_submit_env_pairs,
+        stamp_content_commit, validate_stats_token, CredentialProfile, DeployConfig, DeployMode,
         DEPLOYED_STATS_TOKEN_ENV, PRIVATE_API_TOKEN_ENV,
     };
     use silan_viking_app::ScannedAsset;
@@ -6934,6 +7148,82 @@ mod tests {
     fn deployed_stats_token_reports_the_runtime_env_name() {
         let err = validate_stats_token(DEPLOYED_STATS_TOKEN_ENV, "short").expect_err("short token");
         assert!(err.contains("STATS_SYNC_TOKEN"), "{err}");
+    }
+
+    #[test]
+    fn search_submit_config_projects_to_frontend_publish_environment() {
+        let root: toml::Value = r#"
+            providers = ["google", "indexnow", "baidu"]
+            site_url = "https://silan.tech/"
+            sitemap_url = "https://silan.tech/sitemap.xml"
+            strict = true
+
+            [google]
+            credentials_file = "/etc/silan/search-console.json"
+
+            [indexnow]
+            key = "index-key"
+            key_location = "https://silan.tech/index-key.txt"
+
+            [baidu]
+            site = "silan.tech"
+            token = "baidu-token"
+        "#
+        .parse()
+        .expect("parse test toml");
+        let search_submit =
+            parse_search_submit_config(Some(&root)).expect("parse search submit config");
+        assert_eq!(
+            search_submit.providers,
+            vec![
+                "google".to_owned(),
+                "indexnow".to_owned(),
+                "baidu".to_owned()
+            ]
+        );
+
+        let cfg = DeployConfig {
+            mode: DeployMode::Nginx,
+            host: "43.106.17.64".to_owned(),
+            user: "root".to_owned(),
+            ssh_key_path: PathBuf::from("/tmp/key"),
+            remote_dir: "/www/wwwroot/silan.tech".to_owned(),
+            ssh_port: 22,
+            public_url: Some("https://silan.tech".to_owned()),
+            backend_port: 5200,
+            systemd_unit: "silan-backend".to_owned(),
+            nginx_extension_dir: None,
+            credential_profile: CredentialProfile::default_profile(),
+            search_submit,
+        };
+        let pairs = search_submit_env_pairs(&cfg);
+
+        assert!(
+            pairs.contains(&(
+                "SEARCH_ENGINE_SUBMIT_PROVIDERS",
+                "google,indexnow,baidu".to_owned()
+            )),
+            "{pairs:?}"
+        );
+        assert!(
+            pairs.contains(&(
+                "GOOGLE_SEARCH_CONSOLE_CREDENTIALS_FILE",
+                "/etc/silan/search-console.json".to_owned()
+            )),
+            "{pairs:?}"
+        );
+        assert!(
+            pairs.contains(&("INDEXNOW_KEY", "index-key".to_owned())),
+            "{pairs:?}"
+        );
+        assert!(
+            pairs.contains(&("BAIDU_TOKEN", "baidu-token".to_owned())),
+            "{pairs:?}"
+        );
+        assert!(
+            pairs.contains(&("SEARCH_ENGINE_SUBMIT_STRICT", "true".to_owned())),
+            "{pairs:?}"
+        );
     }
 
     #[test]

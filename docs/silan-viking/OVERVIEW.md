@@ -5,10 +5,11 @@
 > with pointers to the detailed chapters. After this one document, you
 > shouldn't have to piece things together across seven files.
 >
-> 30-second positioning: silan-viking is silan's one-person context system —
-> markdown is the source of truth, the Rust engine `silan` syncs it into
-> SQLite to feed the website, collaborating agents read and write it
-> through MCP. Details in `00-end-state-and-requirements.md`.
+> 30-second positioning: Silan Viking is a local-first research publishing
+> workspace. Markdown/TOML is the source of truth, the Rust engine `silan`
+> syncs it into SQLite, the desktop and CLI help the owner review updates,
+> MCP lets agents prepare proposals, and the website is the public projection
+> of reviewed content. Details in `00-end-state-and-requirements.md`.
 
 ---
 
@@ -16,7 +17,7 @@
 
 ```
                  ┌─────────────── local machine ──────────────┐
-  silan writes md ─▶ content/ (markdown source of truth, Git repo)
+  owner captures / edits ─▶ content/ (Markdown/TOML source of truth, Git repo)
                           │  silan index sync
                           ▼
                      portfolio.db (derived cache; the local copy has no runtime data)
@@ -28,7 +29,7 @@
                      ┌─────────────── server ─────────────────┐
                      Go API + portfolio.db + frontend
                            │
-                     visitors browse → comments / likes / pings — runtime data is born only here
+                     visitors/crawlers browse → comments / pings — runtime data is born only here
                            │
   silan stats (remote query) ◀──────────────────────┘
                      └────────────────────────────────────────┘

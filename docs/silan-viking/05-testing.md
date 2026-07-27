@@ -396,8 +396,9 @@ entry_list Parts and the skills key_value_list land into `part_entry`
 | Scenario | What it tests | Expected |
 |---|---|---|
 | ★ **`silan skill emit` artefacts** | Run `silan skill emit --path t` | `t/silan-viking/` has `SKILL.md` (frontmatter with name/description) + `reference/mcp-tools.md`; exit code 0 |
+| ★ **`silan skill emit --codex` artefacts** | Run `silan skill emit --codex` | `~/.codex/skills/silan-viking/` has the same derived `SKILL.md` + `reference/mcp-tools.md` package for Codex discovery |
 | SKILL.md frontmatter compliance | Parse the emitted `SKILL.md` | Frontmatter has `name` / `description`; description is the fixed template and covers the natural-language trigger surface |
-| Skill body embeds project state | Read the body of the emitted `SKILL.md` | Includes the current 6 content types + the MCP local resolution rules; synced bundle has no absolute paths or fixed ports |
+| Skill body embeds project state | Read the body of the emitted `SKILL.md` | Includes the current 6 content types, reader-review workflow, and MCP local resolution rules; synced bundle has no absolute paths or fixed ports |
 | ★ **MCP coordinates resolve locally** | Emit on machine A, copy to machine B, run `silan skill status` + `silan mcp status --json` on B | Connects via machine B's own `silan mcp serve --stdio`; if the binary / project / Schema hash mismatches, reports `binary_found` / `mcp_available` / `schema_hash_match` failures explicitly |
 | ★ **emit is derived; rebuildable** | Edit `SCHEMA.md`, then re-`emit` | The skill bundle overwrites and follows the new project state; no stale type listings remain |
 | `silan skill status` consistency | After emit, edit `SCHEMA.md`, then `skill status` | Detects the mismatch (ContentHash comparison); prompts re-emit |

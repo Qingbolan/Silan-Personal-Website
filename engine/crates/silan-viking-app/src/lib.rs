@@ -24,6 +24,7 @@
 mod api_credentials;
 
 pub mod capture;
+pub mod commit_message;
 pub mod cover;
 pub mod credential_profile;
 pub mod deepseek_credentials;
@@ -53,6 +54,10 @@ pub mod workspace_content;
 pub mod workspace_sync;
 
 pub use capture::{CaptureError, CapturedContent, ContentCreator, IdeaCategory};
+pub use commit_message::{
+    DeepSeekCommitMessageError, DeepSeekCommitMessageGenerator, DEEPSEEK_COMMIT_MESSAGE_MODEL_ENV,
+    DEFAULT_DEEPSEEK_COMMIT_MESSAGE_MODEL,
+};
 pub use cover::{
     CoverApplyState, CoverBrief, CoverError, CoverGenerationInput, CoverGenerationResult,
     CoverTargetKind, CoverTargetSummary, CoverWorkspace,
@@ -94,9 +99,10 @@ pub use language_audit::{
     DeepSeekLanguageAuditError, DeepSeekLanguageAuditor, DocumentLanguageAudit,
     LanguageAuditCategory, LanguageAuditDocument, LanguageAuditFailure, LanguageAuditFinding,
     LanguageAuditProgress, LanguageAuditReport, LanguageAuditRunState, LanguageAuditScope,
-    LanguageAuditSeverity, LanguageAuditUsage, LanguageAuditWorkflow, LanguageAuditWorkspace,
-    LanguageAuditWorkspaceError, DEEPSEEK_LANGUAGE_AUDIT_MODEL_ENV,
-    DEFAULT_DEEPSEEK_LANGUAGE_AUDIT_MODEL, DEFAULT_LANGUAGE_AUDIT_MIN_CONFIDENCE,
+    LanguageAuditScore, LanguageAuditScoreDimension, LanguageAuditSeverity, LanguageAuditUsage,
+    LanguageAuditWorkflow, LanguageAuditWorkspace, LanguageAuditWorkspaceError,
+    DEEPSEEK_LANGUAGE_AUDIT_MODEL_ENV, DEFAULT_DEEPSEEK_LANGUAGE_AUDIT_MODEL,
+    DEFAULT_LANGUAGE_AUDIT_MIN_CONFIDENCE,
 };
 pub use media_library::{MediaAssetRef, MediaLibrary, MediaLibraryError, MediaReferenceStatus};
 pub use media_optimizer::{

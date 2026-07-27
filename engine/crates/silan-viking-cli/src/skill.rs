@@ -1,7 +1,7 @@
-//! The `silan skill` command group — generate the Claude skill package
+//! The `silan skill` command group — generate the collaborating-agent skill package
 //! (`docs/silan-viking/13`).
 //!
-//! A silan-viking skill is a small tree under `~/.claude/skills/silan-viking/`:
+//! A silan-viking skill is a small tree under an agent skill directory:
 //! `SKILL.md` (frontmatter + body) and `reference/mcp-tools.md`. It is a
 //! *derived artifact* — `silan skill emit` regenerates it from the truth
 //! source (`silan-viking.toml` + `content/SCHEMA.md`), so it never drifts.
@@ -17,9 +17,10 @@ use std::path::{Path, PathBuf};
 /// mounts the skill by matching this against what silan is doing.
 const DESCRIPTION: &str = "silan's personal context system. \
 Use it when silan voices a moment, a spark, a half-formed thought, or wants to \
-write an article / push a project forward / review site content and visitor \
-data — to capture the thought into context, help write, maintain projects, \
-and selectively publish.";
+write an article / push a project forward / review article clarity, reader \
+pull, actionability, expression quality, site content, or visitor data — to \
+capture the thought into context, help write, maintain projects, run reader \
+reviews, and selectively publish.";
 
 /// The default install location — Claude discovers skills by scanning here.
 pub fn default_skill_dir() -> PathBuf {
@@ -28,6 +29,18 @@ pub fn default_skill_dir() -> PathBuf {
         .join(".claude")
         .join("skills")
         .join("silan-viking")
+}
+
+/// The Codex install location. `CODEX_HOME` mirrors Codex's own skill lookup
+/// convention; when unset, Codex scans `~/.codex/skills`.
+pub fn codex_skill_dir() -> PathBuf {
+    let root = std::env::var("CODEX_HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_owned());
+            Path::new(&home).join(".codex")
+        });
+    root.join("skills").join("silan-viking")
 }
 
 /// Render `SKILL.md` — frontmatter + the four-section body (`13` §13.4). The
@@ -63,6 +76,10 @@ fn render_skill_md(content_root: &Path) -> String {
          \n\
          silan's personal context system. The truth source is markdown under\n\
          `silan://resources/` ({types}); capabilities are served over MCP.\n\
+         The CLI also exposes a DeepSeek reader review for Blog and episode\n\
+         series prose: it scores expert pull, general clarity, actionability,\n\
+         and expression quality, then reports concrete reader, rigor,\n\
+         terminology, expression, logic, and Markdown-structure findings.\n\
          \n\
          ## Connecting\n\
          \n\
@@ -85,6 +102,7 @@ fn render_skill_md(content_root: &Path) -> String {
          | wanting a *new* moment / blog / project written | `propose` to a fresh `silan://resources/<kind>/<slug>` — see the note below |\n\
          | wanting to think a moment through, write it up | `recall` for related Items first, then `propose` |\n\
          | wanting to push a project / moment forward | `propose` anchored to the right Part (e.g. progress) |\n\
+         | asking whether an article is clear, attractive, rigorous, usable, or weirdly expressed | run `silan blog reader-review <slug>` or `silan episode series reader-review <series>` only after confirming DeepSeek review is intended; authored source is sent to DeepSeek |\n\
          | asking \"how many people read this\" | `stats` / `visitors` / `crawler_breakdown` / `source_breakdown` |\n\
          | asking you to remember something about him / the project | `ctx_write` to `silan://agent/` — written directly, no proposal |\n\
          | ending the session | `reflect(session)` — settle it into agent memory |\n\
@@ -145,6 +163,23 @@ fn render_skill_md(content_root: &Path) -> String {
          | flip an Item to public *locally* | `silan-viking site publish <uri>` (this only edits frontmatter; still needs `update-content` to reach prod) |\n\
          | find the Blog or series that needs a cover | `silan-viking cover find <query> --type blog|series --json` |\n\
          | generate and apply its cover | review `silan-viking cover generate <target-uri> --dry-run --json`, then rerun without `--dry-run` |\n\
+         \n\
+         ## Read-only review CLI\n\
+         \n\
+         Use these only when silan asks for a reader/editor review and accepts\n\
+         that the saved authored source is sent to DeepSeek. The new semantic\n\
+         entrypoint is `reader-review`; `language-check` remains as an older\n\
+         alias. Reports include four 1-5 scores (`expert_pull`,\n\
+         `general_clarity`, `actionability`, `expression_quality`) plus exact\n\
+         findings in `unnatural_expression`, `logical_gap`, `concept_misuse`,\n\
+         `terminology`, `audience_fit`, `actionability_gap`, `rigor_gap`, and\n\
+         `markdown_structure`.\n\
+         \n\
+         | silan wants to… | the verb is… |\n\
+         |---|---|\n\
+         | review one Blog or every Blog | `silan-viking blog reader-review [<slug>] [--min-confidence N] [--report PATH] [--json]` |\n\
+         | review one episode series or every series | `silan-viking episode series reader-review [<series>] [--min-confidence N] [--report PATH] [--json]` |\n\
+         | keep old scripts working | `language-check` is still accepted as an alias for `reader-review` |\n\
          \n\
          ## Reference\n\
          \n\
@@ -323,10 +358,14 @@ mod tests {
             "## Connecting",
             "## When to do what",
             "## Three lines that must not be crossed",
+            "## Read-only review CLI",
             "## Reference",
         ] {
             assert!(md.contains(section), "SKILL.md must have `{section}`");
         }
+        assert!(md.contains("reader-review"));
+        assert!(md.contains("expert_pull"));
+        assert!(md.contains("markdown_structure"));
     }
 
     #[test]

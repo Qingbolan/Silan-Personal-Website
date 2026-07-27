@@ -1,12 +1,15 @@
-# 18 · DeepSeek language-review workflow
+# 18 · DeepSeek reader-review workflow
 
 ## Purpose
 
-The language-review workflow detects reader-facing prose that is unnatural,
-logically incomplete, conceptually inconsistent, or terminologically odd. It
-is diagnostic: it never rewrites authored Markdown or accepts a suggestion.
+The reader-review workflow detects reader-facing prose and Markdown reading
+structure problems from several reader angles. It checks whether expert,
+technical, research, adjacent-technical, and ordinary readers can understand
+the claim, feel enough pull to continue, know how to act on it, and trust the
+expression. It is diagnostic: it never rewrites authored Markdown or accepts a
+suggestion.
 
-The same application workflow serves the CLI and Silan Context System Desktop.
+The same application workflow serves the CLI and Silan Viking Desktop.
 Provider calls, target discovery, failure handling, and report construction do
 not belong to either presentation adapter.
 
@@ -58,8 +61,9 @@ The content editor's document column exposes:
 Unsaved target files disable the corresponding action. This guarantees that
 the source displayed in the report is the source sent to DeepSeek. After a
 review, the document column shows either a pass mark or its finding count.
-Opening the report shows exact quotes, source lines, category, severity,
-explanation, suggested repair, model, and confidence threshold.
+Opening the report shows four iteration scores, exact quotes, source lines,
+category, severity, explanation, suggested repair, model, and confidence
+threshold.
 
 DeepSeek credentials are configured under **Workspace settings → AI
 connection**. Desktop and CLI use the same stable macOS Keychain service and

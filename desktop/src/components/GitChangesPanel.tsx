@@ -6,6 +6,7 @@ import {
   GitBranch,
   GitCommitHorizontal,
   LoaderCircle,
+  Sparkles,
   X,
 } from 'lucide-react';
 import type { WorkspaceFileChange } from '../types';
@@ -79,6 +80,7 @@ export function GitChangesPanel({ onClose, onCommitted }: GitChangesPanelProps) 
   const [diffError, setDiffError] = React.useState<string | null>(null);
   const [togglingPath, setTogglingPath] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState('');
+  const [generatingMessage, setGeneratingMessage] = React.useState(false);
   const [committing, setCommitting] = React.useState(false);
   const [commitError, setCommitError] = React.useState<string | null>(null);
 
@@ -123,6 +125,20 @@ export function GitChangesPanel({ onClose, onCommitted }: GitChangesPanelProps) 
 
   const stagedPaths = changes.filter((change) => change.staged).map((change) => change.path);
   const allStaged = changes.length > 0 && stagedPaths.length === changes.length;
+
+  const generateCommitMessage = async () => {
+    if (generatingMessage || committing || stagedPaths.length === 0) return;
+    setGeneratingMessage(true);
+    setCommitError(null);
+    try {
+      const generated = await invoke<string>('generate_workspace_commit_message');
+      setMessage(generated.trim());
+    } catch (reason) {
+      setCommitError(String(reason));
+    } finally {
+      setGeneratingMessage(false);
+    }
+  };
 
   const toggleStaged = async (change: WorkspaceFileChange) => {
     if (togglingPath) return;
@@ -310,22 +326,35 @@ export function GitChangesPanel({ onClose, onCommitted }: GitChangesPanelProps) 
         <label className="git-panel-commit-field">
           <span>
             Commit message
-            <small>{stagedPaths.length} staged file{stagedPaths.length === 1 ? '' : 's'}</small>
+            <span className="git-panel-commit-tools">
+              <button
+                type="button"
+                className="git-panel-generate-message"
+                disabled={generatingMessage || committing || stagedPaths.length === 0}
+                onClick={() => void generateCommitMessage()}
+                title="Generate commit message with DeepSeek"
+                aria-label="Generate commit message with DeepSeek"
+              >
+                {generatingMessage ? <LoaderCircle size={12} className="spin" /> : <Sparkles size={12} />}
+                {generatingMessage ? 'Generating' : 'DeepSeek'}
+              </button>
+              <small>{stagedPaths.length} staged file{stagedPaths.length === 1 ? '' : 's'}</small>
+            </span>
           </span>
           <textarea
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             placeholder={stagedPaths.length > 0
-              ? 'Describe this content change...'
+              ? 'Describe this content change or generate with DeepSeek...'
               : 'Stage at least one file to commit...'}
-            disabled={committing}
+            disabled={committing || generatingMessage}
             rows={2}
           />
         </label>
         <button
           type="button"
           className="git-panel-commit-button"
-          disabled={committing || stagedPaths.length === 0 || !message.trim()}
+          disabled={committing || generatingMessage || stagedPaths.length === 0 || !message.trim()}
           onClick={() => void commit()}
         >
           {committing ? <LoaderCircle size={14} className="spin" /> : <GitCommitHorizontal size={15} />}

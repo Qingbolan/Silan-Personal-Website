@@ -14,6 +14,7 @@ import type {
   DocumentLanguageAudit,
   LanguageAuditCategory,
   LanguageAuditFinding,
+  LanguageAuditScoreDimension,
 } from '../types';
 
 type LanguageReviewPanelProps = {
@@ -35,6 +36,17 @@ const categoryLabels: Record<LanguageAuditCategory, string> = {
   logical_gap: 'Logical gap',
   concept_misuse: 'Concept misuse',
   terminology: 'Terminology',
+  audience_fit: 'Audience fit',
+  actionability_gap: 'Actionability gap',
+  rigor_gap: 'Rigor gap',
+  markdown_structure: 'Markdown structure',
+};
+
+const scoreLabels: Record<LanguageAuditScoreDimension, string> = {
+  expert_pull: 'Expert pull',
+  general_clarity: 'General clarity',
+  actionability: 'Actionability',
+  expression_quality: 'Expression quality',
 };
 
 export function LanguageReviewPanel({
@@ -65,14 +77,14 @@ export function LanguageReviewPanel({
         <header className="language-review-head">
           <div className="new-project-badge"><FileSearch size={17} /></div>
           <div>
-            <span>DEEPSEEK LANGUAGE REVIEW</span>
-            <h3 id="language-review-title">{state.target?.label || 'Language review'}</h3>
+            <span>DEEPSEEK READER REVIEW</span>
+            <h3 id="language-review-title">{state.target?.label || 'Reader review'}</h3>
           </div>
           <button
             type="button"
             className="language-close-button language-review-close"
             disabled={state.phase === 'running'}
-            aria-label="Close language review"
+            aria-label="Close reader review"
             onClick={onClose}
           >
             <X size={15} />
@@ -132,9 +144,21 @@ export function LanguageReviewPanel({
                       <span>{result.language} · {result.source_path}</span>
                     </div>
                     <em data-state={result.findings.length === 0 ? 'pass' : 'review'}>
-                      {result.findings.length === 0 ? 'Pass' : `${result.findings.length} to review`}
+                      {result.findings.length === 0 ? 'No findings' : `${result.findings.length} to review`}
                     </em>
                   </header>
+
+                  {Boolean(result.scores?.length) && (
+                    <div className="language-review-scores" aria-label="Reader review scores">
+                      {result.scores?.map((score) => (
+                        <div key={score.dimension}>
+                          <strong>{score.score}/5</strong>
+                          <span>{scoreLabels[score.dimension]}</span>
+                          <small>{score.rationale}</small>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {result.findings.length === 0 ? (
                     <p className="language-review-document-summary">{result.summary}</p>

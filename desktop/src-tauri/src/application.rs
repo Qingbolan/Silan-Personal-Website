@@ -16,14 +16,15 @@ use serde::Deserialize;
 use silan_viking_app::{
     api_base_url, ArticleImageAttributionPlan, ArticleImageAttributionResult,
     ArticleImageAttributionWorkspace, ContentCreator, ContentEditor, ContentKind, CoverBrief,
-    CoverGenerationInput, CoverWorkspace, CreateTranslationInput, DeepSeekApiKey, DeliveryControl,
-    EditableDocument, EditablePart, EditableSection, GeneratedImageAsset, GeoAdvisor, IdeaCategory,
-    ImageGenerationRequest, ImageOutputFormat, ImageQuality, ImageSize, LanguageAuditReport,
-    LanguageAuditScope, LanguageAuditWorkflow, MarkdownSelectionEditAction,
-    MarkdownSelectionEditRequest, MarkdownTranslationRequest, MarkdownTranslationSyncRequest,
-    MediaAssetRef, MediaLibrary, OpenAiApiKey, OpenAiImageGenerator, OpenAiMarkdownTranslator,
-    ReleaseScope, ResumeProfileUpdate, SaveLifecycleInput, SaveMetadataInput, SaveTranslationInput,
-    StatsCache, StatsError, WebsiteInsights, WorkspaceContent,
+    CoverGenerationInput, CoverWorkspace, CreateTranslationInput, DeepSeekApiKey,
+    DeepSeekCommitMessageGenerator, DeliveryControl, EditableDocument, EditablePart,
+    EditableSection, GeneratedImageAsset, GeoAdvisor, IdeaCategory, ImageGenerationRequest,
+    ImageOutputFormat, ImageQuality, ImageSize, LanguageAuditReport, LanguageAuditScope,
+    LanguageAuditWorkflow, MarkdownSelectionEditAction, MarkdownSelectionEditRequest,
+    MarkdownTranslationRequest, MarkdownTranslationSyncRequest, MediaAssetRef, MediaLibrary,
+    OpenAiApiKey, OpenAiImageGenerator, OpenAiMarkdownTranslator, ReleaseScope,
+    ResumeProfileUpdate, SaveLifecycleInput, SaveMetadataInput, SaveTranslationInput, StatsCache,
+    StatsError, WebsiteInsights, WorkspaceContent,
 };
 use std::collections::BTreeMap;
 use std::env;
@@ -420,6 +421,19 @@ impl DesktopWorkspace {
     pub(crate) fn workspace_file_diff(&self, path: &str, staged: bool) -> Result<String, String> {
         self.delivery_control
             .file_diff(path, staged)
+            .map_err(|error| error.to_string())
+    }
+
+    pub(crate) fn generate_workspace_commit_message(
+        &self,
+        api_key: &DeepSeekApiKey,
+    ) -> Result<String, String> {
+        let staged_diff = self
+            .delivery_control
+            .staged_diff()
+            .map_err(|error| error.to_string())?;
+        DeepSeekCommitMessageGenerator::default()
+            .generate(api_key, &staged_diff)
             .map_err(|error| error.to_string())
     }
 

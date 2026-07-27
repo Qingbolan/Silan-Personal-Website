@@ -55,8 +55,9 @@ installed:
 
 ## §13.2 What a skill bundle looks like — disk artefacts
 
-A silan-viking skill is a small tree under
-`~/.claude/skills/silan-viking/`. **It is a `silan`-generated
+A silan-viking skill is a small tree under an agent skill directory:
+by default `~/.claude/skills/silan-viking/`, and for Codex
+`~/.codex/skills/silan-viking/`. **It is a `silan`-generated
 artefact, not hand-written, not the source of truth** — same nature
 as `portfolio.db`: rebuildable at any time by `silan skill emit`.
 
@@ -72,7 +73,7 @@ as `portfolio.db`: rebuildable at any time by `silan skill emit`.
 ```markdown
 ---
 name: silan-viking
-description: silan's personal context system. Use when silan voices a thought,
+description: Silan Viking, silan's local-first research publishing workspace. Use when silan voices a thought,
   a spark, a half-formed idea, or wants to write an article / push a project
   forward / view site content and visitor data — help him capture the thought
   into context, assist with writing, maintain projects, and selectively publish.
@@ -100,7 +101,8 @@ the "cross-type / tool groups" of `02-cli-service.md`. Naming follows
 
 ```
 silan skill emit            emit the skill bundle to ~/.claude/skills/silan-viking/
-                            (--path overrides output; derived from silan-viking.toml + SCHEMA.md)
+                            (--codex targets ~/.codex/skills/silan-viking/; --path overrides output;
+                            derived from silan-viking.toml + SCHEMA.md)
 silan skill status          check whether the skill is installed and matches project state (hash comparison)
 silan skill rm              remove the installed skill bundle
 ```
@@ -113,8 +115,10 @@ silan skill rm              remove the installed skill bundle
 2. Render `SKILL.md` — the frontmatter description uses a fixed
    template (§13.4); the body embeds the current type list and the
    **MCP local resolution rules**.
-3. Write the whole `~/.claude/skills/silan-viking/` tree. Overwrites
-   if present (it is a derived artefact; overwriting loses nothing).
+3. Write the selected skill tree. The default is
+   `~/.claude/skills/silan-viking/`; `--codex` writes
+   `~/.codex/skills/silan-viking/`; `--path` writes exactly there.
+   Overwrites if present (it is a derived artefact; overwriting loses nothing).
 
 > **Install** = one command: `silan skill emit`. No extra "download
 > / register" steps — Claude's discovery mechanism is its own scan
@@ -138,7 +142,7 @@ places:
 
 | Scenario | How | Constraint |
 |---|---|---|
-| Local personal use | `silan skill emit` writes `~/.claude/skills/silan-viking/` | Default path; overwriting is safe |
+| Local personal use | `silan skill emit` writes `~/.claude/skills/silan-viking/`; `silan skill emit --codex` writes `~/.codex/skills/silan-viking/` | Default path remains Claude; Codex is explicit; overwriting is safe |
 | Multiple personal machines | `silan skill emit --path <dotfiles>/skills/silan-viking/`, then dotfiles / cloud drive / git syncs into each machine's `~/.claude/skills/` | Sync is outsourced to existing tools; each machine uses its own `silan mcp status` for connection status, `silan skill status` uses hash comparison to detect drift |
 | Team / project share | `silan skill emit --path .claude/skills/silan-viking/` and distribute alongside the repo | Only bundles without private ports / absolute paths may be committed; the MCP integration must be written as a relative convention like `silan mcp serve --stdio` |
 
@@ -210,7 +214,9 @@ connect to MCP**. The wiring:
 `silan skill emit` only fulfils the **discovery layer**. For an
 agent to actually call silan-viking, three things must hold at once:
 
-1. `~/.claude/skills/silan-viking/` contains the current-hash skill bundle.
+1. The selected agent skill directory contains the current-hash
+   `silan-viking` bundle (`~/.claude/skills/silan-viking/` by
+   default, or `~/.codex/skills/silan-viking/` for Codex).
 2. An executable `silan-viking` / `silan` binary exists on this machine and can read the content repo `silan-viking.toml` points to.
 3. `silan mcp status --json` reports MCP available on this machine, or the host can start / connect to it via the relative convention `silan mcp serve --stdio`.
 
@@ -237,6 +243,7 @@ surface**, not tool names:
 
 - ✅ Cover "silan voices a thought / a spark / a half-formed idea" — maps to `capture`.
 - ✅ Cover "wants to write an article / push a project forward / tidy up some idea" — maps to `propose` / `summarize_updates`.
+- ✅ Cover "wants to review whether an article is clear, attractive, actionable, rigorous, or weirdly expressed" — maps to the read-only DeepSeek `reader-review` CLI.
 - ✅ Cover "view the site content, visitor data, the views/comments of a piece" — maps to `stats` / `visitors`.
 - ❌ Do not write "use when calling the capture tool" — that is a tool name; silan never speaks that way.
 
@@ -249,9 +256,9 @@ by the skill body, and the body translates "what he's doing" into
 
 ```
 ## What this is
-  silan's personal context system. Source of truth is markdown;
-  abilities come through MCP. One-sentence positioning + a pointer
-  to silan:// (00 terminal-state).
+  Silan Viking is a local-first research publishing workspace.
+  Source of truth is Markdown/TOML; abilities come through MCP.
+  One-sentence positioning + a pointer to silan:// (00 terminal-state).
 
 ## Connect (hurdle ②)
   Abilities come from MCP. If this session has not connected,
@@ -267,6 +274,7 @@ by the skill body, and the body translates "what he's doing" into
   | Voicing a half-formed thought | capture(note, type) — start a proposal; do not land directly |
   | Wanting to think one idea deeper, into an article | recall first for related old Items; then propose |
   | Wanting to push some project / idea forward | propose anchored to the matching Part (progress etc.) |
+  | Asking whether an article is clear, attractive, actionable, rigorous, or awkward | run `silan blog reader-review <slug>` / `silan episode series reader-review <series>` only after confirming DeepSeek review is intended |
   | Asking "how many people read this" | stats / visitors / crawler_breakdown / source_breakdown (read the synced local cache) |
   | Asking you to remember something about him / the project | ctx_write to silan://agent/ — direct write, no proposal |
   | End of session | reflect(session) — settle into agent/sessions/ and agent/owner/ |
@@ -295,7 +303,7 @@ by the skill body, and the body translates "what he's doing" into
 
 | Existing constraint | Does this chapter break it? |
 |---|---|
-| `#1` markdown as source of truth | ✅ The skill bundle is a derived artefact under `~/.claude/`; does not touch `content/` |
+| `#1` markdown as source of truth | ✅ The skill bundle is a derived artefact under the selected agent skill directory; does not touch `content/` |
 | `#10` agent updates published content via proposal | ✅ Red line ① in the skill body forbids resources/ direct writes |
 | `#13` single-tenant; selective-publish authority belongs to silan | ✅ Red line ②: accept / publish / deploy are not exposed to the agent |
 | `03` MCP is the only ability source | ✅ The skill carries zero abilities; only discovery + trigger; everything turns into an MCP call |
@@ -338,9 +346,9 @@ warrant an L4 adapter (compare `silan-viking-mcp`, which is an
 actual server process).
 
 ```
-silan-viking-cli/src/skill.rs   # the three silan skill emit/status/rm sub-commands
+silan-viking-cli/src/skill.rs   # silan skill emit/status/rm, including --codex target
                                 # reads silan-viking.toml + SCHEMA.md
-                                # renders SKILL.md + reference/ into ~/.claude/skills/
+                                # renders SKILL.md + reference/ into the selected agent skill dir
 ```
 
 - The `SKILL.md` frontmatter description uses a **fixed template

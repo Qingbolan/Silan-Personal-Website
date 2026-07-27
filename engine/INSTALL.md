@@ -1,6 +1,7 @@
 # Installing Silan CLI
 
-`silan` is the primary command for the Silan personal website content engine.
+`silan` is the primary command for the Silan Viking research publishing
+workspace.
 `svk` is its compact alias, while `silan-viking` remains available for
 compatibility. All three names execute the same binary.
 (Engine developers: use `engine/install-dev.sh` to build from a checkout.)

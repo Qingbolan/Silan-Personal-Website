@@ -15,7 +15,23 @@ export type LanguageAuditCategory =
   | 'unnatural_expression'
   | 'logical_gap'
   | 'concept_misuse'
-  | 'terminology';
+  | 'terminology'
+  | 'audience_fit'
+  | 'actionability_gap'
+  | 'rigor_gap'
+  | 'markdown_structure';
+
+export type LanguageAuditScoreDimension =
+  | 'expert_pull'
+  | 'general_clarity'
+  | 'actionability'
+  | 'expression_quality';
+
+export type LanguageAuditScore = {
+  dimension: LanguageAuditScoreDimension;
+  score: number;
+  rationale: string;
+};
 
 export type LanguageAuditFinding = {
   category: LanguageAuditCategory;
@@ -35,6 +51,7 @@ export type DocumentLanguageAudit = {
   provider: 'deepseek';
   model: string;
   summary: string;
+  scores?: LanguageAuditScore[];
   findings: LanguageAuditFinding[];
   usage?: {
     prompt_tokens: number;

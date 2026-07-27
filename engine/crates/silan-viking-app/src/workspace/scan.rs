@@ -20,6 +20,7 @@
 use silan_viking_base::{ContentHash, ItemId, Lang, Meta, Namespace, PartId, SilanUri, Slug};
 use silan_viking_content::{ContentError, ContentKind, File, Item, Part, PartRole, PartShape};
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 use thiserror::Error;
 use time::OffsetDateTime;
 
@@ -574,14 +575,34 @@ fn dir_name(path: &Path) -> String {
         .unwrap_or_default()
 }
 
-/// The modification time of `path`, falling back to the Unix epoch when the
-/// filesystem does not report one — the scan must not fail over a missing
-/// mtime.
+/// The newest modification time under `path`, falling back to the Unix epoch
+/// when the filesystem does not report one. Item metadata tracks the actual
+/// edited source files, not just the item directory entry, because rewriting a
+/// nested `parts/body/en.md` does not necessarily update the parent mtime.
 fn scan_timestamp(path: &Path) -> OffsetDateTime {
-    std::fs::metadata(path)
-        .and_then(|m| m.modified())
+    newest_mtime(path)
         .map(OffsetDateTime::from)
         .unwrap_or(OffsetDateTime::UNIX_EPOCH)
+}
+
+fn newest_mtime(path: &Path) -> Option<SystemTime> {
+    let mut newest = std::fs::metadata(path)
+        .and_then(|metadata| metadata.modified())
+        .ok();
+    if path.is_dir() {
+        let Ok(entries) = std::fs::read_dir(path) else {
+            return newest;
+        };
+        for entry in entries.flatten() {
+            if let Some(child_mtime) = newest_mtime(&entry.path()) {
+                newest = Some(match newest {
+                    Some(current) => current.max(child_mtime),
+                    None => child_mtime,
+                });
+            }
+        }
+    }
+    newest
 }
 
 #[cfg(test)]
@@ -645,6 +666,19 @@ mod tests {
         let err = read_series(&dir).expect_err("malformed toml is an error");
         assert!(matches!(err, ScanError::MalformedSeries { .. }));
         let _ = std::fs::remove_dir_all(dir.parent().expect("parent"));
+    }
+
+    #[test]
+    fn scan_timestamp_uses_nested_content_file_mtime() {
+        let root = tmp_dir("recursive-mtime");
+        let item_dir = root.join("resources/moment/example");
+        let part_dir = item_dir.join("parts/body");
+        std::fs::create_dir_all(&part_dir).expect("mkdir");
+        let body = part_dir.join("en.md");
+        std::fs::write(&body, "---\ntitle: Example\n---\nBody").expect("write body");
+
+        assert!(scan_timestamp(&item_dir) >= scan_timestamp(&body));
+        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]

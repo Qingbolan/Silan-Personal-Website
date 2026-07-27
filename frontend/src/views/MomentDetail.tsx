@@ -14,6 +14,7 @@ import { Badge, BrandLoading, NetworkError, type BadgeProps } from '../component
 import { useRemoteResource } from '../hooks/useRemoteResource';
 import { useSetPageTitle } from '../layout/PageTitleContext';
 import { markdownToPlainExcerpt, withoutRepeatedTitle } from '../lib/markdown';
+import { normalizeContentTimestamp } from '../utils/contentTimestamp';
 
 type MomentKind = 'work' | 'education' | 'research' | 'publication' | 'project' | 'other';
 
@@ -63,6 +64,14 @@ const formatMomentDate = (moment: Moment, language: 'en' | 'zh') => {
     month: 'long',
     day: '2-digit',
   }).format(date);
+};
+
+const firstValidContentTimestamp = (...values: Array<string | null | undefined>): string | undefined => {
+  for (const value of values) {
+    const timestamp = normalizeContentTimestamp(value);
+    if (timestamp) return timestamp;
+  }
+  return undefined;
 };
 
 // Xiaohongshu-style detail overlay: a centered modal (article left, a
@@ -174,8 +183,8 @@ const MomentDetail: React.FC = () => {
               description,
               path: detailPath,
               lang,
-              datePublished: moment.created_at || moment.date,
-              dateModified: moment.updated_at || moment.created_at || moment.date,
+              datePublished: firstValidContentTimestamp(moment.date, moment.created_at),
+              dateModified: firstValidContentTimestamp(moment.updated_at, moment.created_at, moment.date),
             })}
           />
         )}

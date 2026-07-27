@@ -23,7 +23,7 @@ use super::parsed::{Parsed, ParsedBuilder};
 use super::toml_entries;
 use super::Parser;
 use crate::schema::Schema;
-use silan_viking_content::{ContentKind, Item, Part, PartRole, PartShape};
+use silan_viking_content::{ContentKind, HasMeta, Item, Part, PartRole, PartShape};
 use std::sync::Arc;
 
 /// Resume frontmatter fields that carry per-language content (`10` §10.4.5):
@@ -165,6 +165,7 @@ impl Parser for ResumeParser {
         }
 
         let mut builder = Parsed::builder(ContentKind::Resume, item.id().clone());
+        builder.put_source_times(item.meta().created_at(), item.meta().updated_at());
 
         for part in item.parts() {
             // Every resume Part — prose or structured — carries its stable

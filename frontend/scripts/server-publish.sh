@@ -14,28 +14,48 @@ esac
 : "${SILAN_PUBLIC_ORIGIN:?SILAN_PUBLIC_ORIGIN is required}"
 
 source_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+script_path="$(readlink -f "${BASH_SOURCE[0]}")"
 state_root="$SILAN_FRONTEND_STATE_ROOT"
+build_root="$state_root/build"
 published_root="$state_root/published"
 releases_root="$published_root/releases"
 current_link="$published_root/current"
 previous_link="$published_root/previous"
 puppeteer_cache="$state_root/cache/puppeteer"
 dependency_marker="$state_root/dependencies.sha256"
+runtime_user="www"
+runtime_group="www"
+dist="$source_root/dist"
 
-mkdir -p "$state_root/cache" "$published_root" "$releases_root" "$puppeteer_cache"
-exec 9>"$published_root/.publish.lock"
-if ! flock -w 240 9; then
-  echo "[frontend:server] another static publication is still running" >&2
-  exit 75
-fi
+runtime_home() {
+  local home
+  home="$(getent passwd "$runtime_user" | cut -d: -f6)"
+  if [[ -z "$home" || "$home" != /* ]]; then
+    echo "[frontend:server] runtime user $runtime_user has no absolute home" >&2
+    exit 78
+  fi
+  printf '%s\n' "$home"
+}
+
+dependency_lock_hash() {
+  sha256sum "$source_root/package.json" "$source_root/package-lock.json" \
+    | sha256sum \
+    | awk '{print $1}'
+}
+
+dependencies_are_ready() {
+  local lock_hash installed_hash
+  lock_hash="$(dependency_lock_hash)"
+  installed_hash=""
+  if [[ -f "$dependency_marker" ]]; then
+    installed_hash="$(tr -d '[:space:]' < "$dependency_marker")"
+  fi
+  [[ "$installed_hash" == "$lock_hash" && -x "$source_root/node_modules/.bin/vite" ]]
+}
 
 prepare_dependencies() {
   local lock_hash installed_hash
-  lock_hash="$(
-    sha256sum "$source_root/package.json" "$source_root/package-lock.json" \
-      | sha256sum \
-      | awk '{print $1}'
-  )"
+  lock_hash="$(dependency_lock_hash)"
   installed_hash=""
   if [[ -f "$dependency_marker" ]]; then
     installed_hash="$(tr -d '[:space:]' < "$dependency_marker")"
@@ -57,18 +77,159 @@ prepare_dependencies() {
   mv -f "$dependency_marker.next" "$dependency_marker"
 }
 
-prepare_dependencies
+load_server_environment() {
+  if [[ -r /etc/silan-backend/db.env ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    . /etc/silan-backend/db.env
+    set +a
+  fi
+}
+
+prepare_search_engine_submission() {
+  if [[ ! -f "$source_root/scripts/submit-search-engines.mjs" ]]; then
+    echo "[search-submit] prepare skipped: submit script is not present"
+    return
+  fi
+
+  (
+    cd "$source_root"
+    node scripts/submit-search-engines.mjs prepare
+  )
+}
+
+submit_search_engines() {
+  if [[ ! -f "$source_root/scripts/submit-search-engines.mjs" ]]; then
+    echo "[search-submit] skipped: submit script is not present"
+    return
+  fi
+
+  if (
+    cd "$source_root"
+    node scripts/submit-search-engines.mjs submit
+  ); then
+    return
+  fi
+
+  if [[ "${SEARCH_ENGINE_SUBMIT_STRICT:-false}" == "true" ]]; then
+    echo "[search-submit] submission failed in strict mode" >&2
+    exit 1
+  fi
+
+  echo "[search-submit] warning: submission failed; release remains published" >&2
+}
+
+assert_managed_dist() {
+  local expected_dist actual_dist
+  if [[ ! -d "$build_root/dist" || ! -L "$dist" ]]; then
+    echo "[frontend:server] dist must be the managed link $dist -> $build_root/dist" >&2
+    echo "[frontend:server] run a frontend deployment to provision the static publisher" >&2
+    exit 78
+  fi
+  expected_dist="$(readlink -f "$build_root/dist")"
+  actual_dist="$(readlink -f "$dist")"
+  if [[ "$actual_dist" != "$expected_dist" ]]; then
+    echo "[frontend:server] dist must be the managed link $dist -> $build_root/dist" >&2
+    echo "[frontend:server] run a frontend deployment to provision the static publisher" >&2
+    exit 78
+  fi
+}
+
+handoff_root_publish() {
+  local current_uid home runtime_config runtime_cache
+  current_uid="$(id -u)"
+  if [[ "$mode" != "publish" || "$current_uid" -ne 0 ]]; then
+    return
+  fi
+
+  if ! id "$runtime_user" >/dev/null 2>&1; then
+    echo "[frontend:server] runtime user $runtime_user does not exist" >&2
+    exit 78
+  fi
+
+  assert_managed_dist
+  home="$(runtime_home)"
+  runtime_config="$state_root/runtime/config"
+  runtime_cache="$state_root/runtime/cache"
+  install -d -o "$runtime_user" -g "$runtime_group" -m 0755 \
+    "$build_root" "$build_root/dist" "$published_root" "$releases_root" \
+    "$state_root/runtime" "$runtime_config" "$runtime_cache"
+  chown -R "$runtime_user:$runtime_group" "$build_root" "$published_root"
+  install -d -o "$runtime_user" -g "$runtime_group" -m 0755 \
+    "$source_root/node_modules/.vite-temp"
+
+  echo "[frontend:server] hand off publish to $runtime_user"
+  exec runuser -u "$runtime_user" --preserve-environment -- \
+    env PATH="$PATH" \
+      HOME="$home" \
+      XDG_CONFIG_HOME="$runtime_config" \
+      XDG_CACHE_HOME="$runtime_cache" \
+      SILAN_FRONTEND_STATE_ROOT="$SILAN_FRONTEND_STATE_ROOT" \
+      SILAN_PUBLIC_ORIGIN="$SILAN_PUBLIC_ORIGIN" \
+      bash "$script_path" publish
+}
+
+configure_runtime_environment() {
+  local home
+  home="$(runtime_home)"
+  export HOME="$home"
+  export XDG_CONFIG_HOME="$state_root/runtime/config"
+  export XDG_CACHE_HOME="$state_root/runtime/cache"
+  mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
+}
+
+assert_runtime_publish_identity() {
+  local current_uid runtime_uid foreign_path
+  current_uid="$(id -u)"
+  runtime_uid="$(id -u "$runtime_user")"
+  if [[ "$current_uid" -ne "$runtime_uid" ]]; then
+    echo "[frontend:server] publish must run as $runtime_user, got uid=$current_uid" >&2
+    exit 77
+  fi
+
+  assert_managed_dist
+  foreign_path="$(
+    find "$build_root" "$published_root" -xdev ! -user "$runtime_uid" -print -quit
+  )"
+  if [[ -n "$foreign_path" ]]; then
+    echo "[frontend:server] publish workspace ownership drift: $foreign_path" >&2
+    echo "[frontend:server] run a frontend deployment as root to repair ownership" >&2
+    exit 77
+  fi
+  if [[ ! -w "$build_root/dist" || ! -w "$published_root" ]]; then
+    echo "[frontend:server] publish workspace is not writable by $runtime_user" >&2
+    exit 77
+  fi
+}
+
+load_server_environment
+handoff_root_publish
+
+mkdir -p "$state_root/cache" "$published_root" "$releases_root" "$puppeteer_cache"
+exec 9>"$published_root/.publish.lock"
+if ! flock -w 240 9; then
+  echo "[frontend:server] another static publication is still running" >&2
+  exit 75
+fi
+
 if [[ "$mode" == "prepare" ]]; then
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo "[frontend:server] dependency preparation must run as root" >&2
+    exit 77
+  fi
+  prepare_dependencies
   echo "[frontend:server] build environment ready"
   exit 0
 fi
 
-if [[ -r /etc/silan-backend/db.env ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  . /etc/silan-backend/db.env
-  set +a
+assert_runtime_publish_identity
+configure_runtime_environment
+if ! dependencies_are_ready; then
+  echo "[frontend:server] dependencies are not prepared for the current lockfile" >&2
+  echo "[frontend:server] run a frontend deployment as root before publishing content" >&2
+  exit 78
 fi
+echo "[frontend:server] dependencies unchanged"
 
 export PUPPETEER_CACHE_DIR="$puppeteer_cache"
 export PRERENDER_START_LOCAL_BACKEND=false
@@ -82,7 +243,6 @@ echo "[frontend:server] build:seo against $SILAN_PUBLIC_ORIGIN"
   npm run build:seo
 )
 
-dist="$source_root/dist"
 test -s "$dist/index.html"
 test -s "$dist/zh/blog/index.html"
 test -s "$dist/sitemap.xml"
@@ -93,6 +253,7 @@ if grep -q '"blogList"' "$dist/zh/blog/index.html"; then
   echo "[frontend:server] list page contains a serialized runtime snapshot" >&2
   exit 1
 fi
+prepare_search_engine_submission
 
 release_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 next_release="$releases_root/.${release_id}.next"
@@ -104,10 +265,6 @@ rm -rf "$next_release"
 rm -f "$next_current" "$next_previous"
 mkdir -p "$next_release"
 rsync -a --delete "$dist/" "$next_release/"
-if [[ "$(id -u)" -eq 0 ]]; then
-  chown -R www:www "$dist"
-  chown -R www:www "$next_release"
-fi
 mv "$next_release" "$release"
 
 if [[ -L "$current_link" ]]; then
@@ -128,3 +285,4 @@ for stale_release in "${stale_releases[@]}"; do
 done
 
 echo "[frontend:server] release=$release"
+submit_search_engines

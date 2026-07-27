@@ -209,9 +209,13 @@ fn media_help_exposes_preview_apply_and_inspection() {
 }
 
 #[test]
-fn blog_and_episode_help_expose_deepseek_language_checks() {
+fn blog_and_episode_help_expose_deepseek_reader_reviews() {
     let (blog_code, blog_stdout, blog_stderr) = run(&["blog", "--help"]);
     assert_eq!(blog_code, 0);
+    assert!(
+        blog_stdout.contains("blog reader-review [<slug>]"),
+        "{blog_stdout}"
+    );
     assert!(
         blog_stdout.contains("blog language-check [<slug>]"),
         "{blog_stdout}"
@@ -220,6 +224,10 @@ fn blog_and_episode_help_expose_deepseek_language_checks() {
 
     let (episode_code, episode_stdout, episode_stderr) = run(&["episode", "--help"]);
     assert_eq!(episode_code, 0);
+    assert!(
+        episode_stdout.contains("episode series reader-review [<series>]"),
+        "{episode_stdout}"
+    );
     assert!(
         episode_stdout.contains("episode series language-check [<series>]"),
         "{episode_stdout}"

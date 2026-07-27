@@ -8,8 +8,8 @@ file describes how the system is put together.
 
 - **silan-viking** — Rust engine that owns content parsing, validation,
   indexing, deployment packaging, MCP, and CLI workflows.
-- **Silan Context System** — Tauri + React desktop authoring surface for local
-  review and editing.
+- **Silan Viking Desktop** — Tauri + React desktop authoring surface for local
+  capture, review, editing, publication-state inspection, and delivery checks.
 - **Frontend** — React 18, TypeScript, Vite, Tailwind, Framer Motion,
   Three.js, and i18next.
 - **Backend** — Go-Zero API with Ent ORM, backed by SQLite by default and
@@ -17,13 +17,15 @@ file describes how the system is put together.
 - **Content model** — Markdown + YAML source files synchronized into a derived
   SQLite read model.
 - **Publishing metadata** — i18n routing, sitemap, OpenGraph, structured data,
-  and SEO-facing page text generated from the indexed model.
+  `llms.txt`, and search/AI-readable page text generated from reviewed source.
+  These outputs support discovery hygiene and machine readability; they do not
+  claim ranking, citation, or answer-engine adoption.
 - **Observability** — Prometheus metrics and visitor analytics without
   third-party tracking scripts.
 
 ## Architecture
 
-![Silan Context System architecture](images/silan-context-system-architecture.png)
+![Silan Viking architecture](images/silan-context-system-architecture.png)
 
 Editable source:
 [`images/silan-context-system-architecture.svg`](images/silan-context-system-architecture.svg).
@@ -42,7 +44,7 @@ engine testable without starting the Go service or React app.
 | `silan-viking.toml` | Project configuration for paths, identity, deployment, and runtime settings. |
 | `frontend/` | Public React site. The website renders accepted indexed content; it is not the authoring source. |
 | `backend/` | Go-Zero API and Ent persistence layer for public runtime behavior. |
-| `desktop/` | Silan Context System Tauri app for local review, editing, and synchronization. |
+| `desktop/` | Silan Viking Desktop Tauri app for local capture, review, editing, media/language work, and delivery checks. |
 | `deploy/` | Docker Compose, nginx, and deployment entrypoints. |
 | `docs/` | Design docs, implementation notes, and technical references. |
 

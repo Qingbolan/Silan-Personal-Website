@@ -202,6 +202,15 @@ pub(crate) async fn get_workspace_file_diff(path: String, staged: bool) -> Resul
 }
 
 #[tauri::command]
+pub(crate) async fn generate_workspace_commit_message() -> Result<String, String> {
+    run_background("DeepSeek commit message generation", move || {
+        let api_key = DesktopDeepSeekCredentials::load_key()?;
+        DesktopWorkspace::from_environment()?.generate_workspace_commit_message(&api_key)
+    })
+    .await
+}
+
+#[tauri::command]
 pub(crate) async fn stage_workspace_paths(paths: Vec<String>) -> Result<(), String> {
     run_background("stage workspace paths", move || {
         DesktopWorkspace::from_environment()?.stage_workspace_paths(&paths)

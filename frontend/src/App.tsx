@@ -24,6 +24,7 @@ const ProjectDetail = React.lazy(() => import('./components/ProjectGallery/Proje
 const BlogStack = React.lazy(() => import('./views/BlogStack'));
 const BlogDetail = React.lazy(() => import('./components/BlogStack/BlogDetail'));
 const EpisodeDetail = React.lazy(() => import('./components/Episode/EpisodeDetail'));
+const EpisodeSeriesOverview = React.lazy(() => import('./components/Episode/EpisodeSeriesOverview'));
 const SearchResults = React.lazy(() => import('./views/SearchResults'));
 const OAuthPopupClose = React.lazy(() => import('./views/OAuthPopupClose'));
 
@@ -85,6 +86,7 @@ const LocalizedRoutes: React.FC = () => {
         <Route path="/blog" element={<BlogStack />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/blog/:id/" element={<BlogDetail />} />
+        <Route path="/episodes/series/:seriesSlug" element={<EpisodeSeriesOverview />} />
         <Route path="/episodes/:slug" element={<EpisodeDetail />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/auth/popup-closed" element={<OAuthPopupClose />} />

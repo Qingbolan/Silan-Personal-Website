@@ -2,7 +2,10 @@
 
 **AI is now in the loop of research—from related-work discovery to paper understanding and peer review. Researchers therefore need an academic presence that is accurate, verifiable, and AI-native.**
 
-Silan Viking is a local-first research publishing workspace for technical researchers. It connects research notes, articles, project pages, résumé evidence, and AI/search metadata in one owner-reviewed workflow—controlling both how research is indexed and how it is semantically represented across search engines and AI systems.
+Silan Viking is a local-first research publishing workspace for AI, ML, and
+systems researchers who maintain a public body of work. It prevents one new
+result from becoming scattered maintenance across notes, articles, project
+pages, résumé evidence, AI/search metadata, and deployment checks.
 
 Capture a research update once. Keep every public representation current, evidence-backed, and understandable to both people and AI.
 
@@ -26,11 +29,11 @@ of the system, not the product itself.
 ## The Research Update Problem
 
 Silan Viking begins with an AI, ML, or systems researcher who already has work
-to show, is comfortable with Markdown/Git and self-hosted tooling, and wants to
-keep an academic website, project record, and résumé current without turning
-each new result into a small website project. The trigger is concrete: an
-experiment changes the conclusion, a paper is accepted, a release ships, or a
-résumé claim gains better evidence.
+to show and recurring public-record maintenance pressure. The current operator
+is comfortable with Markdown/Git and self-hosted tooling, but that is the
+current onboarding constraint rather than the long-term ceiling. The trigger
+is concrete: an experiment changes the conclusion, a paper is accepted, a
+release ships, or a résumé claim gains better evidence.
 
 The same fact now needs several honest forms:
 
@@ -92,7 +95,7 @@ release.
 | Relationships | Stable `silan://` identities and typed links between related records |
 | Validation | Schema checks, source linting, a rebuildable SQLite projection, and guided next steps |
 | Publication | Explicit private/public state, local preview, and configured Docker deployment |
-| Machine readability | Stable routes, summaries, structured data, sitemap, robots rules, `llms.txt`, and language metadata |
+| Machine readability | Stable routes, summaries, structured data, sitemap, robots rules, `llms.txt`, and language metadata for discovery hygiene, not ranking or citation proof |
 | Observation | Deployed-version checks, human activity, comments, and heuristic search/AI crawler attribution |
 | Agent help | MCP operations over the Silan content workspace and reviewable change proposals |
 | Cross-machine work | Git is the supported source synchronization path |

@@ -207,7 +207,8 @@ impl OpenAiMarkdownTranslator {
                     ));
                 }
             }
-            MarkdownSelectionEditAction::AgentEdit | MarkdownSelectionEditAction::OptimizeExpression => {
+            MarkdownSelectionEditAction::AgentEdit
+            | MarkdownSelectionEditAction::OptimizeExpression => {
                 if edit.replacement.trim().is_empty() {
                     return Err(OpenAiTranslationError::InvalidResponse(
                         "selection replacement was empty".to_owned(),

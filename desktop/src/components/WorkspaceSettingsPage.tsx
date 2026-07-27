@@ -277,8 +277,8 @@ const apiProviderMeta: Record<ApiCredentialProvider, {
   },
   deepseek: {
     displayName: 'DeepSeek',
-    description: 'Language review checks Blog and episode-series prose without modifying source files.',
-    modelLabel: 'Language review model',
+    description: 'Reader review scores Blog and episode-series prose without modifying source files.',
+    modelLabel: 'Reader review model',
     keyLabel: 'DeepSeek API key',
     placeholder: 'DeepSeek API key',
   },

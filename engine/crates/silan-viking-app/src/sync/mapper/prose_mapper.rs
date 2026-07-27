@@ -20,6 +20,8 @@ use crate::schema::{FieldColumn, TypeSpec};
 use crate::sync::error::MapError;
 use crate::sync::rows::{Row, RowSet, SqlValue};
 use silan_viking_content::ContentKind;
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 
 /// The shared prose-type mapping engine.
 pub struct ProseMapper;
@@ -126,6 +128,15 @@ fn main_row(
 ) -> Row {
     let mut row =
         Row::new(table_names::main_table(kind)).with("id", SqlValue::Text(item_id.to_owned()));
+    row = row
+        .with(
+            "created_at",
+            SqlValue::Text(format_timestamp(parsed.source_created_at())),
+        )
+        .with(
+            "updated_at",
+            SqlValue::Text(format_timestamp(parsed.source_updated_at())),
+        );
     for name in parsed.main().field_names() {
         let Some(field_spec) = type_spec.field(name) else {
             continue; // a frontmatter key the SCHEMA does not declare
@@ -138,6 +149,12 @@ fn main_row(
         }
     }
     row
+}
+
+fn format_timestamp(value: OffsetDateTime) -> String {
+    value
+        .format(&Rfc3339)
+        .unwrap_or_else(|_| OffsetDateTime::UNIX_EPOCH.format(&Rfc3339).unwrap())
 }
 
 /// Build one translation row per language, carrying that language's

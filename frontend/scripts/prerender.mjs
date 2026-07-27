@@ -124,6 +124,13 @@ const normalizeContentTimestamp = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1 ? undefined : value;
 };
+const firstValidContentTimestamp = (...values) => {
+  for (const value of values) {
+    const timestamp = normalizeContentTimestamp(value);
+    if (timestamp) return timestamp;
+  }
+  return undefined;
+};
 const sanitizeContentTimestamps = (record) => ({
   ...record,
   publish_date: normalizeContentTimestamp(record?.publish_date),
@@ -289,15 +296,26 @@ const localizedRoute = (route, language) => {
 };
 
 const recordLastModified = (record) => {
-  const value = normalizeContentTimestamp(
-    record?.updated_at ||
-    record?.updatedAt ||
-    record?.publish_date ||
-    record?.publishDate ||
+  const value = firstValidContentTimestamp(
+    record?.updatedAt,
+    record?.updated_at,
+    record?.publish_date,
+    record?.publishDate,
     record?.date,
   );
   return value ? value.slice(0, 10) : undefined;
 };
+const seriesLastModified = (series) => {
+  const timestamps = [
+    recordLastModified(series),
+    ...asArray(series?.episodes).map(recordLastModified),
+  ].filter(Boolean).sort();
+  return timestamps.at(-1);
+};
+const seriesRouteRecord = (series) => ({
+  ...series,
+  updated_at: seriesLastModified(series),
+});
 
 const registerPublicRoute = (routes, route, language, record) => {
   const localized = localizedRoute(route, language);
@@ -348,6 +366,14 @@ async function detailRoutes() {
         await fetchJson(`/api/v1/episodes/series?lang=${language}`),
       );
       for (const item of series) {
+        if (item.slug) {
+          registerPublicRoute(
+            routes,
+            `/episodes/series/${item.slug}/`,
+            language,
+            seriesRouteRecord(item),
+          );
+        }
         for (const episode of asArray(item.episodes)) {
           if (episode.slug) {
             registerPublicRoute(
@@ -387,6 +413,10 @@ async function detailRoutes() {
             date: normalizeContentTimestamp(output.date),
           })),
       }));
+      for (const moment of moments) {
+        const segment = moment.slug || moment.id;
+        if (segment) registerPublicRoute(routes, `/moments/${segment}/`, language, moment);
+      }
     } catch (e) {
       log(`could not list ${language} moments: ${e.message}`);
     }
@@ -412,17 +442,23 @@ async function routeDataFor(route) {
 
   const resources = {};
   const blog = {};
+  const observedLastModified = [];
   for (const lang of ROUTE_DATA_LANGUAGES) {
     try {
       const resource = sanitizeContentTimestamps(
         await fetchJson(`${blogEndpoint}?lang=${lang}`),
       );
+      const lastModified = recordLastModified(resource);
+      if (lastModified) observedLastModified.push(lastModified);
       if (resource) blog[lang] = resource;
     } catch (e) {
       log(`could not embed ${lang} blog route data for ${logical}: ${e.message}`);
     }
   }
 
+  if (observedLastModified.length) {
+    routeLastModified.set(route, observedLastModified.sort().at(-1));
+  }
   if (Object.keys(blog).length) resources.blog = blog;
   return { route: withTrailingSlash(logical), resources };
 }
@@ -634,7 +670,7 @@ async function llmsEntries() {
       entries.push({
         kind: 'Moment',
         title: moment.title || slug,
-        path: `/moments/?id=${encodeURIComponent(slug)}`,
+        path: `/moments/${slug}/`,
         summary: shortSummary(moment.summary, moment.description),
         tags: moment.tags || [],
         text: clipText(moment.description),
@@ -881,7 +917,7 @@ const priorityFor = (route) => {
   const normalized = logicalRoute(route).replace(/\/$/, '') || '/';
   if (normalized === '/') return '1.0';
   if (/^\/(blog|projects|moments)$/.test(normalized)) return '0.8';
-  if (/^\/(blog|projects|episodes)\//.test(normalized)) return '0.7';
+  if (/^\/(blog|projects|moments|episodes)\//.test(normalized)) return '0.7';
   return '0.6';
 };
 
@@ -899,7 +935,7 @@ function writeSitemap(routes) {
     const logical = logicalRoute(route);
     const prefix = logical === '/'
       ? '/'
-      : /^\/(blog|projects)\/?$/.test(logical)
+      : /^\/(blog|projects|moments)\/?$/.test(logical)
         ? withTrailingSlash(logical)
         : null;
     if (!prefix) return undefined;

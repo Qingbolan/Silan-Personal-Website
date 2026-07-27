@@ -14,7 +14,7 @@ use super::error::{Issue, ParseError};
 use super::frontmatter;
 use super::parsed::{Parsed, ParsedBuilder};
 use crate::schema::{Schema, TypeSpec};
-use silan_viking_content::{ContentKind, Identified, Item, Part};
+use silan_viking_content::{ContentKind, HasMeta, Identified, Item, Part};
 
 /// The shared prose-type parsing engine.
 ///
@@ -56,6 +56,7 @@ impl<'s> ProseTypeParser<'s> {
             })?;
 
         let mut builder = Parsed::builder(expected, item.id().clone());
+        builder.put_source_times(item.meta().created_at(), item.meta().updated_at());
 
         // The frontmatter source is the canonical file of the main Part —
         // the first Part in SCHEMA order that the Item actually has.

@@ -22,7 +22,7 @@ pub fn run(content_root: &Path, scope: LanguageAuditScope, args: &[&str]) -> Res
     let workflow = LanguageAuditWorkflow::with_auditor(content_root, auditor)
         .map_err(|error| error.to_string())?;
     eprintln!(
-        "Sending authored documents to DeepSeek for read-only language review \
+        "Sending authored documents to DeepSeek for read-only reader review \
          (model={}, min-confidence={:.2}).",
         workflow.model(),
         workflow.min_confidence()
@@ -53,7 +53,7 @@ pub fn run(content_root: &Path, scope: LanguageAuditScope, args: &[&str]) -> Res
     }
     if report.documents_failed > 0 {
         return Err(format!(
-            "language review incomplete: {} of {} documents failed",
+            "reader review incomplete: {} of {} documents failed",
             report.documents_failed, report.documents_total
         ));
     }
@@ -76,7 +76,7 @@ fn write_report(path: &Path, report: &LanguageAuditReport) -> Result<(), String>
 
 fn print_human_report(content_root: &Path, report: &LanguageAuditReport) {
     println!(
-        "DeepSeek language review · model={} · min-confidence={:.2} · \
+        "DeepSeek reader review · model={} · min-confidence={:.2} · \
          documents={}/{} · findings={} (major={})",
         report.model,
         report.min_confidence,
@@ -99,6 +99,7 @@ fn print_human_report(content_root: &Path, report: &LanguageAuditReport) {
 fn print_document_findings(content_root: &Path, result: &DocumentLanguageAudit) {
     if result.findings.is_empty() {
         println!("\n[PASS] {} [{}]", result.source_path, result.language);
+        print_document_scores(result);
         return;
     }
     println!(
@@ -107,6 +108,7 @@ fn print_document_findings(content_root: &Path, result: &DocumentLanguageAudit) 
         result.language,
         result.findings.len()
     );
+    print_document_scores(result);
     for finding in &result.findings {
         let path = content_root.join(&result.source_path);
         let location = finding
@@ -123,6 +125,19 @@ fn print_document_findings(content_root: &Path, result: &DocumentLanguageAudit) 
         println!("    why: {}", one_line(&finding.explanation));
         println!("    fix: {}", one_line(&finding.suggestion));
     }
+}
+
+fn print_document_scores(result: &DocumentLanguageAudit) {
+    if result.scores.is_empty() {
+        return;
+    }
+    let scores = result
+        .scores
+        .iter()
+        .map(|score| format!("{}={}/5", score.dimension.as_str(), score.score))
+        .collect::<Vec<_>>()
+        .join(" · ");
+    println!("  scores: {scores}");
 }
 
 fn one_line(value: &str) -> String {
@@ -155,7 +170,7 @@ impl LanguageCheckOptions {
                     index += 1;
                     options.model = Some(
                         args.get(index)
-                            .ok_or("language-check --model requires a value")?
+                            .ok_or("reader-review --model requires a value")?
                             .to_string(),
                     );
                 }
@@ -166,7 +181,7 @@ impl LanguageCheckOptions {
                     index += 1;
                     options.min_confidence = parse_min_confidence(
                         args.get(index)
-                            .ok_or("language-check --min-confidence requires a value")?,
+                            .ok_or("reader-review --min-confidence requires a value")?,
                     )?;
                 }
                 value if value.starts_with("--min-confidence=") => {
@@ -177,7 +192,7 @@ impl LanguageCheckOptions {
                     index += 1;
                     options.output_path = Some(PathBuf::from(
                         args.get(index)
-                            .ok_or("language-check --report requires a path")?,
+                            .ok_or("reader-review --report requires a path")?,
                     ));
                 }
                 value if value.starts_with("--report=") => {
@@ -185,14 +200,14 @@ impl LanguageCheckOptions {
                         Some(PathBuf::from(value.trim_start_matches("--report=")));
                 }
                 value if value.starts_with('-') => {
-                    return Err(format!("unknown language-check flag `{value}`"));
+                    return Err(format!("unknown reader-review flag `{value}`"));
                 }
                 value if options.selector.is_none() => {
                     options.selector = Some(value.to_owned());
                 }
                 value => {
                     return Err(format!(
-                        "language-check accepts at most one slug, got `{value}`"
+                        "reader-review accepts at most one slug, got `{value}`"
                     ));
                 }
             }
@@ -204,7 +219,7 @@ impl LanguageCheckOptions {
             .is_some_and(|model| model.trim().is_empty())
         {
             return Err(format!(
-                "language-check model cannot be empty; default is {DEFAULT_DEEPSEEK_LANGUAGE_AUDIT_MODEL}"
+                "reader-review model cannot be empty; default is {DEFAULT_DEEPSEEK_LANGUAGE_AUDIT_MODEL}"
             ));
         }
         Ok(options)
@@ -214,10 +229,10 @@ impl LanguageCheckOptions {
 fn parse_min_confidence(value: &str) -> Result<f64, String> {
     let parsed = value
         .parse::<f64>()
-        .map_err(|_| format!("invalid language-check confidence `{value}`; expected 0..=1"))?;
+        .map_err(|_| format!("invalid reader-review confidence `{value}`; expected 0..=1"))?;
     if !parsed.is_finite() || !(0.0..=1.0).contains(&parsed) {
         return Err(format!(
-            "invalid language-check confidence `{value}`; expected 0..=1"
+            "invalid reader-review confidence `{value}`; expected 0..=1"
         ));
     }
     Ok(parsed)

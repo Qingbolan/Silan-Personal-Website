@@ -3,11 +3,14 @@
 > A new research result should become an accurate public explanation before
 > its context goes cold.
 
-Silan Viking exists to shorten that update. A technical researcher who is
-comfortable with Markdown, Git, Docker, and self-hosted tooling should be able
-to record one result, connect it to the right project and résumé evidence,
-review every public claim, publish deliberately, and verify what reached the
-web without rebuilding the website workflow for every update.
+Silan Viking exists to shorten that update for the person who actually pays
+the maintenance cost: an AI, ML, or systems researcher with a public body of
+work to keep current. The current operator is comfortable with Markdown, Git,
+Docker, and self-hosted tooling, but that is the current onboarding constraint.
+The user need is broader: record one result, connect it to the right project
+and résumé evidence, review every public claim, publish deliberately, deploy
+explicitly, and verify what reached the web without rebuilding the website
+workflow for every update.
 
 This document describes the product direction and its non-negotiable
 boundaries. The numbered documents under `docs/silan-viking/` describe the
@@ -23,14 +26,16 @@ The product starts from one event:
 - a project ships a meaningful milestone;
 - a résumé claim becomes stale or gains proof.
 
-The researcher does not want to rebuild a site. They want the current claim,
-evidence, uncertainty, and next step to be findable by the people who need
-them.
+The researcher does not want to rebuild a site or run a generic SEO program.
+They want the current claim, evidence, uncertainty, and next step to be
+findable by the people and machines that need an accurate explanation.
 
 Today that update is fragmented across notes, an article draft, project page,
 résumé, images, language variants, search metadata, deployment, and a fresh
 Agent conversation. None of the steps is individually difficult. The setup
-cost across all of them is enough to delay the public record.
+cost across all of them is enough to delay the public record, so the product
+must reduce the repeated update roundtrip rather than optimize only the first
+site setup.
 
 ## 2. The End State
 
@@ -50,8 +55,9 @@ Imagine a Friday afternoon after a useful result:
 8. The researcher can see whether that content version reached the site and
    whether people or classified crawlers requested it.
 
-The end state is not "a website that grows by itself." It is a public research
-record that is easier to keep honest than to neglect.
+The end state is not "a website that grows by itself" and not Generative
+Engine Optimization (GEO) management as a dashboard label. It is a public
+research record that is easier to keep honest than to neglect.
 
 ## 3. The Product Boundary
 
@@ -95,6 +101,9 @@ post-v1.0 release is published.
 - Packaged desktop onboarding is not yet the default installation experience.
 - Search and AI signals measure machine reachability, not understanding,
   ranking, citation, or share of voice.
+- `llms.txt`, structured data, and search/AI-readable text are discovery
+  hygiene outputs. They are not a GEO dashboard or proof of answer-engine
+  adoption.
 - New workspaces need explicit hosting and deployment configuration.
 - Agent proposals do not carry publication or production-deployment authority.
 

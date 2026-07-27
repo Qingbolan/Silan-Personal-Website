@@ -1,4 +1,4 @@
-# Silan Desktop 产品与架构评审
+# Silan Viking Desktop 产品与架构评审
 
 评审日期：2026-07-14
 
@@ -51,7 +51,7 @@
 
 ## 产品定义
 
-Silan Desktop 是站点所有者的本地发布工作台：把零散观察转成结构化、多语言、可发布的长期内容，并把真实访问与评论重新转成下一轮写作行动。
+Silan Viking Desktop 是技术研究者的本地发布工作台：把一次研究更新转成可审查的 Moment、Article、Project、Resume 证据与多语言公开内容，并把部署状态、真实访问与评论重新转成下一轮写作行动。
 
 它不是通用 CMS、文件浏览器、纯 Markdown 编辑器或纯流量面板。
 

@@ -1,16 +1,17 @@
 # silan-viking — design documents
 
-> silan's one-person context system.
+> Silan Viking's design documents.
 >
 > This directory is the authoritative design for silan-viking. One chapter
 > per file. Older single-file designs and early sketches live in `archive/`.
 
 ## One-sentence terminal state
 
-> silan-viking is silan's one-person context system: it continually captures
-> and structures his ideas (spark → article → project), lets any collaborating
-> agent understand him; the personal website is a selective outward projection
-> of the mature content inside that context.
+> Silan Viking is a local-first research publishing workspace: it helps a
+> researcher with a public body of work keep one new result from becoming
+> scattered maintenance across notes/articles/projects/résumé, review
+> owner-controlled changes, publish deliberately, deploy explicitly, and
+> verify what reached the web.
 
 ## Chapter index
 
@@ -36,7 +37,7 @@
 | [`15-agent-self-evolution.md`](./15-agent-self-evolution.md) | Three-layer design + gates for agents that evolve a project on their own; the E1–E3 stages (wired into `04`) | settled |
 | [`16-terminal-artifact-delivery-deploy.md`](./16-terminal-artifact-delivery-deploy.md) | Delivery and deployment of the terminal-state artefact | settled |
 | [`17-single-source-of-truth.md`](./17-single-source-of-truth.md) | **SSOT** — drift-prone global definitions pinned in one place + the consistency self-check checklist (cures doc drift) | settled |
-| [`18-language-review-workflow.md`](./18-language-review-workflow.md) | Fixed DeepSeek language-review workflow shared by CLI and Desktop, including target, state, privacy, and authority contracts | settled |
+| [`18-language-review-workflow.md`](./18-language-review-workflow.md) | Fixed DeepSeek reader-review workflow shared by CLI and Desktop, including target, scores, finding categories, privacy, and authority contracts | settled |
 
 ## Reading order
 

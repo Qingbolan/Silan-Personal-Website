@@ -336,7 +336,7 @@ silan mcp status          readiness probe: binary / SCHEMA / content repo / tool
 ### `silan skill <verb>` — skill-bundle distribution for collaborating agents (serves #16)
 
 ```
-silan skill emit     emit a skill bundle to ~/.claude/skills/silan-viking/ (--path overrides the output location)
+silan skill emit     emit a skill bundle to ~/.claude/skills/silan-viking/ (--codex targets ~/.codex/skills/silan-viking/; --path overrides)
                      derived from silan-viking.toml + content/SCHEMA.md; overwrites if present
 silan skill status   check whether the skill is installed and whether it matches the current project state (ContentHash comparison)
 silan skill rm       remove the installed skill bundle
@@ -368,22 +368,27 @@ silan credentials github set|rotate|status|remove [--profile <name>]
 > entries, including on non-macOS systems. Secrets never enter project config,
 > workspace source, command arguments, or CLI output.
 
-### DeepSeek language-quality review
+### DeepSeek reader review
 
 ```
-silan blog language-check [<slug>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]
-silan episode series language-check [<series>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]
+silan blog reader-review [<slug>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]
+silan episode series reader-review [<series>] [--model MODEL] [--min-confidence N] [--report PATH] [--json]
 ```
 
 > With no slug, the Blog command reviews every Blog language source. With no
 > series slug, the series command reviews every `series.toml` plus every
-> episode language source. The read-only review detects unnatural expression,
-> internal logical gaps, concept misuse, and odd or inconsistent terminology;
-> it emits exact quotes, source lines, explanations, and suggested repairs.
+> episode language source. The read-only review uses expert-adoption,
+> general-reader, and expression stress-test panels to score expert pull,
+> general clarity, actionability, and expression quality; it also detects
+> unnatural expression, logical gaps, concept misuse, terminology issues,
+> audience-fit problems, actionability gaps, rigor gaps, and Markdown reading
+> structure problems. It emits exact quotes, source lines, explanations, and
+> suggested repairs.
 > The default model is `deepseek-v4-flash`, and the default minimum confidence
 > is `0.80`; pass `--min-confidence 0` to retain every model candidate. Running
 > either command explicitly sends the selected authored source to DeepSeek,
-> but never mutates it.
+> but never mutates it. `language-check` remains accepted as a compatibility
+> alias for older scripts.
 
 The CLI and Desktop use the same fixed application workflow. In Desktop, open
 a Blog or episode and use the document column to review the current saved

@@ -41,8 +41,8 @@ function seriesToBlogData(series: EpisodeSeriesData): BlogData | null {
   )[0];
   const description = series.description || '';
   return {
-    id: firstEpisode.id,             // open the first episode on card click
-    slug: firstEpisode.slug,
+    id: series.id,
+    slug: series.slug,
     title: series.title,
     titleZh: '',
     summary: description,
@@ -244,9 +244,11 @@ const BlogStack: React.FC = () => {
   );
 
   const handlePostClick = useCallback((post: BlogData) => {
-    // Series cards (synthesised from episode_series) route to the dedicated
-    // episode detail page; regular blog posts go to BlogDetail.
-    if (post.type === 'series' || post.type === 'episode') {
+    if (post.type === 'series') {
+      navigate(`/episodes/series/${post.seriesSlug || post.slug}`);
+      return;
+    }
+    if (post.type === 'episode') {
       navigate(`/episodes/${post.slug}`);
       return;
     }

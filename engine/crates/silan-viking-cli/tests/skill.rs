@@ -61,11 +61,13 @@ fn emit_renders_the_full_skill_package() {
         "SKILL.md must open with frontmatter"
     );
     assert!(skill_md.contains("description: silan's personal context system"));
+    assert!(skill_md.contains("reader reviews"));
     for section in [
         "## What this is",
         "## Connecting",
         "## When to do what",
         "## Three lines that must not be crossed",
+        "## Read-only review CLI",
         "## Reference",
     ] {
         assert!(skill_md.contains(section), "SKILL.md must have `{section}`");
@@ -73,6 +75,9 @@ fn emit_renders_the_full_skill_package() {
     // The translation table is keyed on natural language, not tool names.
     assert!(skill_md.contains("silan seems to be"));
     assert!(skill_md.contains("context_brief()"));
+    assert!(skill_md.contains("reader-review"));
+    assert!(skill_md.contains("expert_pull"));
+    assert!(skill_md.contains("markdown_structure"));
     // The type list is interpolated from SCHEMA.
     assert!(skill_md.contains("blog / project / episode / resume / moment"));
 

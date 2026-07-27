@@ -7252,6 +7252,53 @@ button.ai-cover-credential:hover:not(:disabled) {
   padding: 9px 12px 11px;
 }
 
+.language-review-scores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border-top: 1px solid var(--line);
+  background: var(--line);
+}
+
+.language-review-scores > div {
+  min-width: 0;
+  padding: 9px 10px;
+  background: var(--color-surface);
+}
+
+.language-review-scores strong,
+.language-review-scores span,
+.language-review-scores small {
+  display: block;
+}
+
+.language-review-scores strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.language-review-scores span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.language-review-scores small {
+  margin-top: 5px;
+  color: var(--faint);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .language-review-scores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .language-review-findings {
   display: grid;
   gap: 1px;
@@ -9383,6 +9430,48 @@ button.ai-cover-credential:hover:not(:disabled) {
   font-size: 8px;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
+}
+
+.git-panel-commit-tools {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.git-panel-generate-message {
+  display: inline-flex;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 8px;
+  background: var(--paper-solid);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease-standard),
+    background var(--ds-duration-fast) var(--ds-ease-standard),
+    transform var(--ds-duration-fast) var(--ds-ease-standard);
+}
+
+.git-panel-generate-message:hover:not(:disabled) {
+  border-color: var(--ds-color-border-strong);
+  background: var(--color-surfaceSecondary);
+}
+
+.git-panel-generate-message:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.git-panel-generate-message:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
 }
 
 .git-panel-commit textarea {

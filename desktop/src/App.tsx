@@ -4296,7 +4296,7 @@ export default function App() {
                                     <small
                                       className="content-tree-review-count"
                                       data-state={reviewFindingCount === 0 ? 'pass' : 'review'}
-                                      aria-label={`${reviewFindingCount} language review findings`}
+                                      aria-label={`${reviewFindingCount} reader review findings`}
                                     >
                                       {reviewFindingCount === 0 ? '✓' : reviewFindingCount}
                                     </small>
@@ -4335,10 +4335,10 @@ export default function App() {
                     )}
                   </nav>
                   {languageReviewAvailable && contentRailMode === 'files' && (
-                    <section className="content-sidebar-review" aria-label="DeepSeek language review">
+                    <section className="content-sidebar-review" aria-label="DeepSeek reader review">
                       <div>
                         <FileSearch size={14} />
-                        <span>Language review</span>
+                        <span>Reader review</span>
                       </div>
                       <button
                         type="button"

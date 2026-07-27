@@ -39,3 +39,19 @@ public_url   = "https://silan.tech"
 backend_port = 5200
 systemd_unit = "silan-backend"
 nginx_extension_dir = "/www/server/panel/vhost/nginx/extension/silan.tech"
+
+[search_submit]
+providers   = ["google", "indexnow", "baidu"]
+site_url    = "https://silan.tech/"
+sitemap_url = "https://silan.tech/sitemap.xml"
+strict      = false
+
+# [search_submit.google]
+# credentials_file = "/etc/silan-backend/search-console-service-account.json"
+#
+[search_submit.indexnow]
+key = "af2e52c6b9b6f992f5163482ca2a8835"
+#
+# [search_submit.baidu]
+# site  = "silan.tech"
+# token = "replace-with-baidu-token"

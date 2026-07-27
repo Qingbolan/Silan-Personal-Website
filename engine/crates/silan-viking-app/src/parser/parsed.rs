@@ -14,6 +14,7 @@ use super::entry::PartEntry;
 use silan_viking_base::{ItemId, Lang, PartId};
 use silan_viking_content::{ContentKind, PartRole, Relation};
 use std::collections::BTreeMap;
+use time::OffsetDateTime;
 
 /// One value of a language-neutral frontmatter field.
 #[derive(Debug, Clone, PartialEq)]
@@ -176,6 +177,8 @@ impl LangVariant {
 pub struct Parsed {
     kind: ContentKind,
     item_id: ItemId,
+    source_created_at: OffsetDateTime,
+    source_updated_at: OffsetDateTime,
     main: LangNeutral,
     langs: BTreeMap<Lang, LangVariant>,
     relations: Vec<Relation>,
@@ -195,6 +198,16 @@ impl Parsed {
     /// The parsed Item's identity.
     pub fn item_id(&self) -> &ItemId {
         &self.item_id
+    }
+
+    /// Source creation timestamp from the scanned Item metadata.
+    pub fn source_created_at(&self) -> OffsetDateTime {
+        self.source_created_at
+    }
+
+    /// Source last-modified timestamp from the scanned Item metadata.
+    pub fn source_updated_at(&self) -> OffsetDateTime {
+        self.source_updated_at
     }
 
     /// The language-neutral fields.
@@ -247,6 +260,8 @@ impl Parsed {
 pub(in crate::parser) struct ParsedBuilder {
     kind: ContentKind,
     item_id: ItemId,
+    source_created_at: OffsetDateTime,
+    source_updated_at: OffsetDateTime,
     main: LangNeutral,
     langs: BTreeMap<Lang, LangVariant>,
     relations: Vec<Relation>,
@@ -259,6 +274,8 @@ impl ParsedBuilder {
         Self {
             kind,
             item_id,
+            source_created_at: OffsetDateTime::UNIX_EPOCH,
+            source_updated_at: OffsetDateTime::UNIX_EPOCH,
             main: LangNeutral::default(),
             langs: BTreeMap::new(),
             relations: Vec::new(),
@@ -269,6 +286,16 @@ impl ParsedBuilder {
     /// Set a language-neutral main field.
     pub(in crate::parser) fn put_main(&mut self, name: impl Into<String>, value: FieldValue) {
         self.main.fields.insert(name.into(), value);
+    }
+
+    /// Carry source timestamps from the scanned Item into the parsed product.
+    pub(in crate::parser) fn put_source_times(
+        &mut self,
+        created_at: OffsetDateTime,
+        updated_at: OffsetDateTime,
+    ) {
+        self.source_created_at = created_at;
+        self.source_updated_at = updated_at.max(created_at);
     }
 
     /// Set a translatable scalar field for one language.
@@ -343,6 +370,8 @@ impl ParsedBuilder {
         Ok(Parsed {
             kind: self.kind,
             item_id: self.item_id,
+            source_created_at: self.source_created_at,
+            source_updated_at: self.source_updated_at,
             main: self.main,
             langs: self.langs,
             relations: self.relations,

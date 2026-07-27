@@ -505,9 +505,9 @@ proposal info — never "published / merged".
 `initialize.instructions` fixed template:
 
 ```text
-This MCP server exposes silan-viking, silan's personal context system.
-First call context_brief(). Published resources are read/propose only.
-Agent memory under silan://agent/ may be updated with ctx_write.
+This MCP server exposes Silan Viking, a local-first research publishing
+workspace. First call context_brief(). Published resources are read/propose
+only. Agent memory under silan://agent/ may be updated with ctx_write.
 Never accept, publish, or deploy without an explicit owner CLI action.
 Schema version: <schema_version>. Content commit: <content_commit>.
 Useful resources: silan://schema, silan://overview, silan://agent/brief.

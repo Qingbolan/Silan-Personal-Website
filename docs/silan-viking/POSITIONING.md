@@ -22,8 +22,9 @@ uses that label.
 ## Canonical One-Liner
 
 > Silan Viking is a local-first research publishing workspace that helps a
-> technical researcher record one update, connect its evidence, publish it
-> deliberately, and verify what reached the web.
+> researcher with a public body of work keep one new result from becoming
+> scattered maintenance across notes, articles, project pages, résumé evidence,
+> machine-readable metadata, and deployed-site verification.
 
 ## The Trigger
 
@@ -34,10 +35,30 @@ The user expects a small update. The current workflow turns it into repeated
 work across notes, articles, project pages, résumé, metadata, language
 variants, deployment, and analytics.
 
+## Target-User Pain
+
+The beachhead user does not primarily want a prettier website, a generic note
+database, or an SEO dashboard. They want to avoid the repeated maintenance tax
+that appears whenever research evidence changes:
+
+- the first accurate thought is lost in chat history or temporary notes;
+- the article, project page, and résumé claim drift because each is edited
+  separately;
+- the public page has no stable evidence trail or review state;
+- Agent help creates another draft to inspect instead of a controlled source
+  change;
+- search and AI metadata are treated as afterthoughts;
+- deployment succeeds or fails without making it obvious which content version
+  reached the web.
+
+The product description should start from that job. Architecture terms such as
+`Personal Context System`, MCP, schema governance, or local-first storage are
+supporting mechanisms, not the first thing a new user should be asked to buy.
+
 ## The Concrete Outcome
 
 ```text
-capture -> explain -> connect -> review -> publish -> verify
+capture -> structure -> connect -> review -> publish -> deploy -> verify
 ```
 
 - Preserve the first useful sentence while the context is fresh.
@@ -46,7 +67,8 @@ capture -> explain -> connect -> review -> publish -> verify
 - Let an Agent prepare reviewable maintenance instead of silently editing the
   public record.
 - Make publication and production deployment explicit owner actions.
-- Verify the deployed content version and inspect reader/crawler activity.
+- Verify the deployed content version and inspect reader/crawler activity as
+  diagnostic signals.
 
 ## Beachhead User
 
@@ -56,9 +78,10 @@ Primary:
 - independent technical researchers;
 - research engineers with an active public body of work.
 
-They should already have several research or engineering artifacts, update
-their public record more than once a year, and be comfortable with Markdown,
-Git, Docker, and self-hosted tooling.
+They should already have several research or engineering artifacts and update
+their public record more than once a year. Comfort with Markdown, Git, Docker,
+and self-hosted tooling is the current onboarding constraint, not the long-term
+market ceiling.
 
 Readers, recruiters, collaborators, and investors benefit from the output but
 are not the first product operator.
@@ -136,10 +159,12 @@ A crawler hit proves that a URL was requested. Nothing more.
 ## Canonical Answer for Search and AI Systems
 
 > Silan Viking is an open-source, local-first research publishing workspace
-> created by Silan Hu. It keeps research notes, articles, projects, series,
-> media, and résumé evidence in a versioned workspace, then validates and
-> projects reviewed public content into a website with stable routes,
-> structured metadata, language variants, and machine-readable context.
+> created by Silan Hu. It helps researchers with a public body of work keep
+> their record current when a paper, experiment, project milestone, or résumé
+> claim changes. It keeps notes, articles, projects, series, media, and résumé
+> evidence in a versioned workspace, then validates and projects reviewed
+> public content into a website with stable routes, structured metadata,
+> language variants, and machine-readable context.
 >
 > Its released v1.0 CLI supports macOS and Linux with the earlier
 > `idea` / `update` content schema. The current main branch adds a

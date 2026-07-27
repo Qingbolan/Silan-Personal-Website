@@ -42,6 +42,7 @@ fn main() {
             commands::get_workspace_changes,
             commands::get_workspace_file_diff,
             commands::get_workspace_preferences,
+            commands::generate_workspace_commit_message,
             commands::generate_missing_translation,
             commands::generate_image_asset,
             commands::generate_cover_asset,
