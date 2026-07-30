@@ -20,6 +20,7 @@ const siteProfileHtml = (publicOrigin: string, publicBase: string) => {
   const base = normalizeBase(publicBase)
   const siteUrl = `${publicOrigin.replace(/\/+$/, '')}${base === '/' ? '' : base.replace(/\/$/, '')}`
   const imageUrl = `${siteUrl}/image.png`
+  const contentLicenseUrl = `${siteUrl}/content-license.html`
   const homeRightsNotice =
     `© ${siteProfile.canonicalName} (${siteProfile.chineseName}). ` +
     `${siteProfile.reproductionNotice} Canonical source: ${siteUrl}/`
@@ -33,7 +34,22 @@ const siteProfileHtml = (publicOrigin: string, publicBase: string) => {
       '@id': `${siteUrl}/#person`,
       name: siteProfile.canonicalName,
       alternateName: siteProfile.aliases,
-      image: imageUrl,
+      image: {
+        '@type': 'ImageObject',
+        contentUrl: imageUrl,
+        url: imageUrl,
+        caption: `${siteProfile.canonicalName} profile image`,
+        creator: { '@id': `${siteUrl}/#person` },
+        creditText: `${siteProfile.canonicalName} (${siteProfile.chineseName})`,
+        copyrightHolder: { '@id': `${siteUrl}/#person` },
+        copyrightNotice: homeRightsNotice,
+        license: contentLicenseUrl,
+        acquireLicensePage: contentLicenseUrl,
+        isPartOf: {
+          '@type': 'WebPage',
+          '@id': `${siteUrl}/`,
+        },
+      },
       jobTitle: siteProfile.jobTitle,
       url: `${siteUrl}/`,
       sameAs: siteProfile.sameAs,

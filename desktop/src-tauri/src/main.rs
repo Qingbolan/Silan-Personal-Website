@@ -24,7 +24,11 @@ fn main() {
             commands::capture_moment,
             commands::apply_article_image_attribution,
             commands::commit_workspace_changes,
+            commands::convert_blog_to_moment,
+            commands::convert_moment_to_blog,
+            commands::create_blog_from_moment,
             commands::create_project,
+            commands::create_project_from_moment,
             commands::deploy_content,
             commands::edit_markdown_selection,
             commands::get_episode_series_source,
@@ -50,6 +54,7 @@ fn main() {
             commands::import_media_asset,
             commands::import_media_asset_bytes,
             commands::import_resume_media_asset,
+            commands::link_moment_to_content,
             commands::list_documents,
             commands::preview_article_image_attribution,
             commands::release_scope,
@@ -77,6 +82,7 @@ fn main() {
             commands::test_deepseek_credentials,
             commands::test_openai_credentials,
             commands::transcribe_audio,
+            commands::unlink_moment_from_content,
             commands::unstage_workspace_paths,
             commands::verify_remote_content
         ])

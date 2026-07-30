@@ -851,9 +851,37 @@ p:not([data-ds] *) {
   background: linear-gradient(145deg, rgba(50, 49, 48, 0.9), rgba(45, 44, 43, 0.9));
 }
 
-/* Prism syntax highlight (theme-aware, minimal) */
+/* Syntax highlight — token colours are inherited from the code surface so
+   light article snippets and dark code panels can each keep readable contrast. */
+:root {
+  --syntax-fg: var(--color-textPrimary, #1f2937);
+  --syntax-muted: color-mix(in oklch, var(--color-textSecondary, #6b7280) 82%, transparent);
+  --syntax-punctuation: color-mix(in oklch, var(--color-textSecondary, #6b7280) 92%, var(--color-textPrimary, #1f2937));
+  --syntax-keyword: var(--ds-color-accent, var(--color-primary, #2563eb));
+  --syntax-property: oklch(0.46 0.13 264);
+  --syntax-string: oklch(0.50 0.12 150);
+  --syntax-number: oklch(0.58 0.15 62);
+  --syntax-function: oklch(0.50 0.14 300);
+  --syntax-variable: oklch(0.56 0.17 28);
+  --syntax-type: oklch(0.48 0.13 220);
+}
+
+.syntax-surface--dark,
+.dark {
+  --syntax-fg: oklch(0.93 0.006 264);
+  --syntax-muted: oklch(0.67 0.012 264);
+  --syntax-punctuation: oklch(0.76 0.01 264);
+  --syntax-keyword: oklch(0.76 0.12 256);
+  --syntax-property: oklch(0.76 0.12 230);
+  --syntax-string: oklch(0.78 0.12 150);
+  --syntax-number: oklch(0.82 0.14 72);
+  --syntax-function: oklch(0.80 0.12 310);
+  --syntax-variable: oklch(0.78 0.13 36);
+  --syntax-type: oklch(0.78 0.10 205);
+}
+
 pre[class*="language-"], code[class*="language-"] {
-  color: var(--color-textPrimary, #1f2937);
+  color: var(--syntax-fg);
   background: transparent;
   text-shadow: none;
 }
@@ -862,21 +890,22 @@ code[class*="language-"] .token.block-comment,
 code[class*="language-"] .token.prolog,
 code[class*="language-"] .token.doctype,
 code[class*="language-"] .token.cdata {
-  color: var(--color-textTertiary, #9ca3af);
+  color: var(--syntax-muted);
+  font-style: italic;
 }
 code[class*="language-"] .token.punctuation {
-  color: var(--color-textSecondary, #6b7280);
+  color: var(--syntax-punctuation);
 }
 code[class*="language-"] .token.property,
 code[class*="language-"] .token.tag,
 code[class*="language-"] .token.constant,
 code[class*="language-"] .token.symbol,
 code[class*="language-"] .token.deleted {
-  color: var(--color-accent, #42b883);
+  color: var(--syntax-property);
 }
 code[class*="language-"] .token.boolean,
 code[class*="language-"] .token.number {
-  color: #f59e0b; /* amber-500 */
+  color: var(--syntax-number);
 }
 code[class*="language-"] .token.selector,
 code[class*="language-"] .token.attr-name,
@@ -884,33 +913,33 @@ code[class*="language-"] .token.string,
 code[class*="language-"] .token.char,
 code[class*="language-"] .token.builtin,
 code[class*="language-"] .token.inserted {
-  color: #10b981; /* emerald-500 */
+  color: var(--syntax-string);
 }
 code[class*="language-"] .token.operator,
 code[class*="language-"] .token.entity,
 code[class*="language-"] .token.url {
-  color: var(--color-textSecondary, #6b7280);
+  color: var(--syntax-punctuation);
 }
 code[class*="language-"] .token.atrule,
 code[class*="language-"] .token.attr-value,
 code[class*="language-"] .token.keyword {
-  color: var(--color-primary, #42b883);
+  color: var(--syntax-keyword);
 }
 code[class*="language-"] .token.function,
 code[class*="language-"] .token.class-name,
 code[class*="language-"] .token.macro {
-  color: #a78bfa; /* violet-400 */
+  color: var(--syntax-function);
 }
 code[class*="language-"] .token.regex,
 code[class*="language-"] .token.important,
 code[class*="language-"] .token.variable,
 code[class*="language-"] .token.lifetime,
 code[class*="language-"] .token.decorator {
-  color: #ef4444; /* red-500 */
+  color: var(--syntax-variable);
 }
 code[class*="language-"] .token.type,
 code[class*="language-"] .token.parameter {
-  color: #0ea5e9; /* sky-500 */
+  color: var(--syntax-type);
 }
 code[class*="language-"] .token.bold { font-weight: 700; }
 code[class*="language-"] .token.italic { font-style: italic; }
@@ -1513,6 +1542,16 @@ code[class*="language-"] .token.italic { font-style: italic; }
   padding: 0.1rem 0.34rem;
 }
 .markdown-content .markdown-body pre {
+  --syntax-fg: var(--color-textPrimary, #171717);
+  --syntax-muted: color-mix(in oklch, var(--color-textSecondary, #525252) 78%, transparent);
+  --syntax-punctuation: color-mix(in oklch, var(--color-textSecondary, #525252) 88%, var(--color-textPrimary, #171717));
+  --syntax-keyword: var(--ds-color-accent, var(--color-primary, #1d4ed8));
+  --syntax-property: oklch(0.43 0.13 264);
+  --syntax-string: oklch(0.43 0.12 150);
+  --syntax-number: oklch(0.54 0.15 62);
+  --syntax-function: oklch(0.45 0.14 300);
+  --syntax-variable: oklch(0.52 0.16 28);
+  --syntax-type: oklch(0.43 0.13 220);
   background:
     linear-gradient(
       180deg,
@@ -1543,6 +1582,16 @@ code[class*="language-"] .token.italic { font-style: italic; }
   padding: 0;
 }
 .dark .markdown-content .markdown-body pre {
+  --syntax-fg: oklch(0.94 0.006 264);
+  --syntax-muted: oklch(0.67 0.012 264);
+  --syntax-punctuation: oklch(0.76 0.01 264);
+  --syntax-keyword: oklch(0.76 0.12 256);
+  --syntax-property: oklch(0.76 0.12 230);
+  --syntax-string: oklch(0.78 0.12 150);
+  --syntax-number: oklch(0.82 0.14 72);
+  --syntax-function: oklch(0.80 0.12 310);
+  --syntax-variable: oklch(0.78 0.13 36);
+  --syntax-type: oklch(0.78 0.10 205);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 38%),
     #121316;
@@ -1562,17 +1611,92 @@ code[class*="language-"] .token.italic { font-style: italic; }
   border: 0;
   color: inherit;
 }
-.markdown-content .markdown-body table { border-collapse: collapse; display: table; width: 100%; }
+.markdown-content .markdown-body .markdown-table-scroll {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-background, #ffffff) 72%, transparent),
+      transparent 46%
+    ),
+    var(--ds-color-surface-1, color-mix(in srgb, var(--color-textPrimary, #171717) 3%, var(--color-background, #ffffff)));
+  border: 1px solid var(--ds-color-border, color-mix(in srgb, var(--color-textPrimary, #171717) 14%, transparent));
+  border-radius: var(--ds-radius-lg, 0.75rem);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-background, #ffffff) 84%, transparent),
+    var(--ds-elevation-1, none);
+  margin: 1.45rem 0 1.85rem;
+  max-width: 100%;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.markdown-content .markdown-body .markdown-table-scroll:focus-visible {
+  outline: 2px solid var(--ds-color-ring, color-mix(in srgb, var(--color-accent, #2563eb) 42%, transparent));
+  outline-offset: 3px;
+}
+.markdown-content .markdown-body table {
+  border-collapse: separate;
+  border-spacing: 0;
+  display: table;
+  font-size: 0.92rem;
+  line-height: 1.58;
+  margin: 0;
+  min-width: min(42rem, 100%);
+  table-layout: auto;
+  width: 100%;
+}
 .markdown-content .markdown-body th,
 .markdown-content .markdown-body td {
-  border: 1px solid var(--color-cardBorder, #e5e7eb) !important;
-  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--ds-color-border, #e5e7eb) !important;
+  border-right: 1px solid var(--ds-color-border, #e5e7eb) !important;
+  min-width: 9.5rem;
+  overflow-wrap: normal;
+  padding: 0.72rem 0.9rem;
+  text-wrap: pretty;
   vertical-align: top;
+  word-break: normal;
+}
+.markdown-content .markdown-body th:last-child,
+.markdown-content .markdown-body td:last-child {
+  border-right: 0 !important;
+  min-width: 18rem;
+}
+.markdown-content .markdown-body tbody tr:last-child td {
+  border-bottom: 0 !important;
 }
 .markdown-content .markdown-body th {
-  background: var(--color-surface, #f5f5f5);
+  background: var(--ds-color-surface-2, #f5f5f5);
   color: var(--color-textPrimary, #171717);
   font-weight: 650;
+  letter-spacing: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.markdown-content .markdown-body td {
+  color: color-mix(in srgb, var(--color-textPrimary, #171717) 84%, transparent);
+}
+.markdown-content .markdown-body tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--ds-color-surface-2, #f5f5f5) 58%, transparent);
+}
+.markdown-content .markdown-body tbody tr:hover td {
+  background: color-mix(in srgb, var(--ds-color-primary-soft, #eef2ff) 58%, transparent);
+}
+.markdown-content .markdown-body td code,
+.markdown-content .markdown-body th code {
+  white-space: nowrap;
+}
+.markdown-content .markdown-body td p,
+.markdown-content .markdown-body th p {
+  margin: 0;
+}
+.dark .markdown-content .markdown-body .markdown-table-scroll {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 44%),
+    var(--ds-color-surface-1, #202226);
+  border-color: var(--ds-color-border, rgba(255, 255, 255, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    var(--ds-elevation-1, none);
 }
 .markdown-content .markdown-body img,
 .markdown-content .markdown-body video {

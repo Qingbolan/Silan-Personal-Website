@@ -183,6 +183,11 @@ const Markdown: React.FC<MarkdownProps> = ({
         />
       )
     ),
+    table: ({ children: tableChildren, node: _node, ...props }) => (
+      <div className="markdown-table-scroll" role="region" aria-label="Scrollable table" tabIndex={0}>
+        <table {...props}>{tableChildren}</table>
+      </div>
+    ),
   }), [richLinks]);
 
   const onClick = React.useCallback((event: React.MouseEvent<HTMLDivElement>) => {

@@ -66,7 +66,7 @@ export const CodeContent: React.FC<CodeContentProps> = ({ item, isWideScreen }) 
           </Button>
         </div>
 
-        <pre className={`max-h-[42rem] overflow-auto bg-[oklch(0.16_0.008_264)] p-5 text-[0.82rem] leading-6 text-[oklch(0.9_0.01_264)] sm:p-6 sm:text-sm ${languageClass}`}>
+        <pre className={`syntax-surface--dark max-h-[42rem] overflow-auto bg-[oklch(0.16_0.008_264)] p-5 text-[0.82rem] leading-6 text-[oklch(0.9_0.01_264)] sm:p-6 sm:text-sm ${languageClass}`}>
           <code
             className={`font-mono ${languageClass}`}
             dangerouslySetInnerHTML={{ __html: highlightedCode }}

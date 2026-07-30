@@ -15,16 +15,17 @@ use crate::model::{
 use serde::Deserialize;
 use silan_viking_app::{
     api_base_url, ArticleImageAttributionPlan, ArticleImageAttributionResult,
-    ArticleImageAttributionWorkspace, ContentCreator, ContentEditor, ContentKind, CoverBrief,
-    CoverGenerationInput, CoverWorkspace, CreateTranslationInput, DeepSeekApiKey,
-    DeepSeekCommitMessageGenerator, DeliveryControl, EditableDocument, EditablePart,
-    EditableSection, GeneratedImageAsset, GeoAdvisor, IdeaCategory, ImageGenerationRequest,
-    ImageOutputFormat, ImageQuality, ImageSize, LanguageAuditReport, LanguageAuditScope,
-    LanguageAuditWorkflow, MarkdownSelectionEditAction, MarkdownSelectionEditRequest,
-    MarkdownTranslationRequest, MarkdownTranslationSyncRequest, MediaAssetRef, MediaLibrary,
-    OpenAiApiKey, OpenAiImageGenerator, OpenAiMarkdownTranslator, ReleaseScope,
-    ResumeProfileUpdate, SaveLifecycleInput, SaveMetadataInput, SaveTranslationInput, StatsCache,
-    StatsError, WebsiteInsights, WorkspaceContent,
+    ArticleImageAttributionWorkspace, ContentCreator, ContentEditor, ContentKind,
+    ContentRelationshipEditor, CoverBrief, CoverGenerationInput, CoverWorkspace,
+    CreateTranslationInput, DeepSeekApiKey, DeepSeekCommitMessageGenerator, DeliveryControl,
+    EditableDocument, EditablePart, EditableSection, GeneratedImageAsset, GeoAdvisor, IdeaCategory,
+    ImageGenerationRequest, ImageOutputFormat, ImageQuality, ImageSize, LanguageAuditReport,
+    LanguageAuditScope, LanguageAuditWorkflow, MarkdownSelectionEditAction,
+    MarkdownSelectionEditRequest, MarkdownTranslationRequest, MarkdownTranslationSyncRequest,
+    MediaAssetRef, MediaLibrary, OpenAiApiKey, OpenAiImageGenerator, OpenAiMarkdownTranslator,
+    RelationshipTargetKind, ReleaseScope, ResumeProfileUpdate, SaveLifecycleInput,
+    SaveMetadataInput, SaveTranslationInput, StatsCache, StatsError, WebsiteInsights,
+    WorkspaceContent,
 };
 use std::collections::BTreeMap;
 use std::env;
@@ -115,6 +116,7 @@ pub(crate) struct DesktopWorkspace {
     website_insights: WebsiteInsights,
     content: ContentEditor,
     creator: ContentCreator,
+    relationships: ContentRelationshipEditor,
     workspace_content: WorkspaceContent,
     media_library: MediaLibrary,
     cover_workspace: CoverWorkspace,
@@ -133,6 +135,8 @@ impl DesktopWorkspace {
                 .map_err(|error| error.to_string())?,
             content: ContentEditor::open(&content_root).map_err(|error| error.to_string())?,
             creator: ContentCreator::open(&content_root).map_err(|error| error.to_string())?,
+            relationships: ContentRelationshipEditor::open(&content_root)
+                .map_err(|error| error.to_string())?,
             workspace_content: WorkspaceContent::open(&content_root)
                 .map_err(|error| error.to_string())?,
             media_library: MediaLibrary::open(&content_root).map_err(|error| error.to_string())?,
@@ -1225,6 +1229,80 @@ impl DesktopWorkspace {
         self.document_for_part(&captured.part_id)
     }
 
+    pub(crate) fn convert_blog_to_moment(&self, slug: &str) -> Result<EditorDocument, String> {
+        let mutation = self
+            .relationships
+            .convert_blog_to_moment_and_sync(slug, &self.db_path)
+            .map_err(|error| error.to_string())?;
+        self.document_for_kind_slug(ContentKind::Moment, &mutation.item_slug)
+    }
+
+    pub(crate) fn convert_moment_to_blog(&self, slug: &str) -> Result<EditorDocument, String> {
+        let mutation = self
+            .relationships
+            .convert_moment_to_blog_and_sync(slug, &self.db_path)
+            .map_err(|error| error.to_string())?;
+        self.document_for_kind_slug(ContentKind::Blog, &mutation.item_slug)
+    }
+
+    pub(crate) fn create_blog_from_moment(&self, slug: &str) -> Result<EditorDocument, String> {
+        let mutation = self
+            .relationships
+            .create_from_moment_and_sync(slug, RelationshipTargetKind::Blog, &self.db_path)
+            .map_err(|error| error.to_string())?;
+        self.document_for_kind_slug(
+            ContentKind::Blog,
+            mutation
+                .related_slug
+                .as_deref()
+                .ok_or_else(|| "created blog slug was not returned".to_owned())?,
+        )
+    }
+
+    pub(crate) fn create_project_from_moment(&self, slug: &str) -> Result<EditorDocument, String> {
+        let mutation = self
+            .relationships
+            .create_from_moment_and_sync(slug, RelationshipTargetKind::Project, &self.db_path)
+            .map_err(|error| error.to_string())?;
+        self.document_for_kind_slug(
+            ContentKind::Project,
+            mutation
+                .related_slug
+                .as_deref()
+                .ok_or_else(|| "created project slug was not returned".to_owned())?,
+        )
+    }
+
+    pub(crate) fn link_moment_to_content(
+        &self,
+        slug: &str,
+        target_kind: &str,
+        target_slug: &str,
+    ) -> Result<EditorDocument, String> {
+        let target_kind =
+            RelationshipTargetKind::parse(target_kind).map_err(|error| error.to_string())?;
+        let mutation = self
+            .relationships
+            .link_moment_to_existing_and_sync(slug, target_kind, target_slug, &self.db_path)
+            .map_err(|error| error.to_string())?;
+        self.document_for_kind_slug(ContentKind::Moment, &mutation.item_slug)
+    }
+
+    pub(crate) fn unlink_moment_from_content(
+        &self,
+        slug: &str,
+        target_kind: &str,
+        target_slug: &str,
+    ) -> Result<EditorDocument, String> {
+        let target_kind =
+            RelationshipTargetKind::parse(target_kind).map_err(|error| error.to_string())?;
+        let mutation = self
+            .relationships
+            .unlink_moment_from_existing_and_sync(slug, target_kind, target_slug, &self.db_path)
+            .map_err(|error| error.to_string())?;
+        self.document_for_kind_slug(ContentKind::Moment, &mutation.item_slug)
+    }
+
     fn document_for_part(&self, part_id: &str) -> Result<EditorDocument, String> {
         let (document, _) = WorkspaceContent::open(&self.content_root)
             .map_err(|error| error.to_string())?
@@ -1235,6 +1313,37 @@ impl DesktopWorkspace {
             .into_iter()
             .find(|part| part.part_id == part_id)
             .ok_or_else(|| format!("captured part `{part_id}` was not returned"))
+    }
+
+    fn document_for_kind_slug(
+        &self,
+        kind: ContentKind,
+        slug: &str,
+    ) -> Result<EditorDocument, String> {
+        let document = WorkspaceContent::open(&self.content_root)
+            .map_err(|error| error.to_string())?
+            .editable_documents()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|document| {
+                document.content_type == kind.frontmatter_value() && document.slug == slug
+            })
+            .ok_or_else(|| {
+                format!(
+                    "{} `{slug}` was not returned after relationship update",
+                    kind.frontmatter_value()
+                )
+            })?;
+        let engagement = ContentEngagementSnapshot::read(&self.db_path);
+        map_editable_document(document, &engagement)
+            .into_iter()
+            .next()
+            .ok_or_else(|| {
+                format!(
+                    "{} `{slug}` has no editable Markdown part",
+                    kind.frontmatter_value()
+                )
+            })
     }
 
     fn resolve_media_reference(&self, reference: &str) -> Option<String> {

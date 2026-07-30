@@ -23,6 +23,7 @@ import {
   Folder,
   FolderPlus,
   GitBranch,
+  Link2,
   LoaderCircle,
   Menu,
   MessageCircle,
@@ -39,6 +40,7 @@ import {
   Sparkles,
   ThumbsUp,
   Type,
+  Unlink2,
   UploadCloud,
   UserRound,
   X,
@@ -308,9 +310,10 @@ const fileBytes = async (file: File) => Array.from(new Uint8Array(await file.arr
 
 type ContentRailPanel = 'parts' | 'settings' | 'reactions';
 type ContentRailMode = 'files' | 'interaction';
-type ContentSettingsPage = 'overview' | 'cover' | 'discovery' | 'links' | 'publishing' | 'source';
+type ContentSettingsPage = 'overview' | 'cover' | 'discovery' | 'links' | 'relations' | 'publishing' | 'source';
 type SeriesSettingsPage = 'overview' | 'cover' | 'publishing' | 'source';
 type DashboardRankingMetric = 'views' | 'likes' | 'comments' | 'crawlers' | 'ai_crawlers' | 'search_bots' | 'ai_chat';
+type RelationTargetKind = 'blog' | 'project';
 type SettingsPageItem<Page extends string> = {
   id: Page;
   label: string;
@@ -340,6 +343,7 @@ const contentSettingsPages: Array<SettingsPageItem<ContentSettingsPage>> = [
   { id: 'cover', label: 'Cover', description: 'Preview and generate' },
   { id: 'discovery', label: 'Discovery', description: 'Resources and image credit' },
   { id: 'links', label: 'Links', description: 'Repository and demo' },
+  { id: 'relations', label: 'Relations', description: 'Convert and connect' },
   { id: 'publishing', label: 'Publishing', description: 'Visibility and lifecycle' },
   { id: 'source', label: 'Source', description: 'Identifiers and files' },
 ];
@@ -544,6 +548,10 @@ export default function App() {
   const [metadataCoverBusy, setMetadataCoverBusy] = React.useState(false);
   const [metadataCoverError, setMetadataCoverError] = React.useState<string | undefined>(undefined);
   const [metadataCoverLocalPreview, setMetadataCoverLocalPreview] = React.useState('');
+  const [relationshipBusy, setRelationshipBusy] = React.useState('');
+  const [relationshipError, setRelationshipError] = React.useState<string | null>(null);
+  const [relationshipTargetKind, setRelationshipTargetKind] = React.useState<RelationTargetKind>('blog');
+  const [relationshipTargetSlug, setRelationshipTargetSlug] = React.useState('');
   const [reactionDraft, setReactionDraft] = React.useState({ likes: '0', comments: '0' });
   const [reactionSavingId, setReactionSavingId] = React.useState('');
   const [reactionError, setReactionError] = React.useState<string | null>(null);
@@ -2699,6 +2707,12 @@ export default function App() {
   ]);
 
   React.useEffect(() => {
+    setRelationshipError(null);
+    setRelationshipTargetSlug('');
+    setRelationshipTargetKind('blog');
+  }, [selectedContentGroup?.id]);
+
+  React.useEffect(() => {
     if (!selectedContentGroup || reactionSavingId) return;
     setReactionDraft({
       likes: String(selectedContentGroup.engagement.likes),
@@ -2810,6 +2824,57 @@ export default function App() {
       setMetadataError(String(reason));
     } finally {
       setMetadataSavingId('');
+    }
+  };
+
+  const reloadDocumentsAfterRelationship = async (saved: EditorDocument) => {
+    const nextDocuments = await invoke<EditorDocument[]>('list_documents');
+    savedTranslationContentRef.current = new Map(
+      nextDocuments.flatMap((document) => (
+        document.translations.map((translation) => [translation.id, translation.content] as const)
+      )),
+    );
+    setDocuments(nextDocuments);
+    setSelectedId(saved.id);
+    setLanguageByDocument((current) => {
+      const next: Record<string, string> = {};
+      nextDocuments.forEach((document) => {
+        next[document.id] = current[document.id]
+          || document.canonical_language
+          || document.translations[0]?.language
+          || '';
+      });
+      return next;
+    });
+  };
+
+  const runRelationshipCommand = async (
+    busyKey: string,
+    command: string,
+    args: Record<string, unknown>,
+    nextPage: ContentSettingsPage = 'relations',
+  ) => {
+    if (!selectedContentGroup || relationshipBusy) return;
+    const hasDirtyMarkdown = selectedContentGroup.documents.some((document) => (
+      document.translations.some((translation) => dirtyIds.has(translation.id))
+    ));
+    if (hasDirtyMarkdown) {
+      setRelationshipError('Save Markdown before changing relationships.');
+      return;
+    }
+    setRelationshipBusy(busyKey);
+    setRelationshipError(null);
+    try {
+      const saved = await invoke<EditorDocument>(command, args);
+      await reloadDocumentsAfterRelationship(saved);
+      setContentSettingsPage(nextPage);
+      if (command === 'link_moment_to_content' || command === 'unlink_moment_from_content') {
+        setRelationshipTargetSlug('');
+      }
+    } catch (reason) {
+      setRelationshipError(String(reason));
+    } finally {
+      setRelationshipBusy('');
     }
   };
 
@@ -4443,6 +4508,7 @@ export default function App() {
                               (page.id !== 'cover' || Boolean(selectedMetadataCoverLabel))
                               && (page.id !== 'discovery' || selectedContentGroup.kind === 'blog')
                               && (page.id !== 'links' || selectedContentGroup.kind === 'project')
+                              && (page.id !== 'relations' || selectedContentGroup.kind === 'blog' || selectedContentGroup.kind === 'moment')
                             ))}
                             activePage={contentSettingsPage}
                             onChange={setContentSettingsPage}
@@ -4653,6 +4719,184 @@ export default function App() {
                               </>
                             )}
 
+                            {contentSettingsPage === 'relations' && (selectedContentGroup.kind === 'blog' || selectedContentGroup.kind === 'moment') && (
+                              <>
+                                <SettingsPageIntro
+                                  eyebrow={`${selected.entity_type} settings`}
+                                  title="Relations"
+                                  description="Convert durable notes into publishable resources, or keep independent resources connected by typed source relations."
+                                />
+                                {selectedContentGroup.kind === 'blog' && (
+                                  <section className="resume-editor-section content-settings-section">
+                                    <div className="content-settings-section-heading">
+                                      <h3>Convert this blog</h3>
+                                      <p>Move this article source into Moments and rewrite its frontmatter for the moment schema.</p>
+                                    </div>
+                                    <div className="content-settings-command-row">
+                                      <button
+                                        type="button"
+                                        className="content-settings-secondary-action"
+                                        disabled={relationshipBusy !== ''}
+                                        onClick={() => void runRelationshipCommand(
+                                          'blog-to-moment',
+                                          'convert_blog_to_moment',
+                                          { slug: selectedContentGroup.slug },
+                                        )}
+                                      >
+                                        {relationshipBusy === 'blog-to-moment' ? <LoaderCircle size={15} /> : <Radio size={15} />}
+                                        Convert to moment
+                                      </button>
+                                    </div>
+                                  </section>
+                                )}
+
+                                {selectedContentGroup.kind === 'moment' && (
+                                  <>
+                                    <section className="resume-editor-section content-settings-section">
+                                      <div className="content-settings-section-heading">
+                                        <h3>Convert this moment</h3>
+                                        <p>Move this moment source into Blog and rewrite its frontmatter for the article schema.</p>
+                                      </div>
+                                      <div className="content-settings-command-row">
+                                        <button
+                                          type="button"
+                                          className="content-settings-secondary-action"
+                                          disabled={relationshipBusy !== ''}
+                                          onClick={() => void runRelationshipCommand(
+                                            'moment-to-blog',
+                                            'convert_moment_to_blog',
+                                            { slug: selectedContentGroup.slug },
+                                          )}
+                                        >
+                                          {relationshipBusy === 'moment-to-blog' ? <LoaderCircle size={15} /> : <FileText size={15} />}
+                                          Convert to blog
+                                        </button>
+                                      </div>
+                                    </section>
+
+                                    <section className="resume-editor-section content-settings-section">
+                                      <div className="content-settings-section-heading">
+                                        <h3>Create from this moment</h3>
+                                        <p>Create a new resource with fresh item identity, clone this moment body, and add an evolution relation from the moment.</p>
+                                      </div>
+                                      <div className="content-settings-command-row">
+                                        <button
+                                          type="button"
+                                          className="content-settings-secondary-action"
+                                          disabled={relationshipBusy !== ''}
+                                          onClick={() => void runRelationshipCommand(
+                                            'moment-create-blog',
+                                            'create_blog_from_moment',
+                                            { slug: selectedContentGroup.slug },
+                                            'overview',
+                                          )}
+                                        >
+                                          {relationshipBusy === 'moment-create-blog' ? <LoaderCircle size={15} /> : <FileText size={15} />}
+                                          New blog
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="content-settings-secondary-action"
+                                          disabled={relationshipBusy !== ''}
+                                          onClick={() => void runRelationshipCommand(
+                                            'moment-create-project',
+                                            'create_project_from_moment',
+                                            { slug: selectedContentGroup.slug },
+                                            'overview',
+                                          )}
+                                        >
+                                          {relationshipBusy === 'moment-create-project' ? <LoaderCircle size={15} /> : <FolderPlus size={15} />}
+                                          New project
+                                        </button>
+                                      </div>
+                                    </section>
+
+                                    <section className="resume-editor-section content-settings-section">
+                                      <div className="content-settings-section-heading">
+                                        <h3>Reference existing content</h3>
+                                        <p>Add or remove a structured reference from this moment to an existing blog or project slug.</p>
+                                      </div>
+                                      <div className="content-settings-grid">
+                                        <div className="content-settings-control">
+                                          <span>Target type</span>
+                                          <small>The existing resource collection that owns the target slug.</small>
+                                          <div className="content-cover-type-group" role="radiogroup" aria-label="Relation target type">
+                                            <button
+                                              type="button"
+                                              role="radio"
+                                              aria-checked={relationshipTargetKind === 'blog'}
+                                              className={relationshipTargetKind === 'blog' ? 'active' : ''}
+                                              disabled={relationshipBusy !== ''}
+                                              onClick={() => setRelationshipTargetKind('blog')}
+                                            >
+                                              Blog
+                                            </button>
+                                            <button
+                                              type="button"
+                                              role="radio"
+                                              aria-checked={relationshipTargetKind === 'project'}
+                                              className={relationshipTargetKind === 'project' ? 'active' : ''}
+                                              disabled={relationshipBusy !== ''}
+                                              onClick={() => setRelationshipTargetKind('project')}
+                                            >
+                                              Project
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <label className="content-settings-field content-settings-field--wide">
+                                          <span>Target slug</span>
+                                          <small>The existing blog or project slug to reference from this moment.</small>
+                                          <input
+                                            type="text"
+                                            value={relationshipTargetSlug}
+                                            onChange={(event) => setRelationshipTargetSlug(event.target.value)}
+                                            disabled={relationshipBusy !== ''}
+                                            placeholder={relationshipTargetKind === 'blog' ? 'research-update' : 'silan-viking'}
+                                          />
+                                        </label>
+                                      </div>
+                                      <div className="content-settings-command-row">
+                                        <button
+                                          type="button"
+                                          className="content-settings-secondary-action"
+                                          disabled={relationshipBusy !== '' || !relationshipTargetSlug.trim()}
+                                          onClick={() => void runRelationshipCommand(
+                                            'moment-link',
+                                            'link_moment_to_content',
+                                            {
+                                              slug: selectedContentGroup.slug,
+                                              targetKind: relationshipTargetKind,
+                                              targetSlug: relationshipTargetSlug.trim(),
+                                            },
+                                          )}
+                                        >
+                                          {relationshipBusy === 'moment-link' ? <LoaderCircle size={15} /> : <Link2 size={15} />}
+                                          Link reference
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="content-settings-secondary-action"
+                                          disabled={relationshipBusy !== '' || !relationshipTargetSlug.trim()}
+                                          onClick={() => void runRelationshipCommand(
+                                            'moment-unlink',
+                                            'unlink_moment_from_content',
+                                            {
+                                              slug: selectedContentGroup.slug,
+                                              targetKind: relationshipTargetKind,
+                                              targetSlug: relationshipTargetSlug.trim(),
+                                            },
+                                          )}
+                                        >
+                                          {relationshipBusy === 'moment-unlink' ? <LoaderCircle size={15} /> : <Unlink2 size={15} />}
+                                          Unlink reference
+                                        </button>
+                                      </div>
+                                    </section>
+                                  </>
+                                )}
+                              </>
+                            )}
+
                             {contentSettingsPage === 'publishing' && (
                               <>
                                 <SettingsPageIntro
@@ -4702,6 +4946,11 @@ export default function App() {
                           {metadataError && (
                             <div className="content-settings-error" role="alert">
                               <span>{metadataError}</span>
+                            </div>
+                          )}
+                          {relationshipError && (
+                            <div className="content-settings-error" role="alert">
+                              <span>{relationshipError}</span>
                             </div>
                           )}
                           </div>

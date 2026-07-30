@@ -13,15 +13,15 @@ const TableBlock: React.FC<TableBlockProps> = ({ header, rows }) => {
   };
 
   return (
-    <div className="not-prose my-6 overflow-auto rounded-xl border border-theme-card-border bg-theme-surface-elevated shadow-medium">
-      <table className="w-full text-sm">
+    <div data-ds className="not-prose my-8 overflow-auto rounded-ds-lg border border-ds-border bg-ds-surface-1 shadow-ds-1">
+      <table className="w-full min-w-[42rem] border-separate border-spacing-0 text-left text-ds-sm leading-6">
         {header.length > 0 && (
-          <thead className="sticky top-0 z-10 bg-theme-surface-secondary">
-            <tr className="border-b border-theme-card-border">
+          <thead className="sticky top-0 z-10 bg-ds-surface-2">
+            <tr>
               {header.map((h, i) => (
                 <th
                   key={`th-${i}`}
-                  className="whitespace-nowrap border border-theme-card-border px-4 py-2 text-left align-top font-semibold"
+                  className="min-w-36 border-b border-r border-ds-border px-4 py-3 align-top font-semibold text-ds-fg last:border-r-0"
                 >
                   <div className="flex items-center gap-2">{renderCell(h)}</div>
                 </th>
@@ -33,12 +33,12 @@ const TableBlock: React.FC<TableBlockProps> = ({ header, rows }) => {
           {rows.map((row, r) => (
             <tr
               key={`tr-${r}`}
-              className={`border-b border-theme-card-border last:border-0 hover:bg-theme-surface-tertiary/40 ${r % 2 === 1 ? 'bg-theme-surface/60' : ''}`}
+              className="transition-colors duration-ds-fast hover:bg-ds-primary-soft"
             >
               {row.map((cell, c) => (
                 <td
                   key={`td-${r}-${c}`}
-                  className="whitespace-pre-wrap border border-theme-card-border px-4 py-2 align-top"
+                  className={`min-w-36 whitespace-pre-wrap border-b border-r border-ds-border px-4 py-3 align-top text-ds-fg-muted last:border-r-0 ${r === rows.length - 1 ? 'border-b-0' : ''} ${r % 2 === 1 ? 'bg-ds-surface-2' : ''}`}
                 >
                   {renderCell(cell)}
                 </td>

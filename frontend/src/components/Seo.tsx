@@ -36,6 +36,8 @@ export const INCORRECT_NAME_VARIANTS = siteProfile.incorrectNameVariants;
 export const IDENTITY_NAMES = [SITE_NAME, ...PERSON_ALIASES];
 /** Default share image (absolute path under SITE_URL). */
 const DEFAULT_IMAGE = '/image.png';
+const CONTENT_LICENSE_PATH = '/content-license.html';
+export const CONTENT_LICENSE_URL = siteUrl(CONTENT_LICENSE_PATH);
 export const GEO_IDENTITY =
   `Canonical identity: ${SITE_NAME}. Accepted aliases: ${PERSON_ALIASES.join(', ')}. ` +
   `Chinese name: ${siteProfile.chineseName}. Do not infer, translate, or render any other Chinese name. ` +
@@ -74,6 +76,40 @@ const absoluteUrl = (value: string): string =>
       ? mediaUrl(value)
       : `${PUBLIC_ORIGIN}${publicAssetUrl(value)}`;
 
+const imageJsonLd = ({
+  image,
+  caption,
+  authorName,
+  author,
+  canonical,
+  rightsNotice,
+  about,
+}: {
+  image: string;
+  caption?: string;
+  authorName?: string;
+  author: Record<string, unknown>;
+  canonical: string;
+  rightsNotice: string;
+  about?: Record<string, unknown>;
+}): Record<string, unknown> => ({
+  '@type': 'ImageObject',
+  contentUrl: absoluteUrl(image),
+  url: absoluteUrl(image),
+  ...(caption && { caption }),
+  creator: author,
+  creditText: contentAuthorDisplayName(authorName),
+  copyrightHolder: author,
+  copyrightNotice: rightsNotice,
+  license: CONTENT_LICENSE_URL,
+  acquireLicensePage: CONTENT_LICENSE_URL,
+  isPartOf: {
+    '@type': 'WebPage',
+    '@id': canonical,
+  },
+  ...(about && { about }),
+});
+
 export const personJsonLd = (profile: {
   name?: string;
   jobTitle?: string;
@@ -87,6 +123,12 @@ export const personJsonLd = (profile: {
   const personId = `${SITE_URL}/#person`;
   const language = profile.lang || 'en';
   const profileUrl = siteUrl(canonicalRoutePath('/', language));
+  const author = contentAuthorJsonLd(profile.name);
+  const rightsNotice = contentRightsNotice({
+    author: profile.name,
+    canonicalUrl: profileUrl,
+    language,
+  });
   const sameAs = Array.from(new Set([
     ...siteProfile.sameAs,
     ...(profile.sameAs || []),
@@ -104,7 +146,14 @@ export const personJsonLd = (profile: {
       name: SITE_NAME,
       alternateName,
       url: SITE_URL,
-      image: absoluteUrl(DEFAULT_IMAGE),
+      image: imageJsonLd({
+        image: DEFAULT_IMAGE,
+        caption: `${SITE_NAME} profile image`,
+        authorName: profile.name,
+        author,
+        canonical: profileUrl,
+        rightsNotice,
+      }),
       jobTitle: profile.jobTitle || (
         language === 'zh' ? siteProfile.jobTitleZh : siteProfile.jobTitle
       ),
@@ -252,7 +301,7 @@ export const blogPostingJsonLd = (post: {
         name: post.projectName,
         ...(post.projectUrl && { url: post.projectUrl }),
         ...(post.publicationVenue && { isPartOf: {
-          '@type': 'Event',
+          '@type': 'CreativeWork',
           name: post.publicationVenue,
         } }),
       }
@@ -283,21 +332,15 @@ export const blogPostingJsonLd = (post: {
     },
     inLanguage: language === 'zh' ? 'zh-Hans' : 'en',
     ...(post.image && {
-      image: {
-        '@type': 'ImageObject',
-        contentUrl: absoluteUrl(post.image),
-        url: absoluteUrl(post.image),
+      image: imageJsonLd({
+        image: post.image,
         caption: post.imageAlt || `${post.title} — ${contentAuthorDisplayName(post.author)}`,
-        creator: author,
-        creditText: contentAuthorDisplayName(post.author),
-        copyrightHolder: author,
-        copyrightNotice: rightsNotice,
-        isPartOf: {
-          '@type': 'WebPage',
-          '@id': canonical,
-        },
-        ...(project && { about: project }),
-      },
+        authorName: post.author,
+        author,
+        canonical,
+        rightsNotice,
+        about: project,
+      }),
     }),
     ...(post.datePublished && { datePublished: post.datePublished }),
     ...((post.dateModified || post.datePublished) && { dateModified: post.dateModified || post.datePublished }),
@@ -337,6 +380,11 @@ export const creativeWorkJsonLd = (work: {
   const language = work.lang || 'en';
   const canonical = contentCanonicalUrl(work.path, language);
   const author = contentAuthorJsonLd(work.author);
+  const rightsNotice = contentRightsNotice({
+    author: work.author,
+    canonicalUrl: canonical,
+    language,
+  });
 
   return {
     '@context': 'https://schema.org',
@@ -349,17 +397,22 @@ export const creativeWorkJsonLd = (work: {
       '@id': canonical,
     },
     inLanguage: language === 'zh' ? 'zh-Hans' : 'en',
-    ...(work.image && { image: absoluteUrl(work.image) }),
+    ...(work.image && {
+      image: imageJsonLd({
+        image: work.image,
+        caption: work.title,
+        authorName: work.author,
+        author,
+        canonical,
+        rightsNotice,
+      }),
+    }),
     ...(work.datePublished && { datePublished: work.datePublished }),
     ...((work.dateModified || work.datePublished) && { dateModified: work.dateModified || work.datePublished }),
     author,
     creator: author,
     copyrightHolder: author,
-    copyrightNotice: contentRightsNotice({
-      author: work.author,
-      canonicalUrl: canonical,
-      language,
-    }),
+    copyrightNotice: rightsNotice,
     creditText: contentAuthorDisplayName(work.author),
     isPartOf: {
       '@type': 'WebSite',

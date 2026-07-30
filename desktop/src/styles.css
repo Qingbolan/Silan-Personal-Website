@@ -6053,6 +6053,44 @@ h1 {
   line-height: 1.45;
 }
 
+.content-settings-command-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.content-settings-secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  padding: 0 14px;
+  background: var(--paper-solid);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 720;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.content-settings-secondary-action:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--color-surfaceSecondary);
+}
+
+.content-settings-secondary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.content-settings-secondary-action svg {
+  flex: 0 0 auto;
+}
+
 .content-settings-section .ai-cover-generator {
   border-top: 0;
   padding-top: 0;

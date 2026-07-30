@@ -458,6 +458,48 @@ pub(crate) fn create_project(title: String) -> Result<EditorDocument, String> {
 }
 
 #[tauri::command]
+pub(crate) fn convert_blog_to_moment(slug: String) -> Result<EditorDocument, String> {
+    DesktopWorkspace::from_environment()?.convert_blog_to_moment(&slug)
+}
+
+#[tauri::command]
+pub(crate) fn convert_moment_to_blog(slug: String) -> Result<EditorDocument, String> {
+    DesktopWorkspace::from_environment()?.convert_moment_to_blog(&slug)
+}
+
+#[tauri::command]
+pub(crate) fn create_blog_from_moment(slug: String) -> Result<EditorDocument, String> {
+    DesktopWorkspace::from_environment()?.create_blog_from_moment(&slug)
+}
+
+#[tauri::command]
+pub(crate) fn create_project_from_moment(slug: String) -> Result<EditorDocument, String> {
+    DesktopWorkspace::from_environment()?.create_project_from_moment(&slug)
+}
+
+#[tauri::command]
+pub(crate) fn link_moment_to_content(
+    slug: String,
+    target_kind: String,
+    target_slug: String,
+) -> Result<EditorDocument, String> {
+    DesktopWorkspace::from_environment()?.link_moment_to_content(&slug, &target_kind, &target_slug)
+}
+
+#[tauri::command]
+pub(crate) fn unlink_moment_from_content(
+    slug: String,
+    target_kind: String,
+    target_slug: String,
+) -> Result<EditorDocument, String> {
+    DesktopWorkspace::from_environment()?.unlink_moment_from_content(
+        &slug,
+        &target_kind,
+        &target_slug,
+    )
+}
+
+#[tauri::command]
 pub(crate) async fn sync_stats() -> Result<StatsSyncReport, String> {
     // Network and cache persistence are intentionally blocking SDK
     // boundaries. Keep both off Tauri's command executor so a slow response

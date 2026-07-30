@@ -39,6 +39,75 @@ const bashRules: TokenRule[] = [
   { className: 'function', pattern: /^[A-Za-z_./-][\w./-]*(?=\s|$)/ },
 ];
 
+const jsonRules: TokenRule[] = [
+  { className: 'property', pattern: /^"(?:\\.|[^"\\])*"(?=\s*:)/ },
+  { className: 'string', pattern: /^"(?:\\.|[^"\\])*"/ },
+  { className: 'number', pattern: /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/ },
+  { className: 'boolean', pattern: /^(?:true|false)(?=\b)/ },
+  { className: 'constant', pattern: /^null(?=\b)/ },
+  { className: 'punctuation', pattern: /^[{}[\],:]/ },
+];
+
+const javascriptRules: TokenRule[] = [
+  { className: 'comment', pattern: /^\/\/.*|^\/\*[\s\S]*?\*\// },
+  { className: 'string', pattern: /^"(?:\\.|[^"\\])*"|^'(?:\\.|[^'\\])*'|^`(?:\\.|[^`\\])*`/ },
+  {
+    className: 'keyword',
+    pattern: keywordPattern([
+      'as', 'async', 'await', 'break', 'case', 'catch', 'class', 'const',
+      'continue', 'debugger', 'default', 'delete', 'do', 'else', 'export',
+      'extends', 'finally', 'for', 'from', 'function', 'if', 'import', 'in',
+      'instanceof', 'let', 'new', 'of', 'return', 'static', 'super', 'switch',
+      'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield',
+    ]),
+  },
+  {
+    className: 'type',
+    pattern: keywordPattern([
+      'any', 'boolean', 'enum', 'interface', 'keyof', 'namespace', 'never',
+      'number', 'private', 'protected', 'public', 'readonly', 'string',
+      'type', 'unknown',
+    ]),
+  },
+  {
+    className: 'builtin',
+    pattern: keywordPattern([
+      'Array', 'Boolean', 'Date', 'Error', 'JSON', 'Map', 'Math', 'Number',
+      'Object', 'Promise', 'React', 'RegExp', 'Set', 'String', 'Symbol',
+      'console', 'document', 'window',
+    ]),
+  },
+  { className: 'boolean', pattern: /^(?:true|false|null|undefined)(?=\b)/ },
+  { className: 'number', pattern: /^\b(?:0x[\da-fA-F]+|\d+(?:\.\d+)?(?:e[+-]?\d+)?)\b/i },
+  { className: 'function', pattern: /^[A-Za-z_$][\w$]*(?=\s*\()/ },
+  { className: 'property', pattern: /^[A-Za-z_$][\w$]*(?=\s*:)/ },
+  { className: 'operator', pattern: /^(?:=>|===|!==|==|!=|<=|>=|\+\+|--|\?\?|\|\||&&|[+\-*/%=&|^~!<>?:.])/ },
+  { className: 'punctuation', pattern: /^[{}()[\],;]/ },
+];
+
+const cssRules: TokenRule[] = [
+  { className: 'comment', pattern: /^\/\*[\s\S]*?\*\// },
+  { className: 'atrule', pattern: /^@[A-Za-z-]+/ },
+  { className: 'string', pattern: /^"(?:\\.|[^"\\])*"|^'(?:\\.|[^'\\])*'/ },
+  { className: 'number', pattern: /^-?(?:\d*\.)?\d+(?:%|[a-z]+)?/i },
+  { className: 'variable', pattern: /^--[A-Za-z0-9_-]+/ },
+  { className: 'property', pattern: /^-?[A-Za-z_][\w-]*(?=\s*:)/ },
+  { className: 'function', pattern: /^-?[A-Za-z_][\w-]*(?=\()/ },
+  { className: 'selector', pattern: /^[.#]?[A-Za-z_][\w-]*(?=[\s,{:#.[>+~])/ },
+  { className: 'operator', pattern: /^[>+~*=^$|!:-]/ },
+  { className: 'punctuation', pattern: /^[{}()[\],;]/ },
+];
+
+const markupRules: TokenRule[] = [
+  { className: 'comment', pattern: /^<!--[\s\S]*?-->/ },
+  { className: 'doctype', pattern: /^<!doctype[^>]*>/i },
+  { className: 'tag', pattern: /^<\/?[A-Za-z][\w:-]*/ },
+  { className: 'attr-name', pattern: /^[A-Za-z_:][\w:.-]*(?=\s*=)/ },
+  { className: 'attr-value', pattern: /^=\s*(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s>]+)/ },
+  { className: 'string', pattern: /^"(?:\\.|[^"\\])*"|^'(?:\\.|[^'\\])*'/ },
+  { className: 'punctuation', pattern: /^[<>/]/ },
+];
+
 const cRules: TokenRule[] = [
   { className: 'comment', pattern: /^\/\/.*|^\/\*[\s\S]*?\*\// },
   { className: 'string', pattern: /^"(?:\\.|[^"\\])*"|^'(?:\\.|[^'\\])*'/ },
@@ -126,6 +195,20 @@ const languageRules: Record<string, TokenRule[]> = {
   sh: bashRules,
   shell: bashRules,
   zsh: bashRules,
+  css: cssRules,
+  html: markupRules,
+  javascript: javascriptRules,
+  js: javascriptRules,
+  json: jsonRules,
+  jsonc: [
+    { className: 'comment', pattern: /^\/\/.*|^\/\*[\s\S]*?\*\// },
+    ...jsonRules,
+  ],
+  jsx: javascriptRules,
+  ts: javascriptRules,
+  tsx: javascriptRules,
+  typescript: javascriptRules,
+  xml: markupRules,
   c: cRules,
   h: cRules,
   rust: rustRules,
@@ -137,13 +220,26 @@ const languageRules: Record<string, TokenRule[]> = {
 const aliases: Record<string, string> = {
   bash: 'bash',
   c: 'c',
+  css: 'css',
   h: 'c',
+  html: 'html',
+  javascript: 'javascript',
+  js: 'javascript',
+  json: 'json',
+  jsonc: 'jsonc',
+  jsx: 'jsx',
+  markdown: 'markdown',
+  md: 'markdown',
   py: 'python',
   python: 'python',
   rs: 'rust',
   rust: 'rust',
   shell: 'bash',
   sh: 'bash',
+  ts: 'typescript',
+  tsx: 'tsx',
+  typescript: 'typescript',
+  xml: 'xml',
   zsh: 'bash',
 };
 
@@ -155,6 +251,15 @@ export const normalizeCodeLanguage = (language?: string): string => {
 export const inferCodeLanguage = (code: string): string => {
   const text = code.trim();
   if (!text) return '';
+  if (
+    /^[{[]/.test(text) &&
+    /(?:"[^"]+"\s*:|[}\]])/.test(text)
+  ) {
+    return 'json';
+  }
+  if (/^\s*</.test(text) && /<\/?[A-Za-z][\s\S]*>/.test(text)) return 'html';
+  if (/^\s*(?:import|export|const|let|var|function|class|type|interface)\b/m.test(text)) return 'typescript';
+  if (/^\s*(?:\.|#|@media|@layer|:root|[A-Za-z-]+\s*\{)/m.test(text) && /[{}:;]/.test(text)) return 'css';
   if (/^\s*(fn|use|impl|pub|let\s+mut|match)\b/m.test(text)) return 'rust';
   if (/^\s*(#include|int\s+main|typedef|struct\s+\w+\s*\{|void\s+\w+\s*\()/m.test(text)) return 'c';
   if (/^\s*(def|class|import|from|async\s+def)\b/m.test(text)) return 'python';

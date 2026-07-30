@@ -11,8 +11,9 @@ mod skill;
 
 use rusqlite::{params, Connection, OptionalExtension};
 use silan_viking_app::{
-    optimize_media_tree, stage_deploy_media_asset, ContentKind, CredentialProfile, Identified,
-    ProposalId, ScannedAsset, Workspace, MEDIA_OPTIMIZER_VERSION,
+    optimize_media_tree, stage_deploy_media_asset, ContentKind, ContentRelationshipEditor,
+    CredentialProfile, Identified, ProposalId, RelationshipTargetKind, ScannedAsset, Workspace,
+    MEDIA_OPTIMIZER_VERSION,
 };
 use std::env;
 use std::fs;
@@ -54,6 +55,7 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
     Some(match command {
         "blog" => &[
             "blog new|list|show|edit|archive|rm <slug>",
+            "blog convert-to-moment <slug>",
             "blog add-part <slug> <role> · blog add-lang <slug> <lang>",
             "blog publish|unpublish <slug>",
             "blog list [--status <status>|--tag <tag>]",
@@ -68,6 +70,9 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
         ],
         "moment" => &[
             "moment new|list|show|edit|archive|rm <slug>",
+            "moment convert-to-blog <slug>",
+            "moment create-blog|create-project <slug>",
+            "moment link|unlink <slug> <blog|project> <target-slug>",
             "moment add-part <slug> <role> · moment add-lang <slug> <lang>",
             "moment status <slug> <state> · moment set-type <slug> <moment-type>",
             "moment list [--status <status>|--tag <tag>]",
@@ -366,7 +371,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
         ["relation", "graph"] | ["relation", "list"] => relation_graph(&opts.content_root),
         ["relation", "show", uri] => relation_show(&opts.content_root, uri),
         ["relation", "link", from, to, "--type", kind] => {
-            relation_link(&opts.content_root, from, to, kind)
+            relation_link(&opts.content_root, &opts.db_path, from, to, kind)
         }
         ["skill", "emit"] => skill::emit(&opts.content_root, &skill::default_skill_dir()),
         ["skill", "emit", "--codex"] => skill::emit(&opts.content_root, &skill::codex_skill_dir()),
@@ -445,6 +450,9 @@ fn run(args: Vec<String>) -> Result<(), String> {
             // Reverse: status back to draft AND visibility back to private.
             type_set_lifecycle_state(&opts.content_root, "blog", slug, "draft", "private")
         }
+        ["blog", "convert-to-moment", slug] => {
+            convert_blog_to_moment(&opts.content_root, &opts.db_path, slug)
+        }
         ["blog", "language-check", rest @ ..] | ["blog", "reader-review", rest @ ..] => {
             language_check::run(
                 &opts.content_root,
@@ -465,6 +473,37 @@ fn run(args: Vec<String>) -> Result<(), String> {
         ["moment", "set-type", slug, ut] => {
             type_set_field(&opts.content_root, "moment", slug, "moment_type", ut)
         }
+        ["moment", "convert-to-blog", slug] => {
+            convert_moment_to_blog(&opts.content_root, &opts.db_path, slug)
+        }
+        ["moment", "create-blog", slug] => create_from_moment(
+            &opts.content_root,
+            &opts.db_path,
+            slug,
+            RelationshipTargetKind::Blog,
+        ),
+        ["moment", "create-project", slug] => create_from_moment(
+            &opts.content_root,
+            &opts.db_path,
+            slug,
+            RelationshipTargetKind::Project,
+        ),
+        ["moment", "link", slug, target_kind, target_slug] => moment_link(
+            &opts.content_root,
+            &opts.db_path,
+            slug,
+            target_kind,
+            target_slug,
+            true,
+        ),
+        ["moment", "unlink", slug, target_kind, target_slug] => moment_link(
+            &opts.content_root,
+            &opts.db_path,
+            slug,
+            target_kind,
+            target_slug,
+            false,
+        ),
 
         // -- flat-type write verbs (blog / project / moment) --
         [kind, "new", slug] if is_flat_kind(kind) => type_new(&opts.content_root, kind, slug),
@@ -1941,14 +1980,35 @@ fn relation_show(content_root: &Path, uri: &str) -> Result<(), String> {
 /// frontmatter (`02` §relation). The edge becomes a `content_relation` row on
 /// the next `index sync`. `<kind>` accepts the doc's hyphenated spelling
 /// (`evolved-into`) or the wire form (`evolved_into`).
-fn relation_link(content_root: &Path, from: &str, to: &str, kind: &str) -> Result<(), String> {
+fn relation_link(
+    content_root: &Path,
+    db_path: &Path,
+    from: &str,
+    to: &str,
+    kind: &str,
+) -> Result<(), String> {
+    let rel = parse_relation_type(kind)?;
+    let mutation = ContentRelationshipEditor::open(content_root)
+        .map_err(|error| error.to_string())?
+        .link_and_sync(from, to, rel, db_path)
+        .map_err(|error| error.to_string())?;
+    println!(
+        "linked {} -{}-> {}",
+        mutation.item_uri,
+        mutation
+            .relation_type
+            .unwrap_or_else(|| rel.as_str().to_owned()),
+        mutation.related_uri.unwrap_or_else(|| to.to_owned())
+    );
+    Ok(())
+}
+
+fn parse_relation_type(kind: &str) -> Result<silan_viking_app::RelationType, String> {
     use silan_viking_app::RelationType;
 
-    // Normalise `evolved-into` → `evolved_into` and validate against the
-    // closed RelationType set, so a typo fails here, not at `index sync`.
     let wire = kind.replace('-', "_");
-    let rel = RelationType::ALL
-        .iter()
+    RelationType::ALL
+        .into_iter()
         .find(|t| t.as_str() == wire)
         .ok_or_else(|| {
             format!(
@@ -1959,52 +2019,79 @@ fn relation_link(content_root: &Path, from: &str, to: &str, kind: &str) -> Resul
                     .collect::<Vec<_>>()
                     .join(", ")
             )
-        })?;
+        })
+}
 
-    let from_file = relation_item_file(content_root, from)?;
-    // The `to` endpoint must resolve to a real Item — link only existing nodes.
-    relation_item_file(content_root, to)?;
-    append_relation(&from_file, rel.as_str(), to)?;
-    println!("linked {from} -{}-> {to}", rel.as_str());
+fn convert_blog_to_moment(content_root: &Path, db_path: &Path, slug: &str) -> Result<(), String> {
+    let mutation = ContentRelationshipEditor::open(content_root)
+        .map_err(|error| error.to_string())?
+        .convert_blog_to_moment_and_sync(slug, db_path)
+        .map_err(|error| error.to_string())?;
+    println!(
+        "converted blog `{slug}` to moment `{}` ({})",
+        mutation.item_slug, mutation.item_uri
+    );
     Ok(())
 }
 
-/// Resolve a `silan://resources/<kind>/<slug>` URI to its primary Part's
-/// canonical `en.md` — the frontmatter-carrying file an edge is declared in.
-fn relation_item_file(content_root: &Path, uri: &str) -> Result<PathBuf, String> {
-    let path = uri
-        .strip_prefix("silan://resources/")
-        .ok_or_else(|| format!("relation uri must start with silan://resources/: {uri}"))?;
-    let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-    let kind = segments
-        .first()
-        .ok_or_else(|| format!("relation uri has no content kind: {uri}"))?;
-    let slug = segments
-        .last()
-        .ok_or_else(|| format!("relation uri has no slug: {uri}"))?;
-    // `episode` URIs carry `<series>/<slug>`; every other type is `<slug>`.
-    let role = match *kind {
-        "project" | "projects" => "overview",
-        _ => "body",
-    };
-    let canon = match *kind {
-        "project" | "projects" => "projects",
-        "blog" | "blogs" => "blog",
-        "episode" | "episodes" => "episode",
-        "moment" | "moments" => "moment",
-        "resume" => "resume",
-        other => return Err(format!("unsupported relation kind `{other}` in {uri}")),
-    };
-    let mut dir = content_root.join("resources").join(canon);
-    // episode: silan://resources/episode/<series>/<slug>
-    if canon == "episode" && segments.len() >= 3 {
-        dir = dir.join(segments[1]);
+fn convert_moment_to_blog(content_root: &Path, db_path: &Path, slug: &str) -> Result<(), String> {
+    let mutation = ContentRelationshipEditor::open(content_root)
+        .map_err(|error| error.to_string())?
+        .convert_moment_to_blog_and_sync(slug, db_path)
+        .map_err(|error| error.to_string())?;
+    println!(
+        "converted moment `{slug}` to blog `{}` ({})",
+        mutation.item_slug, mutation.item_uri
+    );
+    Ok(())
+}
+
+fn create_from_moment(
+    content_root: &Path,
+    db_path: &Path,
+    slug: &str,
+    target_kind: RelationshipTargetKind,
+) -> Result<(), String> {
+    let mutation = ContentRelationshipEditor::open(content_root)
+        .map_err(|error| error.to_string())?
+        .create_from_moment_and_sync(slug, target_kind, db_path)
+        .map_err(|error| error.to_string())?;
+    println!(
+        "created {} `{}` from moment `{slug}` and linked {} -{}-> {}",
+        mutation.related_kind.as_deref().unwrap_or("content"),
+        mutation.related_slug.as_deref().unwrap_or(""),
+        mutation.item_uri,
+        mutation.relation_type.as_deref().unwrap_or("evolved_into"),
+        mutation.related_uri.as_deref().unwrap_or("")
+    );
+    Ok(())
+}
+
+fn moment_link(
+    content_root: &Path,
+    db_path: &Path,
+    slug: &str,
+    target_kind: &str,
+    target_slug: &str,
+    link: bool,
+) -> Result<(), String> {
+    let target_kind = RelationshipTargetKind::parse(target_kind).map_err(|e| e.to_string())?;
+    let editor =
+        ContentRelationshipEditor::open(content_root).map_err(|error| error.to_string())?;
+    let mutation = if link {
+        editor.link_moment_to_existing_and_sync(slug, target_kind, target_slug, db_path)
+    } else {
+        editor.unlink_moment_from_existing_and_sync(slug, target_kind, target_slug, db_path)
     }
-    let file = dir.join(slug).join("parts").join(role).join("en.md");
-    if !file.exists() {
-        return Err(format!("relation endpoint not found: {uri}"));
-    }
-    Ok(file)
+    .map_err(|error| error.to_string())?;
+    println!(
+        "{} {} -{}-> {}",
+        if link { "linked" } else { "unlinked" },
+        mutation.item_uri,
+        mutation.relation_type.as_deref().unwrap_or("references"),
+        mutation.related_uri.as_deref().unwrap_or("")
+    );
+    Ok(())
 }
 
 // ── proposal group (`02` §二 `silan proposal`, mechanism in `03` §3.1) ──────
@@ -6955,32 +7042,6 @@ fn episode_rm(content_root: &Path, series: &str, slug: &str) -> Result<(), Strin
     fs::remove_dir_all(&dir).map_err(|e| e.to_string())?;
     println!("removed episode {}", dir.display());
     Ok(())
-}
-
-/// Append a `relations:` entry to a file's frontmatter. Creates the
-/// `relations:` block if absent.
-fn append_relation(file: &Path, rel: &str, to_uri: &str) -> Result<(), String> {
-    let text = fs::read_to_string(file).map_err(|e| e.to_string())?;
-    let mut lines: Vec<String> = text.lines().map(str::to_owned).collect();
-    let entry = format!("  - {{ type: {rel}, to: \"{to_uri}\" }}");
-    if let Some(idx) = lines.iter().position(|l| l.trim() == "relations:") {
-        lines.insert(idx + 1, entry);
-    } else {
-        let fences: Vec<usize> = lines
-            .iter()
-            .enumerate()
-            .filter(|(_, l)| l.trim() == "---")
-            .map(|(i, _)| i)
-            .collect();
-        match fences.get(1) {
-            Some(&close) => {
-                lines.insert(close, entry);
-                lines.insert(close, "relations:".to_owned());
-            }
-            None => return Err(format!("{}: no frontmatter block", file.display())),
-        }
-    }
-    fs::write(file, format!("{}\n", lines.join("\n"))).map_err(|e| e.to_string())
 }
 
 /// `project progress <slug>` — append a dated progress note to the project's
