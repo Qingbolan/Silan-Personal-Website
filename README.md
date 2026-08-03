@@ -18,9 +18,6 @@ Silan Viking is a local-first workspace that transforms every research update in
 - **Practical guide:** [Using Silan Viking](https://silan.tech/episodes/getting-the-lay-of-the-land/)
 - **Latest release:** [v1.0.0](https://github.com/Qingbolan/Silan-Context-System/releases/tag/v1.0.0)
 
-The desktop workbench is the control surface; the website is one public output
-of the system, not the product itself.
-
 ## The Research Update Problem
 
 Silan Viking begins with an AI, ML, or systems researcher who already has work
