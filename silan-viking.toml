@@ -28,8 +28,8 @@ background_position = "center 42%"
 cover_height_px = 420
 
 [deploy]
-# mode = "nginx" routes through systemd + a host-managed nginx (BaoTa /
-# 宝塔 here). Use mode = "docker" for the v1.0.0 Docker-Compose path.
+# Production routes through systemd + a host-managed nginx (BaoTa / 宝塔).
+# Docker Compose is reserved for `silan site preview`.
 mode         = "nginx"
 host         = "43.106.17.64"
 user         = "root"

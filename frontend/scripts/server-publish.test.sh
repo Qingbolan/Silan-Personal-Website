@@ -129,4 +129,9 @@ EOF
 
 test_root_publish_hands_off_before_locking
 test_publish_rejects_unprepared_dependencies
+grep -q 'npm run prerender' "$publisher" \
+  || fail "content publication does not invoke the prerender-only command"
+if grep -q 'npm run build:seo' "$publisher"; then
+  fail "content publication still performs the legacy full SEO build"
+fi
 echo "server-publish tests passed"

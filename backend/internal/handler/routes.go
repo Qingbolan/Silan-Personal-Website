@@ -469,6 +469,12 @@ func privateStatsRoutes(serverCtx *svc.ServiceContext) []rest.Route {
 			Handler: stats.SnapshotHandler(serverCtx),
 		},
 		{
+			// Operator moderation: publish or hide one runtime comment.
+			Method:  http.MethodPut,
+			Path:    "/comments/:comment_id/visibility",
+			Handler: stats.UpdateCommentVisibilityHandler(serverCtx),
+		},
+		{
 			// Crawler access log — which bot crawled which page, and when.
 			Method:  http.MethodGet,
 			Path:    "/bots",
@@ -508,6 +514,12 @@ func privateContentStatusRoutes(serverCtx *svc.ServiceContext) []rest.Route {
 			Method:  http.MethodPost,
 			Path:    "/content/deploy",
 			Handler: health.ContentDeployHandler(serverCtx),
+		},
+		{
+			// Promote the previous complete archived content generation through the same state machine.
+			Method:  http.MethodPost,
+			Path:    "/content/rollback",
+			Handler: health.ContentRollbackHandler(serverCtx),
 		},
 	}
 }

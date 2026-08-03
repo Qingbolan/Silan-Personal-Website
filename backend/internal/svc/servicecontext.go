@@ -301,6 +301,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			ImporterPath:    c.ContentDeployImporterPath(),
 			DatabaseEnv:     c.ContentDeployDatabaseEnv(),
 			MediaRoot:       c.MediaRoot(),
+			StateRoot:       c.ContentDeployStateRoot(),
 			MaxBundleBytes:  c.ContentDeployMaxBundleBytes(),
 			StaticPublisher: contentdeploy.NewCommandStaticPublisher(c.ContentDeployStaticPublisher()),
 		}, rawDB),

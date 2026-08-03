@@ -7,7 +7,7 @@ file describes how the system is put together.
 ## Stack
 
 - **silan-viking** — Rust engine that owns content parsing, validation,
-  indexing, deployment packaging, MCP, and CLI workflows.
+  indexing, release orchestration, MCP, and CLI workflows.
 - **Silan Viking Desktop** — Tauri + React desktop authoring surface for local
   capture, review, editing, publication-state inspection, and delivery checks.
 - **Frontend** — React 18, TypeScript, Vite, Tailwind, Framer Motion,
@@ -38,7 +38,7 @@ engine testable without starting the Go service or React app.
 
 | Path | Responsibility |
 | --- | --- |
-| `engine/` | `silan-viking` Rust workspace: content parsing, validation, indexing, MCP, CLI, site build, and deployment packaging. |
+| `engine/` | `silan-viking` Rust workspace: content parsing, validation, indexing, MCP, CLI, site projection, and release orchestration. |
 | `engine/crates/` | Layered Rust crates for base utilities, content model, entities, application behavior, CLI, MCP, and site delivery. |
 | `content/` | Markdown source for blogs, projects, ideas, series, updates, résumé resources, and relation-bearing public material. |
 | `silan-viking.toml` | Project configuration for paths, identity, deployment, and runtime settings. |
@@ -58,8 +58,11 @@ cargo build --release -p silan-viking-cli
 # binary: engine/target/release/silan-viking
 ```
 
-The frontend and backend are bundled into `silan-viking site deploy` and
-rebuilt inside Docker on the deploy host. To work on them directly:
+Production code deployment materializes frontend/backend source artifacts from
+the committed project Git revision. Mutable working-tree files are never
+transported. The Nginx/systemd target builds those bounded artifacts in its
+managed workspace; Docker is reserved for the disposable local preview stack.
+To work on the services directly:
 
 ```sh
 cd frontend && npm install && npm run dev
@@ -122,7 +125,8 @@ cross build --config 'build.rustc-wrapper=""' \
             --target x86_64-unknown-linux-gnu
 ```
 
-Linux release binaries ship with empty deploy-artifact placeholders because
-the cross container cannot see `frontend/`, `backend/`, and `deploy/` outside
-the cargo workspace. Everything except `site deploy` works normally; for full
-deploy support on Linux, build from a local checkout.
+The CLI no longer embeds frontend/backend source trees. This keeps Cargo builds
+independent of Node/Go source churn and avoids treating one binary as a hidden
+transport container. Production code deployment runs from a project checkout;
+content-only publication needs only the content workspace, configured API, and
+machine credential.

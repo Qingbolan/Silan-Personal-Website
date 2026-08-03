@@ -16,7 +16,15 @@ const staticPublishTimeout = 3 * time.Minute
 // verified and live; a queued or fire-and-forget refresh is not a successful
 // content deployment.
 type StaticPublisher interface {
-	Publish(context.Context) (string, error)
+	Publish(context.Context, ReleaseContext) (string, error)
+}
+
+// ReleaseContext binds the static projection to the exact content generation
+// that was transactionally promoted before rendering started.
+type ReleaseContext struct {
+	ContentCommit string
+	ContentHash   string
+	SchemaVersion int
 }
 
 // CommandStaticPublisher runs the server-owned frontend release command. The
@@ -34,14 +42,20 @@ func NewCommandStaticPublisher(executable string) StaticPublisher {
 	return &CommandStaticPublisher{executable: executable}
 }
 
-func (publisher *CommandStaticPublisher) Publish(ctx context.Context) (string, error) {
+func (publisher *CommandStaticPublisher) Publish(ctx context.Context, release ReleaseContext) (string, error) {
 	if !filepath.IsAbs(publisher.executable) {
 		return "", fmt.Errorf("static publisher must be an absolute executable path")
 	}
 	publishCtx, cancel := context.WithTimeout(ctx, staticPublishTimeout)
 	defer cancel()
 
-	output, err := exec.CommandContext(publishCtx, publisher.executable).CombinedOutput()
+	command := exec.CommandContext(publishCtx, publisher.executable)
+	command.Env = append(command.Environ(),
+		"SILAN_CONTENT_COMMIT="+release.ContentCommit,
+		"SILAN_CONTENT_HASH="+release.ContentHash,
+		fmt.Sprintf("SILAN_SCHEMA_VERSION=%d", release.SchemaVersion),
+	)
+	output, err := command.CombinedOutput()
 	if err != nil {
 		if publishCtx.Err() != nil {
 			return "", fmt.Errorf("static publisher timed out: %w", publishCtx.Err())

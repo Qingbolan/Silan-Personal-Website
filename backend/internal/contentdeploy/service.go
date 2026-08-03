@@ -22,7 +22,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const BundleVersion = 1
+const (
+	BundleVersion           = 2
+	ProjectionSchemaVersion = 1
+)
 
 type State string
 
@@ -30,12 +33,45 @@ const (
 	StateReceiving State = "receiving"
 	StateValidated State = "validated"
 	StatePromoting State = "promoting"
+	StateRendering State = "rendering"
+	StateVerifying State = "verifying"
 	StateComplete  State = "complete"
 	StateFailed    State = "failed"
 )
 
+type deploymentLifecycle struct {
+	state State
+}
+
+func newDeploymentLifecycle() *deploymentLifecycle {
+	return &deploymentLifecycle{state: StateReceiving}
+}
+
+func (lifecycle *deploymentLifecycle) transition(next State) error {
+	allowed := map[State]State{
+		StateReceiving: StateValidated,
+		StateValidated: StatePromoting,
+		StatePromoting: StateVerifying,
+		StateVerifying: StateRendering,
+		StateRendering: StateComplete,
+	}
+	if next == StateFailed {
+		if lifecycle.state == StateComplete || lifecycle.state == StateFailed {
+			return fmt.Errorf("cannot fail terminal deployment state %q", lifecycle.state)
+		}
+		lifecycle.state = next
+		return nil
+	}
+	if expected, ok := allowed[lifecycle.state]; !ok || expected != next {
+		return fmt.Errorf("invalid deployment transition %q -> %q", lifecycle.state, next)
+	}
+	lifecycle.state = next
+	return nil
+}
+
 type Manifest struct {
 	Version       int          `json:"version"`
+	SchemaVersion int          `json:"schema_version"`
 	ContentCommit string       `json:"content_commit"`
 	ContentHash   string       `json:"content_hash"`
 	DatabaseSHA   string       `json:"database_sha256"`
@@ -75,6 +111,7 @@ type Config struct {
 	ImporterPath    string
 	DatabaseEnv     string
 	MediaRoot       string
+	StateRoot       string
 	MaxBundleBytes  int64
 	StaticPublisher StaticPublisher
 }
@@ -92,6 +129,12 @@ func NewService(config Config, db *sql.DB) *Service {
 func (s *Service) Deploy(ctx context.Context, body io.Reader) (_ *Result, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	lifecycle := newDeploymentLifecycle()
+	defer func() {
+		if err != nil {
+			_ = lifecycle.transition(StateFailed)
+		}
+	}()
 
 	if s.config.Driver != "postgres" && s.config.Driver != "postgresql" {
 		return nil, fmt.Errorf("content deployment requires PostgreSQL, configured driver is %q", s.config.Driver)
@@ -114,12 +157,75 @@ func (s *Service) Deploy(ctx context.Context, body io.Reader) (_ *Result, err er
 	if err := validateDatabase(databasePath, manifest); err != nil {
 		return nil, err
 	}
+	if err := lifecycle.transition(StateValidated); err != nil {
+		return nil, err
+	}
 
+	return s.promotePrepared(ctx, work, manifest, lifecycle)
+}
+
+// Rollback promotes the newest complete archived generation that differs from
+// the current database provenance. It reuses the same validation, media,
+// importer, rendering and verification state machine as a forward release.
+func (s *Service) Rollback(ctx context.Context) (_ *Result, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	lifecycle := newDeploymentLifecycle()
+	defer func() {
+		if err != nil {
+			_ = lifecycle.transition(StateFailed)
+		}
+	}()
+	if s.config.Driver != "postgres" && s.config.Driver != "postgresql" {
+		return nil, fmt.Errorf("content rollback requires PostgreSQL, configured driver is %q", s.config.Driver)
+	}
+	current, err := s.currentResult(ctx)
+	if err != nil {
+		return nil, err
+	}
+	archives, err := releaseArchivePaths(s.config.StateRoot)
+	if err != nil {
+		return nil, fmt.Errorf("list release archives: %w", err)
+	}
+	for _, archive := range archives {
+		manifest, readErr := readManifest(filepath.Join(archive, "manifest.json"))
+		if readErr != nil {
+			continue
+		}
+		if manifest.ContentCommit == current.ContentCommit {
+			continue
+		}
+		if validateErr := validateDatabase(filepath.Join(archive, "portfolio.db"), manifest); validateErr != nil {
+			return nil, fmt.Errorf("validate rollback archive %q: %w", manifest.ContentCommit, validateErr)
+		}
+		if err := lifecycle.transition(StateValidated); err != nil {
+			return nil, err
+		}
+		return s.promotePrepared(ctx, archive, manifest, lifecycle)
+	}
+	return nil, fmt.Errorf("no previous complete content release is available")
+}
+
+func (s *Service) promotePrepared(
+	ctx context.Context,
+	work string,
+	manifest *Manifest,
+	lifecycle *deploymentLifecycle,
+) (_ *Result, err error) {
+	databasePath := filepath.Join(work, "portfolio.db")
 	stagedMedia, rollbackMedia, commitMedia, finalizeMedia, err := stageMedia(work, s.config.MediaRoot, manifest.Media)
 	if err != nil {
 		return nil, fmt.Errorf("stage media: %w", err)
 	}
-	_ = stagedMedia
+	commitArchive, abortArchive, err := s.stageReleaseArchive(databasePath, stagedMedia, manifest)
+	if err != nil {
+		return nil, fmt.Errorf("stage release archive: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			abortArchive()
+		}
+	}()
 	mediaPromoted := false
 	defer func() {
 		if err != nil && mediaPromoted {
@@ -130,6 +236,9 @@ func (s *Service) Deploy(ctx context.Context, body io.Reader) (_ *Result, err er
 		return nil, fmt.Errorf("promote media: %w", err)
 	}
 	mediaPromoted = true
+	if err := lifecycle.transition(StatePromoting); err != nil {
+		return nil, err
+	}
 
 	importCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
@@ -151,20 +260,159 @@ func (s *Service) Deploy(ctx context.Context, body io.Reader) (_ *Result, err er
 			manifest.ContentCommit, manifest.ContentHash, result.ContentCommit, result.ContentHash,
 		)
 	}
+	if err := lifecycle.transition(StateVerifying); err != nil {
+		return nil, err
+	}
 	mediaPromoted = false
 	// The new database and media generation are already live. Cleanup is
 	// deliberately best-effort: a historical root-owned backup must not turn
 	// a successful atomic promotion into a false deployment failure.
 	_ = finalizeMedia()
 	if s.config.StaticPublisher != nil {
-		release, publishErr := s.config.StaticPublisher.Publish(ctx)
+		if err := lifecycle.transition(StateRendering); err != nil {
+			return nil, err
+		}
+		release, publishErr := s.config.StaticPublisher.Publish(ctx, ReleaseContext{
+			ContentCommit: manifest.ContentCommit,
+			ContentHash:   manifest.ContentHash,
+			SchemaVersion: manifest.SchemaVersion,
+		})
 		if publishErr != nil {
 			return nil, fmt.Errorf("publish static release: %w", publishErr)
 		}
 		result.StaticPublished = true
 		result.StaticRelease = release
+	} else if err := lifecycle.transition(StateRendering); err != nil {
+		return nil, err
 	}
+	if err := commitArchive(); err != nil {
+		return nil, fmt.Errorf("commit release archive: %w", err)
+	}
+	if err := lifecycle.transition(StateComplete); err != nil {
+		return nil, err
+	}
+	result.State = lifecycle.state
 	return result, nil
+}
+
+func (s *Service) stageReleaseArchive(
+	databasePath string,
+	mediaPath string,
+	manifest *Manifest,
+) (func() error, func(), error) {
+	if strings.TrimSpace(s.config.StateRoot) == "" {
+		return nil, nil, fmt.Errorf("content release state root is required")
+	}
+	if err := os.MkdirAll(s.config.StateRoot, 0o750); err != nil {
+		return nil, nil, err
+	}
+	name := manifest.ContentCommit
+	next := filepath.Join(s.config.StateRoot, "."+name+".next")
+	target := filepath.Join(s.config.StateRoot, name)
+	_ = os.RemoveAll(next)
+	if err := os.MkdirAll(next, 0o750); err != nil {
+		return nil, nil, err
+	}
+	abort := func() { _ = os.RemoveAll(next) }
+	if err := copyFile(databasePath, filepath.Join(next, "portfolio.db"), 0o600); err != nil {
+		abort()
+		return nil, nil, err
+	}
+	if err := copyTree(mediaPath, filepath.Join(next, "media")); err != nil {
+		abort()
+		return nil, nil, err
+	}
+	encoded, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		abort()
+		return nil, nil, err
+	}
+	if err := os.WriteFile(filepath.Join(next, "manifest.json"), append(encoded, '\n'), 0o600); err != nil {
+		abort()
+		return nil, nil, err
+	}
+	commit := func() error {
+		if err := os.WriteFile(filepath.Join(next, "complete"), []byte("complete\n"), 0o600); err != nil {
+			return err
+		}
+		_ = os.RemoveAll(target)
+		if err := os.Rename(next, target); err != nil {
+			return err
+		}
+		return pruneReleaseArchives(s.config.StateRoot, 3)
+	}
+	return commit, abort, nil
+}
+
+func copyFile(source, destination string, mode os.FileMode) error {
+	input, err := os.Open(source)
+	if err != nil {
+		return err
+	}
+	defer input.Close()
+	if err := os.MkdirAll(filepath.Dir(destination), 0o750); err != nil {
+		return err
+	}
+	output, err := os.OpenFile(destination, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
+	if err != nil {
+		return err
+	}
+	_, copyErr := io.Copy(output, input)
+	closeErr := output.Close()
+	if copyErr != nil {
+		return copyErr
+	}
+	return closeErr
+}
+
+func pruneReleaseArchives(root string, retain int) error {
+	releases, err := releaseArchivePaths(root)
+	if err != nil {
+		return err
+	}
+	if len(releases) <= retain {
+		return nil
+	}
+	for _, release := range releases[retain:] {
+		if err := os.RemoveAll(release); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func releaseArchivePaths(root string) ([]string, error) {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return nil, err
+	}
+	type releaseEntry struct {
+		path    string
+		modTime time.Time
+	}
+	releases := make([]releaseEntry, 0, len(entries))
+	for _, entry := range entries {
+		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		path := filepath.Join(root, entry.Name())
+		if _, err := os.Stat(filepath.Join(path, "complete")); err != nil {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return nil, err
+		}
+		releases = append(releases, releaseEntry{path: path, modTime: info.ModTime()})
+	}
+	sort.Slice(releases, func(i, j int) bool {
+		return releases[i].modTime.After(releases[j].modTime)
+	})
+	paths := make([]string, 0, len(releases))
+	for _, release := range releases {
+		paths = append(paths, release.path)
+	}
+	return paths, nil
 }
 
 func (s *Service) currentResult(ctx context.Context) (*Result, error) {
@@ -176,7 +424,6 @@ func (s *Service) currentResult(ctx context.Context) (*Result, error) {
 	}
 	info, mediaErr := os.Stat(s.config.MediaRoot)
 	result.Success = true
-	result.State = StateComplete
 	result.MediaRootOK = mediaErr == nil && info.IsDir()
 	return &result, nil
 }
@@ -245,10 +492,23 @@ func readManifest(path string) (*Manifest, error) {
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		return nil, fmt.Errorf("decode deployment manifest: %w", err)
 	}
-	if manifest.Version != BundleVersion || manifest.ContentCommit == "" || manifest.ContentHash == "" || manifest.DatabaseSHA == "" || manifest.Media == nil {
+	if manifest.Version != BundleVersion ||
+		manifest.SchemaVersion != ProjectionSchemaVersion ||
+		!isHexDigest(manifest.ContentCommit, 40) ||
+		manifest.ContentHash == "" ||
+		!isHexDigest(manifest.DatabaseSHA, 64) ||
+		manifest.Media == nil {
 		return nil, fmt.Errorf("invalid deployment manifest")
 	}
 	return &manifest, nil
+}
+
+func isHexDigest(value string, size int) bool {
+	if len(value) != size {
+		return false
+	}
+	_, err := hex.DecodeString(value)
+	return err == nil
 }
 
 func validateDatabase(path string, manifest *Manifest) error {

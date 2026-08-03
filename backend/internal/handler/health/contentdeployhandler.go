@@ -41,3 +41,14 @@ func ContentDeployHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		httpx.OkJsonCtx(r.Context(), w, result)
 	}
 }
+
+func ContentRollbackHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		result, err := svcCtx.ContentDeploy.Rollback(r.Context())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("content rollback failed: %v", err), http.StatusUnprocessableEntity)
+			return
+		}
+		httpx.OkJsonCtx(r.Context(), w, result)
+	}
+}

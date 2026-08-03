@@ -59,6 +59,7 @@ func TestValidateDatabaseBindsManifestToProjection(t *testing.T) {
 	sum := sha256.Sum256(data)
 	manifest := &Manifest{
 		Version:       BundleVersion,
+		SchemaVersion: ProjectionSchemaVersion,
 		ContentCommit: "commit-1",
 		ContentHash:   "hash-1",
 		DatabaseSHA:   hex.EncodeToString(sum[:]),
@@ -106,6 +107,71 @@ func TestReconcileMediaRequestsOnlyFilesWhoseHashDoesNotMatch(t *testing.T) {
 		required.UploadPaths[0] != "changed.png" ||
 		required.UploadPaths[1] != "missing.png" {
 		t.Fatalf("upload paths = %v", required.UploadPaths)
+	}
+}
+
+func TestDeploymentLifecycleRejectsSkippedAndTerminalTransitions(t *testing.T) {
+	lifecycle := newDeploymentLifecycle()
+	if err := lifecycle.transition(StatePromoting); err == nil {
+		t.Fatal("expected receiving -> promoting to be rejected")
+	}
+	for _, state := range []State{
+		StateValidated,
+		StatePromoting,
+		StateVerifying,
+		StateRendering,
+		StateComplete,
+	} {
+		if err := lifecycle.transition(state); err != nil {
+			t.Fatalf("transition to %s: %v", state, err)
+		}
+	}
+	if err := lifecycle.transition(StateFailed); err == nil {
+		t.Fatal("expected terminal complete state to reject failure transition")
+	}
+}
+
+func TestReleaseArchiveKeepsACompleteRollbackGeneration(t *testing.T) {
+	root := t.TempDir()
+	database := filepath.Join(root, "projection.db")
+	media := filepath.Join(root, "desired-media")
+	if err := os.WriteFile(database, []byte("projection"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(media, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(media, "figure.png"), []byte("figure"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	service := &Service{config: Config{StateRoot: filepath.Join(root, "releases")}}
+	manifest := &Manifest{
+		Version:       BundleVersion,
+		SchemaVersion: ProjectionSchemaVersion,
+		ContentCommit: "commit-1",
+		ContentHash:   "hash-1",
+		DatabaseSHA:   "sha-1",
+		Media:         []MediaAsset{},
+	}
+	commit, abort, err := service.stageReleaseArchive(database, media, manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer abort()
+	if err := commit(); err != nil {
+		t.Fatal(err)
+	}
+	archives, err := releaseArchivePaths(service.config.StateRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(archives) != 1 || filepath.Base(archives[0]) != "commit-1" {
+		t.Fatalf("archives = %v", archives)
+	}
+	for _, relative := range []string{"complete", "manifest.json", "portfolio.db", "media/figure.png"} {
+		if _, err := os.Stat(filepath.Join(archives[0], relative)); err != nil {
+			t.Fatalf("archive missing %s: %v", relative, err)
+		}
 	}
 }
 

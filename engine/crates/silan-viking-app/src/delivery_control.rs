@@ -39,6 +39,8 @@ pub enum DeliveryControlError {
     EmptyCommitMessage,
     #[error("no files are staged for commit")]
     NothingStaged,
+    #[error("content release requires a clean committed workspace; pending paths: {0}")]
+    DirtyWorkspace(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -194,6 +196,7 @@ struct ContentDeployResponse {
 #[derive(Debug, Serialize)]
 struct ContentDeployManifest {
     version: u8,
+    schema_version: u64,
     content_commit: String,
     content_hash: String,
     database_sha256: String,
@@ -619,6 +622,7 @@ impl DeliveryControl {
     }
 
     pub fn deploy_content(&self) -> Result<DeployRunStatus, DeliveryControlError> {
+        self.ensure_releaseable()?;
         let content_commit = self.content_commit()?;
         let sync = WorkspaceSync::open(&self.content_root, &self.db_path)
             .map_err(|error| DeliveryControlError::Workspace(error.to_string()))?;
@@ -723,6 +727,54 @@ impl DeliveryControl {
         })
     }
 
+    pub fn rollback_content(&self) -> Result<DeployRunStatus, DeliveryControlError> {
+        let token = self
+            .bearer_token
+            .as_ref()
+            .ok_or(DeliveryControlError::MissingCredential)?;
+        let base = api_base_url(&self.content_root)
+            .map_err(|error| DeliveryControlError::Remote(error.to_string()))?;
+        let agent = deploy_http_agent(&self.content_root, &base);
+        let url = format!("{base}/api/v1/content/rollback");
+        let response: ContentDeployResponse = agent
+            .post(&url)
+            .set("Authorization", &format!("Bearer {token}"))
+            .call()
+            .map_err(|error| deploy_http_error(&url, error))?
+            .into_json()
+            .map_err(|error| DeliveryControlError::Remote(format!("{url}: {error}")))?;
+        if !response.success
+            || response.state != "complete"
+            || !response.media_root_ok
+            || !response.static_published
+            || response.static_release.is_empty()
+            || response.content_commit.is_empty()
+        {
+            return Err(DeliveryControlError::Remote(format!(
+                "rollback verification failed: state={}, commit={}, media_root_ok={}, static_published={}, static_release={}",
+                response.state,
+                response.content_commit,
+                response.media_root_ok,
+                response.static_published,
+                response.static_release,
+            )));
+        }
+        Ok(DeployRunStatus {
+            success: true,
+            content_commit: response.content_commit.clone(),
+            static_published: true,
+            static_release: response.static_release.clone(),
+            stdout: format!(
+                "Rolled back to content {} ({}) and static release {} at {}",
+                response.content_commit,
+                response.content_hash,
+                response.static_release,
+                response.generated_at,
+            ),
+            stderr: String::new(),
+        })
+    }
+
     fn build_deploy_bundle(
         &self,
         content_commit: &str,
@@ -753,7 +805,8 @@ impl DeliveryControl {
             DeliveryControlError::Runner(format!("read staged database: {error}"))
         })?;
         let manifest = ContentDeployManifest {
-            version: 1,
+            version: 2,
+            schema_version: crate::schema::SUPPORTED_SCHEMA_VERSION,
             content_commit: content_commit.to_owned(),
             content_hash,
             database_sha256: format!("{:x}", Sha256::digest(&database_bytes)),
@@ -836,6 +889,54 @@ impl DeliveryControl {
     fn content_commit(&self) -> Result<String, DeliveryControlError> {
         run(&self.repo()?, ["rev-parse", "HEAD"])
     }
+
+    /// A deployment bundle represents one immutable authored revision. Local
+    /// edits must never be projected under the previous Git commit.
+    fn ensure_releaseable(&self) -> Result<(), DeliveryControlError> {
+        let repo = self.repo()?;
+        // `agent/` is a private, non-projectable namespace and does not alter
+        // a public release. Only schema and authored resource changes block
+        // provenance stamping.
+        let pending = run_raw(
+            &repo,
+            [
+                "status",
+                "--porcelain",
+                "--untracked-files=all",
+                "--",
+                "SCHEMA.md",
+                "resources",
+            ],
+        )?;
+        let paths = pending
+            .lines()
+            .filter_map(parse_porcelain_path)
+            .take(8)
+            .collect::<Vec<_>>();
+        if paths.is_empty() {
+            return Ok(());
+        }
+        let suffix = (pending.lines().count() > paths.len()).then_some(", …");
+        Err(DeliveryControlError::DirtyWorkspace(format!(
+            "{}{}",
+            paths.join(", "),
+            suffix.unwrap_or_default(),
+        )))
+    }
+}
+
+fn parse_porcelain_path(line: &str) -> Option<String> {
+    let value = line.get(3..)?.trim();
+    if value.is_empty() {
+        return None;
+    }
+    Some(
+        value
+            .rsplit_once(" -> ")
+            .map_or(value, |(_, destination)| destination)
+            .trim_matches('"')
+            .to_owned(),
+    )
 }
 
 fn scope_owns_path(scope: ReleaseScope, path: &str) -> bool {
@@ -1160,5 +1261,35 @@ mod tests {
 
         assert!(diff.contains("+staged version"));
         assert!(!diff.contains("unstaged version"));
+    }
+
+    #[test]
+    fn deployment_rejects_uncommitted_content_before_network_or_projection() {
+        let (_directory, content, db) = fixture("http://127.0.0.1:1");
+        std::fs::write(content.join("resources/pending.md"), "not committed\n")
+            .expect("write pending content");
+        let control = DeliveryControl::open(&content, &db, content.parent().expect("repo root"))
+            .expect("open")
+            .with_bearer_token("delivery-contract-token");
+
+        let error = control
+            .deploy_content()
+            .expect_err("dirty deploy must fail");
+
+        let message = error.to_string();
+        assert!(matches!(error, DeliveryControlError::DirtyWorkspace(_)));
+        assert!(message.contains("resources/pending.md"), "{message}");
+        assert!(
+            !db.exists(),
+            "projection must not be built for a dirty release"
+        );
+    }
+
+    #[test]
+    fn porcelain_rename_reports_the_destination_path() {
+        assert_eq!(
+            parse_porcelain_path("R  resources/old.md -> resources/new.md"),
+            Some("resources/new.md".to_owned())
+        );
     }
 }

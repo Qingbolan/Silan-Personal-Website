@@ -35,6 +35,13 @@ func TestMediaRootUsesDeployDefault(t *testing.T) {
 	}
 }
 
+func TestContentDeployStateRootUsesDurableDefault(t *testing.T) {
+	cfg := Config{}
+	if got := cfg.ContentDeployStateRoot(); got != "/var/lib/silan-viking/content-releases" {
+		t.Fatalf("ContentDeployStateRoot() = %q", got)
+	}
+}
+
 func TestLoadConfigFromEnvOverridesTrafficRules(t *testing.T) {
 	t.Setenv("TRAFFIC_AI_USER_AGENTS", "future-ai-fetcher, another-ai")
 	t.Setenv("TRAFFIC_BOT_USER_AGENTS", "future-ai-fetcher=FutureAI,genericbot=GenericBot")

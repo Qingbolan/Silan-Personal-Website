@@ -23,6 +23,7 @@ type ContentDeployConfig struct {
 	DatabaseEnv         string `json:"database_env,env=CONTENT_DEPLOY_DATABASE_ENV,optional"`
 	MaxBundleBytes      int64  `json:"max_bundle_bytes,env=CONTENT_DEPLOY_MAX_BUNDLE_BYTES,optional"`
 	StaticPublisherPath string `json:"static_publisher_path,env=CONTENT_DEPLOY_STATIC_PUBLISHER,optional"`
+	StateRoot           string `json:"state_root,env=CONTENT_DEPLOY_STATE_ROOT,optional"`
 }
 
 func (c *Config) ContentDeployImporterPath() string {
@@ -48,6 +49,13 @@ func (c *Config) ContentDeployMaxBundleBytes() int64 {
 
 func (c *Config) ContentDeployStaticPublisher() string {
 	return c.ContentDeploy.StaticPublisherPath
+}
+
+func (c *Config) ContentDeployStateRoot() string {
+	if c.ContentDeploy.StateRoot != "" {
+		return c.ContentDeploy.StateRoot
+	}
+	return "/var/lib/silan-viking/content-releases"
 }
 
 // ApplyRuntimeLimits keeps the server-wide go-zero guards compatible with the
@@ -187,6 +195,9 @@ func (c *Config) LoadConfigFromEnv() {
 	}
 	if value := os.Getenv("CONTENT_DEPLOY_STATIC_PUBLISHER"); value != "" {
 		c.ContentDeploy.StaticPublisherPath = value
+	}
+	if value := os.Getenv("CONTENT_DEPLOY_STATE_ROOT"); value != "" {
+		c.ContentDeploy.StateRoot = value
 	}
 	if value := os.Getenv("TRAFFIC_AI_USER_AGENTS"); value != "" {
 		c.Traffic.AIUserAgents = csvList(value)

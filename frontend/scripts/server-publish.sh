@@ -3,9 +3,9 @@ set -euo pipefail
 
 mode="${1:-}"
 case "$mode" in
-  prepare|publish) ;;
+  prepare|compile|build|publish) ;;
   *)
-    echo "usage: server-publish.sh prepare|publish" >&2
+    echo "usage: server-publish.sh prepare|compile|build|publish" >&2
     exit 64
     ;;
 esac
@@ -17,6 +17,7 @@ source_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 script_path="$(readlink -f "${BASH_SOURCE[0]}")"
 state_root="$SILAN_FRONTEND_STATE_ROOT"
 build_root="$state_root/build"
+code_root="$build_root/code"
 published_root="$state_root/published"
 releases_root="$published_root/releases"
 current_link="$published_root/current"
@@ -138,7 +139,7 @@ assert_managed_dist() {
 handoff_root_publish() {
   local current_uid home runtime_config runtime_cache
   current_uid="$(id -u)"
-  if [[ "$mode" != "publish" || "$current_uid" -ne 0 ]]; then
+  if [[ "$mode" == "prepare" || "$current_uid" -ne 0 ]]; then
     return
   fi
 
@@ -152,7 +153,7 @@ handoff_root_publish() {
   runtime_config="$state_root/runtime/config"
   runtime_cache="$state_root/runtime/cache"
   install -d -o "$runtime_user" -g "$runtime_group" -m 0755 \
-    "$build_root" "$build_root/dist" "$published_root" "$releases_root" \
+    "$build_root" "$build_root/dist" "$code_root" "$published_root" "$releases_root" \
     "$state_root/runtime" "$runtime_config" "$runtime_cache"
   chown -R "$runtime_user:$runtime_group" "$build_root" "$published_root"
   install -d -o "$runtime_user" -g "$runtime_group" -m 0755 \
@@ -237,10 +238,71 @@ export VITE_API_ORIGIN="$SILAN_PUBLIC_ORIGIN"
 export VITE_PUBLIC_ORIGIN="$SILAN_PUBLIC_ORIGIN"
 export VITE_GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
 
-echo "[frontend:server] build:seo against $SILAN_PUBLIC_ORIGIN"
+if [[ "$mode" == "compile" || "$mode" == "build" ]]; then
+  echo "[frontend:server] compile immutable code baseline"
+  (
+    cd "$source_root"
+    npm run build
+  )
+  code_next="$build_root/.code.next"
+  rm -rf "$code_next"
+  mkdir -p "$code_next"
+  rsync -a --delete "$dist/" "$code_next/"
+  rm -rf "$code_root"
+  mv "$code_next" "$code_root"
+  if [[ "$mode" == "compile" ]]; then
+    echo "[frontend:server] code-baseline=$code_root"
+    exit 0
+  fi
+else
+  if [[ ! -s "$code_root/index.html" ]]; then
+    echo "[frontend:server] no compiled frontend baseline; run a frontend deployment first" >&2
+    exit 78
+  fi
+  echo "[frontend:server] restore immutable code baseline"
+  rsync -a --delete "$code_root/" "$dist/"
+fi
+
+echo "[frontend:server] prerender content against $SILAN_PUBLIC_ORIGIN"
 (
   cd "$source_root"
-  npm run build:seo
+  npm run prerender
+)
+
+release_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+code_commit="unknown"
+if [[ -s "$source_root/.silan-code-commit" ]]; then
+  code_commit="$(tr -d '[:space:]' < "$source_root/.silan-code-commit")"
+fi
+code_digest="$(
+  find "$code_root" -type f -print0 \
+    | sort -z \
+    | xargs -0 sha256sum \
+    | sha256sum \
+    | awk '{print $1}'
+)"
+export SILAN_STATIC_RELEASE="$release_id"
+export SILAN_CODE_COMMIT="$code_commit"
+export SILAN_CODE_DIGEST="$code_digest"
+export SILAN_CONTENT_COMMIT="${SILAN_CONTENT_COMMIT:-unknown}"
+export SILAN_CONTENT_HASH="${SILAN_CONTENT_HASH:-unknown}"
+export SILAN_SCHEMA_VERSION="${SILAN_SCHEMA_VERSION:-1}"
+(
+  cd "$source_root"
+  node --input-type=module -e '
+    import { writeFileSync } from "node:fs";
+    const value = (name) => process.env[name] || "unknown";
+    writeFileSync("dist/release-manifest.json", `${JSON.stringify({
+      version: 1,
+      release_id: value("SILAN_STATIC_RELEASE"),
+      content_commit: value("SILAN_CONTENT_COMMIT"),
+      content_hash: value("SILAN_CONTENT_HASH"),
+      schema_version: Number(value("SILAN_SCHEMA_VERSION")),
+      code_commit: value("SILAN_CODE_COMMIT"),
+      frontend_artifact_sha256: value("SILAN_CODE_DIGEST"),
+      generated_at: new Date().toISOString(),
+    }, null, 2)}\n`);
+  '
 )
 
 test -s "$dist/index.html"
@@ -255,7 +317,6 @@ if grep -q '"blogList"' "$dist/zh/blog/index.html"; then
 fi
 prepare_search_engine_submission
 
-release_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 next_release="$releases_root/.${release_id}.next"
 release="$releases_root/$release_id"
 next_current="$published_root/.current.next"

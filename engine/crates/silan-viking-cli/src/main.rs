@@ -12,8 +12,8 @@ mod skill;
 use rusqlite::{params, Connection, OptionalExtension};
 use silan_viking_app::{
     optimize_media_tree, stage_deploy_media_asset, ContentKind, ContentRelationshipEditor,
-    CredentialProfile, Identified, ProposalId, RelationshipTargetKind, ScannedAsset, Workspace,
-    MEDIA_OPTIMIZER_VERSION,
+    CredentialProfile, DeliveryControl, Identified, ProposalId, RelationshipTargetKind,
+    ScannedAsset, Workspace,
 };
 use std::env;
 use std::fs;
@@ -25,17 +25,6 @@ use std::time::{Duration, Instant};
 /// The canonical `content/SCHEMA.md`, embedded so `silan init` writes a
 /// schema the engine can actually parse (it needs the fenced ```yaml``` block).
 const SCHEMA_TEMPLATE: &str = include_str!("../assets/SCHEMA.md");
-
-// Deploy artifacts, packed by `build.rs` into `OUT_DIR` and embedded
-// here. `silan site deploy` unpacks these into a staging directory and
-// builds the Docker images from them — so the user's machine needs
-// only Docker, no source checkout, no Node, no Go (docs/silan-viking/16).
-/// Front-end source (`frontend/`, minus `node_modules`/`dist`), gzip tar.
-const FRONTEND_TARBALL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/frontend.tar.gz"));
-/// Go backend source (`backend/`, minus compiled binaries), gzip tar.
-const BACKEND_TARBALL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/backend.tar.gz"));
-/// Docker deploy assets (`deploy/`: compose, Dockerfiles, nginx), gzip tar.
-const DEPLOY_TARBALL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/deploy.tar.gz"));
 
 fn main() {
     if let Err(err) = run(env::args().skip(1).collect()) {
@@ -606,7 +595,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
             site_preview(&opts.content_root, &opts.db_path, &opts.out_dir, true)
         }
         ["site", "check"] => site_check(&opts.content_root),
-        ["site", "status"] => site_status(&opts.content_root),
+        ["site", "status"] => site_status(&opts.content_root, &opts.db_path),
         ["site", "promote", live, snapshot, commit] => site_promote(live, snapshot, commit),
         ["site", "publish", uri] => site_publish(&opts.content_root, uri),
         // `site deploy` accepts an optional `--confirm` / `--dry-run` (mutually
@@ -657,15 +646,9 @@ fn run(args: Vec<String>) -> Result<(), String> {
                     }
                 }
             }
-            site_deploy(
-                &opts.content_root,
-                &opts.db_path,
-                &opts.out_dir,
-                confirm,
-                DeployWhat::Content,
-            )
+            run_content_release(&opts.content_root, &opts.db_path, confirm)
         }
-        ["site", "rollback"] => site_rollback(&opts.content_root),
+        ["site", "rollback"] => site_rollback(&opts.content_root, &opts.db_path),
         // The first token names a known multi-verb command, but the rest
         // didn't match any arm — a bare or mistyped subcommand. List that
         // command's verbs rather than leaving the user with a blank error.
@@ -1084,13 +1067,14 @@ fn default_config(content_dir: &str) -> String {
          port          = 7700\n\
          enable_deploy = false\n\
          \n\
-         # [deploy] — uncomment and fill in for `silan site deploy`.\n\
-         # The Docker compose file and images are embedded in the silan\n\
-         # binary; the target machine needs only Docker.\n\
+         # [deploy] — uncomment for the managed Nginx/systemd target.\n\
+         # Use `silan site preview` for the isolated local Docker stack.\n\
+         # mode         = \"nginx\"\n\
          # host         = \"example.com\"\n\
          # user         = \"deploy\"\n\
          # ssh_key_path = \"~/.ssh/silan_deploy_ed25519\"  # path only, never the key\n\
-         # remote_dir   = \"/srv/silan-viking\"\n\
+         # remote_dir   = \"/www/wwwroot/example.com\"\n\
+         # public_url   = \"https://example.com\"\n\
          # \n\
          # [search_submit] — optional; `silan site deploy` projects this into\n\
          # the remote frontend publisher after sitemap generation.\n\
@@ -3010,27 +2994,16 @@ fn site_publish(content_root: &Path, uri: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// The `[deploy]` section of `silan-viking.toml` (`06` §6.2.2).
-//
-// There is deliberately no `compose_file` field: the Docker compose
-// file and Dockerfiles are embedded in the `silan-viking` binary and
-// staged at deploy time (`docs/silan-viking/16`), not user-supplied.
-/// What to push in an nginx-mode deploy. Docker mode ignores this — it
-/// always ships the whole stack as one image set.
+/// What to release to the configured production target.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DeployWhat {
-    /// Sync `content/`, scp `portfolio.db`, restart the backend. The cheapest
-    /// path — no rebuild, no frontend bundle. Use this when you edited a blog
-    /// post and want it live in ~10 seconds.
+    /// Publish a committed projection through the authenticated content API.
     Content,
-    /// Build the frontend with `npm run build` and ship `dist/`. Run when you
-    /// changed React code; content is not re-synced.
+    /// Install a committed frontend code artifact and publish its static view.
     Frontend,
-    /// Tar the backend Go source, build remotely (CGO needs the target's
-    /// glibc / SQLite headers), restart. Run when you changed Go code.
+    /// Install a committed backend artifact, build, restart and verify.
     Backend,
-    /// Everything: content + frontend + backend, in that order so the API
-    /// is restarted with a fresh schema before the new frontend assets load.
+    /// Install matching code artifacts, then complete via the content release.
     All,
 }
 
@@ -3065,29 +3038,12 @@ impl DeployWhat {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DeployMode {
-    /// v1.0.0 default. Builds Docker images locally (or on remote), ships
-    /// via `docker save | ssh docker load`, runs `docker compose up -d`.
-    /// The host needs only Docker.
-    Docker,
-    /// v1.1.0. Targets a host where Nginx (e.g. BaoTa/宝塔) already fronts
-    /// vhosts and the backend runs under systemd. Pushes the frontend
-    /// `dist/`, the derived `portfolio.db`, and the backend Go source;
-    /// builds the backend remotely (CGO needs the target's glibc); then
-    /// `systemctl restart` and a `/api/v1/health` probe.
-    Nginx,
-}
-
 struct DeployConfig {
-    mode: DeployMode,
     host: String,
     user: String,
     /// SSH key path — only required for a remote `host`.
     ssh_key_path: PathBuf,
-    /// Remote directory — only required for a remote `host`. In Docker
-    /// mode this is the staging dir; in Nginx mode it is the vhost root
-    /// (e.g. `/www/wwwroot/silan.tech`).
+    /// Managed Nginx vhost root (e.g. `/www/wwwroot/silan.tech`).
     remote_dir: String,
     /// SSH port. Optional in `[deploy]`, defaults to 22 — a hardened
     /// server often moves sshd off the standard port.
@@ -3136,9 +3092,8 @@ struct SearchSubmitConfig {
 }
 
 /// Read and validate `[deploy]` from the project config. A missing section or
-/// field is a code-1 user error (`06` §6.8). For a remote `host`, the SSH key
-/// file must exist with `600` permissions (`06` §6.2.2). A `localhost` /
-/// `local` host is a single-host docker deploy and needs no SSH fields.
+/// field is a code-1 user error (`06` §6.8). The SSH key must exist with
+/// `600` permissions (`06` §6.2.2). Local Docker is owned by `site preview`.
 fn deploy_config(content_root: &Path) -> Result<DeployConfig, String> {
     let project_root = content_root.parent().unwrap_or(content_root);
     let config_path = project_root.join("silan-viking.toml");
@@ -3157,53 +3112,45 @@ fn deploy_config(content_root: &Path) -> Result<DeployConfig, String> {
             .map(str::to_owned)
             .ok_or_else(|| format!("[deploy].{k} is required in silan-viking.toml"))
     };
-    let opt = |k: &str| -> String {
-        deploy
-            .get(k)
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_owned()
-    };
-
     let host = field("host")?;
     let is_local = matches!(host.as_str(), "localhost" | "127.0.0.1" | "local");
+    if is_local {
+        return Err(
+            "production deploy cannot target localhost; use `silan site preview`".to_owned(),
+        );
+    }
 
-    let (ssh_key_path, remote_dir) = if is_local {
-        // Single-host deploy: no SSH, no remote dir.
-        (PathBuf::new(), String::new())
+    let ssh_key_raw = field("ssh_key_path")?;
+    // Expand a leading `~/` to $HOME — the config stores a path, not the key.
+    let ssh_key_path = if let Some(rest) = ssh_key_raw.strip_prefix("~/") {
+        PathBuf::from(env::var("HOME").map_err(|_| "HOME is not set".to_string())?).join(rest)
     } else {
-        let ssh_key_raw = field("ssh_key_path")?;
-        // Expand a leading `~/` to $HOME — the config stores a path, not the key.
-        let ssh_key_path = if let Some(rest) = ssh_key_raw.strip_prefix("~/") {
-            PathBuf::from(env::var("HOME").map_err(|_| "HOME is not set".to_string())?).join(rest)
-        } else {
-            PathBuf::from(&ssh_key_raw)
-        };
-        if !ssh_key_path.exists() {
+        PathBuf::from(&ssh_key_raw)
+    };
+    if !ssh_key_path.exists() {
+        return Err(format!(
+            "SSH key not found: {} — generate one or fix [deploy].ssh_key_path",
+            ssh_key_path.display()
+        ));
+    }
+    // The private key must be `600` — ssh refuses a world-readable key
+    // anyway, and we fail early with a clear message (`06` §6.2.2).
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = fs::metadata(&ssh_key_path)
+            .map_err(|e| e.to_string())?
+            .permissions()
+            .mode()
+            & 0o777;
+        if mode != 0o600 {
             return Err(format!(
-                "SSH key not found: {} — generate one or fix [deploy].ssh_key_path",
+                "SSH key {} has mode {mode:o}, expected 600 — run `chmod 600` on it",
                 ssh_key_path.display()
             ));
         }
-        // The private key must be `600` — ssh refuses a world-readable key
-        // anyway, and we fail early with a clear message (`06` §6.2.2).
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mode = fs::metadata(&ssh_key_path)
-                .map_err(|e| e.to_string())?
-                .permissions()
-                .mode()
-                & 0o777;
-            if mode != 0o600 {
-                return Err(format!(
-                    "SSH key {} has mode {mode:o}, expected 600 — run `chmod 600` on it",
-                    ssh_key_path.display()
-                ));
-            }
-        }
-        (ssh_key_path, field("remote_dir")?)
-    };
+    }
+    let remote_dir = field("remote_dir")?;
 
     // ssh_port — optional, defaults to 22. Accepts a TOML integer or a
     // string (so `ssh_port = 2222` and `ssh_port = "2222"` both work).
@@ -3217,21 +3164,15 @@ fn deploy_config(content_root: &Path) -> Result<DeployConfig, String> {
             .ok_or("[deploy].ssh_port must be a port number (1-65535)")?,
     };
 
-    // mode — optional, defaults to docker (v1.0.0 behaviour). v1.1.0 adds
-    // "nginx" for BaoTa / systemd hosts.
-    let mode = match deploy
+    let mode = deploy
         .get("mode")
         .and_then(|v| v.as_str())
-        .unwrap_or("docker")
-    {
-        "docker" => DeployMode::Docker,
-        "nginx" => DeployMode::Nginx,
-        other => {
-            return Err(format!(
-                "[deploy].mode = \"{other}\" — must be \"docker\" or \"nginx\""
-            ))
-        }
-    };
+        .unwrap_or("nginx");
+    if mode != "nginx" {
+        return Err(format!(
+            "[deploy].mode = \"{mode}\" is obsolete — production delivery supports only \"nginx\"; use `silan site preview` for the local Docker stack"
+        ));
+    }
 
     // Nginx-mode fields. All optional with safe defaults so a half-filled
     // [deploy] still parses; the orchestrator will surface missing values
@@ -3264,13 +3205,8 @@ fn deploy_config(content_root: &Path) -> Result<DeployConfig, String> {
     let search_submit = parse_search_submit_config(config.get("search_submit"))?;
 
     Ok(DeployConfig {
-        mode,
         host,
-        user: if is_local {
-            opt("user")
-        } else {
-            field("user")?
-        },
+        user: field("user")?,
         ssh_key_path,
         remote_dir,
         ssh_port,
@@ -3426,6 +3362,64 @@ fn run_status_with_timeout(
     wait_child_with_timeout(child, timeout, label)
 }
 
+/// A disposable component tree materialized from one committed project
+/// revision. Production transports consume this artifact rather than the
+/// mutable working tree, so unrelated local edits cannot leak into a release.
+struct GitCodeArtifact {
+    root: PathBuf,
+    commit: String,
+}
+
+impl GitCodeArtifact {
+    fn materialize(project_root: &Path, component: &str) -> Result<Self, String> {
+        let commit = git_head_commit(project_root)
+            .ok_or_else(|| "code deployment requires a committed Git revision".to_owned())?;
+        let root = env::temp_dir().join(format!(
+            "silan-code-artifact-{}-{}",
+            std::process::id(),
+            time::OffsetDateTime::now_utc().unix_timestamp_nanos(),
+        ));
+        fs::create_dir_all(&root)
+            .map_err(|error| format!("create code artifact {}: {error}", root.display()))?;
+        let archive = root.join("source.tar");
+        let archived = Command::new("git")
+            .args(["-C"])
+            .arg(project_root)
+            .args(["archive", "--format=tar", "-o"])
+            .arg(&archive)
+            .args(["HEAD", "--", component])
+            .status()
+            .map_err(|error| format!("archive {component}@{commit}: {error}"))?;
+        if !archived.success() {
+            let _ = fs::remove_dir_all(&root);
+            return Err(format!("archive {component}@{commit} failed: {archived}"));
+        }
+        let extracted = Command::new("tar")
+            .args(["-xf"])
+            .arg(&archive)
+            .args(["-C"])
+            .arg(&root)
+            .status()
+            .map_err(|error| format!("extract {component}@{commit}: {error}"))?;
+        let _ = fs::remove_file(&archive);
+        if !extracted.success() {
+            let _ = fs::remove_dir_all(&root);
+            return Err(format!("extract {component}@{commit} failed: {extracted}"));
+        }
+        Ok(Self { root, commit })
+    }
+
+    fn component(&self, name: &str) -> PathBuf {
+        self.root.join(name)
+    }
+}
+
+impl Drop for GitCodeArtifact {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.root);
+    }
+}
+
 fn remote_file_md5(cfg: &DeployConfig, remote_path: &str) -> Result<Option<String>, String> {
     let path = shell_quote(remote_path);
     let raw = ssh_exec(
@@ -3499,52 +3493,6 @@ impl<'a> RemoteArtifactTransport<'a> {
             }
         }
         Err(last_error.unwrap_or_else(|| format!("[transfer] {label}: upload failed")))
-    }
-
-    fn download_file_verified(
-        &self,
-        remote: &str,
-        local: &Path,
-        label: &str,
-    ) -> Result<(), String> {
-        let expected_hash = remote_file_md5(self.cfg, remote)?
-            .ok_or_else(|| format!("[transfer] {label}: remote file missing: {remote}"))?;
-        let tmp = local.with_extension(format!(
-            "download-{}-{}.tmp",
-            std::process::id(),
-            time::OffsetDateTime::now_utc().unix_timestamp_nanos()
-        ));
-        let mut last_error = None;
-        for attempt in 1..=self.attempts {
-            println!(
-                "[transfer] {label}: download attempt {attempt}/{} ← {remote}",
-                self.attempts
-            );
-            let result = self
-                .download_with_rsync(remote, &tmp, &expected_hash, label)
-                .or_else(|rsync_error| {
-                    eprintln!("[transfer] {label}: rsync download unavailable/failed ({rsync_error}); falling back to ssh stream");
-                    self.download_with_ssh_stream(remote, &tmp, &expected_hash, label)
-                });
-            match result {
-                Ok(()) => {
-                    fs::rename(&tmp, local).map_err(|error| {
-                        format!(
-                            "[transfer] {label}: move {} → {}: {error}",
-                            tmp.display(),
-                            local.display()
-                        )
-                    })?;
-                    println!("[transfer] {label}: verified md5 {expected_hash}");
-                    return Ok(());
-                }
-                Err(error) => {
-                    let _ = fs::remove_file(&tmp);
-                    last_error = Some(error);
-                }
-            }
-        }
-        Err(last_error.unwrap_or_else(|| format!("[transfer] {label}: download failed")))
     }
 
     fn sync_backend_source(&self, backend: &Path, remote_build_dir: &str) -> Result<(), String> {
@@ -3626,89 +3574,6 @@ impl<'a> RemoteArtifactTransport<'a> {
         Ok(())
     }
 
-    fn sync_media_tree(
-        &self,
-        media_root: &Path,
-        remote_media: &str,
-        generation_hash: &str,
-    ) -> Result<(), String> {
-        if !media_root.is_dir() {
-            return Err(format!(
-                "[content] media staging directory not found: {}",
-                media_root.display()
-            ));
-        }
-        let generation = format!(
-            "{}-{}",
-            std::process::id(),
-            time::OffsetDateTime::now_utc().unix_timestamp_nanos()
-        );
-        let remote_media_next = format!("{remote_media}.next-{generation}");
-        let remote_media_previous = format!("{remote_media}.previous-{generation}");
-        let remote_media_hash = format!("{remote_media}.generation-md5");
-        let prepare = format!(
-            "set -e; \
-             rm -rf {next} {previous}; \
-             mkdir -p {next}; \
-             if [ -d {live} ]; then cp -a {live}/. {next}/; fi",
-            next = shell_quote(&remote_media_next),
-            previous = shell_quote(&remote_media_previous),
-            live = shell_quote(remote_media),
-        );
-        ssh_exec(self.cfg, &prepare)?;
-
-        let publish = (|| -> Result<(), String> {
-            let mut cmd = Command::new("rsync");
-            cmd.args(["-az", "--delete"]);
-            cmd.arg("-e").arg(self.rsync_ssh_command());
-            cmd.arg(format!("{}/", media_root.display()));
-            cmd.arg(format!(
-                "{}:{}/",
-                ssh_target(self.cfg),
-                remote_media_next.trim_end_matches('/')
-            ));
-            let status = run_status_with_timeout(&mut cmd, self.timeout, "[content] rsync media")?;
-            if !status.success() {
-                return Err(format!("[content] rsync media exited with status {status}"));
-            }
-            ssh_exec(
-                self.cfg,
-                &format!(
-                    "set -e; \
-                     if [ -d {live} ]; then mv {live} {previous}; fi; \
-                     if mv {next} {live}; then \
-                       printf '%s\\n' {hash} > {hash_file}.next; \
-                       mv {hash_file}.next {hash_file}; \
-                       rm -rf {previous}; \
-                     else \
-                       rm -rf {next}; \
-                       if [ -d {previous} ]; then mv {previous} {live}; fi; \
-                       exit 1; \
-                     fi",
-                    next = shell_quote(&remote_media_next),
-                    previous = shell_quote(&remote_media_previous),
-                    live = shell_quote(remote_media),
-                    hash = shell_quote(generation_hash),
-                    hash_file = shell_quote(&remote_media_hash),
-                ),
-            )?;
-            Ok(())
-        })();
-        if publish.is_err() {
-            let _ = ssh_exec(
-                self.cfg,
-                &format!(
-                    "rm -rf {next}; \
-                     if [ ! -d {live} ] && [ -d {previous} ]; then mv {previous} {live}; fi",
-                    next = shell_quote(&remote_media_next),
-                    previous = shell_quote(&remote_media_previous),
-                    live = shell_quote(remote_media),
-                ),
-            );
-        }
-        publish
-    }
-
     fn upload_with_rsync(
         &self,
         local: &Path,
@@ -3744,42 +3609,6 @@ impl<'a> RemoteArtifactTransport<'a> {
             ));
         }
         self.verify_and_promote(remote_tmp, remote, expected_hash, label)
-    }
-
-    fn download_with_rsync(
-        &self,
-        remote: &str,
-        local_tmp: &Path,
-        expected_hash: &str,
-        label: &str,
-    ) -> Result<(), String> {
-        if let Some(parent) = local_tmp.parent() {
-            fs::create_dir_all(parent).map_err(|error| {
-                format!("[transfer] {label}: create {}: {error}", parent.display())
-            })?;
-        }
-        let mut cmd = Command::new("rsync");
-        cmd.args(["-az", "--partial"]);
-        cmd.arg("-e").arg(self.rsync_ssh_command());
-        cmd.arg(format!("{}:{}", ssh_target(self.cfg), remote));
-        cmd.arg(local_tmp);
-        let status = run_status_with_timeout(
-            &mut cmd,
-            self.timeout,
-            &format!("[transfer] {label}: rsync download"),
-        )?;
-        if !status.success() {
-            return Err(format!(
-                "[transfer] {label}: rsync download exited with status {status}"
-            ));
-        }
-        let actual_hash = md5_file(local_tmp)?;
-        if actual_hash != expected_hash {
-            return Err(format!(
-                "[transfer] {label}: md5 mismatch after rsync download — expected {expected_hash}, got {actual_hash}"
-            ));
-        }
-        Ok(())
     }
 
     fn upload_with_ssh_stream(
@@ -3838,77 +3667,6 @@ impl<'a> RemoteArtifactTransport<'a> {
         if !status.success() {
             return Err(format!(
                 "[transfer] {label}: ssh stream exited with status {status}"
-            ));
-        }
-        Ok(())
-    }
-
-    fn download_with_ssh_stream(
-        &self,
-        remote: &str,
-        local_tmp: &Path,
-        expected_hash: &str,
-        label: &str,
-    ) -> Result<(), String> {
-        if let Some(parent) = local_tmp.parent() {
-            fs::create_dir_all(parent).map_err(|error| {
-                format!("[transfer] {label}: create {}: {error}", parent.display())
-            })?;
-        }
-        let mut cmd = Command::new("ssh");
-        append_ssh_options(&mut cmd, self.cfg, "-p");
-        cmd.arg(ssh_target(self.cfg))
-            .arg(format!("cat {}", shell_quote(remote)));
-        cmd.stdout(Stdio::piped());
-        cmd.stderr(Stdio::inherit());
-        let mut child = cmd
-            .spawn()
-            .map_err(|error| format!("[transfer] {label}: ssh download: {error}"))?;
-        let mut stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| format!("[transfer] {label}: open ssh stdout"))?;
-        let local_tmp = local_tmp.to_path_buf();
-        let local_tmp_for_thread = local_tmp.clone();
-        let label_for_thread = label.to_owned();
-        let (copy_tx, copy_rx) = std::sync::mpsc::channel();
-        std::thread::spawn(move || {
-            let result = (|| -> Result<(), String> {
-                let mut output = fs::File::create(&local_tmp_for_thread).map_err(|error| {
-                    format!(
-                        "[transfer] {label_for_thread}: create {}: {error}",
-                        local_tmp_for_thread.display()
-                    )
-                })?;
-                io::copy(&mut stdout, &mut output).map_err(|error| {
-                    format!(
-                        "[transfer] {label_for_thread}: write {}: {error}",
-                        local_tmp_for_thread.display()
-                    )
-                })?;
-                Ok(())
-            })();
-            let _ = copy_tx.send(result);
-        });
-        let status_result = wait_child_with_timeout(
-            child,
-            self.timeout,
-            &format!("[transfer] {label}: ssh download"),
-        )?;
-        let copy_result = copy_rx
-            .recv_timeout(Duration::from_secs(5))
-            .map_err(|_| format!("[transfer] {label}: ssh download copy did not finish"))?;
-        copy_result?;
-        let status = status_result;
-        if !status.success() {
-            return Err(format!(
-                "[transfer] {label}: ssh download exited with status {status}"
-            ));
-        }
-        let actual_hash = md5_file(&local_tmp)?;
-        if actual_hash != expected_hash {
-            return Err(format!(
-                "[transfer] {label}: md5 mismatch after download — expected {expected_hash}, got {actual_hash}"
             ));
         }
         Ok(())
@@ -4061,18 +3819,6 @@ fn scp_to(cfg: &DeployConfig, src: &Path, dst: &str) -> Result<(), String> {
     RemoteArtifactTransport::new(cfg).upload_file_atomic(src, dst, label)
 }
 
-/// Download one deploy artifact with checksum verification. This is used by
-/// deploy promotion to bring the server's live SQLite DB to the operator
-/// machine before replacing derived tables. Pulling the live file first is
-/// what preserves comments, likes, views and contact messages.
-fn scp_from(cfg: &DeployConfig, src: &str, dst: &Path) -> Result<(), String> {
-    let label = dst
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("artifact");
-    RemoteArtifactTransport::new(cfg).download_file_verified(src, dst, label)
-}
-
 /// Probe `https://<host>/api/v1/health` over HTTPS. Returns Err when the
 /// status is not 2xx or the body doesn't include `"ok"`. Uses `curl` via
 /// the host shell — Rust's HTTP clients would mean another dependency for
@@ -4211,31 +3957,9 @@ fn is_ipv4_literal(host: &str) -> bool {
     count == 4
 }
 
-/// Unpack one embedded gzip tarball into `staging`. The tarball's paths
-/// are repo-relative (`frontend/...`, `backend/...`, `deploy/...`), so
-/// after this the staging dir mirrors the repo layout the Docker build
-/// expects (`docs/silan-viking/16`).
-fn unpack_embedded(staging: &Path, name: &str, tarball: &[u8]) -> Result<(), String> {
-    let tar_path = staging.join(name);
-    fs::write(&tar_path, tarball).map_err(|e| format!("write {name}: {e}"))?;
-    let status = Command::new("tar")
-        .arg("-xzf")
-        .arg(&tar_path)
-        .arg("-C")
-        .arg(staging)
-        .status()
-        .map_err(|e| format!("tar -x {name}: {e}"))?;
-    if !status.success() {
-        return Err(format!("failed to unpack embedded {name}"));
-    }
-    let _ = fs::remove_file(&tar_path);
-    Ok(())
-}
-
-/// Materialise the deploy build context from the artifacts embedded in
-/// this binary. Returns the staging directory — laid out as a minimal
-/// repo (`frontend/`, `backend/`, `deploy/`) the Docker multi-stage
-/// builds consume. The user's machine never needs a source checkout.
+/// Materialise a disposable local-preview context from the current checkout.
+/// Production code delivery never uses this tree. Keeping preview staging at
+/// runtime avoids compiling the entire frontend/backend source into the CLI.
 fn stage_deploy_artifacts(project_root: &Path) -> Result<PathBuf, String> {
     let staging = project_root.join("_deploy/staging");
     // Always start clean: a stale tree from a half-finished deploy would
@@ -4245,9 +3969,26 @@ fn stage_deploy_artifacts(project_root: &Path) -> Result<PathBuf, String> {
     }
     fs::create_dir_all(&staging).map_err(|e| format!("create staging: {e}"))?;
 
-    unpack_embedded(&staging, "frontend.tar.gz", FRONTEND_TARBALL)?;
-    unpack_embedded(&staging, "backend.tar.gz", BACKEND_TARBALL)?;
-    unpack_embedded(&staging, "deploy.tar.gz", DEPLOY_TARBALL)?;
+    for component in ["frontend", "backend", "deploy"] {
+        let source = project_root.join(component);
+        if !source.is_dir() {
+            return Err(format!("preview source is missing: {}", source.display()));
+        }
+        let destination = staging.join(component);
+        fs::create_dir_all(&destination)
+            .map_err(|error| format!("create {}: {error}", destination.display()))?;
+        let status = Command::new("rsync")
+            .args(["-a", "--delete"])
+            .args(["--exclude", ".git", "--exclude", "node_modules"])
+            .args(["--exclude", "dist", "--exclude", "target"])
+            .arg(format!("{}/", source.display()))
+            .arg(format!("{}/", destination.display()))
+            .status()
+            .map_err(|error| format!("stage preview {component}: {error}"))?;
+        if !status.success() {
+            return Err(format!("stage preview {component} failed: {status}"));
+        }
+    }
     Ok(staging)
 }
 
@@ -4381,7 +4122,7 @@ fn site_preview(
         println!("  Brings up a single-host Docker stack at http://localhost:8080:");
         println!("  1 sync     content/ -> {}", db_path.display());
         println!(
-            "  2 build    stage embedded sources + SEO artifacts + media -> {}",
+            "  2 build    stage checkout sources + SEO artifacts + media -> {}",
             out_dir.display()
         );
         println!("  3 package  docker compose build (backend/web/proxy images)");
@@ -4407,7 +4148,7 @@ fn site_preview(
     let content_commit = git_head_commit(content_root).unwrap_or_else(|| "unknown".into());
     let assets = ws.scan().map_err(|e| e.to_string())?.assets().to_vec();
 
-    // 2 — build: stage embedded artefacts + SEO into the project's staging area.
+    // 2 — build: stage a disposable local-preview context + SEO.
     println!("[2/6] build");
     let staging = stage_deploy_artifacts(project_root)?;
     write_local_preview_env(&staging, &preview_token)?;
@@ -4443,15 +4184,9 @@ fn site_preview(
 }
 
 // ---------------------------------------------------------------------------
-// `silan site deploy` — the `06` §6.5 six-step pipeline: sync → build →
-// package → ship → promote → up. Dry-run is the default; only `--confirm`
-// touches the server.
-//
-// The Docker build context is materialised from artifacts embedded in this
-// binary (`stage_deploy_artifacts`), not from a source checkout — so the
-// only thing the operator's machine needs is Docker (`docs/silan-viking/16`).
-//
-// Nginx-mode deploy (v1.1.0)
+// `silan site deploy` — committed code artifact delivery to the managed
+// Nginx/systemd target. Content promotion remains an authenticated API use
+// case even when it is the final phase of `--what=all`.
 // ---------------------------------------------------------------------------
 //
 // Targets a host where Nginx already fronts vhosts (e.g. BaoTa / 宝塔) and
@@ -4499,7 +4234,7 @@ fn run_nginx_deploy(
             println!("  {step} frontend source → persistent server build workspace");
             step += 1;
         }
-        if what.does_frontend() || what.does_content() {
+        if what.does_frontend() {
             println!("  {step} preflight server Node/Chromium/dependencies; no live state changed");
             step += 1;
         }
@@ -4515,27 +4250,25 @@ fn run_nginx_deploy(
         }
         if what.does_content() {
             println!(
-                "  {step} content  silan-viking index sync → detect runtime DB → cp .prev → \
-                 pull projection artifact → promote derived tables locally → \
-                 verified artifact upload → chown → md5-verify → \
-                 (PostgreSQL: transactional sqlite2pg while API stays online; \
-                 SQLite: stop/swap/start) → mirror media/",
+                "  {step} content  committed projection + changed media → authenticated HTTPS bundle → \
+                 server-owned transactional promotion",
             );
             step += 1;
         }
-        let activation = match (what.does_backend(), what.does_content()) {
-            (true, _) => format!("restart {}", cfg.systemd_unit),
-            (false, true) => {
-                "no API restart in PostgreSQL mode (SQLite installs stop/start only)".to_owned()
-            }
-            (false, false) => "no API lifecycle change".to_owned(),
+        let activation = match what.does_backend() {
+            true => format!("restart {}", cfg.systemd_unit),
+            false => "no API lifecycle change".to_owned(),
         };
         println!("  {step} activate  {activation} → curl /api/v1/health");
         step += 1;
         if what.does_frontend() || what.does_content() {
             println!(
-                "  {step} SEO  server npm run build:seo against production API → \
-                 verified immutable release → atomic current switch"
+                "  {step} static  {} → prerender against production API → verified immutable release → atomic current switch",
+                if what.does_frontend() {
+                    "compile code baseline"
+                } else {
+                    "reuse code baseline"
+                }
             );
             step += 1;
         }
@@ -4545,14 +4278,8 @@ fn run_nginx_deploy(
         return Ok(());
     }
 
-    let refresh_frontend = what.does_frontend() || what.does_content();
+    let refresh_frontend = what.does_frontend();
     let mut did_work = false;
-    // `deploy_nginx_content` stops the backend itself (to release the
-    // mmap'd DB before scp). If it ran we need `start`, not `restart` —
-    // restart on a stopped unit works but loses one transition's worth of
-    // journal context, and tooling that watches the unit state sees two
-    // active→inactive flips instead of one.
-    let mut backend_stopped = false;
     // Stage frontend source and provision all failure-prone build dependencies
     // before touching content. The actual SEO render must happen later, after
     // the updated API is healthy.
@@ -4575,26 +4302,16 @@ fn run_nginx_deploy(
     if what.does_backend() {
         deploy_nginx_private_api_credential(content_root, cfg)?;
     }
-    if what.does_content() {
-        backend_stopped = deploy_nginx_content(content_root, db_path, cfg)?;
-        did_work = true;
-    }
     if !did_work {
         return Err(format!("--what={} selected nothing", what.label()));
     }
 
-    if backend_stopped {
-        println!("[start] systemctl start {}", cfg.systemd_unit);
-        ssh_exec(cfg, &format!("systemctl start {}", cfg.systemd_unit))?;
-        std::thread::sleep(std::time::Duration::from_secs(2));
-    } else if what.does_backend() {
+    if what.does_backend() {
         println!("[restart] systemctl restart {}", cfg.systemd_unit);
         ssh_exec(cfg, &format!("systemctl restart {}", cfg.systemd_unit))?;
         std::thread::sleep(std::time::Duration::from_secs(2));
-    } else if what.does_content() {
-        println!("[online] PostgreSQL content transaction applied; API stayed running");
     } else {
-        println!("[online] API lifecycle unchanged; server SEO build follows");
+        println!("[online] API lifecycle unchanged; static build follows");
     }
     let health_base = cfg
         .public_url
@@ -4604,12 +4321,19 @@ fn run_nginx_deploy(
     deploy_health_check(cfg)?;
 
     if refresh_frontend {
-        publish_nginx_frontend(cfg)?;
+        if what.does_content() {
+            compile_nginx_frontend(cfg)?;
+        } else {
+            publish_nginx_frontend(cfg)?;
+        }
     }
-    if what.does_backend() || refresh_frontend {
+    if what.does_content() {
+        run_content_release(content_root, db_path, true)?;
+    }
+    if what.does_backend() || refresh_frontend || what.does_content() {
         deploy_nginx_extension(cfg)?;
     }
-    if refresh_frontend {
+    if refresh_frontend || what.does_content() {
         deploy_frontend_health_check(cfg)?;
     }
     println!("done.");
@@ -4886,335 +4610,6 @@ fn deploy_nginx_private_api_credential(
     result
 }
 
-/// Phase 1 — content. Rebuild the local derived db, ship it, leave the
-/// restart/health check to the caller.
-///
-/// PostgreSQL mode treats SQLite as an offline projection artifact and never
-/// changes the API process lifecycle. SQLite mode still wraps the live-file
-/// swap in stop → backup → promote → push → clear-wal → start. Returns `true`
-/// only when the backend was stopped for a live SQLite swap.
-fn deploy_nginx_content(
-    content_root: &Path,
-    db_path: &Path,
-    cfg: &DeployConfig,
-) -> Result<bool, String> {
-    println!("[content] index sync");
-    let ws = Workspace::open(content_root).map_err(|e| e.to_string())?;
-    ws.sync(db_path).map_err(|e| e.to_string())?;
-
-    let remote_dir = format!("{}/api/_deploy/api", cfg.remote_dir);
-    println!("[content] mkdir -p {remote_dir}");
-    ssh_exec(cfg, &format!("mkdir -p {remote_dir}"))?;
-
-    let database_mode = remote_database_mode(cfg)?;
-    let backend_stopped = database_mode == RemoteDatabaseMode::Sqlite;
-    if backend_stopped {
-        // SQLite installs serve this exact file and must release their live
-        // handle before it is replaced. PostgreSQL installs only use the
-        // file as an offline import artifact and remain online.
-        println!(
-            "[content] systemctl stop {} (release SQLite lock)",
-            cfg.systemd_unit
-        );
-        ssh_exec(cfg, &format!("systemctl stop {}", cfg.systemd_unit))?;
-    } else {
-        println!("[content] PostgreSQL runtime detected; API remains online");
-    }
-
-    // Take a .prev snapshot so `site rollback` has something to fall back
-    // on. The previous --what=content path skipped this and left rollback
-    // unusable on a bad content deploy.
-    let remote_db = format!("{remote_dir}/portfolio.db");
-    println!("[content] backup → {remote_db}.prev");
-    ssh_exec(
-        cfg,
-        &format!("[ -f {remote_db} ] && cp -f {remote_db} {remote_db}.prev || true"),
-    )?;
-
-    // Clear stale -wal/-shm from the now-stopped backend. If they survive
-    // they will be paired against the new main DB at next open and sqlite
-    // will report "database disk image is malformed" → crashloop → 502.
-    if backend_stopped {
-        println!("[content] clear stale WAL/SHM on remote");
-        ssh_exec(cfg, &format!("rm -f {remote_db}-wal {remote_db}-shm"))?;
-    }
-
-    // SQLite and PostgreSQL have different ownership boundaries:
-    //
-    // - SQLite serves this file directly, so its runtime rows must be pulled
-    //   back and preserved while derived tables are promoted.
-    // - PostgreSQL owns runtime rows independently. Its importer replaces
-    //   projection tables transactionally and explicitly skips runtime tables,
-    //   so pulling the old offline SQLite artifact back first is redundant.
-    let live_snapshot = std::env::temp_dir().join(format!(
-        "silan-viking-nginx-live-{}-{}.db",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|e| format!("system clock before unix epoch: {e}"))?
-            .as_nanos(),
-    ));
-    let promotion = (|| -> Result<(), String> {
-        let content_commit = git_head_commit(content_root).unwrap_or_else(|| "unknown".into());
-        if database_mode == RemoteDatabaseMode::Postgres {
-            println!("[content] PostgreSQL fast path — stage local projection directly");
-            fs::copy(db_path, &live_snapshot).map_err(|e| {
-                format!(
-                    "[content] stage {} from {}: {e}",
-                    live_snapshot.display(),
-                    db_path.display()
-                )
-            })?;
-            stamp_content_commit(&live_snapshot, &content_commit)?;
-        } else {
-            let remote_exists = ssh_exec(
-                cfg,
-                &format!("if [ -f {remote_db} ]; then printf present; fi"),
-            )?;
-            if remote_exists.trim() == "present" {
-                println!("[content] pull live DB → {}", live_snapshot.display());
-                scp_from(cfg, &remote_db, &live_snapshot)?;
-            } else {
-                println!("[content] first deploy — seed live DB from derived snapshot");
-                fs::copy(db_path, &live_snapshot).map_err(|e| {
-                    format!(
-                        "[content] seed {} from {}: {e}",
-                        live_snapshot.display(),
-                        db_path.display()
-                    )
-                })?;
-            }
-            println!("[content] promote derived tables (runtime facts stay live)");
-            promote_db(&live_snapshot, db_path, &content_commit)?;
-        }
-
-        println!("[content] scp {} → {remote_db}", live_snapshot.display());
-        scp_to(cfg, &live_snapshot, &remote_db)?;
-
-        // Backend runs as `User=www` per the silan-backend.service unit; if
-        // scp landed as root the daemon cannot open the DB for writes.
-        ssh_exec(cfg, &format!("chown www:www {remote_db}"))?;
-
-        // Trust nothing — verify the promoted generation byte-for-byte.
-        verify_remote_db_matches(cfg, &live_snapshot, &remote_db)
-    })();
-    let _ = fs::remove_file(&live_snapshot);
-    promotion?;
-
-    // If the live backend runs against PostgreSQL (the runtime DB is no
-    // longer the shipped SQLite file but a server-resident PG), import the
-    // freshly-scp'd SQLite into PG before the backend comes back up. The
-    // SQLite file remains on disk as the rollback artifact; PG is the read
-    // path. We detect PG mode by the presence of the systemd EnvironmentFile
-    // the installer wrote (/etc/silan-backend/db.env containing DB_SOURCE).
-    // Without it, the deploy stays SQLite-only — no change in behaviour for
-    // installs that never migrated.
-    sync_remote_postgres(cfg, &remote_db, database_mode)?;
-
-    // Mirror media assets to <remote_dir>/api/media. The DB already holds
-    // rewritten `/api/v1/media?f=<rel_path>` URLs from `sync`; the backend
-    // serves them out of `Media.Root` (see deploy_nginx_backend for the yaml
-    // template that points Media.Root here). Mirror semantics: an asset
-    // deleted from content/ disappears from the server on the next deploy.
-    let assets = ws.scan().map_err(|e| e.to_string())?.assets().to_vec();
-    if assets.is_empty() {
-        return Ok(backend_stopped);
-    }
-    let generation = format!(
-        "{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|error| format!("system clock before unix epoch: {error}"))?
-            .as_nanos()
-    );
-    let staging = std::env::temp_dir().join(format!("silan-viking-media-{generation}"));
-    let _ = fs::remove_dir_all(&staging);
-    fs::create_dir_all(&staging)
-        .map_err(|e| format!("[content] staging dir {}: {e}", staging.display()))?;
-    let Some(media_root) = stage_media(&staging, &assets)? else {
-        return Ok(backend_stopped);
-    };
-    let remote_media = format!("{}/api/media", cfg.remote_dir);
-    println!(
-        "[content] mirror {} media file(s) → {remote_media}",
-        assets.len(),
-    );
-    let remote_media_hash = format!("{remote_media}.generation-md5");
-    let publish_media = (|| -> Result<(), String> {
-        let generation_hash = media_generation_hash(&assets);
-        let remote_generation = ssh_exec(
-            cfg,
-            &format!(
-                "if [ -d {remote_media} ] && [ -f {remote_media_hash} ]; then \
-                   cat {remote_media_hash}; \
-                 fi"
-            ),
-        )?;
-        if remote_generation.trim() == generation_hash {
-            println!("[content] media generation unchanged; skip mirror");
-            return Ok(());
-        }
-        RemoteArtifactTransport::new(cfg).sync_media_tree(
-            &absolutise(&media_root)?,
-            &remote_media,
-            &generation_hash,
-        )?;
-        Ok(())
-    })();
-    let _ = fs::remove_dir_all(&staging);
-    publish_media?;
-    Ok(backend_stopped)
-}
-
-/// Stamp the projection provenance before a PostgreSQL fast-path import.
-///
-/// `Workspace::sync` owns the content hash and item count. Deployment owns
-/// the Git commit that made that projection releasable, so it updates only
-/// `content_commit` and leaves the rest of the generated metadata intact.
-fn stamp_content_commit(db_path: &Path, content_commit: &str) -> Result<(), String> {
-    let connection = rusqlite::Connection::open(db_path)
-        .map_err(|error| format!("[content] open staged projection metadata: {error}"))?;
-    let updated = connection
-        .execute(
-            "UPDATE sync_meta SET content_commit = ?1",
-            rusqlite::params![content_commit],
-        )
-        .map_err(|error| format!("[content] stamp staged projection commit: {error}"))?;
-    if updated == 0 {
-        connection
-            .execute(
-                "INSERT INTO sync_meta(content_commit) VALUES (?1)",
-                rusqlite::params![content_commit],
-            )
-            .map_err(|error| format!("[content] create staged projection metadata: {error}"))?;
-    }
-    Ok(())
-}
-
-fn media_generation_hash(assets: &[ScannedAsset]) -> String {
-    let mut ordered = assets.iter().collect::<Vec<_>>();
-    ordered.sort_by(|left, right| left.rel_path.cmp(&right.rel_path));
-    let mut digest = md5::Context::new();
-    digest.consume(MEDIA_OPTIMIZER_VERSION.as_bytes());
-    digest.consume([0]);
-    for asset in ordered {
-        digest.consume(asset.rel_path.as_bytes());
-        digest.consume([0]);
-        digest.consume(asset.hash.to_string().as_bytes());
-        digest.consume([0]);
-    }
-    format!("{:x}", digest.compute())
-}
-
-/// Confirm that the remote DB file is byte-identical to what we shipped.
-/// scp can return success while the backend's mmap'd inode keeps serving
-/// the old bytes, so size+timestamp aren't enough — md5 is the only
-/// honest signal that the swap actually landed.
-fn verify_remote_db_matches(
-    cfg: &DeployConfig,
-    local_db: &Path,
-    remote_db: &str,
-) -> Result<(), String> {
-    let local_hash = md5_file(local_db)?;
-    // `md5sum` is GNU coreutils — present on every Linux target this
-    // deploy supports. Output is `<hash>  <path>\n`; take the first word.
-    let raw = ssh_exec(cfg, &format!("md5sum {remote_db}"))?;
-    let remote_hash = raw
-        .split_whitespace()
-        .next()
-        .ok_or_else(|| format!("[content] empty md5sum output for {remote_db}"))?
-        .to_string();
-    if remote_hash.eq_ignore_ascii_case(&local_hash) {
-        println!("[content] verified md5 {local_hash} (local == remote)");
-        Ok(())
-    } else {
-        Err(format!(
-            "[content] md5 mismatch — local {local_hash} != remote {remote_hash}; \
-             scp did not land. Backend is stopped; investigate before restarting."
-        ))
-    }
-}
-
-/// Path the PG cutover installer writes — a systemd-style env file with
-/// `DB_DRIVER=postgres` and `DB_SOURCE=postgres://...`. Its presence is the
-/// signal that the backend has been switched off SQLite; its absence means
-/// the deploy stays SQLite-only and PG sync is skipped.
-const REMOTE_DB_ENV_PATH: &str = "/etc/silan-backend/db.env";
-
-/// Path the PG cutover installer drops the importer at. A Linux x86_64 build
-/// of `backend/cmd/sqlite2pg` from this same tree.
-const REMOTE_SQLITE2PG_BIN: &str = "/usr/local/bin/silan-sqlite2pg";
-
-/// Resolve the production read model before any lifecycle action. PostgreSQL
-/// mode requires the importer up front so a missing binary fails while the
-/// API is still healthy.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum RemoteDatabaseMode {
-    Sqlite,
-    Postgres,
-}
-
-fn remote_database_mode(cfg: &DeployConfig) -> Result<RemoteDatabaseMode, String> {
-    // Decide once whether PG mode is active. Reading the env file's
-    // `DB_DRIVER` and trying `[ -x importer ]` in a single ssh call keeps
-    // the deploy log clean for non-PG installs (one round trip, one note).
-    let probe = format!(
-        "if [ -f {env} ] && grep -q '^DB_DRIVER=postgres' {env} && [ -x {bin} ]; then \
-           echo PG_READY; \
-         elif [ -f {env} ] && grep -q '^DB_DRIVER=postgres' {env}; then \
-           echo PG_NO_BIN; \
-         else \
-           echo NO_PG; \
-         fi",
-        env = REMOTE_DB_ENV_PATH,
-        bin = REMOTE_SQLITE2PG_BIN,
-    );
-    let state = ssh_exec(cfg, &probe)?;
-    let state = state.trim();
-    match state {
-        "NO_PG" => {
-            println!("[pg-sync] skip: remote backend uses SQLite (no {REMOTE_DB_ENV_PATH})");
-            Ok(RemoteDatabaseMode::Sqlite)
-        }
-        "PG_NO_BIN" => Err(format!(
-            "[pg-sync] {REMOTE_DB_ENV_PATH} says DB_DRIVER=postgres but \
-             {REMOTE_SQLITE2PG_BIN} is missing — install it from \
-             `backend/cmd/sqlite2pg` before running update-content."
-        )),
-        "PG_READY" => Ok(RemoteDatabaseMode::Postgres),
-        other => Err(format!("[pg-sync] unexpected probe state: {other:?}")),
-    }
-}
-
-fn sync_remote_postgres(
-    cfg: &DeployConfig,
-    remote_db: &str,
-    database_mode: RemoteDatabaseMode,
-) -> Result<(), String> {
-    match database_mode {
-        RemoteDatabaseMode::Sqlite => Ok(()),
-        RemoteDatabaseMode::Postgres => {
-            println!("[pg-sync] import SQLite → PG via {REMOTE_SQLITE2PG_BIN}");
-            let cmd = format!(
-                "{bin} --sqlite {db} --env-file {env}",
-                bin = REMOTE_SQLITE2PG_BIN,
-                db = remote_db,
-                env = REMOTE_DB_ENV_PATH,
-            );
-            let out = ssh_exec(cfg, &cmd)?;
-            // The importer logs one "copied <table>: N rows" line per table
-            // and a "done: copied X tables" trailer. Echo just the trailer
-            // to keep the deploy log readable; the full log is available on
-            // the server side if a per-table count is needed.
-            if let Some(done) = out.lines().rev().find(|l| l.contains("done:")) {
-                println!("[pg-sync] {}", done.trim());
-            }
-            Ok(())
-        }
-    }
-}
-
 /// Compute the lowercase hex md5 of a local file. Streams the file so the
 /// 250 KB derived DB doesn't all need to be in memory at once (matters for
 /// the larger media tarballs in the same flow).
@@ -5353,17 +4748,27 @@ fn ensure_remote_frontend_runtime(cfg: &DeployConfig) -> Result<(), String> {
 /// build output, and releases remain server-resident and are never copied
 /// through the operator's machine.
 fn sync_nginx_frontend_source(project_root: &Path, cfg: &DeployConfig) -> Result<(), String> {
-    let frontend = project_root.join("frontend");
+    let artifact = GitCodeArtifact::materialize(project_root, "frontend")?;
+    let frontend = artifact.component("frontend");
     println!(
         "[frontend] rsync source → {}",
         remote_frontend_source_dir(cfg)
     );
-    RemoteArtifactTransport::new(cfg)
-        .sync_frontend_source(&frontend, &remote_frontend_source_dir(cfg))
+    let source_dir = remote_frontend_source_dir(cfg);
+    RemoteArtifactTransport::new(cfg).sync_frontend_source(&frontend, &source_dir)?;
+    ssh_exec(
+        cfg,
+        &format!(
+            "printf '%s\\n' {} > {}/.silan-code-commit",
+            shell_quote(&artifact.commit),
+            shell_quote(&source_dir),
+        ),
+    )?;
+    Ok(())
 }
 
 fn run_remote_frontend_stage(cfg: &DeployConfig, stage: &str) -> Result<(), String> {
-    if !matches!(stage, "prepare" | "publish") {
+    if !matches!(stage, "prepare" | "compile" | "build" | "publish") {
         return Err(format!("[frontend:server] unknown stage `{stage}`"));
     }
     let public_origin = cfg
@@ -5426,7 +4831,9 @@ exec bash scripts/server-publish.sh publish
         source_dir = shell_quote(&source_dir),
     );
     let drop_in = format!(
-        "[Service]\nEnvironment=CONTENT_DEPLOY_STATIC_PUBLISHER={REMOTE_FRONTEND_PUBLISHER}\n"
+        "[Service]\n\
+         Environment=CONTENT_DEPLOY_STATIC_PUBLISHER={REMOTE_FRONTEND_PUBLISHER}\n\
+         ReadWritePaths={state_root} /var/lib/silan-viking/content-releases\n"
     );
     let wrapper_encoded = base64_encode(wrapper.as_bytes());
     let drop_in_encoded = base64_encode(drop_in.as_bytes());
@@ -5519,8 +4926,16 @@ fn prepare_nginx_frontend(cfg: &DeployConfig) -> Result<(), String> {
 }
 
 fn publish_nginx_frontend(cfg: &DeployConfig) -> Result<(), String> {
-    run_remote_frontend_stage(cfg, "publish")
+    run_remote_frontend_stage(cfg, "build")
 }
+
+fn compile_nginx_frontend(cfg: &DeployConfig) -> Result<(), String> {
+    run_remote_frontend_stage(cfg, "compile")
+}
+
+/// Server-owned importer used exclusively by the authenticated content deploy
+/// transaction. Code deployment installs it; clients never invoke it over SSH.
+const REMOTE_SQLITE2PG_BIN: &str = "/usr/local/bin/silan-sqlite2pg";
 
 /// Phase 3 — backend. Incrementally sync the Go source, build on the server
 /// (CGO_ENABLED=1 — the SQLite driver needs cgo + libsqlite on the target's
@@ -5528,7 +4943,8 @@ fn publish_nginx_frontend(cfg: &DeployConfig) -> Result<(), String> {
 /// `backend-api.yaml` is written if one isn't already there; the caller
 /// restarts systemd to pick it up.
 fn deploy_nginx_backend(project_root: &Path, cfg: &DeployConfig) -> Result<(), String> {
-    let backend = project_root.join("backend");
+    let artifact = GitCodeArtifact::materialize(project_root, "backend")?;
+    let backend = artifact.component("backend");
     if !backend.is_dir() {
         return Err(format!(
             "[backend] {} not found — silan-viking expects backend/ next to engine/",
@@ -5551,6 +4967,7 @@ fn deploy_nginx_backend(project_root: &Path, cfg: &DeployConfig) -> Result<(), S
         &format!(
             "set -e && \
              mkdir -p {api_dir} {etc_dir} && \
+             install -d -o www -g www -m 0750 /var/lib/silan-viking/content-releases && \
              cd {remote_build_dir} && \
              CGO_ENABLED=1 go build -o {bin_path} backend.go && \
              CGO_ENABLED=1 go build -o {importer} ./cmd/sqlite2pg"
@@ -5728,333 +5145,46 @@ fn which(name: &str) -> Option<PathBuf> {
 fn site_deploy(
     content_root: &Path,
     db_path: &Path,
-    out_dir: &Path,
+    _out_dir: &Path,
     confirm: bool,
     what: DeployWhat,
 ) -> Result<(), String> {
+    if what == DeployWhat::Content {
+        return run_content_release(content_root, db_path, confirm);
+    }
     let cfg = deploy_config(content_root)?;
     let project_root = content_root.parent().unwrap_or(content_root);
-    if cfg.mode == DeployMode::Nginx {
-        return run_nginx_deploy(content_root, db_path, project_root, &cfg, confirm, what);
-    }
-    // Below this point: docker mode (v1.0.0 behaviour). `--what` is not
-    // meaningful here — docker ships everything as one image set — so a
-    // non-default selection is a no-op warning.
-    if what != DeployWhat::All {
-        eprintln!(
-            "note: --what={} ignored in docker mode (docker ships the whole stack)",
-            what.label(),
-        );
-    }
-    // A `localhost` / `local` host means a single-host deploy: docker runs
-    // here, no SSH. This is what the e2e Docker experiment exercises.
-    let is_local = matches!(cfg.host.as_str(), "localhost" | "127.0.0.1" | "local");
-    let target = format!("{}@{}", cfg.user, cfg.host);
-    // The compose file lives inside the staged `deploy/` directory. Its
-    // own `build.context: ..` then resolves to the staging root, which
-    // holds `frontend/` and `backend/`.
-    let compose = "deploy/docker-compose.yml";
+    run_nginx_deploy(content_root, db_path, project_root, &cfg, confirm, what)
+}
 
+/// Publish one immutable authored content revision through the application
+/// control plane. Both public content-only CLI verbs terminate here; SSH is a
+/// code/bootstrap transport and is deliberately not a content writer.
+fn run_content_release(content_root: &Path, db_path: &Path, confirm: bool) -> Result<(), String> {
+    let project_root = content_root.parent().unwrap_or(content_root);
+    let control = DeliveryControl::open(content_root, db_path, project_root)
+        .map_err(|error| error.to_string())?;
     if !confirm {
-        println!("site deploy — dry run (pass --confirm to execute)");
-        if is_local {
-            println!("  target  localhost (single-host docker deploy)");
-        } else {
-            println!("  target  {target}:{}", cfg.remote_dir);
-        }
-        println!("  1 sync     content/ -> {}", db_path.display());
+        let plan = control
+            .deployment_plan()
+            .map_err(|error| error.to_string())?;
+        println!("site update-content — dry run (pass --confirm to execute)");
+        println!("  revision  {}@{}", plan.branch, plan.head,);
         println!(
-            "  2 build    stage embedded sources + SEO artifacts + media -> {}",
-            out_dir.display()
+            "  target    {}",
+            plan.deploy_target.as_deref().unwrap_or("not configured"),
         );
-        println!("  3 package  docker compose build (backend/web images, multi-stage)");
-        println!(
-            "  4 ship     {}",
-            if is_local {
-                "load images locally"
-            } else {
-                "docker save | ssh docker load"
-            }
-        );
-        println!("  5 promote  replace derived tables on the live db (runtime tables preserved)");
-        println!("  6 up       docker compose up -d");
+        println!("  changes   {} uncommitted", plan.dirty_count);
+        println!("  media     {} referenced assets", plan.media_asset_count);
+        println!("  release   project → HTTPS bundle → atomic content/media promotion");
+        println!("  render    existing frontend code baseline → static release → verify");
+        println!("  next      {}", plan.next_action);
         return Ok(());
     }
-
-    // 1 — sync: rebuild the derived db snapshot from content/.
-    println!("[1/6] sync");
-    let ws = Workspace::open(content_root).map_err(|e| e.to_string())?;
-    ws.sync(db_path).map_err(|e| e.to_string())?;
-    let content_commit = git_head_commit(content_root).unwrap_or_else(|| "unknown".into());
-    // The scan also surfaces the binary resources (`assets/` images) the
-    // `silan://` references in the synced db now point at — they ride along
-    // into the backend's media volume below.
-    let assets = ws.scan().map_err(|e| e.to_string())?.assets().to_vec();
-
-    // 2 — build: materialise the Docker build context from the embedded
-    // artifacts, then render SEO crawler artifacts into `deploy/seo/` so
-    // the web image bakes them in. The front-end itself is NOT built
-    // here — the web Dockerfile's `node` stage does that, in a container
-    // isolated from the operator's host (`docs/silan-viking/16`).
-    println!("[2/6] build");
-    let staging = stage_deploy_artifacts(project_root)?;
-    let base_url = if is_local {
-        "http://localhost:8080".to_owned()
-    } else {
-        format!("https://{}", cfg.host)
-    };
-    let projector = silan_viking_site::SiteProjector::new(&base_url);
-    let seo_dir = staging.join("deploy/seo");
-    projector
-        .build(content_root, &seo_dir)
-        .map_err(|e| e.to_string())?;
-    // Mirror the SEO artifacts into `--out` too, for `site preview` parity.
-    let _ = projector.build(content_root, out_dir);
-    // Stage the binary resources beside the build context, ready to ship
-    // into the backend's media volume.
-    let media_root = stage_media(&staging, &assets)?;
-    if let Some(ref dir) = media_root {
-        println!(
-            "        staged {} media file(s) -> {}",
-            assets.len(),
-            dir.display()
-        );
-    }
-
-    // 3 — package: build the docker images from the staged compose file.
-    println!("[3/6] package");
-    docker_compose(&staging, compose, &["build"])?;
-
-    // 4/5/6 differ between a local and a remote target.
-    if is_local {
-        return run_local_deploy(
-            &staging,
-            compose,
-            project_root,
-            db_path,
-            media_root.as_deref(),
-            &assets,
-            &content_commit,
-        );
-    }
-
-    // ---- remote target: ship pre-built images + snapshot over SSH ----
-    let key = cfg.ssh_key_path.to_string_lossy().into_owned();
-    // ssh takes `-p <port>`, scp takes `-P <port>` — different flags for
-    // the same thing. Pre-format both as strings the closures can pass.
-    let ssh_port = cfg.ssh_port.to_string();
-    let ssh = |remote_cmd: &str| -> Result<(), String> {
-        // Capture stderr so the wrapper can recognise common failure
-        // modes (Permission denied on the deploy dir is the one users
-        // hit most) and translate the raw OS error into something
-        // actionable. `.status()` would inherit stderr to the terminal
-        // and leave nothing for us to inspect.
-        let out = Command::new("ssh")
-            .args([
-                "-i",
-                &key,
-                "-p",
-                &ssh_port,
-                // First deploy to a fresh server: its host key is not
-                // yet known. `accept-new` records it on first contact
-                // and verifies strictly thereafter — unlike `no`, which
-                // would silently accept a changed (possibly spoofed)
-                // key on every connection.
-                "-o",
-                "StrictHostKeyChecking=accept-new",
-                &target,
-                remote_cmd,
-            ])
-            .output()
-            .map_err(|e| format!("ssh: {e}"))?;
-        // Mirror the captured streams to the terminal so verbose
-        // output (docker load progress, etc.) is still visible.
-        if !out.stdout.is_empty() {
-            let _ = std::io::Write::write_all(&mut std::io::stdout(), &out.stdout);
-        }
-        if !out.stderr.is_empty() {
-            let _ = std::io::Write::write_all(&mut std::io::stderr(), &out.stderr);
-        }
-        if !out.status.success() {
-            let stderr = String::from_utf8_lossy(&out.stderr);
-            if stderr.contains("Permission denied")
-                && (remote_cmd.contains("mkdir") || stderr.contains(cfg.remote_dir.as_str()))
-            {
-                return Err(format!(
-                    "remote_dir `{}` is not writable by the deploy user. \
-                     Either pre-create it with `sudo mkdir -p {dir} && sudo chown $USER {dir}` \
-                     on the target, or pick a path under the deploy user's home (e.g. `~/silan-viking`) \
-                     in [deploy] of silan-viking.toml.",
-                    cfg.remote_dir,
-                    dir = cfg.remote_dir,
-                ));
-            }
-            return Err(format!("remote command failed: {remote_cmd}"));
-        }
-        Ok(())
-    };
-    // scp a local file up to `<remote_dir>/<remote_rel>`. The
-    // `accept-new` host-key policy matches the `ssh` closure above.
-    let scp_up = |local: &Path, remote_rel: &str| -> Result<(), String> {
-        let status = Command::new("scp")
-            .args([
-                "-i",
-                &key,
-                "-P",
-                &ssh_port,
-                "-o",
-                "StrictHostKeyChecking=accept-new",
-            ])
-            .arg(local)
-            .arg(format!("{target}:{}/{remote_rel}", cfg.remote_dir))
-            .status()
-            .map_err(|e| format!("scp: {e}"))?;
-        if !status.success() {
-            return Err(format!("scp up failed: {}", local.display()));
-        }
-        Ok(())
-    };
-    // scp a file down from `<remote_dir>/<remote_rel>` to a local path.
-    let scp_down = |remote_rel: &str, local: &Path| -> Result<(), String> {
-        let status = Command::new("scp")
-            .args([
-                "-i",
-                &key,
-                "-P",
-                &ssh_port,
-                "-o",
-                "StrictHostKeyChecking=accept-new",
-            ])
-            .arg(format!("{target}:{}/{remote_rel}", cfg.remote_dir))
-            .arg(local)
-            .status()
-            .map_err(|e| format!("scp: {e}"))?;
-        if !status.success() {
-            return Err(format!("scp down failed: {remote_rel}"));
-        }
-        Ok(())
-    };
-
-    println!("[4/6] ship");
-    ssh(&format!("mkdir -p {}", cfg.remote_dir))?;
-    // Clean up stale ship artefacts from a previous (possibly failed)
-    // deploy. The hazard: if a previous run died after `mkdir -p` but
-    // before scp, Docker may have created any of the bind-mount sources
-    // below as an empty directory; the next scp would then fail with a
-    // confusing "Is a directory" or silently produce wrong contents.
-    // We delete only the four paths this command actually ships into,
-    // not the whole remote_dir — the operator may keep other files
-    // (logs, manual backups) alongside.
-    ssh(&format!(
-        "cd {dir} && rm -rf images.tar snapshot.db docker-compose.yml proxy.conf",
-        dir = cfg.remote_dir,
-    ))?;
-    // Save the built images to a tarball and ship them.
-    let images_tar = project_root.join("_deploy/images.tar");
-    let save = Command::new("docker")
-        .args(["save", "-o"])
-        .arg(&images_tar)
-        .args(["silan-backend:latest", "silan-web:latest"])
-        .status()
-        .map_err(|e| format!("docker save: {e}"))?;
-    if !save.success() {
-        return Err("docker save failed".into());
-    }
-    scp_up(&images_tar, "images.tar")?;
-    scp_up(db_path, "snapshot.db")?;
-    // The compose file is shipped flat (no `deploy/` prefix); on the
-    // server it sits beside the loaded images, and its `build.context`
-    // is never used there — the images are pre-built.
-    scp_up(&staging.join(compose), "docker-compose.yml")?;
-    // proxy.conf must travel with the compose file: the `proxy` service
-    // bind-mounts `./proxy.conf` into the nginx container, and that path
-    // resolves next to the (flat-shipped) compose file. Without it,
-    // Docker creates `/srv/silan/proxy.conf` as a directory and the
-    // mount onto a file path fails.
-    scp_up(&staging.join("deploy/proxy.conf"), "proxy.conf")?;
-    // The silan-viking binary is deliberately NOT shipped: it is built
-    // for the operator's OS/arch and may not run on the target. promote
-    // is a pure SQLite operation — it runs here, on the operator's
-    // machine, against a db copied down from the server.
-    ssh(&format!(
-        "cd {} && docker load -i images.tar",
-        cfg.remote_dir
-    ))?;
-
-    println!("[5/6] promote");
-    // Bring the stack up so the named volume + live db exist.
-    ssh(&format!(
-        "cd {dir} && docker compose -f docker-compose.yml up -d",
-        dir = cfg.remote_dir,
-    ))?;
-
-    // Ship the media tree first, while the backend is up — the mirror step
-    // uses `docker compose exec`, which needs a running container. tar it
-    // (scp has no recursive flag here), send the tarball, unpack it on the
-    // server, then mirror it into the volume — clearing `/data/media` first
-    // so a deleted asset also disappears server-side.
-    if let Some(ref dir) = media_root {
-        let media_tar = project_root.join("_deploy/media.tar");
-        let tar = Command::new("tar")
-            .arg("-czf")
-            .arg(&media_tar)
-            .arg("-C")
-            .arg(dir)
-            .arg(".")
-            .status()
-            .map_err(|e| format!("tar media: {e}"))?;
-        if !tar.success() {
-            return Err("packing the media tree failed".to_owned());
-        }
-        scp_up(&media_tar, "media.tar")?;
-        ssh(&format!(
-            "cd {dir} && docker compose -f docker-compose.yml exec -T backend \
-                 sh -c 'rm -rf /data/media && mkdir -p /data/media' && \
-             rm -rf media && mkdir -p media && tar -xzf media.tar -C media && \
-             docker compose -f docker-compose.yml cp media/. backend:/data/media",
-            dir = cfg.remote_dir,
-        ))?;
-        println!("  synced {} media file(s) into /data/media", assets.len());
-    }
-
-    // Now stop the backend before touching the db: the backend keeps it in
-    // SQLite WAL mode, so copying the bare `portfolio.db` while the backend
-    // holds an uncheckpointed WAL yields a torn snapshot, and copying a
-    // fresh `.db` back next to a stale `-wal` corrupts the database on the
-    // next open. Stopping the backend checkpoints and releases the WAL.
-    // Then: pull the live db down, promote it HERE (operator-side — no
-    // remote binary), push the promoted db back, and delete the now-stale
-    // `-wal`/`-shm` before the backend reopens. Runtime tables survive.
-    ssh(&format!(
-        "cd {dir} && docker compose -f docker-compose.yml stop backend && \
-         (docker compose -f docker-compose.yml cp backend:/data/portfolio.db live.db \
-            || cp snapshot.db live.db) && \
-         cp -f live.db portfolio.db.prev",
-        dir = cfg.remote_dir,
-    ))?;
-    let live_snapshot = project_root.join("_deploy/live-portfolio.db");
-    scp_down("live.db", &live_snapshot)?;
-    promote_db(&live_snapshot, db_path, &content_commit)?;
-    scp_up(&live_snapshot, "live.db")?;
-    ssh(&format!(
-        "cd {dir} && docker compose -f docker-compose.yml cp live.db backend:/data/portfolio.db && \
-         docker compose -f docker-compose.yml run --rm --no-deps --entrypoint sh backend \
-             -c 'rm -f /data/portfolio.db-wal /data/portfolio.db-shm'",
-        dir = cfg.remote_dir,
-    ))?;
-
-    // Start the backend back up — it was stopped for the db copy — so it
-    // reopens the promoted db cleanly, and restart the proxy: `up -d` may
-    // recreate the backend on a fresh IP, and nginx caches the `backend`
-    // upstream IP at worker start, so a stale proxy serves 502.
-    println!("[6/6] up");
-    ssh(&format!(
-        "cd {} && docker compose -f docker-compose.yml up -d && \
-         docker compose -f docker-compose.yml restart proxy",
-        cfg.remote_dir
-    ))?;
-
-    println!("deployed to https://{}", cfg.host);
+    let status = control
+        .deploy_content()
+        .map_err(|error| error.to_string())?;
+    println!("{}", status.stdout);
     Ok(())
 }
 
@@ -6271,64 +5401,16 @@ fn git_head_commit(content_root: &Path) -> Option<String> {
     Some(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
 
-/// `silan site rollback` — restore the previous live db on the server and
-/// restart the stack (`02` §site / `06` §6.5). It relies on the
-/// `portfolio.db.prev` snapshot that `site deploy` and `site update-content`
-/// leave behind.
-///
-/// Branches on `cfg.mode`: in `docker` mode the prev sits at
-/// `<remote_dir>/portfolio.db` alongside the compose file; in `nginx` mode
-/// (systemd + native binary) it sits under `<remote_dir>/api/_deploy/api/`
-/// next to the live DB. The two layouts cannot be unified without breaking
-/// the compose contract, so we pick the right recipe per mode.
-fn site_rollback(content_root: &Path) -> Result<(), String> {
-    let cfg = deploy_config(content_root)?;
-    let target = format!("{}@{}", cfg.user, cfg.host);
-    let key = cfg.ssh_key_path.to_string_lossy().into_owned();
-    let remote = if cfg.mode == DeployMode::Nginx {
-        // Stop the systemd unit first — same reasoning as in the deploy
-        // path: don't swap a mmap'd file. Then promote .prev. Then start.
-        // Clear any stale -wal/-shm so the restarted backend doesn't try to
-        // pair the rolled-back DB with the failed deploy's WAL.
-        format!(
-            "set -e; \
-             dir={dir}/api/_deploy/api; \
-             test -f $dir/portfolio.db.prev || {{ echo 'no portfolio.db.prev'; exit 1; }}; \
-             systemctl stop {unit}; \
-             mv -f $dir/portfolio.db.prev $dir/portfolio.db; \
-             rm -f $dir/portfolio.db-wal $dir/portfolio.db-shm; \
-             chown www:www $dir/portfolio.db; \
-             systemctl start {unit}",
-            dir = cfg.remote_dir,
-            unit = cfg.systemd_unit,
-        )
-    } else {
-        // docker mode (v1.0.0): the compose file is shipped flat to the
-        // remote dir by `site deploy` (always named `docker-compose.yml`).
-        format!(
-            "cd {dir} && test -f portfolio.db.prev && \
-             mv -f portfolio.db.prev portfolio.db && \
-             docker compose -f docker-compose.yml up -d",
-            dir = cfg.remote_dir,
-        )
-    };
-    let status = Command::new("ssh")
-        .args([
-            "-i",
-            &key,
-            "-p",
-            &cfg.ssh_port.to_string(),
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            &target,
-            &remote,
-        ])
-        .status()
-        .map_err(|e| format!("ssh: {e}"))?;
-    if !status.success() {
-        return Err("rollback failed — no portfolio.db.prev on the server?".into());
-    }
-    println!("rolled back https://{} to the previous deploy", cfg.host);
+/// Promote the previous complete server-owned content generation through the
+/// same authenticated release state machine used for forward publication.
+fn site_rollback(content_root: &Path, db_path: &Path) -> Result<(), String> {
+    let project_root = content_root.parent().unwrap_or(content_root);
+    let control = DeliveryControl::open(content_root, db_path, project_root)
+        .map_err(|error| error.to_string())?;
+    let status = control
+        .rollback_content()
+        .map_err(|error| error.to_string())?;
+    println!("{}", status.stdout);
     Ok(())
 }
 
@@ -6336,50 +5418,38 @@ fn site_rollback(content_root: &Path) -> Result<(), String> {
 /// commit (`02` §site). Distinct from `site check`, which is the pre-publish
 /// local health check.
 ///
-/// Without a `[deploy]` section, status falls back to a local-stack probe
-/// (the 2026-05-21 e2e pass flagged the previous behaviour: a friendly
-/// command was returning a deploy-flavoured error). With `[deploy]`, it
-/// SSHes to the remote host as before.
-fn site_status(content_root: &Path) -> Result<(), String> {
-    // Try [deploy] first; if it isn't configured, that is no longer a hard
-    // error — it just means "there is no remote target, only a local stack
-    // might be running".
+/// Without a `[deploy]` section, status falls back to the isolated local
+/// preview stack. Production status is read from the authenticated content
+/// control plane, so this command observes the same state machine used by
+/// deploy and rollback instead of inferring health from a process manager.
+fn site_status(content_root: &Path, db_path: &Path) -> Result<(), String> {
     let cfg = match deploy_config(content_root) {
         Ok(cfg) => cfg,
-        Err(_) => {
-            // No [deploy] — probe the local docker stack instead.
-            return local_site_status();
-        }
+        Err(_) => return local_site_status(),
     };
-
-    let is_local = matches!(cfg.host.as_str(), "localhost" | "127.0.0.1" | "local");
-    if is_local {
+    if matches!(cfg.host.as_str(), "localhost" | "127.0.0.1" | "local") {
         return local_site_status();
     }
 
-    let target = format!("{}@{}", cfg.user, cfg.host);
-    let key = cfg.ssh_key_path.to_string_lossy().into_owned();
-    let out = Command::new("ssh")
-        .args([
-            "-i",
-            &key,
-            "-p",
-            &cfg.ssh_port.to_string(),
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            &target,
-            &format!("cd {} && docker compose ps", cfg.remote_dir),
-        ])
-        .output()
-        .map_err(|e| format!("ssh: {e}"))?;
-    if !out.status.success() {
-        return Err(format!(
-            "cannot reach {target}: {}",
-            String::from_utf8_lossy(&out.stderr).trim()
-        ));
-    }
+    let project_root = content_root.parent().unwrap_or(content_root);
+    let control = DeliveryControl::open(content_root, db_path, project_root)
+        .map_err(|error| error.to_string())?;
+    let status = control
+        .remote_content_version()
+        .map_err(|error| error.to_string())?;
     println!("site status — {}", cfg.host);
-    print!("{}", String::from_utf8_lossy(&out.stdout));
+    println!("  health:         {}", status.health);
+    println!("  content commit: {}", status.content_commit);
+    println!("  content hash:   {}", status.content_hash);
+    println!("  generated at:   {}", status.generated_at);
+    println!(
+        "  media root:     {}",
+        if status.media_root_ok {
+            "ok"
+        } else {
+            "invalid"
+        }
+    );
     Ok(())
 }
 
@@ -7179,14 +6249,13 @@ fn resume_add_part(content_root: &Path, role: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        media_generation_hash, parse_search_submit_config, search_submit_env_pairs,
-        stamp_content_commit, validate_stats_token, CredentialProfile, DeployConfig, DeployMode,
-        DEPLOYED_STATS_TOKEN_ENV, PRIVATE_API_TOKEN_ENV,
+        parse_search_submit_config, search_submit_env_pairs, validate_stats_token,
+        CredentialProfile, DeployConfig, GitCodeArtifact, DEPLOYED_STATS_TOKEN_ENV,
+        PRIVATE_API_TOKEN_ENV,
     };
-    use silan_viking_app::ScannedAsset;
-    use silan_viking_base::ContentHash;
     use std::fs;
     use std::path::PathBuf;
+    use std::process::Command;
 
     #[test]
     fn private_api_deploy_token_requires_strength_and_env_safe_characters() {
@@ -7244,7 +6313,6 @@ mod tests {
         );
 
         let cfg = DeployConfig {
-            mode: DeployMode::Nginx,
             host: "43.106.17.64".to_owned(),
             user: "root".to_owned(),
             ssh_key_path: PathBuf::from("/tmp/key"),
@@ -7288,66 +6356,41 @@ mod tests {
     }
 
     #[test]
-    fn media_generation_hash_is_order_independent_and_content_sensitive() {
-        let asset = |path: &str, bytes: &[u8]| ScannedAsset {
-            rel_path: path.to_owned(),
-            abs_path: PathBuf::from(path),
-            hash: ContentHash::of(bytes),
-        };
-        let first = asset("blog/a/assets/a.png", b"a");
-        let second = asset("projects/b/assets/b.png", b"b");
-        assert_eq!(
-            media_generation_hash(&[first.clone(), second.clone()]),
-            media_generation_hash(&[second.clone(), first.clone()])
-        );
-        assert_ne!(
-            media_generation_hash(&[first, second]),
-            media_generation_hash(&[
-                asset("blog/a/assets/a.png", b"changed"),
-                asset("projects/b/assets/b.png", b"b"),
-            ])
-        );
-    }
-
-    #[test]
-    fn stamp_content_commit_preserves_projection_metadata() {
-        let path = std::env::temp_dir().join(format!(
-            "silan-viking-stamp-content-{}-{}.db",
+    fn code_artifact_uses_committed_revision_not_dirty_worktree() {
+        let root = std::env::temp_dir().join(format!(
+            "silan-code-artifact-test-{}-{}",
             std::process::id(),
-            time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+            time::OffsetDateTime::now_utc().unix_timestamp_nanos(),
         ));
-        let connection = rusqlite::Connection::open(&path).expect("open test db");
-        connection
-            .execute_batch(
-                "CREATE TABLE sync_meta(
-                    content_commit TEXT,
-                    content_hash TEXT,
-                    items_total INTEGER,
-                    generated_at TEXT
-                 );
-                 INSERT INTO sync_meta VALUES('old', 'hash-1', 7, 'now');",
-            )
-            .expect("seed metadata");
-        drop(connection);
+        fs::create_dir_all(root.join("frontend")).expect("create fixture");
+        fs::write(root.join("frontend/version.txt"), "committed\n").expect("write committed");
+        let git = |args: &[&str]| {
+            let status = Command::new("git")
+                .args(args)
+                .current_dir(&root)
+                .status()
+                .expect("git");
+            assert!(status.success(), "git {args:?}");
+        };
+        git(&["init", "-q"]);
+        git(&["add", "frontend/version.txt"]);
+        git(&[
+            "-c",
+            "user.name=Silan.Hu",
+            "-c",
+            "user.email=silan.hu@u.nus.edu",
+            "commit",
+            "-q",
+            "-m",
+            "fixture",
+        ]);
+        fs::write(root.join("frontend/version.txt"), "dirty\n").expect("write dirty");
 
-        stamp_content_commit(&path, "commit-new").expect("stamp commit");
-
-        let connection = rusqlite::Connection::open(&path).expect("reopen test db");
-        let row = connection
-            .query_row(
-                "SELECT content_commit, content_hash, items_total FROM sync_meta",
-                [],
-                |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, String>(1)?,
-                        row.get::<_, i64>(2)?,
-                    ))
-                },
-            )
-            .expect("read metadata");
-        assert_eq!(row, ("commit-new".to_owned(), "hash-1".to_owned(), 7));
-        drop(connection);
-        fs::remove_file(path).expect("remove test db");
+        let artifact = GitCodeArtifact::materialize(&root, "frontend").expect("artifact");
+        let version =
+            fs::read_to_string(artifact.component("frontend/version.txt")).expect("read artifact");
+        assert_eq!(version, "committed\n");
+        drop(artifact);
+        fs::remove_dir_all(root).expect("remove fixture");
     }
 }
