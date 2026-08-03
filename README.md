@@ -1,11 +1,8 @@
 # Silan Viking -- Make Research Work Findable
 
-**AI is now in the loop of research—from related-work discovery to paper understanding and peer review. Researchers therefore need an academic presence that is accurate, verifiable, and AI-native.**
+**AI is now in the loop of research—from related-work discovery to paper understanding and peer review. Researchers therefore need an academic presence that is accurate, verifiable, and AI-native.**However, researchers still lack a dedicated workspace to consolidate their academic assets and continuously publish them as structured, AI-readable research knowledge.
 
-Silan Viking is a local-first research publishing workspace for AI, ML, and
-systems researchers who maintain a public body of work. It prevents one new
-result from becoming scattered maintenance across notes, articles, project
-pages, résumé evidence, AI/search metadata, and deployment checks.
+Silan Viking is a local-first research publishing workspace for AI, ML, and systems researchers who maintain a public body of work. It prevents one new result from becoming scattered maintenance across notes, articles, project pages, résumé evidence, AI/search metadata, and deployment checks.
 
 Capture a research update once. Keep every public representation current, evidence-backed, and understandable to both people and AI.
 
