@@ -159,7 +159,7 @@ handoff_root_publish() {
   install -d -o "$runtime_user" -g "$runtime_group" -m 0755 \
     "$source_root/node_modules/.vite-temp"
 
-  echo "[frontend:server] hand off publish to $runtime_user"
+  echo "[frontend:server] hand off $mode to $runtime_user"
   exec runuser -u "$runtime_user" --preserve-environment -- \
     env PATH="$PATH" \
       HOME="$home" \
@@ -167,7 +167,7 @@ handoff_root_publish() {
       XDG_CACHE_HOME="$runtime_cache" \
       SILAN_FRONTEND_STATE_ROOT="$SILAN_FRONTEND_STATE_ROOT" \
       SILAN_PUBLIC_ORIGIN="$SILAN_PUBLIC_ORIGIN" \
-      bash "$script_path" publish
+      bash "$script_path" "$mode"
 }
 
 configure_runtime_environment() {

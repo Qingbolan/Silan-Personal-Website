@@ -70,12 +70,14 @@ EOF
   PATH="$fake_bin:$PATH" \
     SILAN_FRONTEND_STATE_ROOT="$state_root" \
     SILAN_PUBLIC_ORIGIN="https://example.test" \
-    bash "$source_root/scripts/server-publish.sh" publish
+    bash "$source_root/scripts/server-publish.sh" compile
 
   grep -q "chown -R www:www $state_root/build $state_root/published" "$command_log" \
     || fail "root publish did not repair managed ownership"
   grep -q 'runuser -u www --preserve-environment' "$command_log" \
     || fail "root publish did not hand off to www"
+  grep -Eq 'bash .*/server-publish\.sh compile$' "$command_log" \
+    || fail "root handoff did not preserve the requested compile stage"
   grep -q "HOME=$case_root/home" "$command_log" \
     || fail "root publish leaked the root HOME into the runtime process"
   [[ ! -e "$state_root/published/.publish.lock" ]] \
