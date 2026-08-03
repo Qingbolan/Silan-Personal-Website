@@ -4227,10 +4227,7 @@ fn run_nginx_deploy(
             "  target  {}@{}:{}  (nginx mode)",
             cfg.user, cfg.host, cfg.remote_dir,
         );
-        println!(
-            "  auth    credential profile={}",
-            cfg.credential_profile.as_str()
-        );
+        println!("  auth    project machine token; OAuth remains server-managed");
         println!("  scope   --what={}", what.label());
         let mut step = 1;
         if what.does_frontend() {
@@ -4247,7 +4244,7 @@ fn run_nginx_deploy(
         }
         if what.does_backend() {
             println!(
-                "  {step} credential  install private API and configured OAuth credentials into protected systemd EnvironmentFile"
+                "  {step} credential  rotate the content-release machine token in the protected systemd EnvironmentFile"
             );
             step += 1;
         }
@@ -4302,7 +4299,7 @@ fn run_nginx_deploy(
         did_work = true;
     }
     if what.does_backend() {
-        deploy_nginx_private_api_credential(content_root, cfg)?;
+        deploy_nginx_content_token(content_root, cfg)?;
     }
     if !did_work {
         return Err(format!("--what={} selected nothing", what.label()));
@@ -4522,50 +4519,15 @@ fn validate_stats_token(env_name: &str, token: &str) -> Result<String, String> {
     Ok(token.to_owned())
 }
 
-fn deploy_nginx_private_api_credential(
-    content_root: &Path,
-    cfg: &DeployConfig,
-) -> Result<(), String> {
+/// Rotate only the machine credential required by the release transaction.
+/// OAuth credentials have an independent lifecycle: a routine code/content
+/// deployment must neither open an interactive desktop Keychain nor rewrite
+/// unrelated login-provider secrets already installed on the server.
+fn deploy_nginx_content_token(content_root: &Path, cfg: &DeployConfig) -> Result<(), String> {
     use std::os::unix::fs::PermissionsExt;
 
     let token = private_api_deploy_token(content_root)?;
-    let github = credentials::github_credentials(&cfg.credential_profile)?;
-    let google = credentials::google_client_id(&cfg.credential_profile)?;
-    let public_url = cfg
-        .public_url
-        .as_deref()
-        .unwrap_or("")
-        .trim_end_matches('/');
-    let public_url = if public_url.is_empty() {
-        format!("https://{}", cfg.host)
-    } else {
-        public_url.to_owned()
-    };
-    if public_url.contains('\n') || public_url.contains('\r') {
-        return Err("[credential] public URL contains an invalid line break".to_owned());
-    }
-
-    let mut environment = format!("STATS_SYNC_TOKEN={token}\n");
-    let mut managed_keys = vec!["STATS_SYNC_TOKEN"];
-    if let Some(google) = google {
-        environment.push_str(&format!("GOOGLE_CLIENT_ID={}\n", google.as_str()));
-        managed_keys.push("GOOGLE_CLIENT_ID");
-    }
-    if let Some(github) = github {
-        environment.push_str(&format!(
-            "GITHUB_CLIENT_ID={}\nGITHUB_CLIENT_SECRET={}\n\
-             GITHUB_CALLBACK_URL={public_url}/api/v1/auth/github/callback\n\
-             FRONTEND_URL={public_url}\n",
-            github.client_id(),
-            github.expose_client_secret(),
-        ));
-        managed_keys.extend([
-            "GITHUB_CLIENT_ID",
-            "GITHUB_CLIENT_SECRET",
-            "GITHUB_CALLBACK_URL",
-            "FRONTEND_URL",
-        ]);
-    }
+    let environment = format!("STATS_SYNC_TOKEN={token}\n");
 
     let local = env::temp_dir().join(format!(
         "silan-private-api-{}-{}.env",
@@ -4578,15 +4540,7 @@ fn deploy_nginx_private_api_credential(
     fs::set_permissions(&local, fs::Permissions::from_mode(0o600))
         .map_err(|error| format!("[credential] protect temporary env: {error}"))?;
 
-    println!(
-        "[credential] install protected machine credentials ({})",
-        managed_keys.join(", ")
-    );
-    let remove_managed = managed_keys
-        .iter()
-        .map(|key| format!("/^{key}=/d"))
-        .collect::<Vec<_>>()
-        .join(";");
+    println!("[credential] rotate protected content-release machine token");
     let result = (|| {
         scp_to(cfg, &local, &remote)?;
         ssh_exec(
@@ -4595,12 +4549,11 @@ fn deploy_nginx_private_api_credential(
                 "set -e && \
                  install -d -m 0750 /etc/silan-backend && \
                  touch {env_path} && \
-                 sed -i '{remove_managed}' {env_path} && \
+                 sed -i '/^STATS_SYNC_TOKEN=/d' {env_path} && \
                  cat {remote} >> {env_path} && \
                  chown root:www {env_path} && chmod 0640 {env_path} && \
                  rm -f {remote}",
                 env_path = REMOTE_PRIVATE_ENV_PATH,
-                remove_managed = remove_managed,
             ),
         )?;
         Ok(())
