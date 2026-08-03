@@ -1,13 +1,8 @@
-# Silan Viking -- Research Publishing Workspace
+# Silan Viking -- Make Research Work Findable
 
-**AI is now in the loop of research—from related-work discovery to paper understanding and peer review. Researchers therefore need an academic presence that is accurate, verifiable, and AI-native.**
+**AI is now in the loop of research—from related-work discovery to paper understanding and peer review. Publishing a paper is no longer enough. Researchers need their work to be continuously discoverable, understandable, and verifiable by both people and AI.** However, researchers still lack a dedicated workspace to consolidate their academic assets and continuously publish them as structured, AI-readable research knowledge.
 
-Silan Viking is a local-first research publishing workspace for AI, ML, and
-systems researchers who maintain a public body of work. It prevents one new
-result from becoming scattered maintenance across notes, articles, project
-pages, résumé evidence, AI/search metadata, and deployment checks.
-
-Capture a research update once. Keep every public representation current, evidence-backed, and understandable to both people and AI.
+Silan Viking is a local-first workspace that transforms every research update into a complete, structured, and evidence-backed academic presence—keeping your work consistent across papers, project pages, researcher profiles, AI/search metadata, and every public representation
 
 ![Silan Viking dashboard showing local/deployed version status, human visits, and crawler requests](docs/images/silan-viking-dashboard.png)
 
@@ -22,9 +17,6 @@ Capture a research update once. Keep every public representation current, eviden
 - **Product page:** [silan.tech/projects/silan-viking](https://silan.tech/projects/silan-viking/)
 - **Practical guide:** [Using Silan Viking](https://silan.tech/episodes/getting-the-lay-of-the-land/)
 - **Latest release:** [v1.0.0](https://github.com/Qingbolan/Silan-Context-System/releases/tag/v1.0.0)
-
-The desktop workbench is the control surface; the website is one public output
-of the system, not the product itself.
 
 ## The Research Update Problem
 
