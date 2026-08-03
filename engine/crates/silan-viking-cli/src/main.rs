@@ -3120,7 +3120,9 @@ fn deploy_config(content_root: &Path) -> Result<DeployConfig, String> {
         );
     }
 
-    let ssh_key_raw = field("ssh_key_path")?;
+    // A desktop onboarding selection is device-local and must not rewrite the
+    // shared project config just to point at this machine's private key.
+    let ssh_key_raw = env::var("SILAN_DEPLOY_SSH_KEY_PATH").unwrap_or(field("ssh_key_path")?);
     // Expand a leading `~/` to $HOME — the config stores a path, not the key.
     let ssh_key_path = if let Some(rest) = ssh_key_raw.strip_prefix("~/") {
         PathBuf::from(env::var("HOME").map_err(|_| "HOME is not set".to_string())?).join(rest)
@@ -4201,15 +4203,16 @@ fn site_preview(
 //       ├── silan-backend             ← compiled Go binary
 //       ├── etc/backend-api.yaml      ← server config
 //       └── _deploy/
-//           ├── api/portfolio.db      ← derived database
 //           └── frontend/
-//               ├── source/           ← persistent build source
-//               ├── releases/         ← immutable static releases
-//               └── current -> ...    ← atomically promoted Nginx root
+//               ├── source/            ← persistent build source
+//               ├── build/code/        ← immutable compiled baseline
+//               └── published/
+//                   ├── releases/      ← immutable static releases
+//                   └── current -> ... ← atomically promoted Nginx root
 
 /// One end-to-end nginx-mode deploy. Backend binaries require a restart;
-/// SQLite content swaps require stop/start; PostgreSQL content transactions
-/// remain online. Every path finishes by probing `/api/v1/health`.
+/// PostgreSQL content transactions remain online. Every path finishes by
+/// probing `/api/v1/health` and, when relevant, the published frontend.
 fn run_nginx_deploy(
     content_root: &Path,
     db_path: &Path,
@@ -4248,27 +4251,26 @@ fn run_nginx_deploy(
             );
             step += 1;
         }
-        if what.does_content() {
-            println!(
-                "  {step} content  committed projection + changed media → authenticated HTTPS bundle → \
-                 server-owned transactional promotion",
-            );
-            step += 1;
-        }
         let activation = match what.does_backend() {
             true => format!("restart {}", cfg.systemd_unit),
             false => "no API lifecycle change".to_owned(),
         };
         println!("  {step} activate  {activation} → curl /api/v1/health");
         step += 1;
-        if what.does_frontend() || what.does_content() {
+        if what.does_frontend() && what.does_content() {
+            println!("  {step} baseline  compile immutable frontend code; do not publish yet");
+            step += 1;
+        }
+        if what.does_content() {
             println!(
-                "  {step} static  {} → prerender against production API → verified immutable release → atomic current switch",
-                if what.does_frontend() {
-                    "compile code baseline"
-                } else {
-                    "reuse code baseline"
-                }
+                "  {step} content  committed projection + changed media → authenticated HTTPS bundle → \
+                 transactional promotion → prerender from code baseline → verified atomic static switch",
+            );
+            step += 1;
+        } else if what.does_frontend() {
+            println!(
+                "  {step} static  compile code baseline → prerender against production API → \
+                 verified immutable release → atomic current switch",
             );
             step += 1;
         }
