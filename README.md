@@ -1,4 +1,4 @@
-# Silan Viking -- Make Your Research Work Findable
+# Silan Viking -- Make Your Work Findable
 
 **AI is now in the loop of research—from related-work discovery to paper understanding and peer review. Researchers therefore need an academic presence that is accurate, verifiable, and AI-native.**
 
