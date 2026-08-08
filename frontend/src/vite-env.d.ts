@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   readonly VITE_PUBLIC_BASE?: string;
   readonly VITE_PUBLIC_ORIGIN?: string;
+  readonly VITE_CANONICAL_BASE?: string;
+  readonly VITE_CANONICAL_ORIGIN?: string;
   readonly VITE_API_ORIGIN?: string;
   readonly VITE_API_PROXY_TARGET?: string;
   readonly VITE_BUILD_SOURCEMAP?: string;

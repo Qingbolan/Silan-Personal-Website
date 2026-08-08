@@ -230,7 +230,7 @@ export const Seo: React.FC<SeoProps> = ({
       <link rel="alternate" hrefLang="en" href={englishUrl} />
       <link rel="alternate" hrefLang="zh-Hans" href={chineseUrl} />
       <link rel="alternate" hrefLang="x-default" href={englishUrl} />
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
+      {noindex && <meta name="robots" content="noindex, follow" />}
 
       {/* Open Graph — Facebook, LinkedIn, WeChat, etc. */}
       <meta property="og:site_name" content={SITE_NAME} />

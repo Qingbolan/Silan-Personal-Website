@@ -24,6 +24,7 @@ import SeriesDocumentFrame, {
 import { stripLeadingMetadataDuplicates } from '../BlogStack/utils/contentText';
 import { useBlogEngagement } from '../BlogStack/hooks/useBlogEngagement';
 import { useRemoteResource } from '../../hooks/useRemoteResource';
+import { canonicalInternalPath } from '../../utils/navigation';
 import { useSetPageTitle } from '../../layout/PageTitleContext';
 import { scrollToAnchor } from '../../lib/scrollToAnchor';
 import { shouldCreditViewDisplay } from '../../utils/viewDisplayCredit';
@@ -208,7 +209,7 @@ const EpisodeDetail: React.FC = () => {
           title={language === 'en' ? 'Episode not found' : '未找到该集'}
           description={language === 'en' ? 'This episode does not exist or is not public.' : '该内容不存在或尚未公开。'}
           actions={
-            <Button variant="outline" size="sm" onClick={() => navigate('/blog')}>
+            <Button variant="outline" size="sm" onClick={() => navigate(canonicalInternalPath('/blog'))}>
               {language === 'en' ? 'Back to writing' : '返回文章列表'}
             </Button>
           }

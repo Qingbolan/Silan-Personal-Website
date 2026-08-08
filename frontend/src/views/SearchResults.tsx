@@ -349,7 +349,7 @@ const SearchResults: React.FC = () => {
         url: SITE_URL,
         potentialAction: {
           '@type': 'SearchAction',
-          target: `${SITE_URL}/search?q={search_term_string}`,
+          target: `${SITE_URL}/search/?q={search_term_string}`,
           'query-input': 'required name=search_term_string',
         },
       },
@@ -357,7 +357,7 @@ const SearchResults: React.FC = () => {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         name: copy.seoTitle,
-        url: `${SITE_URL}/search`,
+        url: `${SITE_URL}/search/`,
         description: copy.seoBody,
         about: GEO_TOPICS.map((topic) => ({ '@type': 'Thing', name: topic })),
         isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
@@ -381,7 +381,7 @@ const SearchResults: React.FC = () => {
           <li>Content types: articles, episodes, projects, moments.</li>
           <li>Canonical identity: Silan Hu, 胡思蓝, AI systems researcher and full-stack engineer.</li>
           <li>Search topics: {GEO_TOPICS.join(', ')}.</li>
-          <li>Search URL pattern: /search?q=search_term_string.</li>
+          <li>Search URL pattern: /search/?q=search_term_string.</li>
         </ul>
       </section>
 

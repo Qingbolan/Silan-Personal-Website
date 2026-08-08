@@ -93,6 +93,10 @@ const config = {
   name: envValue('PRERENDER_LABEL') || TARGET,
   base: normalizeBase(envValue('VITE_PUBLIC_BASE') || '/'),
   publicOrigin: trimTrailingSlash(envValue('VITE_PUBLIC_ORIGIN') || 'https://silan.tech'),
+  canonicalBase: normalizeBase(envValue('VITE_CANONICAL_BASE') || envValue('VITE_PUBLIC_BASE') || '/'),
+  canonicalOrigin: trimTrailingSlash(
+    envValue('VITE_CANONICAL_ORIGIN') || envValue('VITE_PUBLIC_ORIGIN') || 'https://silan.tech',
+  ),
   apiOrigin,
   startLocalBackend,
 };
@@ -100,9 +104,14 @@ const config = {
 const log = (m) => console.log(`[prerender:${config.name}] ${m}`);
 
 const basePath = config.base === '/' ? '' : trimTrailingSlash(config.base);
+const canonicalBasePath = config.canonicalBase === '/' ? '' : trimTrailingSlash(config.canonicalBase);
 const publicUrl = (route = '/') => {
   const normalizedRoute = route.startsWith('/') ? route : `/${route}`;
   return `${trimTrailingSlash(config.publicOrigin)}${basePath}${normalizedRoute}`;
+};
+const canonicalUrl = (route = '/') => {
+  const normalizedRoute = route.startsWith('/') ? route : `/${route}`;
+  return `${trimTrailingSlash(config.canonicalOrigin)}${canonicalBasePath}${normalizedRoute}`;
 };
 const apiUrl = (path) => new URL(path, `${trimTrailingSlash(config.apiOrigin)}/`).toString();
 
@@ -726,9 +735,9 @@ const structuredLicenseUrl = (license) => {
 };
 
 function writeSiteIndex(entries) {
-  const personId = `${publicUrl('/')}#person`;
-  const websiteId = `${publicUrl('/')}#website`;
-  const contentIndexId = `${publicUrl('/site-index.jsonld')}#public-content`;
+  const personId = `${canonicalUrl('/')}#person`;
+  const websiteId = `${canonicalUrl('/')}#website`;
+  const contentIndexId = `${canonicalUrl('/site-index.jsonld')}#public-content`;
   const project = entries.find(
     (entry) => entry.kind === 'Project' && entry.slug === 'silan-viking',
   );
@@ -742,8 +751,8 @@ function writeSiteIndex(entries) {
         ...GEO_PROFILE.aliases,
         GEO_PROFILE.chineseName,
       ])),
-      url: publicUrl('/'),
-      image: publicUrl('/image.png'),
+      url: canonicalUrl('/'),
+      image: canonicalUrl('/image.png'),
       jobTitle: GEO_PROFILE.jobTitle,
       description: GEO_PROFILE.positioning,
       sameAs: GEO_PROFILE.sameAs,
@@ -758,7 +767,7 @@ function writeSiteIndex(entries) {
       '@type': 'WebSite',
       '@id': websiteId,
       name: GEO_PROFILE.homeTitle,
-      url: publicUrl('/'),
+      url: canonicalUrl('/'),
       description: GEO_PROFILE.homeDescription,
       inLanguage: ['en', 'zh-Hans'],
       author: { '@id': personId },
@@ -777,7 +786,7 @@ function writeSiteIndex(entries) {
         item: {
           '@type': entry.kind === 'Project' ? 'SoftwareSourceCode' : 'CreativeWork',
           name: entry.title,
-          url: publicUrl(entry.path),
+          url: canonicalUrl(entry.path),
           ...(entry.summary && { description: entry.summary }),
           author: { '@id': personId },
           isPartOf: { '@id': websiteId },
@@ -787,7 +796,7 @@ function writeSiteIndex(entries) {
   ];
 
   if (project) {
-    const projectUrl = publicUrl(project.path);
+    const projectUrl = canonicalUrl(project.path);
     graph.push({
       '@type': ['SoftwareApplication', 'SoftwareSourceCode'],
       '@id': `${projectUrl}#software`,
@@ -842,8 +851,8 @@ async function writeLlmsText() {
     '',
     `Personal website for ${GEO_PROFILE.canonicalName}: AI-native data, runtime, and knowledge systems.`,
     '',
-    `Canonical site: ${publicUrl('/')}`,
-    `Sitemap: ${publicUrl('/sitemap.xml')}`,
+    `Canonical site: ${canonicalUrl('/')}`,
+    `Sitemap: ${canonicalUrl('/sitemap.xml')}`,
     '',
     '## Generative Engine Context',
     '',
@@ -865,7 +874,7 @@ async function writeLlmsText() {
   ];
   for (const entry of entries) {
     lines.push(`### ${entry.kind}: ${entry.title}`);
-    lines.push(`URL: ${publicUrl(entry.path)}`);
+    lines.push(`URL: ${canonicalUrl(entry.path)}`);
     lines.push(`Author: ${GEO_PROFILE.canonicalName} (${GEO_PROFILE.chineseName})`);
     lines.push(`Reproduction: ${GEO_PROFILE.reproductionNotice}`);
     if (entry.summary) lines.push(`Summary: ${entry.summary}`);
@@ -890,8 +899,8 @@ function crawlerProfileText(entries) {
   return [
     GEO_PROFILE.homeTitle,
     '',
-    `Canonical site: ${publicUrl('/')}`,
-    `Machine-readable context: ${publicUrl('/llms.txt')}`,
+    `Canonical site: ${canonicalUrl('/')}`,
+    `Machine-readable context: ${canonicalUrl('/llms.txt')}`,
     '',
     GEO_PROFILE.identity,
     '',
@@ -955,17 +964,17 @@ function writeSitemap(routes) {
         const chineseRoute = localizedRoute(route, 'zh');
         const alternateLinks = [
           routeSet.has(englishRoute) &&
-            `    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(publicUrl(englishRoute))}" />`,
+            `    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(canonicalUrl(englishRoute))}" />`,
           routeSet.has(chineseRoute) &&
-            `    <xhtml:link rel="alternate" hreflang="zh-Hans" href="${escapeXml(publicUrl(chineseRoute))}" />`,
+            `    <xhtml:link rel="alternate" hreflang="zh-Hans" href="${escapeXml(canonicalUrl(chineseRoute))}" />`,
           routeSet.has(englishRoute) &&
-            `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(publicUrl(englishRoute))}" />`,
+            `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(canonicalUrl(englishRoute))}" />`,
         ].filter(Boolean).join('\n');
         const lastModified = routeLastModified.get(withTrailingSlash(route)) || latestDetailDate(route);
         const lastModifiedTag = lastModified
           ? `    <lastmod>${lastModified}</lastmod>\n`
           : '';
-        return `  <url>\n    <loc>${escapeXml(publicUrl(withTrailingSlash(route)))}</loc>\n` +
+        return `  <url>\n    <loc>${escapeXml(canonicalUrl(withTrailingSlash(route)))}</loc>\n` +
         `${alternateLinks}\n` +
         lastModifiedTag +
         `    <changefreq>weekly</changefreq>\n` +
@@ -1008,7 +1017,7 @@ function rewriteHtmlMetadata(routes) {
   for (const route of routes) {
     const path = join(routeDir(route), 'index.html');
     if (!existsSync(path)) continue;
-    const canonical = publicUrl(withTrailingSlash(route));
+    const canonical = canonicalUrl(withTrailingSlash(route));
     let html = readFileSync(path, 'utf8');
     html = html.replaceAll(`${localServeOrigin}/api/`, `${publicOrigin}/api/`);
     html = html.replaceAll(`${localBackendOrigin}/api/`, `${publicOrigin}/api/`);
@@ -1049,14 +1058,12 @@ function writeRobots() {
   const robots = [
     ...groups,
     '# Internal pages — not for indexing.',
-    `Disallow: ${disallowPrefix}/search`,
     `Disallow: ${disallowPrefix}/gallery`,
     `Disallow: ${disallowPrefix}/design`,
-    `Disallow: ${disallowPrefix}/zh/search`,
     `Disallow: ${disallowPrefix}/zh/gallery`,
     `Disallow: ${disallowPrefix}/zh/design`,
     '',
-    `Sitemap: ${publicUrl('/sitemap.xml')}`,
+    `Sitemap: ${canonicalUrl('/sitemap.xml')}`,
     '',
   ].join('\n');
   writeFileSync(join(DIST, 'robots.txt'), robots, 'utf8');

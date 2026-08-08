@@ -16,7 +16,7 @@ import { useLanguage } from '../components/LanguageContext';
 import { useTheme } from '../components/ThemeContext';
 import GlobalSearch from '../components/Search/GlobalSearch';
 import { usePageTitle, usePageSectionState, usePageFilterState } from './PageTitleContext';
-import { isNavigationPathActive, primaryNavigationPath } from '../utils/navigation';
+import { canonicalInternalPath, isNavigationPathActive, primaryNavigationPath } from '../utils/navigation';
 import { publicAssetUrl } from '../utils/publicAsset';
 
 // ── Primary page routes ─────────────────────────────────────────────
@@ -115,7 +115,7 @@ const NavGroup: React.FC<{ routes: Route[]; activePath: string; ariaLabel: strin
             aria-label={r.label}
             aria-current={active ? 'page' : undefined}
             title={r.label}
-            onClick={() => navigate(r.path)}
+            onClick={() => navigate(canonicalInternalPath(r.path))}
             className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors"
             style={{
               color: active ? activeFg : colors.textSecondary,
@@ -173,7 +173,7 @@ export const NavAvatar: React.FC = () => {
       type="button"
       aria-label={label}
       title={label}
-      onClick={() => navigate('/contact')}
+      onClick={() => navigate(canonicalInternalPath('/contact'))}
       className="group flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform hover:scale-105"
     >
       <span
@@ -407,7 +407,7 @@ const TopNavigation: React.FC = () => {
   const openSearch = useCallback(() => {
     if (window.matchMedia('(max-width: 639px)').matches) {
       primeMobileKeyboard();
-      navigate('/search');
+      navigate(canonicalInternalPath('/search'));
       return;
     }
     setSearchOpen(true);
@@ -565,7 +565,7 @@ const TopNavigation: React.FC = () => {
                   {c.to ? (
                     <button
                       type="button"
-                      onClick={() => navigate(c.to!)}
+                      onClick={() => navigate(canonicalInternalPath(c.to!))}
                       className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-1 transition-colors [&_svg]:h-[14px] [&_svg]:w-[14px]"
                       style={{ color: colors.textTertiary }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = accent)}

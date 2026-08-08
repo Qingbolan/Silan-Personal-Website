@@ -26,6 +26,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../LanguageContext';
 import { Seo, creativeWorkJsonLd } from '../Seo';
+import { canonicalInternalPath } from '../../utils/navigation';
 import {
   fetchProjectDetailById,
   type ProjectLiker,
@@ -488,7 +489,7 @@ const ProjectDetail: React.FC = () => {
               : 'This project does not exist or is not public.'
           }
           actions={
-            <Link to="/projects">
+            <Link to={canonicalInternalPath('/projects')}>
               <Button variant="outline" size="sm">
                 {t('projects.backToProjects')}
               </Button>

@@ -16,7 +16,7 @@ const FRONTEND = resolve(__dirname, '..');
 
 function usage() {
   return [
-    'usage: node scripts/build-static.mjs <base-path> [--origin URL] [--api-origin URL]',
+    'usage: node scripts/build-static.mjs <base-path> [--origin URL] [--api-origin URL] [--canonical-origin URL] [--canonical-base PATH]',
     '',
     'example:',
     '  npm run build:static -- /~silan-hu/',
@@ -33,6 +33,8 @@ function parseArgs(argv) {
   let base = null;
   let origin = process.env.VITE_PUBLIC_ORIGIN || 'https://www.comp.nus.edu.sg';
   let apiOrigin = process.env.VITE_API_ORIGIN || 'https://silan.tech';
+  let canonicalOrigin = process.env.VITE_CANONICAL_ORIGIN || origin;
+  let canonicalBase = process.env.VITE_CANONICAL_BASE || base;
   let sourcemap = process.env.VITE_BUILD_SOURCEMAP || 'false';
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -47,6 +49,14 @@ function parseArgs(argv) {
       apiOrigin = argv[++i];
     } else if (arg.startsWith('--api-origin=')) {
       apiOrigin = arg.slice('--api-origin='.length);
+    } else if (arg === '--canonical-origin') {
+      canonicalOrigin = argv[++i];
+    } else if (arg.startsWith('--canonical-origin=')) {
+      canonicalOrigin = arg.slice('--canonical-origin='.length);
+    } else if (arg === '--canonical-base') {
+      canonicalBase = argv[++i];
+    } else if (arg.startsWith('--canonical-base=')) {
+      canonicalBase = arg.slice('--canonical-base='.length);
     } else if (arg === '--sourcemap') {
       sourcemap = argv[++i];
     } else if (arg.startsWith('--sourcemap=')) {
@@ -61,11 +71,14 @@ function parseArgs(argv) {
   if (!base) throw new Error(usage());
   if (!origin) throw new Error('--origin needs a URL');
   if (!apiOrigin) throw new Error('--api-origin needs a URL');
+  if (!canonicalOrigin) throw new Error('--canonical-origin needs a URL');
 
   return {
     base: normalizeBase(base),
     origin: origin.replace(/\/+$/, ''),
     apiOrigin: apiOrigin.replace(/\/+$/, ''),
+    canonicalOrigin: canonicalOrigin.replace(/\/+$/, ''),
+    canonicalBase: normalizeBase(canonicalBase || base),
     sourcemap,
   };
 }
@@ -90,12 +103,14 @@ const env = {
   PRERENDER_LABEL: 'static',
   VITE_PUBLIC_BASE: config.base,
   VITE_PUBLIC_ORIGIN: config.origin,
+  VITE_CANONICAL_BASE: config.canonicalBase,
+  VITE_CANONICAL_ORIGIN: config.canonicalOrigin,
   VITE_API_ORIGIN: config.apiOrigin,
   VITE_BUILD_SOURCEMAP: config.sourcemap,
 };
 
 console.log(
-  `[build:static] base=${config.base} origin=${config.origin} api=${config.apiOrigin}`,
+  `[build:static] base=${config.base} origin=${config.origin} canonical=${config.canonicalOrigin}${config.canonicalBase === '/' ? '' : config.canonicalBase} api=${config.apiOrigin}`,
 );
 
 await run(process.execPath, [join(FRONTEND, 'node_modules/vite/bin/vite.js'), 'build'], env);

@@ -7,6 +7,7 @@ import { fetchEpisodeSeries } from '../../api/episodes/episodeApi';
 import type { EpisodeSeriesData } from '../../types/episode';
 import { useLanguage } from '../LanguageContext';
 import { useRemoteResource } from '../../hooks/useRemoteResource';
+import { canonicalInternalPath } from '../../utils/navigation';
 import {
   Button,
   BrandLoading,
@@ -73,7 +74,7 @@ const EpisodeSeriesOverview: React.FC = () => {
           title={zh ? '系列不存在' : 'Series not found'}
           description={zh ? '该系列不存在或尚未公开。' : 'This series does not exist or is not public.'}
           actions={
-            <Button variant="outline" size="sm" onClick={() => navigate('/blog')}>
+            <Button variant="outline" size="sm" onClick={() => navigate(canonicalInternalPath('/blog'))}>
               {zh ? '返回文章列表' : 'Back to writing'}
             </Button>
           }

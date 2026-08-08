@@ -15,6 +15,7 @@ import { useRemoteResource } from '../hooks/useRemoteResource';
 import { useSetPageTitle } from '../layout/PageTitleContext';
 import { markdownToPlainExcerpt, withoutRepeatedTitle } from '../lib/markdown';
 import { normalizeContentTimestamp } from '../utils/contentTimestamp';
+import { canonicalInternalPath } from '../utils/navigation';
 
 type MomentKind = 'work' | 'education' | 'research' | 'publication' | 'project' | 'other';
 
@@ -93,7 +94,7 @@ const MomentDetail: React.FC = () => {
   const resource = useRemoteResource<Moment>(slug, loadMoment);
   const moment = resource.data;
 
-  const close = useCallback(() => navigate('/moments'), [navigate]);
+  const close = useCallback(() => navigate(canonicalInternalPath('/moments')), [navigate]);
 
   useSetPageTitle(
     moment

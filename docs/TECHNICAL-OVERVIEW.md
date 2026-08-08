@@ -93,7 +93,7 @@ to use `https://silan.tech/api/v1/...`.
 
 ```sh
 cd frontend
-npm run build:static -- /~silan-hu/
+npm run build:nus
 rsync -av --delete dist/ your-nus-account@server:~/public_html/
 ```
 
@@ -104,8 +104,9 @@ silan-viking site build --static-base /~silan-hu/
 rsync -av --delete frontend/dist/ your-nus-account@server:~/public_html/
 ```
 
-`npm run build:nus` and `silan-viking site build --target nus` are convenience
-aliases for the same NUS base path.
+`npm run build:nus` builds assets for the NUS base path while keeping
+`https://silan.tech/` as the canonical origin, so the mirror does not compete
+with the primary domain in search results.
 
 Known limitation: authenticated login depends on cross-site secure cookies and
 may be blocked by browser third-party-cookie policy on the NUS mirror.
@@ -130,3 +131,26 @@ independent of Node/Go source churn and avoids treating one binary as a hidden
 transport container. Production code deployment runs from a project checkout;
 content-only publication needs only the content workspace, configured API, and
 machine credential.
+
+## Joining an Existing Workspace on a New Device
+
+The packaged desktop runtime now treats first launch as an explicit bootstrap
+lifecycle. When no workspace is configured, **Join existing workspace** asks
+for the Git source repository, a local destination, and an optional branch.
+The production host is deliberately not used as a source-code remote.
+
+Before entering the editor, the desktop application:
+
+1. verifies repository access through the device's SSH agent or HTTPS Git
+   credential manager without accepting credentials embedded in the URL;
+2. clones a missing workspace or fetches an existing checkout;
+3. fast-forwards only a clean remote-ahead branch and stops on dirty,
+   local-ahead, diverged, detached, or no-upstream states;
+4. reads `silan-viking.toml`, validates `content/SCHEMA.md`, and rebuilds the
+   local `portfolio.db` projection from Markdown;
+5. validates a device-local deployment private-key path when the shared
+   project configuration declares a remote deployment target.
+
+Only paths and workspace identity are persisted in the desktop app's local
+configuration. Git credentials remain in the SSH agent or credential manager,
+and deployment key material remains in its original local file.

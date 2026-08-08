@@ -160,7 +160,7 @@ export const Seo: React.FC<SeoProps> = ({
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
       <link rel="canonical" href={canonical} />
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
+      {noindex && <meta name="robots" content="noindex, follow" />}
 
       {/* Open Graph — Facebook, LinkedIn, WeChat, etc. */}
       <meta property="og:site_name" content={SITE_NAME} />

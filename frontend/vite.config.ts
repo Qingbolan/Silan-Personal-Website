@@ -16,10 +16,17 @@ const normalizeBase = (value: string) => {
   return leading.endsWith('/') ? leading : `${leading}/`
 }
 
-const siteProfileHtml = (publicOrigin: string, publicBase: string) => {
+const siteProfileHtml = (
+  publicOrigin: string,
+  publicBase: string,
+  canonicalOrigin = publicOrigin,
+  canonicalBase = publicBase,
+) => {
   const base = normalizeBase(publicBase)
-  const siteUrl = `${publicOrigin.replace(/\/+$/, '')}${base === '/' ? '' : base.replace(/\/$/, '')}`
-  const imageUrl = `${siteUrl}/image.png`
+  const canonicalBasePath = normalizeBase(canonicalBase)
+  const publicUrl = `${publicOrigin.replace(/\/+$/, '')}${base === '/' ? '' : base.replace(/\/$/, '')}`
+  const siteUrl = `${canonicalOrigin.replace(/\/+$/, '')}${canonicalBasePath === '/' ? '' : canonicalBasePath.replace(/\/$/, '')}`
+  const imageUrl = `${publicUrl}/image.png`
   const contentLicenseUrl = `${siteUrl}/content-license.html`
   const homeRightsNotice =
     `© ${siteProfile.canonicalName} (${siteProfile.chineseName}). ` +
@@ -115,10 +122,12 @@ export default defineConfig(({ mode }) => {
   const developmentCountry = env.VITE_DEV_COUNTRY || 'SG';
   const publicOrigin = env.VITE_PUBLIC_ORIGIN || 'https://silan.tech'
   const publicBase = env.VITE_PUBLIC_BASE || '/'
+  const canonicalOrigin = env.VITE_CANONICAL_ORIGIN || publicOrigin
+  const canonicalBase = env.VITE_CANONICAL_BASE || publicBase
 
   return {
     base: publicBase,
-    plugins: [react(), siteProfileHtml(publicOrigin, publicBase)],
+    plugins: [react(), siteProfileHtml(publicOrigin, publicBase, canonicalOrigin, canonicalBase)],
     resolve: {
       alias: {
         '@': resolve(__dirname, './src'),

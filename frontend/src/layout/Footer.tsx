@@ -14,6 +14,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useLanguage } from '../components/LanguageContext';
 import { useTheme } from '../components/ThemeContext';
 import { publicAssetUrl } from '../utils/publicAsset';
+import { canonicalInternalPath } from '../utils/navigation';
 import { Avatar } from '../components/ds/Avatar';
 import siteProfile from '../../site-profile.json';
 
@@ -21,7 +22,7 @@ type InternalLink = { label: string; to: string };
 
 const FooterLink: React.FC<{ item: InternalLink }> = ({ item }) => (
   <Link
-    to={item.to}
+    to={canonicalInternalPath(item.to)}
     className="group inline-flex min-h-10 items-center gap-1.5 text-sm text-white/55 transition-colors duration-200 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
   >
     <span className="border-b border-transparent pb-px transition-colors duration-200 group-hover:border-white/55">
@@ -60,12 +61,12 @@ const Footer: React.FC = () => {
 
   const explore: InternalLink[] = [
     { label: zh ? '主页' : 'Home', to: '/' },
-    { label: zh ? '项目' : 'Projects', to: '/projects' },
-    { label: zh ? '博客' : 'Writing', to: '/blog' },
+    { label: zh ? '项目' : 'Projects', to: '/projects/' },
+    { label: zh ? '博客' : 'Writing', to: '/blog/' },
   ];
   const research: InternalLink[] = [
-    { label: zh ? '瞬间' : 'Moments', to: '/moments' },
-    { label: zh ? '联系' : 'Contact', to: '/contact' },
+    { label: zh ? '瞬间' : 'Moments', to: '/moments/' },
+    { label: zh ? '联系' : 'Contact', to: '/contact/' },
   ];
 
   return (

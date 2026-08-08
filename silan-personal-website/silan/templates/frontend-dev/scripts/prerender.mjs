@@ -90,6 +90,10 @@ const config = {
   name: envValue('PRERENDER_LABEL') || TARGET,
   base: normalizeBase(envValue('VITE_PUBLIC_BASE') || '/'),
   publicOrigin: trimTrailingSlash(envValue('VITE_PUBLIC_ORIGIN') || 'https://silan.tech'),
+  canonicalBase: normalizeBase(envValue('VITE_CANONICAL_BASE') || envValue('VITE_PUBLIC_BASE') || '/'),
+  canonicalOrigin: trimTrailingSlash(
+    envValue('VITE_CANONICAL_ORIGIN') || envValue('VITE_PUBLIC_ORIGIN') || 'https://silan.tech',
+  ),
   apiOrigin,
   startLocalBackend,
 };
@@ -97,9 +101,14 @@ const config = {
 const log = (m) => console.log(`[prerender:${config.name}] ${m}`);
 
 const basePath = config.base === '/' ? '' : trimTrailingSlash(config.base);
+const canonicalBasePath = config.canonicalBase === '/' ? '' : trimTrailingSlash(config.canonicalBase);
 const publicUrl = (route = '/') => {
   const normalizedRoute = route.startsWith('/') ? route : `/${route}`;
   return `${trimTrailingSlash(config.publicOrigin)}${basePath}${normalizedRoute}`;
+};
+const canonicalUrl = (route = '/') => {
+  const normalizedRoute = route.startsWith('/') ? route : `/${route}`;
+  return `${trimTrailingSlash(config.canonicalOrigin)}${canonicalBasePath}${normalizedRoute}`;
 };
 const apiUrl = (path) => new URL(path, `${trimTrailingSlash(config.apiOrigin)}/`).toString();
 
@@ -384,8 +393,8 @@ async function writeLlmsText() {
     '',
     'Personal website for Silan Hu: AI systems research, full-stack engineering, and the silan-viking personal context system.',
     '',
-    `Canonical site: ${publicUrl('/')}`,
-    `Sitemap: ${publicUrl('/sitemap.xml')}`,
+    `Canonical site: ${canonicalUrl('/')}`,
+    `Sitemap: ${canonicalUrl('/sitemap.xml')}`,
     '',
     '## Generative Engine Context',
     '',
@@ -405,7 +414,7 @@ async function writeLlmsText() {
   ];
   for (const entry of entries) {
     lines.push(`### ${entry.kind}: ${entry.title}`);
-    lines.push(`URL: ${publicUrl(entry.path)}`);
+    lines.push(`URL: ${canonicalUrl(entry.path)}`);
     if (entry.summary) lines.push(`Summary: ${entry.summary}`);
     if (entry.tags?.length) lines.push(`Tags: ${entry.tags.join(', ')}`);
     if (entry.text) {
@@ -423,8 +432,8 @@ function crawlerProfileText(entries) {
   return [
     'Silan Hu — AI Systems Researcher & Full Stack Developer',
     '',
-    `Canonical site: ${publicUrl('/')}`,
-    `Machine-readable context: ${publicUrl('/llms.txt')}`,
+    `Canonical site: ${canonicalUrl('/')}`,
+    `Machine-readable context: ${canonicalUrl('/llms.txt')}`,
     '',
     GEO_PROFILE.identity,
     '',
@@ -456,7 +465,7 @@ function writeSitemap(routes) {
   const urls = routes
     .map(
       (route) =>
-        `  <url>\n    <loc>${publicUrl(withTrailingSlash(route))}</loc>\n` +
+        `  <url>\n    <loc>${canonicalUrl(withTrailingSlash(route))}</loc>\n` +
         `    <lastmod>${today}</lastmod>\n` +
         `    <changefreq>weekly</changefreq>\n` +
         `    <priority>${priorityFor(route)}</priority>\n  </url>`,
@@ -493,7 +502,7 @@ function rewriteHtmlMetadata(routes) {
   for (const route of routes) {
     const path = join(routeDir(route), 'index.html');
     if (!existsSync(path)) continue;
-    const canonical = publicUrl(withTrailingSlash(route));
+    const canonical = canonicalUrl(withTrailingSlash(route));
     let html = readFileSync(path, 'utf8');
     html = html.replace(/(rel="canonical"\s+href=")[^"]*(")/g, `$1${canonical}$2`);
     html = html.replace(/(property="og:url"\s+content=")[^"]*(")/g, `$1${canonical}$2`);
@@ -532,11 +541,10 @@ function writeRobots() {
   const robots = [
     ...groups,
     '# Internal pages — not for indexing.',
-    `Disallow: ${disallowPrefix}/search`,
     `Disallow: ${disallowPrefix}/gallery`,
     `Disallow: ${disallowPrefix}/design`,
     '',
-    `Sitemap: ${publicUrl('/sitemap.xml')}`,
+    `Sitemap: ${canonicalUrl('/sitemap.xml')}`,
     '',
   ].join('\n');
   writeFileSync(join(DIST, 'robots.txt'), robots, 'utf8');

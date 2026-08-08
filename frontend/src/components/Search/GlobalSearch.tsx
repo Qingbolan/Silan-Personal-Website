@@ -15,6 +15,7 @@ import {
   type SearchResultKind,
 } from '../../api/search/searchApi';
 import { Alert, Button, EmptyState, Input, Modal, Skeleton } from '../ds';
+import { canonicalInternalPath } from '../../utils/navigation';
 
 interface GlobalSearchProps {
   isOpen: boolean;
@@ -119,7 +120,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, initialQue
   const openAll = (currentValue: string = query) => {
     const trimmed = currentValue.trim();
     if (!trimmed) return;
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    navigate(canonicalInternalPath(`/search?q=${encodeURIComponent(trimmed)}`));
     onClose();
   };
 

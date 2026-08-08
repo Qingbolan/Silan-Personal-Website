@@ -2689,11 +2689,17 @@ fn completion(shell: &str) -> Result<(), String> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct FrontendBuildTarget {
     static_base: Option<String>,
+    canonical_origin: Option<String>,
+    canonical_base: Option<String>,
 }
 
 impl FrontendBuildTarget {
     fn default() -> Self {
-        Self { static_base: None }
+        Self {
+            static_base: None,
+            canonical_origin: None,
+            canonical_base: None,
+        }
     }
 
     fn static_base(base: &str) -> Result<Self, String> {
@@ -2703,6 +2709,8 @@ impl FrontendBuildTarget {
         }
         Ok(Self {
             static_base: Some(normalized),
+            canonical_origin: None,
+            canonical_base: None,
         })
     }
 
@@ -2729,12 +2737,30 @@ impl FrontendBuildTarget {
             } else if let Some(value) = arg.strip_prefix("--base=") {
                 target = Self::static_base(value)?;
                 i += 1;
+            } else if arg == "--canonical-origin" {
+                let Some(value) = flags.get(i + 1) else {
+                    return Err("site build: --canonical-origin needs a URL".to_owned());
+                };
+                target.canonical_origin = Some(value.trim_end_matches('/').to_owned());
+                i += 2;
+            } else if arg == "--canonical-base" {
+                let Some(value) = flags.get(i + 1) else {
+                    return Err("site build: --canonical-base needs a base path".to_owned());
+                };
+                target.canonical_base = Some(normalize_static_base(value)?);
+                i += 2;
+            } else if let Some(value) = arg.strip_prefix("--canonical-origin=") {
+                target.canonical_origin = Some(value.trim_end_matches('/').to_owned());
+                i += 1;
+            } else if let Some(value) = arg.strip_prefix("--canonical-base=") {
+                target.canonical_base = Some(normalize_static_base(value)?);
+                i += 1;
             } else if let Some(value) = arg.strip_prefix("--target=") {
                 target = Self::named_target(value)?;
                 i += 1;
             } else {
                 return Err(format!(
-                    "site build: unknown flag `{arg}` · expected --static-base <base> | --target nus"
+                    "site build: unknown flag `{arg}` · expected --static-base <base> | --target nus | --canonical-origin <url>"
                 ));
             }
         }
@@ -2744,7 +2770,11 @@ impl FrontendBuildTarget {
     fn named_target(target: &str) -> Result<Self, String> {
         match target.trim() {
             "default" => Ok(Self::default()),
-            "nus" => Self::static_base("/~silan-hu/"),
+            "nus" => Ok(Self {
+                static_base: Some("/~silan-hu/".to_owned()),
+                canonical_origin: Some("https://silan.tech".to_owned()),
+                canonical_base: Some("/".to_owned()),
+            }),
             other => Err(format!("--target={other}: supported target aliases: nus")),
         }
     }
@@ -2759,12 +2789,23 @@ impl FrontendBuildTarget {
 
     fn npm_args(&self) -> Vec<String> {
         match &self.static_base {
-            Some(base) => vec![
-                "run".to_owned(),
-                self.npm_script(),
-                "--".to_owned(),
-                base.clone(),
-            ],
+            Some(base) => {
+                let mut args = vec![
+                    "run".to_owned(),
+                    self.npm_script(),
+                    "--".to_owned(),
+                    base.clone(),
+                ];
+                if let Some(origin) = &self.canonical_origin {
+                    args.push("--canonical-origin".to_owned());
+                    args.push(origin.clone());
+                }
+                if let Some(base) = &self.canonical_base {
+                    args.push("--canonical-base".to_owned());
+                    args.push(base.clone());
+                }
+                args
+            }
             None => vec!["run".to_owned(), self.npm_script()],
         }
     }
@@ -4440,6 +4481,14 @@ location = /_silan_crawler_hit {{
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header User-Agent $http_user_agent;
     proxy_set_header Referer $http_referer;
+}}
+
+location = /ideas {{
+    return 301 /moments/;
+}}
+
+location ~ ^/ideas/(.+)$ {{
+    return 301 /moments/?id=$1;
 }}
 
 location ^~ /assets/ {{

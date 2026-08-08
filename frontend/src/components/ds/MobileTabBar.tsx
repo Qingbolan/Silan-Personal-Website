@@ -26,7 +26,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { cn } from '../../lib/utils';
 import { dsRoot } from './dsAttr';
-import { isNavigationPathActive } from '../../utils/navigation';
+import { canonicalInternalPath, isNavigationPathActive } from '../../utils/navigation';
 
 interface TabRoute {
   path: string;
@@ -133,7 +133,7 @@ export const MobileTabBar: React.FC = () => {
                     key={route.path}
                     type="button"
                     role="menuitem"
-                    onClick={() => navigate(route.path)}
+                    onClick={() => navigate(canonicalInternalPath(route.path))}
                     className={cn(
                       'flex w-full items-center gap-2.5 rounded-ds-lg px-3 py-2 text-left transition-colors duration-ds-fast',
                       active ? 'text-ds-primary' : 'text-ds-fg',
@@ -189,7 +189,7 @@ export const MobileTabBar: React.FC = () => {
             key={route.path}
             route={route}
             active={isNavigationPathActive(pathname, route.path)}
-            onClick={() => navigate(route.path)}
+            onClick={() => navigate(canonicalInternalPath(route.path))}
             reduceMotion={reduceMotion}
           />
         ))}

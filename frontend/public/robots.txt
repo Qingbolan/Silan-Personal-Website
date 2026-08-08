@@ -88,10 +88,8 @@ Disallow: /api/v1/content/status
 Disallow: /api/v1/auth/
 
 # Internal pages — not for indexing.
-Disallow: /search
 Disallow: /gallery
 Disallow: /design
-Disallow: /zh/search
 Disallow: /zh/gallery
 Disallow: /zh/design
 # Private machine and identity APIs — public content remains crawlable.

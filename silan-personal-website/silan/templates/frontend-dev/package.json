@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:static": "tsc && node scripts/build-static.mjs",
-    "build:nus": "npm run build:static -- /~silan-hu/",
+    "build:nus": "npm run build:static -- /~silan-hu/ --canonical-origin https://silan.tech --canonical-base /",
     "build:seo": "tsc && vite build && node scripts/prerender.mjs",
     "prerender": "node scripts/prerender.mjs",
     "screenshot": "node scripts/screenshot.mjs",

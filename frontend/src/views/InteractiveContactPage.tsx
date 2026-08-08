@@ -11,6 +11,7 @@ import PublicMessagesWall from '../components/InteractiveContact/PublicMessagesW
 import { fetchMoments } from '../api/moments/momentApi';
 import { fetchPersonalInfo, fetchExpectations, type ExpectationItem } from '../api/home/resumeApi';
 import { resolveSocialLink } from '../utils/socialPlatform';
+import { canonicalInternalPath } from '../utils/navigation';
 import { useRemoteResource } from '../hooks/useRemoteResource';
 import {
   BlogHeader,
@@ -216,7 +217,7 @@ const InteractiveContactPageContent: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       trailingIcon={<ArrowRight />}
-                      onClick={() => navigate('/moments')}
+                      onClick={() => navigate(canonicalInternalPath('/moments'))}
                     >
                       {language === 'en' ? 'Show More Moments' : '查看更多瞬间'}
                     </Button>

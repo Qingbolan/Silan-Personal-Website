@@ -15,6 +15,7 @@ import { readingTracker } from '../../utils/readingBehavior';
 import { useLanguage } from '../LanguageContext';
 import { useSetPageTitle } from '../../layout/PageTitleContext';
 import { Seo, blogPostingJsonLd } from '../Seo';
+import { canonicalInternalPath } from '../../utils/navigation';
 
 const BlogDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -93,7 +94,7 @@ const BlogDetail: React.FC = () => {
 
   // Handle back navigation
   const handleBack = () => {
-    navigate('/blog');
+    navigate(canonicalInternalPath('/blog'));
   };
 
   // Per-article SEO — title, excerpt, cover image and BlogPosting JSON-LD.
