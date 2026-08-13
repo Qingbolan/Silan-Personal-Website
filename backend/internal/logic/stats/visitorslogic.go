@@ -15,7 +15,7 @@ type VisitorsLogic struct {
 	svcCtx *svc.ServiceContext
 }
 
-// De-identified visitor list of one item
+// Visitor observations of one item.
 func NewVisitorsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *VisitorsLogic {
 	return &VisitorsLogic{
 		Logger: logx.WithContext(ctx),

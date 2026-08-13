@@ -35,14 +35,26 @@ func (l *ListBlogCommentsLogic) ListBlogComments(req *types.BlogCommentListReque
 }
 
 func (l *ListBlogCommentsLogic) ListComments(req *types.BlogCommentListRequest, entityType comment.EntityType, clientIP, userAgent, fingerprint, userIdentityID string) (resp *types.BlogCommentListResponse, err error) {
+	return l.listComments(req, entityType, clientIP, fingerprint, userIdentityID, false)
+}
+
+// ListAllComments is the private moderation projection. Public readers use
+// ListComments, which excludes comments whose publication flag is disabled.
+func (l *ListBlogCommentsLogic) ListAllComments(req *types.BlogCommentListRequest, entityType comment.EntityType) (resp *types.BlogCommentListResponse, err error) {
+	return l.listComments(req, entityType, "", "", "", true)
+}
+
+func (l *ListBlogCommentsLogic) listComments(req *types.BlogCommentListRequest, entityType comment.EntityType, clientIP, fingerprint, userIdentityID string, includePrivate bool) (resp *types.BlogCommentListResponse, err error) {
 	postID := req.ID
 	actor := commentruntime.NewActor(userIdentityID, fingerprint)
 
-	list, err := l.svcCtx.DB.Comment.
+	query := l.svcCtx.DB.Comment.
 		Query().
-		Where(comment.EntityIDEQ(postID), comment.EntityTypeEQ(entityType)).
-		Order(comment.ByCreatedAt()).
-		All(l.ctx)
+		Where(comment.EntityIDEQ(postID), comment.EntityTypeEQ(entityType))
+	if !includePrivate {
+		query = query.Where(comment.IsApprovedEQ(true))
+	}
+	list, err := query.Order(comment.ByCreatedAt()).All(l.ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -102,6 +114,7 @@ func (l *ListBlogCommentsLogic) ListComments(req *types.BlogCommentListRequest, 
 			CanDelete:       actor.CanDelete(c),
 			LikesCount:      c.LikesCount,
 			IsLikedByUser:   false, // Will be set below
+			IsPublic:        c.IsApproved,
 			Replies:         []types.BlogCommentData{},
 		}
 		commentMap[c.ID] = &comment
@@ -117,23 +130,27 @@ func (l *ListBlogCommentsLogic) ListComments(req *types.BlogCommentListRequest, 
 		l.setLikeStatus(commentMap, userIdentityID, fingerprint)
 	}
 
-	// Second pass: build tree structure
+	childrenByParent := make(map[string][]string)
 	for _, c := range list {
 		if c.ParentID != "" {
-			// This is a reply - add to parent's replies
-			parentID := c.ParentID
-			if parent, exists := commentMap[parentID]; exists {
-				comment := commentMap[c.ID]
-				parent.Replies = append(parent.Replies, *comment)
-			}
+			childrenByParent[c.ParentID] = append(childrenByParent[c.ParentID], c.ID)
 		}
 	}
+	var buildThread func(string) types.BlogCommentData
+	buildThread = func(commentID string) types.BlogCommentData {
+		current := *commentMap[commentID]
+		current.Replies = make([]types.BlogCommentData, 0, len(childrenByParent[commentID]))
+		for _, childID := range childrenByParent[commentID] {
+			current.Replies = append(current.Replies, buildThread(childID))
+		}
+		return current
+	}
 
-	// Third pass: build final root comments array with populated replies
+	// Reconstruct from parent relations so replies remain complete at every depth.
 	var rootComments []types.BlogCommentData
 	for _, rootID := range rootCommentIDs {
-		if rootComment, exists := commentMap[rootID]; exists {
-			rootComments = append(rootComments, *rootComment)
+		if _, exists := commentMap[rootID]; exists {
+			rootComments = append(rootComments, buildThread(rootID))
 		}
 	}
 

@@ -127,6 +127,7 @@ func (l *CreateProjectCommentLogic) CreateProjectComment(req *types.CreateProjec
 		CanDelete:       true,
 		LikesCount:      comment.LikesCount,
 		IsLikedByUser:   false,
+		IsPublic:        comment.IsApproved,
 		Replies:         []types.ProjectCommentData{},
 	}, nil
 }

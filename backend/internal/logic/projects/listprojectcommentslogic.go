@@ -42,6 +42,7 @@ func (l *ListProjectCommentsLogic) ListProjectComments(req *types.ProjectComment
 		Query().
 		Where(
 			comment.EntityIDEQ(projectUUID),
+			comment.IsApprovedEQ(true),
 			func(s *sql.Selector) {
 				s.Where(sql.Or(
 					sql.EQ(s.C("entity_type"), "project"),
@@ -132,6 +133,7 @@ func (l *ListProjectCommentsLogic) ListProjectComments(req *types.ProjectComment
 			CanDelete:       actor.CanDelete(comment),
 			LikesCount:      comment.LikesCount,
 			IsLikedByUser:   isLiked,
+			IsPublic:        comment.IsApproved,
 			Replies:         []types.ProjectCommentData{},
 		}
 		commentMap[comment.ID] = &commentData

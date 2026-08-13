@@ -137,6 +137,7 @@ func (l *CreateBlogCommentLogic) CreateComment(req *types.CreateBlogCommentReque
 		Content:         c.Content,
 		CreatedAt:       c.CreatedAt.Format(time.RFC3339),
 		CanDelete:       true,
+		IsPublic:        c.IsApproved,
 		Replies:         []types.BlogCommentData{},
 	}, nil
 }

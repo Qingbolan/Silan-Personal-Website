@@ -16,7 +16,7 @@ func TestStatisticsAccessPolicyRouteSets(t *testing.T) {
 	for _, route := range private {
 		got = append(got, route.Path)
 	}
-	want := []string{"/bots", "/crawlers", "/snapshot", "/sources", "/visitors"}
+	want := []string{"/bots", "/comments/:comment_id/visibility", "/crawlers", "/snapshot", "/sources", "/visitors"}
 	slices.Sort(got)
 	if !slices.Equal(got, want) {
 		t.Fatalf("private stats routes = %v, want %v", got, want)

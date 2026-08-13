@@ -24,14 +24,16 @@ type Liker struct {
 // users expose their profile avatar; anonymous actors are represented by a
 // stable visitor number derived from the browser fingerprint.
 func ProjectLikers(ctx context.Context, client *ent.Client, projectID string, limit int) ([]Liker, error) {
-	if limit <= 0 {
+	if limit == 0 {
 		limit = 24
 	}
-	rows, err := client.ProjectLike.Query().
+	query := client.ProjectLike.Query().
 		Where(projectlike.ProjectID(projectID)).
-		Order(ent.Desc(projectlike.FieldCreatedAt)).
-		Limit(limit).
-		All(ctx)
+		Order(ent.Desc(projectlike.FieldCreatedAt))
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	rows, err := query.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -76,18 +78,20 @@ func ProjectLikers(ctx context.Context, client *ent.Client, projectID string, li
 // ContentLikers returns the most recent active likers from the unified
 // interaction table used by blogs, episodes, moments, and similar content.
 func ContentLikers(ctx context.Context, client *ent.Client, entityType contentinteraction.EntityType, entityID string, limit int) ([]Liker, error) {
-	if limit <= 0 {
+	if limit == 0 {
 		limit = 24
 	}
-	rows, err := client.ContentInteraction.Query().
+	query := client.ContentInteraction.Query().
 		Where(
 			contentinteraction.EntityTypeEQ(entityType),
 			contentinteraction.EntityIDEQ(entityID),
 			contentinteraction.KindEQ(contentinteraction.KindLike),
 		).
-		Order(ent.Desc(contentinteraction.FieldCreatedAt)).
-		Limit(limit).
-		All(ctx)
+		Order(ent.Desc(contentinteraction.FieldCreatedAt))
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	rows, err := query.All(ctx)
 	if err != nil {
 		return nil, err
 	}

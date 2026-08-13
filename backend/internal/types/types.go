@@ -36,6 +36,7 @@ type BlogCommentData struct {
 	CanDelete       bool              `json:"can_delete"`
 	LikesCount      int               `json:"likes_count"`
 	IsLikedByUser   bool              `json:"is_liked_by_user"`
+	IsPublic        bool              `json:"is_public"`
 	Replies         []BlogCommentData `json:"replies,optional"`
 }
 
@@ -589,6 +590,7 @@ type ProjectCommentData struct {
 	CanDelete       bool                 `json:"can_delete"`
 	LikesCount      int                  `json:"likes_count"`
 	IsLikedByUser   bool                 `json:"is_liked_by_user"`
+	IsPublic        bool                 `json:"is_public"`
 	Replies         []ProjectCommentData `json:"replies,optional"`
 }
 
@@ -775,7 +777,20 @@ type UpdateCommentData struct {
 	CanDelete       bool                `json:"can_delete"`
 	LikesCount      int                 `json:"likes_count"`
 	IsLikedByUser   bool                `json:"is_liked_by_user"`
+	IsPublic        bool                `json:"is_public"`
 	Replies         []UpdateCommentData `json:"replies"`
+}
+
+type UpdateCommentVisibilityRequest struct {
+	CommentID string `path:"comment_id"`
+	IsPublic  bool   `json:"is_public"`
+}
+
+type UpdateCommentVisibilityResponse struct {
+	CommentID  string `json:"comment_id"`
+	EntityType string `json:"entity_type"`
+	EntityID   string `json:"entity_id"`
+	IsPublic   bool   `json:"is_public"`
 }
 
 type UpdateCommentListResponse struct {
@@ -880,9 +895,10 @@ type StatsResponse struct {
 }
 
 type StatsSnapshotResponse struct {
-	GeneratedAt string              `json:"generated_at"`
-	Items       []StatsSnapshotItem `json:"items"`
-	Countries   []CountryRow        `json:"countries"`
+	GeneratedAt                string              `json:"generated_at"`
+	InteractionDetailsComplete bool                `json:"interaction_details_complete"`
+	Items                      []StatsSnapshotItem `json:"items"`
+	Countries                  []CountryRow        `json:"countries"`
 }
 
 type CountryRow struct {
@@ -903,10 +919,12 @@ type CountryRow struct {
 }
 
 type StatsSnapshotItem struct {
-	Stats    StatsResponse `json:"stats"`
-	Visitors []VisitorRow  `json:"visitors"`
-	Crawlers []CrawlerRow  `json:"crawlers"`
-	Sources  []SourceRow   `json:"sources"`
+	Stats    StatsResponse     `json:"stats"`
+	Visitors []VisitorRow      `json:"visitors"`
+	Crawlers []CrawlerRow      `json:"crawlers"`
+	Sources  []SourceRow       `json:"sources"`
+	Likers   []UpdateLiker     `json:"likers"`
+	Comments []BlogCommentData `json:"comments"`
 }
 
 type UpdateBlogLikesRequest struct {
@@ -990,6 +1008,7 @@ type VerifyEmailResponse struct {
 
 type VisitorRow struct {
 	Fingerprint    string  `json:"fingerprint"`
+	IPAddress      string  `json:"ip_address"`
 	IPMasked       string  `json:"ip_masked"`
 	VisitorKind    string  `json:"visitor_kind"`
 	ReferrerKind   string  `json:"referrer_kind"`

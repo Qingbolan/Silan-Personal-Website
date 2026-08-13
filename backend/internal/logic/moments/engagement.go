@@ -228,7 +228,7 @@ func CreateUpdateComment(ctx context.Context, svcCtx *svc.ServiceContext, req *t
 	if req.AuthenticatedUserID == "" && strings.TrimSpace(req.Fingerprint) != "" {
 		visitor = visitorNumber(req.Fingerprint)
 	}
-	return &types.UpdateCommentData{ID: row.ID, UpdateID: id, ParentID: row.ParentID, AuthorName: author.Name, AuthorAvatarURL: author.AvatarURL, AuthProvider: author.AuthProvider, CountryCode: countryCode, VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: true, Replies: []types.UpdateCommentData{}}, nil
+	return &types.UpdateCommentData{ID: row.ID, UpdateID: id, ParentID: row.ParentID, AuthorName: author.Name, AuthorAvatarURL: author.AvatarURL, AuthProvider: author.AuthProvider, CountryCode: countryCode, VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: true, IsPublic: row.IsApproved, Replies: []types.UpdateCommentData{}}, nil
 }
 
 func ListUpdateComments(ctx context.Context, svcCtx *svc.ServiceContext, key, fingerprint, identity string) (*types.UpdateCommentListResponse, error) {
@@ -258,7 +258,7 @@ func ListUpdateComments(ctx context.Context, svcCtx *svc.ServiceContext, key, fi
 				visitor = visitorNumber(stored)
 			}
 		}
-		comments[row.ID] = &types.UpdateCommentData{ID: row.ID, UpdateID: id, ParentID: row.ParentID, AuthorName: row.AuthorName, AuthorAvatarURL: avatar, AuthProvider: provider, CountryCode: strings.ToUpper(row.CountryCode), VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: actor.CanDelete(row), LikesCount: row.LikesCount, Replies: []types.UpdateCommentData{}}
+		comments[row.ID] = &types.UpdateCommentData{ID: row.ID, UpdateID: id, ParentID: row.ParentID, AuthorName: row.AuthorName, AuthorAvatarURL: avatar, AuthProvider: provider, CountryCode: strings.ToUpper(row.CountryCode), VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: actor.CanDelete(row), LikesCount: row.LikesCount, IsPublic: row.IsApproved, Replies: []types.UpdateCommentData{}}
 		order = append(order, row.ID)
 	}
 	if len(order) > 0 && (identity != "" || fingerprint != "") {

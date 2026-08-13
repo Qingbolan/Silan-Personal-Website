@@ -16,6 +16,7 @@ import (
 	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/contentinteraction"
 	"silan-backend/internal/ent/requestlog"
+	bloglogic "silan-backend/internal/logic/blog"
 	"silan-backend/internal/logic/engagement"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/traffic"
@@ -82,11 +83,33 @@ func (l *StatsLogic) Snapshot() (*types.StatsSnapshotResponse, error) {
 		if sourcesErr != nil {
 			return nil, sourcesErr
 		}
+		commentList, commentsErr := bloglogic.NewListBlogCommentsLogic(l.ctx, l.svcCtx).
+			ListAllComments(&types.BlogCommentListRequest{ID: key.id}, comment.EntityType(key.kind))
+		if commentsErr != nil {
+			return nil, commentsErr
+		}
+		var likerRows []engagement.Liker
+		if key.kind == "project" {
+			likerRows, err = engagement.ProjectLikers(l.ctx, l.svcCtx.DB, key.id, -1)
+		} else {
+			likerRows, err = engagement.ContentLikers(
+				l.ctx,
+				l.svcCtx.DB,
+				contentinteraction.EntityType(key.kind),
+				key.id,
+				-1,
+			)
+		}
+		if err != nil {
+			return nil, err
+		}
 		items = append(items, types.StatsSnapshotItem{
 			Stats:    *itemStats,
 			Visitors: visitors.Visitors,
 			Crawlers: crawlers.Items,
 			Sources:  sources.Items,
+			Likers:   bloglogic.UpdateLikers(likerRows),
+			Comments: commentList.Comments,
 		})
 	}
 	countryLogs, err := l.svcCtx.DB.RequestLog.Query().
@@ -178,9 +201,27 @@ func (l *StatsLogic) Snapshot() (*types.StatsSnapshotResponse, error) {
 		return countries[i].Count > countries[j].Count
 	})
 	return &types.StatsSnapshotResponse{
-		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
-		Items:       items,
-		Countries:   countries,
+		GeneratedAt:                time.Now().UTC().Format(time.RFC3339),
+		InteractionDetailsComplete: true,
+		Items:                      items,
+		Countries:                  countries,
+	}, nil
+}
+
+// UpdateCommentVisibility changes only the public projection flag. Comment
+// content, authorship and engagement counters remain runtime-owned.
+func (l *StatsLogic) UpdateCommentVisibility(req *types.UpdateCommentVisibilityRequest) (*types.UpdateCommentVisibilityResponse, error) {
+	row, err := l.svcCtx.DB.Comment.UpdateOneID(req.CommentID).
+		SetIsApproved(req.IsPublic).
+		Save(l.ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &types.UpdateCommentVisibilityResponse{
+		CommentID:  row.ID,
+		EntityType: row.EntityType.String(),
+		EntityID:   row.EntityID,
+		IsPublic:   row.IsApproved,
 	}, nil
 }
 
@@ -258,6 +299,7 @@ func (l *StatsLogic) Stats(req *types.StatsRequest) (*types.StatsResponse, error
 		Where(
 			comment.EntityTypeEQ(comment.EntityType(req.EntityType)),
 			comment.EntityIDEQ(id),
+			comment.IsApprovedEQ(true),
 		).Count(l.ctx)
 	if err != nil {
 		return nil, err
@@ -287,7 +329,7 @@ func maskIP(ip string) string {
 	return "x"
 }
 
-// Visitors lists the de-identified visitors of a content item.
+// Visitors lists the visitor observations of a content item.
 func (l *StatsLogic) Visitors(req *types.StatsRequest) (*types.VisitorsResponse, error) {
 	kind, err := entityType(req)
 	if err != nil {
@@ -353,6 +395,7 @@ func (l *StatsLogic) Visitors(req *types.StatsRequest) (*types.VisitorsResponse,
 		}
 		visitors = append(visitors, types.VisitorRow{
 			Fingerprint:    fp,
+			IPAddress:      ip,
 			IPMasked:       maskIP(ip),
 			VisitorKind:    row.VisitorKind.String(),
 			ReferrerKind:   row.ReferrerKind.String(),
