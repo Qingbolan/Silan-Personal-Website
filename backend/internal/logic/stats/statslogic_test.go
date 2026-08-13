@@ -10,6 +10,7 @@ import (
 	"silan-backend/internal/ent/contentinteraction"
 	"silan-backend/internal/ent/enttest"
 	"silan-backend/internal/svc"
+	"silan-backend/internal/types"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -37,6 +38,12 @@ func TestSnapshotCarriesCompleteLikerAndModerationDetails(t *testing.T) {
 		SetFingerprint("reader-one").
 		SetCountryCode("SG").
 		SaveX(ctx)
+	svcCtx.DB.ContentInteraction.Create().
+		SetID("view-without-discussion").
+		SetEntityType(contentinteraction.EntityTypeMoment).
+		SetEntityID("moment-without-discussion").
+		SetKind(contentinteraction.KindView).
+		SaveX(ctx)
 
 	svcCtx.DB.Comment.Create().
 		SetID("comment-public").
@@ -63,10 +70,14 @@ func TestSnapshotCarriesCompleteLikerAndModerationDetails(t *testing.T) {
 	if !snapshot.InteractionDetailsComplete {
 		t.Fatal("snapshot must explicitly declare complete interaction details")
 	}
-	if len(snapshot.Items) != 1 {
-		t.Fatalf("items = %d, want 1", len(snapshot.Items))
+	if len(snapshot.Items) != 2 {
+		t.Fatalf("items = %d, want 2", len(snapshot.Items))
 	}
-	item := snapshot.Items[0]
+	items := make(map[string]types.StatsSnapshotItem, len(snapshot.Items))
+	for _, item := range snapshot.Items {
+		items[item.Stats.EntityID] = item
+	}
+	item := items[entityID]
 	if item.Stats.Likes != 1 || item.Stats.Comments != 1 {
 		t.Fatalf("public stats = %+v, want one like and one public comment", item.Stats)
 	}
@@ -78,5 +89,8 @@ func TestSnapshotCarriesCompleteLikerAndModerationDetails(t *testing.T) {
 	}
 	if item.Comments[0].Replies[0].IsPublic {
 		t.Fatal("hidden reply must retain its moderation state in the private snapshot")
+	}
+	if items["moment-without-discussion"].Comments == nil {
+		t.Fatal("empty comment collections must encode as [] rather than null")
 	}
 }

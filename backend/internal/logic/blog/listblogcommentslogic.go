@@ -147,7 +147,7 @@ func (l *ListBlogCommentsLogic) listComments(req *types.BlogCommentListRequest, 
 	}
 
 	// Reconstruct from parent relations so replies remain complete at every depth.
-	var rootComments []types.BlogCommentData
+	rootComments := make([]types.BlogCommentData, 0, len(rootCommentIDs))
 	for _, rootID := range rootCommentIDs {
 		if _, exists := commentMap[rootID]; exists {
 			rootComments = append(rootComments, buildThread(rootID))
