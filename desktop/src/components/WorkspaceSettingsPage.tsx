@@ -18,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { selectPrimaryDocument } from '../lib/content';
+import { Button } from './ds/Button';
 import { contentLifecycleFor, contentStateSummary } from '../lib/contentLifecycle';
 import { formatShortDate } from '../lib/format';
 import { toWebviewMediaUrl } from '../lib/media';
@@ -172,9 +173,10 @@ function WorkspaceProfileSettings({
                     : 'No avatar selected'}
                 </span>
                 <div className="workspace-avatar-actions">
-                  <button
+                  <Button
                     type="button"
-                    className="primary"
+                    variant="primary"
+                    size="sm"
                     disabled={busy}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -182,7 +184,7 @@ function WorkspaceProfileSettings({
                       ? <LoaderCircle size={14} className="spin" />
                       : <ImagePlus size={14} />}
                     {preferences.identity.avatar_reference ? 'Replace image' : 'Choose image'}
-                  </button>
+                  </Button>
                   {preferences.identity.avatar_reference && (
                     <button
                       type="button"
@@ -372,24 +374,26 @@ function ApiProviderConnectionSettings({ provider }: { provider: ApiCredentialPr
           </div>
           <div>
             {configured && (
-              <button
+              <Button
                 type="button"
-                className="secondary"
+                variant="secondary"
+                size="sm"
                 disabled={busy}
                 onClick={() => void test()}
               >
                 {state.phase === 'testing' ? <LoaderCircle size={14} className="spin" /> : <ShieldCheck size={14} />}
                 Test connection
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="submit"
-              className="primary"
+              variant="primary"
+              size="sm"
               disabled={busy || !state.draft.trim()}
             >
               {state.phase === 'saving' ? <LoaderCircle size={14} className="spin" /> : <KeyRound size={14} />}
               Verify &amp; save
-            </button>
+            </Button>
           </div>
         </footer>
       </form>

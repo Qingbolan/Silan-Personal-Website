@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import type { LanguageReviewState } from '../lib/languageReviewWorkflow';
+import { Button } from './ds/Button';
 import type {
   DocumentLanguageAudit,
   LanguageAuditCategory,
@@ -192,15 +193,16 @@ export function LanguageReviewPanel({
                               <LocateFixed size={13} />
                               Open in editor
                             </button>
-                            <button
+                            <Button
                               type="button"
-                              className="primary"
+                              variant="primary"
+                              size="sm"
                               disabled={!finding.suggestion.trim()}
                               onClick={() => onFindingApply(result, finding)}
                             >
                               <WandSparkles size={13} />
                               Apply suggestion
-                            </button>
+                            </Button>
                           </div>
                         </article>
                       ))}
@@ -227,11 +229,11 @@ export function LanguageReviewPanel({
 
         {state.phase !== 'running' && (
           <footer className="language-review-actions">
-            <button type="button" className="cancel" onClick={onClose}>Close</button>
-            <button type="button" className="primary" onClick={onRetry}>
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>Close</Button>
+            <Button type="button" variant="primary" size="sm" onClick={onRetry}>
               <RotateCcw size={14} />
               Review again
-            </button>
+            </Button>
           </footer>
         )}
       </section>

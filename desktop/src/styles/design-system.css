@@ -5,14 +5,15 @@
    scales, layered surfaces, Acrylic/Mica materials). The palette stays academic
    (ink-blue accent + true-neutral graphite).
 
-   IMPORTANT — reset reconciliation:
-   index.css ships an aggressive legacy reset that does
-       button,input,div,span,... { border: none !important; outline: none !important }
-       input,textarea { background: transparent }
-   for the old "no borders, no surfaces" look. Design-system components must
-   opt OUT of that reset. Every ds component carries a `data-ds` attribute and
-   the rules at the bottom of this file restore borders / backgrounds / rings
-   for `[data-ds]` subtrees with matching `!important` specificity.
+   IMPORTANT — `data-ds` opt-in:
+   Every design-system component carries a `data-ds` attribute on its root
+   (see ds/dsAttr.ts). The rules at the bottom of this file give `[data-ds]`
+   subtrees the sane defaults Tailwind's disabled Preflight would otherwise
+   provide: border-box sizing and a soft default border colour, so `border` /
+   `border-ds-*` utilities render the theme hairline with no extra classes.
+   (This file was ported from the web frontend, which paired `data-ds` with
+   an aggressive legacy `border:none !important` reset; the desktop app has
+   no such reset — styles.css leaves element borders alone.)
    ========================================================================== */
 
 :root {
@@ -71,6 +72,8 @@
   --ds-mica-tint:    oklch(0.985 0 0 / 0.86);
 }
 
+/* The desktop app has no dark-mode toggle today; these overrides are kept
+   for future-proofing and simply never match while `.dark` is never set. */
 .dark {
   --ds-elevation-1: 0 1px 2px oklch(0 0 0 / 0.40), 0 1px 1px oklch(0 0 0 / 0.30);
   --ds-elevation-2: 0 4px 10px oklch(0 0 0 / 0.46), 0 1px 3px oklch(0 0 0 / 0.34);
@@ -298,18 +301,17 @@
 }
 
 /* =============================================================================
-   RESET RECONCILIATION
-   index.css forces `border:none !important`, `outline:none !important`, and
-   `background:transparent` on bare elements. Restore them inside any [data-ds]
-   subtree so design-system components render their surfaces, borders & rings.
+   [data-ds] DEFAULTS
+   Tailwind Preflight is disabled in the desktop app (see tailwind.config.js),
+   so elements get no border-box sizing and no default border colour from the
+   framework. These rules supply both for design-system subtrees.
+   (In the web frontend this section fought a legacy `border:none !important`
+   reset; that reset does not exist here — the `!important` flags below are
+   retained only so these declarations always win the cascade.)
    ========================================================================== */
 
-/* Restore the border BOX for every ds element: index.css forces
-   `border:none !important`, which also kills border-width/style. We give
-   ds elements a transparent, zero-width solid border by default — then
-   Tailwind's `border` + `border-ds-*` utilities just work normally
-   (they only need to win the width/colour cascade, not re-enable style).
-   `!important` is required to out-rank the legacy reset. */
+/* Border-box sizing for every ds element — with Preflight off, nothing else
+   sets this, and ds control metrics (h-9 inputs, px-3 padding, …) assume it. */
 [data-ds],
 [data-ds] *,
 [data-ds]::before,
@@ -317,14 +319,9 @@
   box-sizing: border-box;
 }
 
-/* The legacy `border:none !important` reset in index.css is now scoped to
-   exclude `[data-ds]` subtrees (see index.css), so inside a ds component
-   Tailwind's border utilities — including opacity variants like
-   `border-ds-error/25` — work normally with no !important gymnastics.
-
-   We still give ds elements a sane default so a bare `border` utility
-   (width only, no colour class) shows the soft theme hairline rather than
-   inheriting `currentColor` (the near-black text colour — the old bug). */
+/* A sane default border colour so a bare `border` utility (width only, no
+   colour class) shows the soft theme hairline rather than inheriting
+   `currentColor` (the near-black text colour — the old bug). */
 [data-ds],
 [data-ds] * {
   border-color: var(--ds-color-border);
@@ -337,11 +334,8 @@
   border-color: var(--ds-color-border) !important;
 }
 
-/* Note: the legacy index.css reset is now scoped to exclude `[data-ds]`,
-   so ds inputs / focus rings keep whatever their own Tailwind classes set —
-   no reconciliation rules are needed for background or box-shadow here. */
-
-/* ds buttons must keep their fill — never inherit the bare-element reset. */
+/* ds buttons must keep their own chrome — never fall back to the UA's
+   native button appearance. */
 button[data-ds] {
   -webkit-appearance: none;
           appearance: none;

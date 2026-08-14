@@ -3,7 +3,7 @@ import MarkdownEditor, {
 } from './MarkdownEditor';
 
 /**
- * Read-only Novel surface. Preview and editing share one Markdown schema,
+ * Read-only Lexical surface. Preview and editing share one Markdown schema,
  * so GFM structures cannot drift between the rendered document and editor.
  */
 export function MarkdownPreview({

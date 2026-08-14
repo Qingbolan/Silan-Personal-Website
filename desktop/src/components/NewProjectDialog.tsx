@@ -1,6 +1,15 @@
 import React from 'react';
-import { AlertCircle, FolderPlus, LoaderCircle } from 'lucide-react';
+import { AlertCircle, FolderPlus } from 'lucide-react';
 import { slugPreview } from '../lib/format';
+import { Button } from './ds/Button';
+import {
+  Dialog,
+  DialogActions,
+  DialogCard,
+  DialogDescription,
+  DialogTitle,
+} from './ds/Dialog';
+import { Input } from './ds/Input';
 
 type NewProjectDialogProps = {
   title: string;
@@ -24,23 +33,18 @@ export function NewProjectDialog({
   onKeyDown,
 }: NewProjectDialogProps) {
   return (
-    <div className="dialog-overlay" role="presentation" onClick={onCancel}>
-      <div
-        className="dialog-card new-project-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="new-project-title"
-        onClick={(event) => event.stopPropagation()}
-      >
+    <Dialog open onClose={onCancel}>
+      <DialogCard className="new-project-card" aria-labelledby="new-project-title">
         <div className="new-project-badge">
           <FolderPlus size={17} />
         </div>
-        <h3 id="new-project-title">New project</h3>
-        <p>Creates a real content/project source with an overview Part, then opens it for editing.</p>
+        <DialogTitle id="new-project-title">New project</DialogTitle>
+        <DialogDescription>
+          Creates a real content/project source with an overview Part, then opens it for editing.
+        </DialogDescription>
         <label className="new-project-field">
-          <input
+          <Input
             ref={inputRef}
-            className="dialog-input"
             type="text"
             value={title}
             onChange={(event) => onTitleChange(event.target.value)}
@@ -48,6 +52,7 @@ export function NewProjectDialog({
             disabled={submitting}
             placeholder="Project title"
             aria-label="Project title"
+            data-autofocus
           />
           <span className="new-project-slug">
             content/resources/projects/{title.trim() ? slugPreview(title) : '...'}
@@ -59,19 +64,23 @@ export function NewProjectDialog({
             <span>{error}</span>
           </div>
         )}
-        <div className="dialog-actions">
-          <button type="button" className="cancel" disabled={submitting} onClick={onCancel}>Cancel</button>
-          <button
+        <DialogActions>
+          <Button type="button" variant="secondary" size="sm" disabled={submitting} onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
             type="button"
-            className={`primary ${submitting ? 'pending' : ''}`}
+            variant="primary"
+            size="sm"
+            loading={submitting}
             disabled={!title.trim() || submitting}
             onClick={onSubmit}
           >
-            {submitting ? <LoaderCircle size={15} /> : <FolderPlus size={15} />}
+            {!submitting && <FolderPlus size={15} />}
             {submitting ? 'Creating' : 'Create project'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogActions>
+      </DialogCard>
+    </Dialog>
   );
 }

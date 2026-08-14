@@ -209,7 +209,7 @@ function EntryView({ role, entry }: { role: string; entry: ResumeEntry }) {
   );
 
   // Description and detail bullets carry inline Markdown (bold, links) —
-  // render them through the shared Novel schema as one block.
+  // render them through the shared Lexical schema as one block.
   const bodyMarkdown = [
     description,
     details.map((detail) => `- ${detail}`).join('\n'),

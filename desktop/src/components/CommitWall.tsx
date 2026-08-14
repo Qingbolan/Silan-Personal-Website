@@ -18,7 +18,8 @@ type CommitWallProps = {
 };
 
 type TrafficWallProps = {
-  activity: Array<{ date: string; visits: number }>;
+  activity: Array<{ date: string; visits: number; unique_visitors?: number }>;
+  countMetric?: 'visits' | 'unique_visitors';
   noun?: string;
   selectedDate?: string | null;
   onSelect?: (date: string) => void;
@@ -59,10 +60,21 @@ export function CommitWall({ activity, selectedDate, onSelect }: CommitWallProps
   }} />;
 }
 
-export function TrafficWall({ activity, noun = 'human visit', selectedDate, onSelect }: TrafficWallProps) {
+export function TrafficWall({
+  activity,
+  countMetric = 'visits',
+  noun = 'human visit',
+  selectedDate,
+  onSelect,
+}: TrafficWallProps) {
   return (
     <TileWall
-      activity={activity.map((day) => ({ date: day.date, count: day.visits }))}
+      activity={activity.map((day) => ({
+        date: day.date,
+        count: countMetric === 'unique_visitors'
+          ? day.unique_visitors ?? 0
+          : day.visits,
+      }))}
       noun={noun}
       selectedDate={selectedDate}
       onSelect={onSelect}

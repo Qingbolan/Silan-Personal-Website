@@ -12,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { toWebviewMediaUrl } from '../lib/media';
+import { Select } from './ds/Select';
 import type {
   ArticleAttribution,
   ArticleImageAttributionPlan,
@@ -196,14 +197,14 @@ export function ArticleDiscoverySettings({
           )}
           {value.external_resources.map((resource, index) => (
             <div className="article-resource-row" key={`${index}:${resource.url}`}>
-              <select
+              <Select
                 aria-label={`Resource ${index + 1} kind`}
                 value={resource.kind}
                 disabled={disabled}
                 onChange={(event) => updateResource(index, { kind: event.target.value })}
               >
                 {resourceKinds.map(([kind, label]) => <option value={kind} key={kind}>{label}</option>)}
-              </select>
+              </Select>
               <input
                 type="text"
                 aria-label={`Resource ${index + 1} label`}
