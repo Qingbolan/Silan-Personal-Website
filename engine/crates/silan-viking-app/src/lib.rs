@@ -52,6 +52,7 @@ pub mod translation_ai;
 pub mod website_insights;
 pub mod workspace;
 pub mod workspace_content;
+pub mod workspace_join;
 pub mod workspace_sync;
 
 pub use capture::{CaptureError, CapturedContent, ContentCreator, IdeaCategory};
@@ -154,6 +155,10 @@ pub use workspace_content::{
     EditablePart, EditableSection, EditableTranslation, EditableWorkspace, SaveLifecycleInput,
     SaveMetadataInput, SaveProjectFeaturedInput, SaveTranslationInput, SourceRevision,
     WorkspaceContent, WorkspaceContentError, WorkspaceEntityCount,
+};
+pub use workspace_join::{
+    DeploymentKeyRequirement, GitAuthenticationKind, GitRepositoryState, GitRepositoryStatus,
+    JoinWorkspaceInput, JoinWorkspaceResult, WorkspaceJoinError, WorkspaceJoiner, WorkspaceLayout,
 };
 pub use workspace_sync::{
     WorkspaceSync, WorkspaceSyncError, WorkspaceSyncResult, WorkspaceSyncState, WorkspaceSyncStatus,
