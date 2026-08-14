@@ -3,29 +3,30 @@
 use crate::model::{
     CommitActivityDay, ContentMetadataInput, DailyContentTraffic, DailyTraffic, DashboardData,
     DashboardItem, DeliverySyncStatus, DeployRunStatus, DeployVerificationResult, DeployedStats,
-    DeploymentPlan, DeploymentScopeStatus, DocumentStateInput, EditorDocument, EditorTranslation,
-    EngagementStats, EngagementStatsInput, EpisodeSeriesInput, EpisodeSeriesSource, GeoAction,
-    GeoEvidence, GeoInsightReport, GeoMetric, ImportedMediaAsset, MarkdownSelectionAssistAction,
+    DeploymentPlan, DeploymentScopeStatus, DocumentStateInput, EditorDocument, EditorRelation,
+    EditorTranslation, EngagementStats, EpisodeSeriesInput, EpisodeSeriesSource, GeoAction,
+    GeoEvidence, GeoInsightReport, GeoMetric, ImportedMediaAsset, InteractionComment,
+    InteractionDetails, InteractionLiker, MarkdownSelectionAssistAction,
     MarkdownSelectionAssistInput, MarkdownSelectionAssistResult, MomentsCover, MomentsProfile,
     MomentsSettings, RemoteContentVersion, ResumeEntryInput, ResumePartSource, ResumeProfile,
     ResumeProfileSource, ResumeSection, ResumeSocialLink, StatsSyncReport, TopContentItem,
     TrafficCountry, TrafficEvidence, TrafficSource, VersionChange, VersionCommit, VersionStatus,
     VisitorLocation, WorkspaceFileChange, WorkspaceIdentity, WorkspacePreferences,
 };
+use crate::workspace_runtime;
 use serde::Deserialize;
 use silan_viking_app::{
-    api_base_url, ArticleImageAttributionPlan, ArticleImageAttributionResult,
-    ArticleImageAttributionWorkspace, ContentCreator, ContentEditor, ContentKind,
-    ContentRelationshipEditor, CoverBrief, CoverGenerationInput, CoverWorkspace,
+    api_base_url, workspace_stats_sync_token, ArticleImageAttributionPlan,
+    ArticleImageAttributionResult, ArticleImageAttributionWorkspace, ContentCreator, ContentEditor,
+    ContentKind, ContentRelationshipEditor, CoverBrief, CoverGenerationInput, CoverWorkspace,
     CreateTranslationInput, DeepSeekApiKey, DeepSeekCommitMessageGenerator, DeliveryControl,
-    EditableDocument, EditablePart, EditableSection, GeneratedImageAsset, GeoAdvisor, IdeaCategory,
-    ImageGenerationRequest, ImageOutputFormat, ImageQuality, ImageSize, LanguageAuditReport,
-    LanguageAuditScope, LanguageAuditWorkflow, MarkdownSelectionEditAction,
-    MarkdownSelectionEditRequest, MarkdownTranslationRequest, MarkdownTranslationSyncRequest,
-    MediaAssetRef, MediaLibrary, OpenAiApiKey, OpenAiImageGenerator, OpenAiMarkdownTranslator,
-    RelationshipTargetKind, ReleaseScope, ResumeProfileUpdate, SaveLifecycleInput,
-    SaveMetadataInput, SaveTranslationInput, StatsCache, StatsError, WebsiteInsights,
-    WorkspaceContent,
+    EditableDocument, EditablePart, EditableSection, GeoAdvisor, IdeaCategory, ImageOutputFormat,
+    ImageQuality, ImageSize, LanguageAuditReport, LanguageAuditScope, LanguageAuditWorkflow,
+    MarkdownSelectionEditAction, MarkdownSelectionEditRequest, MarkdownTranslationRequest,
+    MarkdownTranslationSyncRequest, MediaAssetRef, MediaLibrary, OpenAiApiKey,
+    OpenAiMarkdownTranslator, RelationshipTargetKind, ReleaseScope, ResumeProfileUpdate,
+    SaveLifecycleInput, SaveMetadataInput, SaveTranslationInput, StatsCache, StatsError, StatsSync,
+    WebsiteInsights, WorkspaceContent,
 };
 use std::collections::BTreeMap;
 use std::env;
@@ -35,14 +36,6 @@ use std::path::{Path, PathBuf};
 
 const DEFAULT_MOMENTS_BACKGROUND_POSITION: &str = "center 42%";
 const DEFAULT_MOMENTS_COVER_HEIGHT_PX: u16 = 420;
-
-#[derive(Debug, Clone, Deserialize)]
-pub(crate) struct GenerateImageAssetInput {
-    pub(crate) prompt: String,
-    pub(crate) size: String,
-    pub(crate) quality: String,
-    pub(crate) output_format: String,
-}
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct GenerateCoverAssetInput {
@@ -80,16 +73,25 @@ struct ProjectConfig {
     project: Option<ProjectSection>,
     database: Option<DatabaseConfig>,
     desktop: Option<DesktopConfig>,
+    deploy: Option<DeployConfig>,
 }
 
 #[derive(Debug, Default, Deserialize)]
 struct ProjectSection {
+    name: Option<String>,
     content_dir: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
 struct DatabaseConfig {
     path: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct DeployConfig {
+    host: Option<String>,
+    user: Option<String>,
+    ssh_key_path: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -127,7 +129,14 @@ pub(crate) struct DesktopWorkspace {
 
 impl DesktopWorkspace {
     pub(crate) fn from_environment() -> Result<Self, String> {
-        let workspace = DesktopWorkspacePaths::resolve()?;
+        Self::from_paths(DesktopWorkspacePaths::resolve()?)
+    }
+
+    pub(crate) fn from_project_root(project_root: &Path) -> Result<Self, String> {
+        Self::from_paths(DesktopWorkspacePaths::from_project_root(project_root)?)
+    }
+
+    fn from_paths(workspace: DesktopWorkspacePaths) -> Result<Self, String> {
         let db_path = workspace.db_path;
         let content_root = workspace.content_root;
         Ok(Self {
@@ -958,24 +967,6 @@ impl DesktopWorkspace {
         Ok(self.imported_media_asset(asset))
     }
 
-    pub(crate) fn generate_image_asset(
-        &self,
-        translation_id: &str,
-        input: GenerateImageAssetInput,
-        api_key: &OpenAiApiKey,
-    ) -> Result<ImportedMediaAsset, String> {
-        let (document, _, _) = self
-            .workspace_content
-            .translation(translation_id)
-            .map_err(|error| error.to_string())?;
-        let generated = generate_image(input, api_key)?;
-        let asset = self
-            .media_library
-            .import_asset_bytes(&document.id, &generated.file_name, &generated.bytes)
-            .map_err(|error| error.to_string())?;
-        Ok(self.imported_media_asset(asset))
-    }
-
     pub(crate) fn generate_cover_asset(
         &self,
         target_uri: &str,
@@ -1130,23 +1121,10 @@ impl DesktopWorkspace {
         if metadata.title.trim().is_empty() {
             return Err("Content title is required.".to_owned());
         }
+        let input = save_metadata_input(translation_id, metadata, expected_revision);
         let saved = self
             .workspace_content
-            .save_metadata(
-                &SaveMetadataInput {
-                    translation_id: translation_id.to_owned(),
-                    title: metadata.title,
-                    description: metadata.description,
-                    cover_url: metadata.cover_url,
-                    cover_source_type: metadata.cover_source_type,
-                    cover_website_url: metadata.cover_website_url,
-                    github_url: metadata.github_url,
-                    demo_url: metadata.demo_url,
-                    article_attribution: metadata.article_attribution,
-                    expected_revision: expected_revision.to_owned(),
-                },
-                &self.db_path,
-            )
+            .save_metadata(&input, &self.db_path)
             .map_err(|error| error.to_string())?;
         let engagement = ContentEngagementSnapshot::read(&self.db_path);
         map_editable_document(saved, &engagement)
@@ -1157,6 +1135,44 @@ impl DesktopWorkspace {
                     .any(|value| value.id == translation_id)
             })
             .ok_or_else(|| format!("saved metadata `{translation_id}` was not returned"))
+    }
+
+    pub(crate) fn save_content_settings(
+        &self,
+        translation_id: &str,
+        metadata: ContentMetadataInput,
+        state: DocumentStateInput,
+        expected_revision: &str,
+    ) -> Result<EditorDocument, String> {
+        if metadata.title.trim().is_empty() {
+            return Err("Content title is required.".to_owned());
+        }
+        let (current, _, _) = self
+            .workspace_content
+            .translation(translation_id)
+            .map_err(|error| error.to_string())?;
+        validate_document_state(&current.content_type, &state)?;
+        let lifecycle = SaveLifecycleInput {
+            translation_id: translation_id.to_owned(),
+            status: state.status,
+            visibility: state.visibility,
+            pinned: state.pinned,
+            expected_revision: expected_revision.to_owned(),
+        };
+        let metadata = save_metadata_input(translation_id, metadata, expected_revision);
+        let saved = self
+            .workspace_content
+            .save_settings(&lifecycle, &metadata, &self.db_path)
+            .map_err(|error| error.to_string())?;
+        let engagement = ContentEngagementSnapshot::read(&self.db_path);
+        map_editable_document(saved, &engagement)
+            .into_iter()
+            .find(|part| {
+                part.translations
+                    .iter()
+                    .any(|value| value.id == translation_id)
+            })
+            .ok_or_else(|| format!("saved settings `{translation_id}` were not returned"))
     }
 
     pub(crate) fn preview_article_image_attribution(
@@ -1177,22 +1193,55 @@ impl DesktopWorkspace {
             .map_err(|error| error.to_string())
     }
 
-    pub(crate) fn save_engagement_stats(
+    pub(crate) fn interaction_details(
         &self,
         entity_type: &str,
         entity_id: &str,
-        stats: EngagementStatsInput,
-    ) -> Result<EngagementStats, String> {
-        if stats.likes < 0 || stats.comments < 0 {
-            return Err("Reaction counters cannot be negative.".to_owned());
-        }
-        let saved = StatsCache::open(&self.db_path)
-            .save_item_engagement(entity_type, entity_id, stats.likes, stats.comments)
+    ) -> Result<InteractionDetails, String> {
+        let details = StatsCache::open(&self.db_path)
+            .interaction_details(entity_type, entity_id)
             .map_err(|error| error.to_string())?;
-        Ok(EngagementStats {
-            likes: saved.likes,
-            comments: saved.comments,
+        Ok(InteractionDetails {
+            is_complete: details.is_complete,
+            likers: details
+                .likers
+                .into_iter()
+                .map(|liker| InteractionLiker {
+                    kind: liker.kind,
+                    country_code: liker.country_code,
+                    visitor_number: liker.visitor_number,
+                    avatar_url: liker.avatar_url,
+                    label: liker.label,
+                })
+                .collect(),
+            comments: details
+                .comments
+                .into_iter()
+                .map(map_interaction_comment)
+                .collect(),
         })
+    }
+
+    pub(crate) fn set_comment_visibility(
+        &self,
+        entity_type: &str,
+        entity_id: &str,
+        comment_id: &str,
+        is_public: bool,
+    ) -> Result<InteractionDetails, String> {
+        let base_url = api_base_url(&self.content_root).map_err(|error| error.to_string())?;
+        let mut sync = StatsSync::new(base_url, &self.db_path);
+        if let Some(token) = workspace_stats_sync_token(&self.content_root) {
+            sync = sync.with_bearer_token(token);
+        }
+        let updated = sync
+            .set_comment_visibility(comment_id, is_public)
+            .map_err(|error| error.to_string())?;
+        if updated.entity_type != entity_type || updated.entity_id != entity_id {
+            return Err("Updated comment does not belong to the selected content item.".to_owned());
+        }
+        sync.sync_snapshot().map_err(|error| error.to_string())?;
+        self.interaction_details(entity_type, entity_id)
     }
 
     pub(crate) fn capture_blog(
@@ -1509,22 +1558,6 @@ impl DesktopWorkspace {
     }
 }
 
-fn generate_image(
-    input: GenerateImageAssetInput,
-    api_key: &OpenAiApiKey,
-) -> Result<GeneratedImageAsset, String> {
-    let request = ImageGenerationRequest {
-        prompt: input.prompt,
-        size: ImageSize::parse(&input.size).map_err(|error| error.to_string())?,
-        quality: ImageQuality::parse(&input.quality).map_err(|error| error.to_string())?,
-        output_format: ImageOutputFormat::parse(&input.output_format)
-            .map_err(|error| error.to_string())?,
-    };
-    OpenAiImageGenerator::default()
-        .generate(api_key, &request)
-        .map_err(|error| error.to_string())
-}
-
 #[derive(Debug, Clone)]
 struct DesktopWorkspacePaths {
     content_root: PathBuf,
@@ -1532,10 +1565,39 @@ struct DesktopWorkspacePaths {
 }
 
 impl DesktopWorkspacePaths {
+    fn from_project_root(project_root: &Path) -> Result<Self, String> {
+        let config = read_project_config(project_root)?;
+        let content_dir = config
+            .project
+            .as_ref()
+            .and_then(|section| section.content_dir.as_deref())
+            .unwrap_or("content");
+        let content_root = project_root.join(content_dir);
+        let db_path = config
+            .database
+            .as_ref()
+            .and_then(|database| database.path.as_deref())
+            .map(|path| project_root.join(path))
+            .ok_or_else(|| {
+                format!(
+                    "Desktop database is not configured; add [database].path to {}",
+                    project_root.join("silan-viking.toml").display()
+                )
+            })?;
+        Ok(Self {
+            content_root,
+            db_path,
+        })
+    }
+
     fn resolve() -> Result<Self, String> {
-        let project_root = env::var("SILAN_DESKTOP_PROJECT")
-            .ok()
-            .map(PathBuf::from)
+        let registered_project_root = workspace_runtime::active_project_root();
+        if let Some(project_root) = registered_project_root.as_deref() {
+            return Self::from_project_root(project_root);
+        }
+        let project_root = registered_project_root
+            .clone()
+            .or_else(|| env::var("SILAN_DESKTOP_PROJECT").ok().map(PathBuf::from))
             .or_else(|| {
                 env::var("SILAN_DESKTOP_CONTENT")
                     .ok()
@@ -1581,6 +1643,44 @@ impl DesktopWorkspacePaths {
     }
 }
 
+#[derive(Debug, Clone)]
+pub(crate) struct DesktopProjectSummary {
+    pub(crate) project_name: String,
+    pub(crate) deployment_key_required: bool,
+    pub(crate) configured_deployment_key: Option<String>,
+    pub(crate) deploy_host: Option<String>,
+    pub(crate) deploy_user: Option<String>,
+}
+
+pub(crate) fn read_desktop_project_summary(
+    project_root: &Path,
+) -> Result<DesktopProjectSummary, String> {
+    let config = read_project_config(project_root)?;
+    let project_name = config
+        .project
+        .as_ref()
+        .and_then(|project| project.name.as_deref())
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .unwrap_or("Silan-Viking")
+        .to_owned();
+    let deploy_host = config
+        .deploy
+        .as_ref()
+        .and_then(|deploy| deploy.host.clone());
+    let deployment_key_required = deploy_host.as_deref().is_some_and(|host| host != "local");
+    Ok(DesktopProjectSummary {
+        project_name,
+        deployment_key_required,
+        configured_deployment_key: config
+            .deploy
+            .as_ref()
+            .and_then(|deploy| deploy.ssh_key_path.clone()),
+        deploy_host,
+        deploy_user: config.deploy.and_then(|deploy| deploy.user),
+    })
+}
+
 pub(crate) fn desktop_content_root() -> Result<PathBuf, String> {
     DesktopWorkspacePaths::resolve().map(|workspace| workspace.content_root)
 }
@@ -1590,6 +1690,7 @@ fn map_daily_traffic(days: Vec<silan_viking_app::DailyTraffic>) -> Vec<DailyTraf
         .map(|day| DailyTraffic {
             date: day.date,
             visits: day.visits,
+            unique_visitors: day.unique_visitors,
             content: day
                 .content
                 .into_iter()
@@ -1597,6 +1698,7 @@ fn map_daily_traffic(days: Vec<silan_viking_app::DailyTraffic>) -> Vec<DailyTraf
                     content_type: item.content_type,
                     title: item.title,
                     visits: item.visits,
+                    unique_visitors: item.unique_visitors,
                     comments: item.comments,
                     evidence: item
                         .evidence
@@ -1627,6 +1729,7 @@ fn map_daily_traffic(days: Vec<silan_viking_app::DailyTraffic>) -> Vec<DailyTraf
                             accuracy_radius: visitor.accuracy_radius,
                             ip_addresses: visitor.ip_addresses,
                             visits: visitor.visits,
+                            unique_visitors: visitor.unique_visitors,
                         })
                         .collect(),
                 })
@@ -1752,6 +1855,28 @@ fn avatar_label(display_name: &str) -> String {
         .to_string()
 }
 
+fn map_interaction_comment(
+    comment: silan_viking_app::stats::InteractionComment,
+) -> InteractionComment {
+    InteractionComment {
+        id: comment.id,
+        parent_id: comment.parent_id,
+        author_name: comment.author_name,
+        author_avatar_url: comment.author_avatar_url,
+        auth_provider: comment.auth_provider,
+        country_code: comment.country_code,
+        content: comment.content,
+        created_at: comment.created_at,
+        likes_count: comment.likes_count,
+        is_public: comment.is_public,
+        replies: comment
+            .replies
+            .into_iter()
+            .map(map_interaction_comment)
+            .collect(),
+    }
+}
+
 struct ContentEngagementSnapshot {
     cache: StatsCache,
 }
@@ -1796,6 +1921,10 @@ fn map_editable_document(
         github_url,
         demo_url,
         article_attribution,
+        moment_type,
+        priority,
+        tags,
+        relations,
         date,
         pinned,
         parts,
@@ -1839,6 +1968,18 @@ fn map_editable_document(
                 github_url: github_url.clone(),
                 demo_url: demo_url.clone(),
                 article_attribution: article_attribution.clone(),
+                moment_type: moment_type.clone(),
+                priority: priority.clone(),
+                tags: tags.clone(),
+                relations: relations
+                    .iter()
+                    .map(|relation| EditorRelation {
+                        relation_type: relation.relation_type.clone(),
+                        target_uri: relation.target_uri.clone(),
+                        target_kind: relation.target_kind.clone(),
+                        target_slug: relation.target_slug.clone(),
+                    })
+                    .collect(),
                 engagement: item_engagement.clone(),
                 translations: translations
                     .into_iter()
@@ -1948,7 +2089,7 @@ fn serialize_resume_part(
                 let items = entry
                     .fields
                     .get("items")
-                    .map(|value| json_to_toml(value))
+                    .map(json_to_toml)
                     .transpose()?
                     .flatten()
                     .unwrap_or(toml::Value::Array(Vec::new()));
@@ -2112,6 +2253,28 @@ fn validate_document_state(kind: &str, state: &DocumentStateInput) -> Result<(),
     Ok(())
 }
 
+fn save_metadata_input(
+    translation_id: &str,
+    metadata: ContentMetadataInput,
+    expected_revision: &str,
+) -> SaveMetadataInput {
+    SaveMetadataInput {
+        translation_id: translation_id.to_owned(),
+        title: metadata.title,
+        description: metadata.description,
+        cover_url: metadata.cover_url,
+        cover_source_type: metadata.cover_source_type,
+        cover_website_url: metadata.cover_website_url,
+        github_url: metadata.github_url,
+        demo_url: metadata.demo_url,
+        article_attribution: metadata.article_attribution,
+        moment_type: metadata.moment_type,
+        priority: metadata.priority,
+        tags: metadata.tags,
+        expected_revision: expected_revision.to_owned(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2127,6 +2290,36 @@ mod tests {
             },
         )
         .is_ok());
+    }
+
+    #[test]
+    fn moment_lifecycle_accepts_all_supported_visibility_modes() {
+        for status in ["active", "ongoing", "completed"] {
+            for visibility in ["private", "unlisted", "public"] {
+                assert!(validate_document_state(
+                    "moment",
+                    &DocumentStateInput {
+                        status: status.to_owned(),
+                        visibility: visibility.to_owned(),
+                        pinned: None,
+                    },
+                )
+                .is_ok());
+            }
+        }
+    }
+
+    #[test]
+    fn moment_lifecycle_rejects_prose_publication_statuses() {
+        assert!(validate_document_state(
+            "moment",
+            &DocumentStateInput {
+                status: "published".to_owned(),
+                visibility: "public".to_owned(),
+                pinned: None,
+            },
+        )
+        .is_err());
     }
 
     #[test]

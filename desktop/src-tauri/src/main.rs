@@ -6,6 +6,8 @@ mod credential_store;
 mod deepseek_credentials;
 mod model;
 mod openai_credentials;
+mod workspace_onboarding;
+mod workspace_runtime;
 use std::path::Path;
 use tauri::{http, Manager};
 
@@ -13,10 +15,12 @@ fn main() {
     tauri::Builder::default()
         .register_uri_scheme_protocol("silan", |_ctx, request| silan_protocol_response(request))
         .setup(|app| {
-            let content_root = application::desktop_content_root()
-                .map_err(|error| std::io::Error::new(std::io::ErrorKind::NotFound, error))?;
-            app.asset_protocol_scope()
-                .allow_directory(content_root.join("resources"), true)?;
+            workspace_runtime::initialize(app.path().app_config_dir()?)
+                .map_err(std::io::Error::other)?;
+            if let Ok(content_root) = application::desktop_content_root() {
+                app.asset_protocol_scope()
+                    .allow_directory(content_root.join("resources"), true)?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -31,6 +35,7 @@ fn main() {
             commands::create_project_from_moment,
             commands::deploy_content,
             commands::edit_markdown_selection,
+            commands::complete_workspace_onboarding,
             commands::get_episode_series_source,
             commands::get_dashboard,
             commands::get_deepseek_credentials,
@@ -44,16 +49,18 @@ fn main() {
             commands::get_resume_sections,
             commands::get_version_status,
             commands::get_workspace_changes,
+            commands::get_workspace_bootstrap_status,
             commands::get_workspace_file_diff,
             commands::get_workspace_preferences,
             commands::generate_workspace_commit_message,
             commands::generate_missing_translation,
-            commands::generate_image_asset,
             commands::generate_cover_asset,
             commands::import_episode_series_media_asset,
             commands::import_media_asset,
             commands::import_media_asset_bytes,
             commands::import_resume_media_asset,
+            commands::join_workspace,
+            commands::get_interaction_details,
             commands::link_moment_to_content,
             commands::list_documents,
             commands::preview_article_image_attribution,
@@ -62,10 +69,11 @@ fn main() {
             commands::remove_openai_credentials,
             commands::remove_workspace_avatar,
             commands::save_content_metadata,
+            commands::save_content_settings,
             commands::save_document,
             commands::save_document_state,
             commands::save_deepseek_credentials,
-            commands::save_engagement_stats,
+            commands::set_comment_visibility,
             commands::save_episode_series,
             commands::save_openai_credentials,
             commands::save_workspace_avatar,
@@ -84,7 +92,9 @@ fn main() {
             commands::transcribe_audio,
             commands::unlink_moment_from_content,
             commands::unstage_workspace_paths,
-            commands::verify_remote_content
+            commands::validate_workspace_deployment_key,
+            commands::verify_remote_content,
+            commands::verify_workspace_repository
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Silan Context System");

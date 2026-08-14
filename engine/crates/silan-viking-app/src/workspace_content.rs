@@ -55,9 +55,25 @@ pub struct EditableDocument {
     pub github_url: Option<String>,
     pub demo_url: Option<String>,
     pub article_attribution: Option<ArticleAttribution>,
+    pub moment_type: Option<String>,
+    pub priority: Option<String>,
+    pub tags: Vec<String>,
+    pub relations: Vec<EditableRelation>,
     pub date: Option<String>,
     pub pinned: bool,
     pub parts: Vec<EditablePart>,
+}
+
+/// One typed, source-declared outgoing relation for content management UIs.
+///
+/// The target coordinates are projected from the canonical `SilanUri` so
+/// adapters never need to reverse-engineer URI directory naming rules.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EditableRelation {
+    pub relation_type: String,
+    pub target_uri: String,
+    pub target_kind: String,
+    pub target_slug: String,
 }
 
 /// One external destination surfaced with a Blog as a compact attachment.
@@ -137,6 +153,9 @@ pub struct SaveMetadataInput {
     pub github_url: Option<String>,
     pub demo_url: Option<String>,
     pub article_attribution: Option<ArticleAttribution>,
+    pub moment_type: Option<String>,
+    pub priority: Option<String>,
+    pub tags: Option<Vec<String>>,
     pub expected_revision: String,
 }
 
@@ -276,6 +295,22 @@ impl WorkspaceContent {
                     }
                 })
                 .collect();
+            let relations = parsed
+                .relations()
+                .iter()
+                .filter_map(|relation| {
+                    let [target_directory, target_slug] = relation.to().segments() else {
+                        return None;
+                    };
+                    let target_kind = ContentKind::from_dir_name(target_directory).ok()?;
+                    Some(EditableRelation {
+                        relation_type: relation.relation_type().as_str().to_owned(),
+                        target_uri: relation.to().to_string(),
+                        target_kind: target_kind.frontmatter_value().to_owned(),
+                        target_slug: target_slug.clone(),
+                    })
+                })
+                .collect();
             documents.push(EditableDocument {
                 id: item.id().to_string(),
                 item_id: item.id().to_string(),
@@ -328,6 +363,19 @@ impl WorkspaceContent {
                 },
                 article_attribution: (item.kind() == ContentKind::Blog)
                     .then(|| article_attribution(&parsed)),
+                moment_type: (item.kind() == ContentKind::Moment)
+                    .then(|| parsed.main().text("moment_type").map(str::to_owned))
+                    .flatten(),
+                priority: (item.kind() == ContentKind::Moment)
+                    .then(|| parsed.main().text("priority").map(str::to_owned))
+                    .flatten(),
+                tags: parsed
+                    .main()
+                    .get("tags")
+                    .and_then(|value| value.as_list())
+                    .unwrap_or_default()
+                    .to_vec(),
+                relations,
                 date: parsed
                     .main()
                     .text("date")
@@ -515,51 +563,41 @@ impl WorkspaceContent {
         let kind = ContentKind::from_frontmatter_value(&document.content_type)
             .map_err(|_| WorkspaceContentError::NotFound(document.id.clone()))?;
         let locator = locator(&document, &part, &translation.language)?;
-        let mut fields = vec![yaml_text("title", input.title.trim())];
-        if let Some(field) = summary_field_for(kind) {
-            fields.push(yaml_text(
-                field,
-                input.description.as_deref().unwrap_or_default().trim(),
-            ));
-        }
-        if let Some(field) = cover_field_for(kind) {
-            fields.push(yaml_text(
-                field,
-                input.cover_url.as_deref().unwrap_or_default().trim(),
-            ));
-        }
-        if kind == ContentKind::Project {
-            fields.push(yaml_text(
-                "cover_source_type",
-                &normalize_cover_source_type(input.cover_source_type.as_deref()),
-            ));
-            fields.push(yaml_text(
-                "cover_website_url",
-                input
-                    .cover_website_url
-                    .as_deref()
-                    .unwrap_or_default()
-                    .trim(),
-            ));
-            fields.push(yaml_text(
-                "github_url",
-                input.github_url.as_deref().unwrap_or_default().trim(),
-            ));
-            fields.push(yaml_text(
-                "demo_url",
-                input.demo_url.as_deref().unwrap_or_default().trim(),
-            ));
-        }
-        if kind == ContentKind::Blog {
-            if let Some(attribution) = input.article_attribution.clone() {
-                let attribution = normalize_article_attribution(attribution)?;
-                fields.extend(article_attribution_yaml(&attribution));
-            }
-        }
+        let fields = content_metadata_fields(kind, input)?;
         self.editor.save_frontmatter_values_and_sync(
             &locator,
             &fields,
             &input.expected_revision,
+            db_path,
+        )?;
+        WorkspaceContent::open(&self.content_root)?.editable_document(&document.id)
+    }
+
+    /// Save the complete desktop settings form as one source mutation.
+    /// Lifecycle and metadata share a revision, so this boundary prevents
+    /// partial saves and optimistic-concurrency conflicts.
+    pub fn save_settings(
+        &self,
+        lifecycle: &SaveLifecycleInput,
+        metadata: &SaveMetadataInput,
+        db_path: impl AsRef<Path>,
+    ) -> Result<EditableDocument, WorkspaceContentError> {
+        if lifecycle.translation_id != metadata.translation_id
+            || lifecycle.expected_revision != metadata.expected_revision
+        {
+            return Err(WorkspaceContentError::InvalidMetadata(
+                "lifecycle and metadata must target the same source revision".to_owned(),
+            ));
+        }
+        let (document, part, translation) = self.translation(&metadata.translation_id)?;
+        let kind = ContentKind::from_frontmatter_value(&document.content_type)
+            .map_err(|_| WorkspaceContentError::NotFound(document.id.clone()))?;
+        let locator = locator(&document, &part, &translation.language)?;
+        let fields = content_settings_fields(kind, lifecycle, metadata)?;
+        self.editor.save_frontmatter_values_and_sync(
+            &locator,
+            &fields,
+            &metadata.expected_revision,
             db_path,
         )?;
         WorkspaceContent::open(&self.content_root)?.editable_document(&document.id)
@@ -831,8 +869,145 @@ fn normalize_resource_kind(value: &str) -> String {
     normalized
 }
 
+fn content_metadata_fields(
+    kind: ContentKind,
+    input: &SaveMetadataInput,
+) -> Result<Vec<(String, serde_yaml::Value)>, WorkspaceContentError> {
+    let mut fields = vec![yaml_text("title", input.title.trim())];
+    if let Some(field) = summary_field_for(kind) {
+        fields.push(yaml_text(
+            field,
+            input.description.as_deref().unwrap_or_default().trim(),
+        ));
+    }
+    if let Some(field) = cover_field_for(kind) {
+        fields.push(yaml_text(
+            field,
+            input.cover_url.as_deref().unwrap_or_default().trim(),
+        ));
+    }
+    if kind == ContentKind::Project {
+        fields.push(yaml_text(
+            "cover_source_type",
+            &normalize_cover_source_type(input.cover_source_type.as_deref()),
+        ));
+        fields.push(yaml_text(
+            "cover_website_url",
+            input
+                .cover_website_url
+                .as_deref()
+                .unwrap_or_default()
+                .trim(),
+        ));
+        fields.push(yaml_text(
+            "github_url",
+            input.github_url.as_deref().unwrap_or_default().trim(),
+        ));
+        fields.push(yaml_text(
+            "demo_url",
+            input.demo_url.as_deref().unwrap_or_default().trim(),
+        ));
+    }
+    if kind == ContentKind::Blog {
+        if let Some(attribution) = input.article_attribution.clone() {
+            let attribution = normalize_article_attribution(attribution)?;
+            fields.extend(article_attribution_yaml(&attribution));
+        }
+    }
+    if kind == ContentKind::Moment {
+        if let Some(moment_type) = input.moment_type.as_deref() {
+            fields.push(yaml_text(
+                "moment_type",
+                validate_metadata_enum(
+                    "moment_type",
+                    moment_type,
+                    &[
+                        "milestone",
+                        "achievement",
+                        "progress",
+                        "release",
+                        "announcement",
+                        "insight",
+                        "learning",
+                        "reflection",
+                    ],
+                )?,
+            ));
+        }
+        if let Some(priority) = input.priority.as_deref() {
+            fields.push(yaml_text(
+                "priority",
+                validate_metadata_enum("priority", priority, &["high", "medium", "low"])?,
+            ));
+        }
+        if let Some(tags) = input.tags.as_ref() {
+            fields.push((
+                "tags".to_owned(),
+                serde_yaml::Value::Sequence(
+                    normalize_metadata_tags(tags)?
+                        .into_iter()
+                        .map(serde_yaml::Value::String)
+                        .collect(),
+                ),
+            ));
+        }
+    }
+    Ok(fields)
+}
+
+fn content_settings_fields(
+    kind: ContentKind,
+    lifecycle: &SaveLifecycleInput,
+    metadata: &SaveMetadataInput,
+) -> Result<Vec<(String, serde_yaml::Value)>, WorkspaceContentError> {
+    let mut fields = content_metadata_fields(kind, metadata)?;
+    fields.push(yaml_text("status", lifecycle.status.trim()));
+    fields.push(yaml_text("visibility", lifecycle.visibility.trim()));
+    if let Some(pinned) = lifecycle.pinned {
+        fields.push(("pinned".to_owned(), serde_yaml::Value::Bool(pinned)));
+    }
+    Ok(fields)
+}
+
 fn yaml_text(key: &str, value: &str) -> (String, serde_yaml::Value) {
     (key.to_owned(), serde_yaml::Value::String(value.to_owned()))
+}
+
+fn validate_metadata_enum<'a>(
+    field: &str,
+    value: &'a str,
+    allowed: &[&str],
+) -> Result<&'a str, WorkspaceContentError> {
+    let value = value.trim();
+    if allowed.contains(&value) {
+        return Ok(value);
+    }
+    Err(WorkspaceContentError::InvalidMetadata(format!(
+        "`{value}` is not a valid {field}; expected one of {}",
+        allowed.join(", ")
+    )))
+}
+
+fn normalize_metadata_tags(tags: &[String]) -> Result<Vec<String>, WorkspaceContentError> {
+    let mut normalized = Vec::new();
+    for tag in tags {
+        let tag = tag.trim().trim_start_matches('#');
+        if tag.is_empty() || normalized.iter().any(|existing| existing == tag) {
+            continue;
+        }
+        if tag.chars().count() > 48 {
+            return Err(WorkspaceContentError::InvalidMetadata(format!(
+                "tag `{tag}` exceeds 48 characters"
+            )));
+        }
+        normalized.push(tag.to_owned());
+    }
+    if normalized.len() > 12 {
+        return Err(WorkspaceContentError::InvalidMetadata(
+            "moments support at most 12 tags".to_owned(),
+        ));
+    }
+    Ok(normalized)
 }
 
 fn article_attribution_yaml(attribution: &ArticleAttribution) -> Vec<(String, serde_yaml::Value)> {
@@ -967,5 +1142,96 @@ mod tests {
             source.starts_with("resources/episode/using-silan-viking/"),
             "{source}"
         );
+    }
+
+    #[test]
+    fn moment_editor_projection_exposes_semantic_metadata_and_relations() {
+        let workspace = WorkspaceContent::open(repository_content()).expect("open content");
+        let moment = workspace
+            .editable_documents()
+            .expect("scan documents")
+            .into_iter()
+            .find(|document| {
+                document.content_type == "moment" && document.slug == "silan-viking-progress"
+            })
+            .expect("moment fixture");
+
+        assert_eq!(moment.moment_type.as_deref(), Some("progress"));
+        assert_eq!(moment.priority.as_deref(), Some("medium"));
+        assert_eq!(moment.tags, ["silan-viking", "content-system"]);
+        assert!(moment.relations.iter().any(|relation| {
+            relation.relation_type == "evolved_into"
+                && relation.target_kind == "project"
+                && relation.target_slug == "silan-viking"
+        }));
+    }
+
+    #[test]
+    fn moment_metadata_validation_uses_the_declared_schema() {
+        assert_eq!(
+            validate_metadata_enum("moment_type", " insight ", &["progress", "insight"])
+                .expect("valid moment type"),
+            "insight"
+        );
+        assert!(validate_metadata_enum("priority", "urgent", &["high", "medium", "low"]).is_err());
+        assert_eq!(
+            normalize_metadata_tags(&[
+                " #research ".to_owned(),
+                "research".to_owned(),
+                "systems".to_owned(),
+            ])
+            .expect("valid tags"),
+            ["research", "systems"]
+        );
+    }
+
+    #[test]
+    fn settings_field_set_combines_metadata_lifecycle_visibility_and_pin() {
+        let metadata = SaveMetadataInput {
+            translation_id: "part:en".to_owned(),
+            title: "Field note".to_owned(),
+            description: None,
+            cover_url: None,
+            cover_source_type: None,
+            cover_website_url: None,
+            github_url: None,
+            demo_url: None,
+            article_attribution: None,
+            moment_type: Some("insight".to_owned()),
+            priority: Some("high".to_owned()),
+            tags: Some(vec!["research".to_owned()]),
+            expected_revision: "revision".to_owned(),
+        };
+        let lifecycle = SaveLifecycleInput {
+            translation_id: "part:en".to_owned(),
+            status: "ongoing".to_owned(),
+            visibility: "unlisted".to_owned(),
+            pinned: Some(true),
+            expected_revision: "revision".to_owned(),
+        };
+
+        let fields = content_settings_fields(ContentKind::Moment, &lifecycle, &metadata)
+            .expect("valid settings fields");
+        let values = fields.into_iter().collect::<BTreeMap<_, _>>();
+        assert_eq!(
+            values.get("title").and_then(serde_yaml::Value::as_str),
+            Some("Field note")
+        );
+        assert_eq!(
+            values.get("status").and_then(serde_yaml::Value::as_str),
+            Some("ongoing")
+        );
+        assert_eq!(
+            values.get("visibility").and_then(serde_yaml::Value::as_str),
+            Some("unlisted")
+        );
+        assert_eq!(
+            values.get("pinned").and_then(serde_yaml::Value::as_bool),
+            Some(true)
+        );
+        assert!(values
+            .get("tags")
+            .and_then(serde_yaml::Value::as_sequence)
+            .is_some());
     }
 }

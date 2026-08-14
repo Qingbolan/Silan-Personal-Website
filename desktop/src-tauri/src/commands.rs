@@ -1,21 +1,82 @@
 //! Thin Tauri command adapter.
 
-use crate::application::{DesktopWorkspace, GenerateCoverAssetInput, GenerateImageAssetInput};
+use crate::application::{DesktopWorkspace, GenerateCoverAssetInput};
 use crate::credential_store::ApiCredentialStatus;
 use crate::deepseek_credentials::DesktopDeepSeekCredentials;
 use crate::model::{
     ContentMetadataInput, DashboardData, DeliverySyncStatus, DeployRunStatus,
-    DeployVerificationResult, DeploymentPlan, DocumentStateInput, EditorDocument, EngagementStats,
-    EngagementStatsInput, EpisodeSeriesInput, EpisodeSeriesSource, GeoInsightReport,
-    ImportedMediaAsset, MarkdownSelectionAssistInput, MarkdownSelectionAssistResult,
+    DeployVerificationResult, DeploymentPlan, DocumentStateInput, EditorDocument,
+    EpisodeSeriesInput, EpisodeSeriesSource, GeoInsightReport, ImportedMediaAsset,
+    InteractionDetails, MarkdownSelectionAssistInput, MarkdownSelectionAssistResult,
     MomentsSettings, ResumeEntryInput, ResumePartSource, ResumeProfile, ResumeProfileSource,
     ResumeSection, StatsSyncReport, VersionStatus, WorkspaceFileChange, WorkspacePreferences,
 };
 use crate::openai_credentials::DesktopOpenAiCredentials;
+use crate::workspace_onboarding::{
+    self, CompleteWorkspaceOnboardingInput, DeploymentKeyValidation, DesktopBootstrapStatus,
+    DesktopJoinWorkspaceInput, DesktopJoinWorkspaceResult, RepositoryAccessInput,
+    RepositoryAccessResult,
+};
 use silan_viking_app::{
     ArticleImageAttributionPlan, ArticleImageAttributionResult, AudioTranscriptionRequest,
     LanguageAuditReport, OpenAiAudioTranscriber,
 };
+use std::path::PathBuf;
+use tauri::Manager;
+
+#[tauri::command]
+pub(crate) fn get_workspace_bootstrap_status() -> DesktopBootstrapStatus {
+    workspace_onboarding::bootstrap_status()
+}
+
+#[tauri::command]
+pub(crate) async fn verify_workspace_repository(
+    input: RepositoryAccessInput,
+) -> Result<RepositoryAccessResult, String> {
+    run_background("workspace repository access", move || {
+        workspace_onboarding::verify_repository_access(input)
+    })
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn join_workspace(
+    app: tauri::AppHandle,
+    input: DesktopJoinWorkspaceInput,
+) -> Result<DesktopJoinWorkspaceResult, String> {
+    let joined = run_background("join workspace", move || {
+        workspace_onboarding::join_workspace(input)
+    })
+    .await?;
+    app.asset_protocol_scope()
+        .allow_directory(PathBuf::from(&joined.content_root).join("resources"), true)
+        .map_err(|error| format!("cannot allow workspace media: {error}"))?;
+    Ok(joined)
+}
+
+#[tauri::command]
+pub(crate) async fn validate_workspace_deployment_key(
+    path: String,
+) -> Result<DeploymentKeyValidation, String> {
+    run_background("deployment key validation", move || {
+        workspace_onboarding::validate_deployment_key(&path)
+    })
+    .await
+}
+
+#[tauri::command]
+pub(crate) fn complete_workspace_onboarding(
+    app: tauri::AppHandle,
+    input: CompleteWorkspaceOnboardingInput,
+) -> Result<DesktopBootstrapStatus, String> {
+    let status = workspace_onboarding::complete_onboarding(input)?;
+    if let Ok(content_root) = crate::application::desktop_content_root() {
+        app.asset_protocol_scope()
+            .allow_directory(content_root.join("resources"), true)
+            .map_err(|error| format!("cannot allow workspace media: {error}"))?;
+    }
+    Ok(status)
+}
 
 #[tauri::command]
 pub(crate) fn list_documents() -> Result<Vec<EditorDocument>, String> {
@@ -293,30 +354,6 @@ pub(crate) async fn edit_markdown_selection(
 }
 
 #[tauri::command]
-pub(crate) async fn generate_image_asset(
-    id: String,
-    prompt: String,
-    size: Option<String>,
-    quality: Option<String>,
-    output_format: Option<String>,
-) -> Result<ImportedMediaAsset, String> {
-    run_background("AI image generation", move || {
-        let api_key = DesktopOpenAiCredentials::load_key()?;
-        DesktopWorkspace::from_environment()?.generate_image_asset(
-            &id,
-            GenerateImageAssetInput {
-                prompt,
-                size: size.unwrap_or_else(|| "1024x1024".to_owned()),
-                quality: quality.unwrap_or_else(|| "auto".to_owned()),
-                output_format: output_format.unwrap_or_else(|| "png".to_owned()),
-            },
-            &api_key,
-        )
-    })
-    .await
-}
-
-#[tauri::command]
 pub(crate) async fn generate_cover_asset(
     target_uri: String,
     language: String,
@@ -367,6 +404,21 @@ pub(crate) fn save_content_metadata(
 }
 
 #[tauri::command]
+pub(crate) fn save_content_settings(
+    id: String,
+    metadata: ContentMetadataInput,
+    state: DocumentStateInput,
+    expected_revision: String,
+) -> Result<EditorDocument, String> {
+    DesktopWorkspace::from_environment()?.save_content_settings(
+        &id,
+        metadata,
+        state,
+        &expected_revision,
+    )
+}
+
+#[tauri::command]
 pub(crate) fn preview_article_image_attribution(
     target_uri: String,
 ) -> Result<ArticleImageAttributionPlan, String> {
@@ -384,12 +436,29 @@ pub(crate) async fn apply_article_image_attribution(
 }
 
 #[tauri::command]
-pub(crate) fn save_engagement_stats(
+pub(crate) fn get_interaction_details(
     entity_type: String,
     entity_id: String,
-    stats: EngagementStatsInput,
-) -> Result<EngagementStats, String> {
-    DesktopWorkspace::from_environment()?.save_engagement_stats(&entity_type, &entity_id, stats)
+) -> Result<InteractionDetails, String> {
+    DesktopWorkspace::from_environment()?.interaction_details(&entity_type, &entity_id)
+}
+
+#[tauri::command]
+pub(crate) async fn set_comment_visibility(
+    entity_type: String,
+    entity_id: String,
+    comment_id: String,
+    is_public: bool,
+) -> Result<InteractionDetails, String> {
+    run_background("comment visibility", move || {
+        DesktopWorkspace::from_environment()?.set_comment_visibility(
+            &entity_type,
+            &entity_id,
+            &comment_id,
+            is_public,
+        )
+    })
+    .await
 }
 
 #[tauri::command]

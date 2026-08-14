@@ -1,6 +1,8 @@
-import { Heart, Lock, MessageCircle, PencilLine } from 'lucide-react';
+import { Heart, Link2, Lock, MessageCircle, PencilLine } from 'lucide-react';
 import { contentGroupTags, contentGroupUpdatedAt, selectPrimaryDocument, translationPreview } from '../lib/content';
+import { contentLifecycleFor } from '../lib/contentLifecycle';
 import { toWebviewMediaUrl } from '../lib/media';
+import { Badge } from './ds/Badge';
 import type { ContentGroup, EditorDocument, MomentsSettings } from '../types';
 
 type MomentFeedProps = {
@@ -31,6 +33,12 @@ const updateDateParts = (value: string) => {
 };
 
 const contentGroupDate = (group: ContentGroup) => group.date || contentGroupUpdatedAt(group);
+
+const momentVisibilityIcon = (visibility: string) => {
+  if (visibility === 'private') return <Lock size={18} aria-label="Private moment" />;
+  if (visibility === 'unlisted') return <Link2 size={18} aria-label="Unlisted moment" />;
+  return <PencilLine size={16} aria-label="Public moment" />;
+};
 
 export function MomentFeed({
   groups,
@@ -90,6 +98,7 @@ export function MomentFeed({
           const date = updateDateParts(updateDate);
           const tags = contentGroupTags(group, 3);
           const preview = translation?.content || translationPreview(document) || group.title;
+          const lifecycle = contentLifecycleFor('moment', group.status, group.visibility);
 
           return (
             <article className="moments-timeline-row" key={group.id}>
@@ -101,11 +110,16 @@ export function MomentFeed({
               <button type="button" className="moments-entry" onClick={() => onOpen(group)}>
                 <div>
                   <p>{preview}</p>
-                  {tags.length > 0 && (
-                    <div className="moments-tags">
-                      {tags.map((tag) => <span key={tag}>#{tag}</span>)}
-                    </div>
-                  )}
+                  <div className="moments-tags">
+                    <Badge size="sm" tone="neutral">{lifecycle.statusLabel}</Badge>
+                    <Badge
+                      size="sm"
+                      tone={lifecycle.visibility === 'public' ? 'success' : lifecycle.visibility === 'unlisted' ? 'warning' : 'neutral'}
+                    >
+                      {lifecycle.visibilityLabel}
+                    </Badge>
+                    {tags.map((tag) => <span key={tag}>#{tag}</span>)}
+                  </div>
                   <div
                     className="moments-engagement"
                     aria-label={`${group.engagement.likes} likes and ${group.engagement.comments} comments`}
@@ -120,7 +134,7 @@ export function MomentFeed({
                     </span>
                   </div>
                 </div>
-                {group.visibility !== 'public' ? <Lock size={18} aria-label="Private moment" /> : <PencilLine size={16} aria-hidden="true" />}
+                {momentVisibilityIcon(lifecycle.visibility)}
               </button>
             </article>
           );

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { contentLifecycleFor } from './contentLifecycle.ts';
+import { contentLifecycleFor, hasDocumentStateChanges } from './contentLifecycle.ts';
 import {
   countResourcesByShelf,
   documentBelongsToShelf,
@@ -112,4 +112,49 @@ test('archived projects leave the Projects shelf and restore as private active w
     status: 'active',
     visibility: 'private',
   });
+});
+
+test('moment progress and visibility are independent state dimensions', () => {
+  const active = contentLifecycleFor('moment', 'active', 'private');
+  assert.deepEqual(
+    active.actions.find((action) => action.id === 'start')?.nextState,
+    { status: 'ongoing', visibility: 'private' },
+  );
+  assert.deepEqual(
+    active.actions.find((action) => action.id === 'make-unlisted')?.nextState,
+    { status: 'active', visibility: 'unlisted' },
+  );
+  assert.deepEqual(
+    active.actions.find((action) => action.id === 'make-public')?.nextState,
+    { status: 'active', visibility: 'public' },
+  );
+
+  const unlisted = contentLifecycleFor('moment', 'ongoing', 'unlisted');
+  assert.deepEqual(
+    unlisted.actions.find((action) => action.id === 'complete')?.nextState,
+    { status: 'completed', visibility: 'unlisted' },
+  );
+  assert.deepEqual(
+    unlisted.actions.find((action) => action.id === 'make-private')?.nextState,
+    { status: 'ongoing', visibility: 'private' },
+  );
+});
+
+test('completed moments reopen to ongoing without changing audience', () => {
+  const reopen = contentLifecycleFor('moment', 'completed', 'public')
+    .actions
+    .find((action) => action.id === 'activate');
+  assert.deepEqual(reopen?.nextState, {
+    status: 'ongoing',
+    visibility: 'public',
+  });
+});
+
+test('publishing form changes enable saving for status, visibility, and moment pin', () => {
+  const current = { status: 'active', visibility: 'public', pinned: false };
+  assert.equal(hasDocumentStateChanges('moment', current, current), false);
+  assert.equal(hasDocumentStateChanges('moment', { ...current, status: 'ongoing' }, current), true);
+  assert.equal(hasDocumentStateChanges('moment', { ...current, visibility: 'unlisted' }, current), true);
+  assert.equal(hasDocumentStateChanges('moment', { ...current, pinned: true }, current), true);
+  assert.equal(hasDocumentStateChanges('blog', { ...current, pinned: true }, current), false);
 });

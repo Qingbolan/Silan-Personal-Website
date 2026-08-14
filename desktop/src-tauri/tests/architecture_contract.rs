@@ -79,7 +79,7 @@ fn tauri_command_surface_matches_the_desktop_features() {
         })
         .filter_map(identifier_prefix)
         .collect::<BTreeSet<_>>();
-    let invoked = invoked_commands(&frontend);
+    let invoked = invoked_commands(&frontend, &registered);
 
     assert_eq!(
         registered, declared,
@@ -115,8 +115,8 @@ fn identifier_prefix(value: &str) -> Option<String> {
     (!identifier.is_empty()).then_some(identifier)
 }
 
-fn invoked_commands(source: &str) -> BTreeSet<String> {
-    source
+fn invoked_commands(source: &str, registered: &BTreeSet<String>) -> BTreeSet<String> {
+    let mut invoked = source
         .lines()
         .filter(|line| line.contains("invoke<") || line.contains("invoke("))
         .filter_map(|line| {
@@ -124,5 +124,14 @@ fn invoked_commands(source: &str) -> BTreeSet<String> {
             let end = line[quote..].find('\'')? + quote;
             Some(line[quote..end].to_owned())
         })
-        .collect()
+        .collect::<BTreeSet<_>>();
+    // Some UI workflows deliberately route a small, typed command family
+    // through one invoke adapter. Their concrete command literals still form
+    // a real UI consumer even though the invoke call receives a variable.
+    for command in registered {
+        if source.contains(&format!("'{command}'")) || source.contains(&format!("\"{command}\"")) {
+            invoked.insert(command.clone());
+        }
+    }
+    invoked
 }

@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Cog,
   Eye,
   EyeOff,
   FileImage,
@@ -23,9 +24,9 @@ import {
   Folder,
   FolderPlus,
   GitBranch,
+  Heart,
   Link2,
   LoaderCircle,
-  Menu,
   MessageCircle,
   PencilLine,
   Plus,
@@ -38,9 +39,7 @@ import {
   Search,
   Send,
   Sparkles,
-  ThumbsUp,
   Type,
-  Unlink2,
   UploadCloud,
   UserRound,
   X,
@@ -50,8 +49,17 @@ import { AiCoverGenerator } from './components/AiCoverGenerator';
 import { ArticleDiscoverySettings } from './components/ArticleDiscoverySettings';
 import { CommitWall, TrafficWall } from './components/CommitWall';
 import { ContentCard } from './components/ContentCard';
+import { ContentPublishingFields } from './components/ContentPublishingFields';
+import {
+  ContentRelationManager,
+  type ContentReferenceOption,
+} from './components/ContentRelationManager';
 import { LanguageCloseControls, type LanguageCloseTab } from './components/LanguageCloseControls';
 import { LanguageReviewPanel } from './components/LanguageReviewPanel';
+import {
+  InteractionDetailsPanel,
+  type InteractionDetailsState,
+} from './components/InteractionDetailsPanel';
 import {
   MarkdownDocumentWorkspace,
   type MarkdownWorkspaceActivity,
@@ -59,6 +67,7 @@ import {
 import type {
   EditorReviewFinding,
   MarkdownEditorHandle,
+  MarkdownImageImport,
   MarkdownSelectionAssistRequest,
 } from './components/MarkdownEditor';
 import {
@@ -70,9 +79,62 @@ import { WorkspaceSettingsPage } from './components/WorkspaceSettingsPage';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { ResumePage, ResumeMediaField } from './components/ResumePage';
 import { RefreshConfirmDialog } from './components/RefreshConfirmDialog';
+import { Button } from './components/ds/Button';
+import {
+  Dialog,
+  DialogActions,
+  DialogCard,
+  DialogDescription,
+  DialogTitle,
+} from './components/ds/Dialog';
+import { Input } from './components/ds/Input';
+import { Select } from './components/ds/Select';
 import { SeriesDetail } from './components/SeriesDetail';
 import { GitChangesPanel } from './components/GitChangesPanel';
 import { MomentFeed } from './components/MomentFeed';
+import {
+  archivableKinds,
+  editableMasonryContentKinds,
+  isContentKind,
+  isVersionScope,
+  masonryContentKinds,
+  navigationEntityFilters,
+  stateManagedKinds,
+} from './app/content/contentModel';
+import {
+  attachmentOnlyCaptureNote,
+  counterpartMarkdownLanguage,
+  fileBytes,
+  inferMarkdownLanguage,
+  preferredMarkdownLanguages,
+} from './app/content/markdownLanguage';
+import {
+  buildDashboardRankingItems,
+  dashboardRankingLabels,
+  dashboardRankingNoun,
+  evidenceEventSourceLabel,
+  evidenceSourceLabel,
+  formatCountryFlag,
+  formatLocationDetail,
+  formatLocationLabel,
+  groupEvidenceByAgent,
+  type DashboardRankingItem,
+  type DashboardRankingMetric,
+} from './app/dashboard/trafficInsights';
+import {
+  contentSettingsPages,
+  defaultArticleAttribution,
+  metadataCoverLabel,
+  metadataSummaryLabel,
+  seriesSettingsPages,
+  SettingsPageIntro,
+  SettingsPageNavigation,
+  type ContentRailMode,
+  type ContentRailPanel,
+  type ContentSettingsPage,
+  type RelationTargetKind,
+  type SeriesSettingsPage,
+} from './app/settings/contentSettings';
 import {
   arrangeBlogGroupsForGrid,
   badgeClass,
@@ -85,6 +147,7 @@ import {
 import {
   contentLifecycleFor,
   contentStateSummary,
+  hasDocumentStateChanges,
   seriesLifecycleFor,
   type DocumentStateInput,
   type LifecycleAction,
@@ -110,8 +173,8 @@ import type {
   ArticleAttribution,
   ContentGroup,
   ContentKind,
+  ContentRelation,
   DashboardData,
-  DashboardItem,
   DeliverySyncStatus,
   DeploymentPlan,
   DeployRunStatus,
@@ -126,20 +189,15 @@ import type {
   GeoInsightReport,
   IdeaCategory,
   ImportedMediaAsset,
+  InteractionDetails,
   LanguageAuditFinding,
   MarkdownSelectionAssistResult,
   MomentsSettings,
   StatsSyncReport,
-  TrafficEvidence,
   VersionStatus,
   VersionScope,
   WorkspacePreferences,
 } from './types';
-
-const masonryContentKinds = new Set<ContentKind>(['blog', 'project']);
-const editableMasonryContentKinds = new Set<ContentKind>(['blog', 'project', 'episode', 'resume', 'moment']);
-const versionScopeFilters = new Set<EntityFilter>(['resume', 'blog', 'project', 'moment']);
-const preferredMarkdownLanguages = ['en', 'zh'];
 
 type PendingReviewAction = {
   findingId: string;
@@ -147,10 +205,6 @@ type PendingReviewAction = {
   language: string;
   mode: 'focus' | 'apply';
 };
-
-const isVersionScope = (filter: EntityFilter): filter is VersionScope => (
-  versionScopeFilters.has(filter)
-);
 
 const entityMeta: Record<EntityFilter, { label: string; eyebrow: string; empty: string; Icon: typeof Folder }> = {
   all: { label: 'Library', eyebrow: 'All content', empty: 'No matching Markdown content.', Icon: Folder },
@@ -162,117 +216,6 @@ const entityMeta: Record<EntityFilter, { label: string; eyebrow: string; empty: 
   moment: { label: 'Moments', eyebrow: 'Timeline', empty: 'No moments yet.', Icon: Aperture },
 };
 
-const navigationEntityFilters: EntityFilter[] = ['resume', 'moment', 'blog', 'project'];
-
-const isTechnicalTrafficSubject = (subject: string) => (
-  /\.(?:js|css)\.map(?:$|[?#])/i.test(subject)
-  || /(?:^|\/)assets\/.+\.(?:js|css|map)(?:$|[?#])/i.test(subject)
-);
-
-type LocationDisplayInput = {
-  country_code: string;
-  region_code?: string;
-  region_name?: string;
-  city?: string;
-  postal_code?: string;
-  place_name?: string;
-  place_feature_code?: string;
-  place_distance_km?: string;
-  latitude?: string;
-  longitude?: string;
-  time_zone?: string;
-  accuracy_radius?: number;
-};
-
-const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-
-const pushUniqueLocationPart = (parts: string[], value?: string) => {
-  const clean = value?.trim();
-  if (!clean) return;
-  if (!parts.some((part) => part.toLowerCase() === clean.toLowerCase())) {
-    parts.push(clean);
-  }
-};
-
-const formatLocationLabel = (location: LocationDisplayInput) => {
-  const parts: string[] = [];
-  pushUniqueLocationPart(parts, location.country_code ? regionNames.of(location.country_code) || location.country_code : '');
-  pushUniqueLocationPart(parts, location.region_name || location.region_code);
-  pushUniqueLocationPart(parts, location.city);
-  pushUniqueLocationPart(parts, location.place_name);
-  pushUniqueLocationPart(parts, location.postal_code);
-  return parts.join(' · ') || 'Location unavailable';
-};
-
-const formatLocationDetail = (location: LocationDisplayInput) => {
-  const details: string[] = [];
-  if (location.latitude || location.longitude) {
-    details.push([location.latitude, location.longitude].filter(Boolean).join(', '));
-  }
-  if (location.accuracy_radius && location.accuracy_radius > 0) {
-    details.push(`±${location.accuracy_radius} km`);
-  }
-  if (location.place_name && location.place_distance_km) {
-    details.push(`nearest ${location.place_distance_km} km`);
-  }
-  if (location.time_zone) {
-    details.push(location.time_zone);
-  }
-  return details.join(' · ');
-};
-
-const groupEvidenceByAgent = (evidence: TrafficEvidence[]) => {
-  const grouped: Record<string, {
-    visits: number;
-    events: Set<string>;
-    subjects: Record<string, { kind: TrafficEvidence['subject_kind']; visits: number }>;
-  }> = {};
-  evidence.forEach((item) => {
-    grouped[item.agent] ||= { visits: 0, events: new Set(), subjects: {} };
-    const group = grouped[item.agent];
-    group.visits += item.visits;
-    group.events.add(item.event);
-    if (item.subject) {
-      const key = `${item.subject_kind}:${item.subject}`;
-      group.subjects[key] ||= { kind: item.subject_kind, visits: 0 };
-      group.subjects[key].visits += item.visits;
-    }
-  });
-  return Object.entries(grouped)
-    .map(([agent, group]) => {
-      const subjects = Object.entries(group.subjects)
-        .map(([key, value]) => ({
-          label: key.slice(key.indexOf(':') + 1),
-          ...value,
-        }))
-        .sort((left, right) => right.visits - left.visits || left.label.localeCompare(right.label));
-      const visibleSubjects = subjects.filter((subject) => !isTechnicalTrafficSubject(subject.label));
-      return {
-        agent,
-        visits: group.visits,
-        event: [...group.events].join(' · '),
-        subjects: visibleSubjects.slice(0, 6),
-        hiddenSubjectCount: Math.max(0, visibleSubjects.length - 6),
-        technicalVisits: subjects
-          .filter((subject) => isTechnicalTrafficSubject(subject.label))
-          .reduce((total, subject) => total + subject.visits, 0),
-      };
-    })
-    .sort((left, right) => right.visits - left.visits || left.agent.localeCompare(right.agent));
-};
-
-const evidenceSubjectLabel = (kind: TrafficEvidence['subject_kind']) => {
-  switch (kind) {
-    case 'ai_query': return 'AI query';
-    case 'attributed_topic': return 'Attributed topic';
-    case 'keyword': return 'Keyword';
-    case 'search_query': return 'Search query';
-    case 'landing_page': return 'Landing page';
-    case 'page': return 'Page fetched';
-    default: return 'Observed';
-  }
-};
-
 const ideaCategories: Array<{ value: IdeaCategory; label: string; Icon: typeof Sparkles }> = [
   { value: 'inspiration', label: '灵感', Icon: Sparkles },
   { value: 'thought', label: '想法', Icon: Brain },
@@ -281,169 +224,25 @@ const ideaCategories: Array<{ value: IdeaCategory; label: string; Icon: typeof S
   { value: 'event', label: '事件', Icon: CalendarDays },
 ];
 
-const stateManagedKinds = new Set<ContentKind>(['blog', 'project', 'episode', 'moment']);
-const archivableKinds = new Set<ContentKind>(['blog', 'project', 'episode']);
-const ENGLISH_MARKDOWN_LANGUAGE = 'en';
-const CHINESE_MARKDOWN_LANGUAGE = 'zh';
-const counterpartMarkdownLanguage = (language: string) => {
-  const normalized = language.trim().toLowerCase();
-  if (normalized === ENGLISH_MARKDOWN_LANGUAGE) return CHINESE_MARKDOWN_LANGUAGE;
-  if (normalized === CHINESE_MARKDOWN_LANGUAGE || normalized.startsWith('zh')) return ENGLISH_MARKDOWN_LANGUAGE;
-  return '';
-};
+const momentTypes = [
+  'milestone',
+  'achievement',
+  'progress',
+  'release',
+  'announcement',
+  'insight',
+  'learning',
+  'reflection',
+] as const;
 
-const inferMarkdownLanguage = (markdown: string, fallback: string) => {
-  const cjkCount = (markdown.match(/[\u3400-\u9fff]/g) || []).length;
-  const latinWordCount = (markdown.match(/[A-Za-z][A-Za-z'-]*/g) || []).length;
-  if (cjkCount >= 6 || cjkCount > latinWordCount * 2) return 'zh';
-  if (latinWordCount > 0) return 'en';
-  return fallback.trim().toLowerCase().startsWith('zh') ? 'zh' : 'en';
-};
+const momentPriorities = ['high', 'medium', 'low'] as const;
 
-const attachmentOnlyCaptureNote = (target: CaptureTarget, fallbackLanguage: string) => {
-  const isZh = fallbackLanguage.trim().toLowerCase().startsWith('zh');
-  if (target === 'moment') return isZh ? '图文记录' : 'Media moment';
-  return isZh ? '图文草稿' : 'Media draft';
-};
-
-const fileBytes = async (file: File) => Array.from(new Uint8Array(await file.arrayBuffer()));
-
-type ContentRailPanel = 'parts' | 'settings' | 'reactions';
-type ContentRailMode = 'files' | 'interaction';
-type ContentSettingsPage = 'overview' | 'cover' | 'discovery' | 'links' | 'relations' | 'publishing' | 'source';
-type SeriesSettingsPage = 'overview' | 'cover' | 'publishing' | 'source';
-type DashboardRankingMetric = 'views' | 'likes' | 'comments' | 'crawlers' | 'ai_crawlers' | 'search_bots' | 'ai_chat';
-type RelationTargetKind = 'blog' | 'project';
-type SettingsPageItem<Page extends string> = {
-  id: Page;
-  label: string;
-  description: string;
-};
-type DashboardRankingItem = {
-  kind: ContentKind;
-  title: string;
-  slug: string;
-  count: number;
-  detail: string;
-  updatedAt: string;
-};
-const contentKinds = new Set<ContentKind>(['blog', 'project', 'idea', 'resume', 'episode', 'moment']);
-const dashboardRankingLabels: Record<DashboardRankingMetric, string> = {
-  views: 'Views ranking',
-  likes: 'Likes ranking',
-  comments: 'Comments ranking',
-  crawlers: 'Crawler ranking',
-  ai_crawlers: 'AI crawler ranking',
-  search_bots: 'Search bot ranking',
-  ai_chat: 'AI chat ranking',
-};
-
-const contentSettingsPages: Array<SettingsPageItem<ContentSettingsPage>> = [
-  { id: 'overview', label: 'Overview', description: 'Title and summary' },
-  { id: 'cover', label: 'Cover', description: 'Preview and generate' },
-  { id: 'discovery', label: 'Discovery', description: 'Resources and image credit' },
-  { id: 'links', label: 'Links', description: 'Repository and demo' },
-  { id: 'relations', label: 'Relations', description: 'Convert and connect' },
-  { id: 'publishing', label: 'Publishing', description: 'Visibility and lifecycle' },
-  { id: 'source', label: 'Source', description: 'Identifiers and files' },
-];
-
-const defaultArticleAttribution = (): ArticleAttribution => ({
-  project_name: '',
-  publication_venue: '',
-  project_url: '',
-  external_resources: [],
-  image_author: '',
-  image_site_url: '',
-  image_watermark_mode: 'off',
-  image_watermark_position: 'bottom-right',
-});
-
-const seriesSettingsPages: Array<SettingsPageItem<SeriesSettingsPage>> = [
-  { id: 'overview', label: 'Overview', description: 'Title and summary' },
-  { id: 'cover', label: 'Cover', description: 'Upload or generate' },
-  { id: 'publishing', label: 'Publishing', description: 'Series availability' },
-  { id: 'source', label: 'Source', description: 'Identifier and file' },
-];
-
-function SettingsPageNavigation<Page extends string>({
-  items,
-  activePage,
-  onChange,
-  label,
-}: {
-  items: Array<SettingsPageItem<Page>>;
-  activePage: Page;
-  onChange: (page: Page) => void;
-  label: string;
-}) {
-  return (
-    <nav className="content-settings-page-nav" aria-label={label}>
-      {items.map(({ id, label: itemLabel, description }) => (
-        <button
-          key={id}
-          type="button"
-          className={activePage === id ? 'active' : ''}
-          aria-current={activePage === id ? 'page' : undefined}
-          onClick={() => onChange(id)}
-        >
-          <span>
-            <strong>{itemLabel}</strong>
-            <small>{description}</small>
-          </span>
-        </button>
-      ))}
-    </nav>
-  );
-}
-
-function SettingsPageIntro({
-  eyebrow,
-  title,
-  description,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <header className="content-settings-page-intro">
-      <span>{eyebrow}</span>
-      <h2>{title}</h2>
-      <p>{description}</p>
-    </header>
-  );
-}
-
-const isContentKind = (value: string): value is ContentKind => contentKinds.has(value as ContentKind);
-
-const dashboardRankingNoun = (metric: DashboardRankingMetric, count: number) => {
-  switch (metric) {
-    case 'likes': return count === 1 ? 'like' : 'likes';
-    case 'comments': return count === 1 ? 'comment' : 'comments';
-    case 'views': return count === 1 ? 'view' : 'views';
-    case 'search_bots': return count === 1 ? 'search bot hit' : 'search bot hits';
-    case 'ai_crawlers': return count === 1 ? 'AI crawler hit' : 'AI crawler hits';
-    case 'ai_chat': return count === 1 ? 'AI chat referral' : 'AI chat referrals';
-    default: return count === 1 ? 'crawler hit' : 'crawler hits';
-  }
-};
-
-const metadataSummaryLabel = (kind: ContentKind) => {
-  switch (kind) {
-    case 'blog': return 'Excerpt';
-    case 'project': return 'Description';
-    default: return '';
-  }
-};
-
-const metadataCoverLabel = (kind: ContentKind) => {
-  switch (kind) {
-    case 'blog': return 'Featured image';
-    case 'project': return 'Thumbnail';
-    default: return '';
-  }
-};
+const parseMetadataTags = (value: string) => (
+  value
+    .split(/[,\n]/)
+    .map((tag) => tag.trim().replace(/^#+/, ''))
+    .filter((tag, index, tags) => Boolean(tag) && tags.indexOf(tag) === index)
+);
 
 const lifecycleIconFor = (action: LifecycleAction | SeriesLifecycleAction) => {
   switch (action.id) {
@@ -452,20 +251,25 @@ const lifecycleIconFor = (action: LifecycleAction | SeriesLifecycleAction) => {
       return <Send size={13} />;
     case 'unpublish':
     case 'unpublish-all':
-    case 'hide':
+    case 'make-private':
       return <EyeOff size={13} />;
     case 'archive':
     case 'archive-all':
       return <Archive size={13} />;
     case 'restore':
       return <RotateCcw size={13} />;
-    case 'show':
+    case 'make-public':
       return <Eye size={13} />;
+    case 'make-unlisted':
+      return <Link2 size={13} />;
     case 'activate':
+    case 'start':
     case 'experiment':
     case 'validate':
     case 'hypothesis':
       return <PlayCircle size={13} />;
+    case 'reset':
+      return <RotateCcw size={13} />;
     case 'pause':
       return <PauseCircle size={13} />;
     case 'complete':
@@ -478,6 +282,12 @@ const lifecycleIconFor = (action: LifecycleAction | SeriesLifecycleAction) => {
   }
 };
 
+const lifecycleButtonVariantFor = (tone: LifecycleAction['tone'] | SeriesLifecycleAction['tone']) => {
+  if (tone === 'primary') return 'primary' as const;
+  if (tone === 'danger') return 'destructive' as const;
+  return 'secondary' as const;
+};
+
 export default function App() {
   const [documents, setDocuments] = React.useState<EditorDocument[]>([]);
   const [dashboard, setDashboard] = React.useState<DashboardData | null>(null);
@@ -485,7 +295,7 @@ export default function App() {
   const [deliverySyncStatus, setDeliverySyncStatus] = React.useState<DeliverySyncStatus | null>(null);
   const [refreshingDeliveryStatus, setRefreshingDeliveryStatus] = React.useState(false);
   const [activityPage, setActivityPage] = React.useState<0 | 1>(0);
-  const [deliveryPage, setDeliveryPage] = React.useState<0 | 1 | 2 | 3>(0);
+  const [deliveryPage, setDeliveryPage] = React.useState<0 | 1 | 2 | 3 | 4>(0);
   const [refreshingWorkspace, setRefreshingWorkspace] = React.useState(false);
   const [selectedCommitDay, setSelectedCommitDay] = React.useState<{ date: string; scopes: VersionScope[] } | null>(null);
   const [selectedTrafficDate, setSelectedTrafficDate] = React.useState<string | null>(null);
@@ -523,6 +333,7 @@ export default function App() {
   const [contentEditorOpen, setContentEditorOpen] = React.useState(false);
   const [contentRailPanel, setContentRailPanel] = React.useState<ContentRailPanel>('parts');
   const [contentRailMode, setContentRailMode] = React.useState<ContentRailMode>('files');
+  const [interactionRailSection, setInteractionRailSection] = React.useState<'likers' | 'comments'>('likers');
   const [contentSettingsPage, setContentSettingsPage] = React.useState<ContentSettingsPage>('overview');
   const [metadataDraft, setMetadataDraft] = React.useState<{
     title: string;
@@ -533,6 +344,9 @@ export default function App() {
     github_url: string;
     demo_url: string;
     article_attribution: ArticleAttribution;
+    moment_type: string;
+    priority: string;
+    tags: string;
   }>({
     title: '',
     description: '',
@@ -542,8 +356,16 @@ export default function App() {
     github_url: '',
     demo_url: '',
     article_attribution: defaultArticleAttribution(),
+    moment_type: 'progress',
+    priority: 'medium',
+    tags: '',
   });
   const [metadataSavingId, setMetadataSavingId] = React.useState('');
+  const [publishingDraft, setPublishingDraft] = React.useState<DocumentStateInput>({
+    status: 'draft',
+    visibility: 'private',
+    pinned: false,
+  });
   const [metadataError, setMetadataError] = React.useState<string | null>(null);
   const [metadataCoverBusy, setMetadataCoverBusy] = React.useState(false);
   const [metadataCoverError, setMetadataCoverError] = React.useState<string | undefined>(undefined);
@@ -552,9 +374,11 @@ export default function App() {
   const [relationshipError, setRelationshipError] = React.useState<string | null>(null);
   const [relationshipTargetKind, setRelationshipTargetKind] = React.useState<RelationTargetKind>('blog');
   const [relationshipTargetSlug, setRelationshipTargetSlug] = React.useState('');
-  const [reactionDraft, setReactionDraft] = React.useState({ likes: '0', comments: '0' });
-  const [reactionSavingId, setReactionSavingId] = React.useState('');
-  const [reactionError, setReactionError] = React.useState<string | null>(null);
+  const [interactionDetailsState, setInteractionDetailsState] = React.useState<InteractionDetailsState>({ status: 'loading' });
+  const [interactionDetailsRefreshing, setInteractionDetailsRefreshing] = React.useState(false);
+  const [commentVisibilityPendingId, setCommentVisibilityPendingId] = React.useState('');
+  const [commentVisibilityError, setCommentVisibilityError] = React.useState<string | null>(null);
+  const interactionDetailsRequestRef = React.useRef(0);
   // Typora-style: the toolbar is a setting, hidden by default — formatting
   // happens by typing Markdown syntax and native shortcuts (⌘B, ⌘I…).
   const [toolbarVisible, setToolbarVisible] = React.useState(
@@ -640,6 +464,24 @@ export default function App() {
     ),
     [filtered],
   );
+  const relationTargetGroups = React.useMemo(() => (
+    groupDocumentsByResource(
+      activeDocuments.filter((document) => (
+        document.entity_type === 'blog' || document.entity_type === 'project'
+      )),
+    )
+  ), [activeDocuments]);
+  const relationTargetOptions = React.useMemo<ContentReferenceOption[]>(() => (
+    relationTargetGroups
+      .map((group) => ({
+        kind: group.kind as 'blog' | 'project',
+        slug: group.slug,
+        title: group.title,
+        status: group.status,
+        visibility: group.visibility,
+      }))
+      .sort((left, right) => left.kind.localeCompare(right.kind) || left.title.localeCompare(right.title))
+  ), [relationTargetGroups]);
   const archivedResources = React.useMemo(
     () => groupDocumentsByResource(archivedDocuments)
       .filter((group) => archivableKinds.has(group.kind))
@@ -951,7 +793,7 @@ export default function App() {
     : selectedTranslation?.source_path || 'No source selected';
   const counterpartLanguage = selectedTranslation
     ? counterpartMarkdownLanguage(selectedTranslation.language)
-    : CHINESE_MARKDOWN_LANGUAGE;
+    : 'zh';
   const counterpartTranslation = selected?.translations.find(
     (translation) => translation.language === counterpartLanguage,
   ) || null;
@@ -1105,7 +947,7 @@ export default function App() {
         return selectedCommitDay.scopes.includes(scope as VersionScope);
       })
     : [];
-  const trafficMode = deliveryPage === 2 ? 'seo' : deliveryPage === 3 ? 'geo' : 'human';
+  const trafficMode = deliveryPage === 2 ? 'unique' : deliveryPage === 3 ? 'seo' : deliveryPage === 4 ? 'geo' : 'human';
   const trafficActivity = trafficMode === 'seo'
     ? dashboard?.daily_seo_visits || []
     : trafficMode === 'geo'
@@ -1114,102 +956,15 @@ export default function App() {
   const selectedTrafficDay = selectedTrafficDate
     ? trafficActivity.find((day) => day.date === selectedTrafficDate) || null
     : null;
-  const dashboardRankingItems = React.useMemo((): DashboardRankingItem[] => {
-    if (!dashboardRankingMetric) return [];
-    const fromMetadata = (contentType: string, title: string) => {
-      const metadata = dashboardContentMetadata.get(`${contentType}:${title}`);
-      const kind = isContentKind(contentType) ? contentType : 'blog';
-      return metadata || {
-        kind,
-        title,
-        slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        status: '',
-        visibility: '',
-        updatedAt: '',
-      };
-    };
-    const toRankingItem = (
-      contentType: string,
-      title: string,
-      count: number,
-      detail?: string,
-    ): DashboardRankingItem => {
-      const metadata = fromMetadata(contentType, title);
-      return {
-        kind: metadata.kind,
-        title: metadata.title,
-        slug: metadata.slug,
-        count,
-        detail: detail || (metadata.status && metadata.visibility
-          ? contentStateSummary(metadata.kind, metadata.status, metadata.visibility)
-          : contentType),
-        updatedAt: metadata.updatedAt,
-      };
-    };
-    if (dashboardRankingMetric === 'likes' || dashboardRankingMetric === 'comments') {
-      return dashboardEngagementRanking
-        .map((item) => toRankingItem(
-          item.kind,
-          item.title,
-          item[dashboardRankingMetric],
-          contentStateSummary(item.kind, item.status, item.visibility),
-        ))
-        .filter((item) => item.count > 0)
-        .sort((left, right) => (
-          right.count - left.count
-          || right.updatedAt.localeCompare(left.updatedAt)
-          || left.title.localeCompare(right.title)
-        ));
-    }
-    if (dashboardRankingMetric === 'views') {
-      return (dashboard?.top_content || [])
-        .map((item) => toRankingItem(item.content_type, item.title, item.views))
-        .filter((item) => item.count > 0)
-        .sort((left, right) => right.count - left.count || left.title.localeCompare(right.title));
-    }
-
-    const counts = new Map<string, { contentType: string; title: string; count: number }>();
-    const addTraffic = (
-      days: DashboardData['daily_visits'],
-      counter: (item: DashboardData['daily_visits'][number]['content'][number]) => number,
-    ) => {
-      days.forEach((day) => {
-        day.content.forEach((item) => {
-          const count = counter(item);
-          if (count <= 0) return;
-          const key = `${item.content_type}:${item.title}`;
-          const current = counts.get(key) || { contentType: item.content_type, title: item.title, count: 0 };
-          current.count += count;
-          counts.set(key, current);
-        });
-      });
-    };
-    if (dashboardRankingMetric === 'search_bots' || dashboardRankingMetric === 'crawlers') {
-      addTraffic(dashboard?.daily_seo_visits || [], (item) => (
-        item.evidence
-          .filter((evidence) => evidence.event === 'Search indexing')
-          .reduce((sum, evidence) => sum + evidence.visits, 0)
-      ));
-    }
-    if (dashboardRankingMetric === 'ai_crawlers' || dashboardRankingMetric === 'crawlers') {
-      addTraffic(dashboard?.daily_geo_visits || [], (item) => (
-        item.evidence
-          .filter((evidence) => evidence.event !== 'Referral click')
-          .reduce((sum, evidence) => sum + evidence.visits, 0)
-      ));
-    }
-    if (dashboardRankingMetric === 'ai_chat') {
-      addTraffic(dashboard?.daily_geo_visits || [], (item) => (
-        item.evidence
-          .filter((evidence) => evidence.event === 'Referral click')
-          .reduce((sum, evidence) => sum + evidence.visits, 0)
-      ));
-    }
-    return Array.from(counts.values())
-      .map((item) => toRankingItem(item.contentType, item.title, item.count))
-      .filter((item) => item.count > 0)
-      .sort((left, right) => right.count - left.count || left.title.localeCompare(right.title));
-  }, [
+  const dashboardRankingItems = React.useMemo((): DashboardRankingItem[] => (
+    buildDashboardRankingItems({
+      metric: dashboardRankingMetric,
+      dashboard,
+      contentMetadata: dashboardContentMetadata,
+      engagementRanking: dashboardEngagementRanking,
+    })
+  ), [
+    dashboard,
     dashboard?.daily_geo_visits,
     dashboard?.daily_seo_visits,
     dashboard?.top_content,
@@ -1218,7 +973,7 @@ export default function App() {
     dashboardRankingMetric,
   ]);
   const activityFilterLabel = selectedTrafficDay
-    ? `${selectedTrafficDay.date} · ${trafficMode === 'human' ? 'Human' : trafficMode.toUpperCase()} traffic · ${selectedTrafficDay.visits} visits`
+    ? `${selectedTrafficDay.date} · ${trafficMode === 'human' ? 'Human' : trafficMode === 'unique' ? 'Unique visitors' : trafficMode.toUpperCase()} traffic · ${trafficMode === 'unique' ? selectedTrafficDay.unique_visitors : selectedTrafficDay.visits} ${trafficMode === 'unique' ? 'unique visitors' : 'visits'}`
     : selectedCommitDay
       ? `${selectedCommitDay.date} · ${selectedCommitDay.scopes.join(' · ') || 'Content'}`
       : dashboardRankingMetric
@@ -1506,6 +1261,7 @@ export default function App() {
     if (!primary) return;
     setContentRailPanel('reactions');
     setContentRailMode('interaction');
+    setInteractionRailSection('likers');
     setSelectedId(primary.id);
     setLanguageByDocument((current) => ({
       ...current,
@@ -1772,14 +1528,36 @@ export default function App() {
     }
   };
 
+  const replaceTranslationContent = React.useCallback((
+    documentId: string,
+    translationId: string,
+    content: string,
+  ) => {
+    setDocuments((current) => current.map((document) => (
+      document.id === documentId
+        ? {
+            ...document,
+            translations: document.translations.map((translation) => (
+              translation.id === translationId ? { ...translation, content } : translation
+            )),
+          }
+        : document
+    )));
+  }, []);
+
   const saveSelected = async () => {
     if (!selected || !selectedTranslation) return null;
+    const content = editorRef.current?.getMarkdown() ?? selectedTranslation.content;
+    if (content !== selectedTranslation.content) {
+      replaceTranslationContent(selected.id, selectedTranslation.id, content);
+      setDirtyIds((current) => new Set(current).add(selectedTranslation.id));
+    }
     setSaving(true);
     setError(null);
     try {
       const saved = await invoke<EditorDocument>('save_document', {
         id: selectedTranslation.id,
-        content: selectedTranslation.content,
+        content,
         expectedRevision: selectedTranslation.revision,
       });
       const savedTranslation = saved.translations.find(
@@ -2012,18 +1790,10 @@ export default function App() {
     ) {
       translationSync.reset();
     }
-    setDocuments((current) => current.map((document) => (
-      document.id === selected.id
-        ? {
-            ...document,
-            translations: document.translations.map((translation) => (
-              translation.id === selectedTranslation.id ? { ...translation, content } : translation
-            )),
-          }
-        : document
-    )));
+    replaceTranslationContent(selected.id, selectedTranslation.id, content);
     setDirtyIds((current) => new Set(current).add(selectedTranslation.id));
   }, [
+    replaceTranslationContent,
     selected?.id,
     selectedTranslation?.id,
     translationSync.reset,
@@ -2054,30 +1824,51 @@ export default function App() {
     return imported;
   }, []);
 
-  const attachFilesToSelected = React.useCallback(async (files: File[]) => {
+  const importFilesToSelected = React.useCallback(async (files: readonly File[]) => {
     if (!selectedTranslation) {
-      setMediaDropError('Open a Markdown translation before adding attachments.');
-      return;
+      throw new Error('Open a Markdown translation before adding attachments.');
     }
     if (!isTauri()) {
-      setMediaDropError('Attachment import is available in the desktop app.');
-      return;
+      throw new Error('Attachment import is available in the desktop app.');
     }
-    if (files.length === 0) return;
+    if (files.length === 0) return [];
 
     setMediaImporting(true);
     setMediaDropError(null);
     try {
-      const imported = await importFileAssets(selectedTranslation.id, files);
-      insertMarkdownAtCursor(imported.map((asset) => asset.markdown).join('\n\n'));
+      const imported = await importFileAssets(selectedTranslation.id, [...files]);
       setLastImportedAsset(imported[imported.length - 1] || null);
       if (deploymentPlan) void loadDeploymentPlan();
+      return imported;
     } catch (reason) {
       setMediaDropError(String(reason));
+      throw reason;
     } finally {
       setMediaImporting(false);
     }
-  }, [deploymentPlan, importFileAssets, insertMarkdownAtCursor, loadDeploymentPlan, selectedTranslation]);
+  }, [deploymentPlan, importFileAssets, loadDeploymentPlan, selectedTranslation]);
+
+  const attachFilesToSelected = React.useCallback(async (files: File[]) => {
+    try {
+      const imported = await importFilesToSelected(files);
+      if (imported.length > 0) {
+        insertMarkdownAtCursor(imported.map((asset) => asset.markdown).join('\n\n'));
+      }
+    } catch {
+      // The shared import boundary owns the user-facing error state.
+    }
+  }, [importFilesToSelected, insertMarkdownAtCursor]);
+
+  const importImagesToSelected = React.useCallback(async (
+    files: readonly File[],
+  ): Promise<readonly MarkdownImageImport[]> => {
+    const imported = await importFilesToSelected(files);
+    return imported.map((asset, index) => ({
+      alt: files[index]?.name.replace(/\.[^.]+$/, '') || asset.file_name,
+      src: asset.uri,
+      title: null,
+    }));
+  }, [importFilesToSelected]);
 
   const editorAssist = useEditorAssistSlashCommands({
     disabled: !selectedTranslation || saving,
@@ -2211,6 +2002,10 @@ export default function App() {
         cover_website_url: saved.cover_website_url,
         github_url: saved.github_url,
         demo_url: saved.demo_url,
+        moment_type: saved.moment_type,
+        priority: saved.priority,
+        tags: saved.tags,
+        relations: saved.relations,
         status: saved.status,
         visibility: saved.visibility,
         pinned: saved.pinned,
@@ -2314,8 +2109,33 @@ export default function App() {
     const savingState = stateSavingId === group.id;
     const disabled = savingState || stateDirty || !translation;
     const lifecycle = contentLifecycleFor(group.kind, group.status, group.visibility);
-    if (lifecycle.actions.length === 0 && group.kind !== 'moment') return null;
     const showStateSummary = variant === 'header';
+    const visibleActions = showStateSummary
+      ? lifecycle.actions
+      : lifecycle.actions.filter((action) => action.group === 'status');
+    if (visibleActions.length === 0 && group.kind !== 'moment') return null;
+    const renderLifecycleAction = (action: LifecycleAction) => (
+      <Button
+        key={action.id}
+        size="sm"
+        variant={lifecycleButtonVariantFor(action.tone)}
+        disabled={disabled}
+        className="state-action"
+        data-action-group={action.group}
+        title={action.description}
+        onClick={() => void saveGroupState(group, action.nextState)}
+      >
+        {savingState ? <LoaderCircle className="state-spinner" size={13} /> : lifecycleIconFor(action)}
+        {action.label}
+      </Button>
+    );
+    const groupedActions = (['status', 'visibility'] as const)
+      .map((actionGroup) => ({
+        id: actionGroup,
+        label: actionGroup === 'status' ? 'Lifecycle' : 'Visibility',
+        actions: visibleActions.filter((action) => action.group === actionGroup),
+      }))
+      .filter((actionGroup) => actionGroup.actions.length > 0);
 
     return (
       <div
@@ -2324,28 +2144,31 @@ export default function App() {
       >
         {showStateSummary && (
           <span className="state-control-summary" aria-label={`${group.title} state`}>
-            <span>{lifecycle.statusLabel}</span>
-            <span data-visibility={lifecycle.visibility === 'private' ? 'private' : undefined}>{lifecycle.visibilityLabel}</span>
+            <span data-state-role="status" data-state-value={lifecycle.status}>{lifecycle.statusLabel}</span>
+            <span data-state-role="visibility" data-state-value={lifecycle.visibility}>{lifecycle.visibilityLabel}</span>
           </span>
         )}
-        {lifecycle.actions.map((action) => (
-          <button
-            key={action.id}
-            type="button"
-            disabled={disabled}
-            className={`state-action state-action--${action.tone}`}
-            title={action.description}
-            onClick={() => void saveGroupState(group, action.nextState)}
-          >
-            {savingState ? <LoaderCircle className="state-spinner" size={13} /> : lifecycleIconFor(action)}
-            {action.label}
-          </button>
-        ))}
+        {showStateSummary ? (
+          <div className="state-action-groups">
+            {groupedActions.map((actionGroup) => (
+              <div
+                className="state-action-group"
+                role="group"
+                aria-label={actionGroup.label}
+                key={actionGroup.id}
+              >
+                <span className="state-action-group-label">{actionGroup.label}</span>
+                <div>{actionGroup.actions.map(renderLifecycleAction)}</div>
+              </div>
+            ))}
+          </div>
+        ) : visibleActions.map(renderLifecycleAction)}
         {group.kind === 'moment' && (
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="secondary"
             disabled={disabled}
-            className={`state-action state-action--secondary ${group.pinned ? 'active' : ''}`}
+            className={`state-action ${group.pinned ? 'active' : ''}`}
             title={group.pinned ? 'Remove this moment from the top' : 'Keep this moment at the top'}
             onClick={() => void saveGroupState(group, {
               status: group.status,
@@ -2354,7 +2177,7 @@ export default function App() {
             })}
           >
             {group.pinned ? 'Unpin' : 'Pin'}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -2377,22 +2200,23 @@ export default function App() {
       >
         {showStateSummary && (
           <span className="state-control-summary" aria-label={`${series.title} state`}>
-            <span>{lifecycle.statusLabel}</span>
-            <span data-visibility={lifecycle.visibility === 'private' ? 'private' : undefined}>{lifecycle.visibilityLabel}</span>
+            <span data-state-role="status" data-state-value={lifecycle.status}>{lifecycle.statusLabel}</span>
+            <span data-state-role="visibility" data-state-value={lifecycle.visibility}>{lifecycle.visibilityLabel}</span>
           </span>
         )}
         {lifecycle.actions.map((action) => (
-          <button
+          <Button
             key={action.id}
-            type="button"
+            size="sm"
+            variant={lifecycleButtonVariantFor(action.tone)}
             disabled={disabled}
-            className={`state-action state-action--${action.tone}`}
+            className="state-action"
             title={action.description}
             onClick={() => void saveSeriesState(series, action.nextState)}
           >
             {savingState ? <LoaderCircle className="state-spinner" size={13} /> : lifecycleIconFor(action)}
             {action.label}
-          </button>
+          </Button>
         ))}
       </div>
     );
@@ -2670,14 +2494,23 @@ export default function App() {
     || metadataDraft.cover_website_url.trim() !== (selectedContentGroup.coverWebsiteUrl || '')
     || metadataDraft.github_url.trim() !== (selectedContentGroup.githubUrl || '')
     || metadataDraft.demo_url.trim() !== (selectedContentGroup.demoUrl || '')
+    || metadataDraft.moment_type !== (selectedContentGroup.momentType || 'progress')
+    || metadataDraft.priority !== (selectedContentGroup.priority || 'medium')
+    || JSON.stringify(parseMetadataTags(metadataDraft.tags))
+      !== JSON.stringify(selectedContentGroup.tags || [])
     || JSON.stringify(metadataDraft.article_attribution)
       !== JSON.stringify(selectedContentGroup.articleAttribution || defaultArticleAttribution())
   ));
-  const reactionDirty = Boolean(selectedContentGroup && (
-    Number.parseInt(reactionDraft.likes, 10) !== selectedContentGroup.engagement.likes
-    || Number.parseInt(reactionDraft.comments, 10) !== selectedContentGroup.engagement.comments
+  const publishingDirty = Boolean(selectedContentGroup && hasDocumentStateChanges(
+    selectedContentGroup.kind,
+    publishingDraft,
+    {
+      status: selectedContentGroup.status,
+      visibility: selectedContentGroup.visibility,
+      pinned: selectedContentGroup.pinned,
+    },
   ));
-
+  const contentSettingsDirty = metadataDirty || publishingDirty;
   React.useEffect(() => {
     if (!selectedContentGroup || metadataSavingId) return;
     setMetadataDraft({
@@ -2689,6 +2522,14 @@ export default function App() {
       github_url: selectedContentGroup.githubUrl || '',
       demo_url: selectedContentGroup.demoUrl || '',
       article_attribution: selectedContentGroup.articleAttribution || defaultArticleAttribution(),
+      moment_type: selectedContentGroup.momentType || 'progress',
+      priority: selectedContentGroup.priority || 'medium',
+      tags: (selectedContentGroup.tags || []).join(', '),
+    });
+    setPublishingDraft({
+      status: selectedContentGroup.status,
+      visibility: selectedContentGroup.visibility,
+      pinned: Boolean(selectedContentGroup.pinned),
     });
     setMetadataError(null);
     setMetadataCoverError(undefined);
@@ -2703,6 +2544,12 @@ export default function App() {
     selectedContentGroup?.githubUrl,
     selectedContentGroup?.demoUrl,
     selectedContentGroup?.articleAttribution,
+    selectedContentGroup?.momentType,
+    selectedContentGroup?.priority,
+    selectedContentGroup?.tags,
+    selectedContentGroup?.status,
+    selectedContentGroup?.visibility,
+    selectedContentGroup?.pinned,
     metadataSavingId,
   ]);
 
@@ -2712,19 +2559,73 @@ export default function App() {
     setRelationshipTargetKind('blog');
   }, [selectedContentGroup?.id]);
 
+  const loadInteractionDetails = React.useCallback(async (syncRemote = false) => {
+    if (!selectedContentGroup) return;
+    const primary = selectPrimaryDocument(selectedContentGroup);
+    if (!primary) return;
+    const requestId = interactionDetailsRequestRef.current + 1;
+    interactionDetailsRequestRef.current = requestId;
+    if (syncRemote) setInteractionDetailsRefreshing(true);
+    else setInteractionDetailsState({ status: 'loading' });
+    setCommentVisibilityError(null);
+    try {
+      let details = syncRemote
+        ? null
+        : await invoke<InteractionDetails>('get_interaction_details', {
+            entityType: primary.entity_type,
+            entityId: primary.entity_id,
+          });
+      if (syncRemote || !details?.is_complete) {
+        setInteractionDetailsRefreshing(true);
+        await invoke<StatsSyncReport>('sync_stats');
+        await loadDocuments();
+        details = await invoke<InteractionDetails>('get_interaction_details', {
+          entityType: primary.entity_type,
+          entityId: primary.entity_id,
+        });
+      }
+      if (interactionDetailsRequestRef.current === requestId) {
+        setInteractionDetailsState(details.is_complete
+          ? { status: 'ready', details }
+          : { status: 'remote-upgrade-required' });
+      }
+    } catch (reason) {
+      if (interactionDetailsRequestRef.current === requestId) {
+        setInteractionDetailsState({ status: 'error', message: String(reason) });
+      }
+    } finally {
+      if (interactionDetailsRequestRef.current === requestId) {
+        setInteractionDetailsRefreshing(false);
+      }
+    }
+  }, [selectedContentGroup?.id, loadDocuments]);
+
   React.useEffect(() => {
-    if (!selectedContentGroup || reactionSavingId) return;
-    setReactionDraft({
-      likes: String(selectedContentGroup.engagement.likes),
-      comments: String(selectedContentGroup.engagement.comments),
-    });
-    setReactionError(null);
-  }, [
-    selectedContentGroup?.id,
-    selectedContentGroup?.engagement.likes,
-    selectedContentGroup?.engagement.comments,
-    reactionSavingId,
-  ]);
+    if (contentRailPanel !== 'reactions' || !selectedContentGroup) return;
+    void loadInteractionDetails();
+  }, [contentRailPanel, selectedContentGroup?.id, loadInteractionDetails]);
+
+  const setCommentVisibility = React.useCallback(async (commentId: string, isPublic: boolean) => {
+    if (!selectedContentGroup || commentVisibilityPendingId) return;
+    const primary = selectPrimaryDocument(selectedContentGroup);
+    if (!primary) return;
+    setCommentVisibilityPendingId(commentId);
+    setCommentVisibilityError(null);
+    try {
+      const details = await invoke<InteractionDetails>('set_comment_visibility', {
+        entityType: primary.entity_type,
+        entityId: primary.entity_id,
+        commentId,
+        isPublic,
+      });
+      setInteractionDetailsState({ status: 'ready', details });
+      await loadDocuments();
+    } catch (reason) {
+      setCommentVisibilityError(String(reason));
+    } finally {
+      setCommentVisibilityPendingId('');
+    }
+  }, [selectedContentGroup?.id, commentVisibilityPendingId, loadDocuments]);
 
   const resetMetadataDraftForGroup = (group: ContentGroup) => {
     setMetadataDraft({
@@ -2736,6 +2637,14 @@ export default function App() {
       github_url: group.githubUrl || '',
       demo_url: group.demoUrl || '',
       article_attribution: group.articleAttribution || defaultArticleAttribution(),
+      moment_type: group.momentType || 'progress',
+      priority: group.priority || 'medium',
+      tags: (group.tags || []).join(', '),
+    });
+    setPublishingDraft({
+      status: group.status,
+      visibility: group.visibility,
+      pinned: Boolean(group.pinned),
     });
     setMetadataError(null);
     setMetadataCoverError(undefined);
@@ -2779,7 +2688,7 @@ export default function App() {
     }
   };
 
-  const saveContentMetadata = async () => {
+  const saveContentSettings = async () => {
     if (!selectedContentGroup || !selectedMetadataTranslation || metadataSavingId) return;
     const title = metadataDraft.title.trim();
     if (!title) {
@@ -2787,13 +2696,13 @@ export default function App() {
       return;
     }
     if (dirtyIds.has(selectedMetadataTranslation.id)) {
-      setMetadataError('Save Markdown before changing metadata.');
+      setMetadataError('Save Markdown before changing settings.');
       return;
     }
     setMetadataSavingId(selectedContentGroup.id);
     setMetadataError(null);
     try {
-      const saved = await invoke<EditorDocument>('save_content_metadata', {
+      const saved = await invoke<EditorDocument>('save_content_settings', {
         id: selectedMetadataTranslation.id,
         metadata: {
           title,
@@ -2806,6 +2715,14 @@ export default function App() {
           article_attribution: selectedContentGroup.kind === 'blog'
             ? metadataDraft.article_attribution
             : null,
+          moment_type: selectedContentGroup.kind === 'moment' ? metadataDraft.moment_type : null,
+          priority: selectedContentGroup.kind === 'moment' ? metadataDraft.priority : null,
+          tags: selectedContentGroup.kind === 'moment' ? parseMetadataTags(metadataDraft.tags) : null,
+        },
+        state: {
+          status: publishingDraft.status,
+          visibility: publishingDraft.visibility,
+          pinned: selectedContentGroup.kind === 'moment' ? Boolean(publishingDraft.pinned) : null,
         },
         expectedRevision: selectedMetadataTranslation.revision,
       });
@@ -2819,6 +2736,14 @@ export default function App() {
         github_url: saved.github_url || '',
         demo_url: saved.demo_url || '',
         article_attribution: saved.article_attribution || defaultArticleAttribution(),
+        moment_type: saved.moment_type || 'progress',
+        priority: saved.priority || 'medium',
+        tags: saved.tags.join(', '),
+      });
+      setPublishingDraft({
+        status: saved.status,
+        visibility: saved.visibility,
+        pinned: Boolean(saved.pinned),
       });
     } catch (reason) {
       setMetadataError(String(reason));
@@ -2878,46 +2803,51 @@ export default function App() {
     }
   };
 
-  const saveEngagementStats = async () => {
-    if (!selectedContentGroup || reactionSavingId) return;
-    const likes = Number.parseInt(reactionDraft.likes, 10);
-    const comments = Number.parseInt(reactionDraft.comments, 10);
-    if (!Number.isFinite(likes) || !Number.isFinite(comments) || likes < 0 || comments < 0) {
-      setReactionError('Reaction counters must be zero or greater.');
+  const openRelationTarget = (relation: ContentRelation) => {
+    const target = relationTargetGroups.find((group) => (
+      group.kind === relation.target_kind && group.slug === relation.target_slug
+    ));
+    if (!target) {
+      setRelationshipError(`Cannot open ${relation.target_uri}; the target is not available in the active workspace.`);
       return;
     }
-    const primary = selectPrimaryDocument(selectedContentGroup);
-    if (!primary) {
-      setReactionError('No content item is selected.');
-      return;
-    }
-    setReactionSavingId(selectedContentGroup.id);
-    setReactionError(null);
-    try {
-      const saved = await invoke<{ likes: number; comments: number }>('save_engagement_stats', {
-        entityType: primary.entity_type,
-        entityId: primary.entity_id,
-        stats: { likes, comments },
-      });
-      setDocuments((current) => current.map((document) => (
-        document.entity_type === primary.entity_type && document.entity_id === primary.entity_id
-          ? { ...document, engagement: saved }
-          : document
-      )));
-    } catch (reason) {
-      setReactionError(String(reason));
-    } finally {
-      setReactionSavingId('');
-    }
+    setRelationshipError(null);
+    openContentGroup(target);
+  };
+
+  const unlinkContentRelation = (relation: ContentRelation) => {
+    if (!selectedContentGroup || (relation.target_kind !== 'blog' && relation.target_kind !== 'project')) return;
+    void runRelationshipCommand(
+      `moment-unlink:${relation.target_kind}:${relation.target_slug}`,
+      'unlink_moment_from_content',
+      {
+        slug: selectedContentGroup.slug,
+        targetKind: relation.target_kind,
+        targetSlug: relation.target_slug,
+      },
+    );
   };
 
   const openContentRailMode = (mode: ContentRailMode) => {
     setContentRailMode(mode);
     setContentRailPanel(mode === 'interaction' ? 'reactions' : 'parts');
+    if (mode === 'interaction') setInteractionRailSection('likers');
   };
 
   const toggleContentRailMode = () => {
     openContentRailMode(contentRailMode === 'files' ? 'interaction' : 'files');
+  };
+
+  const focusInteractionSection = (section: 'likers' | 'comments') => {
+    setContentRailMode('interaction');
+    setContentRailPanel('reactions');
+    setInteractionRailSection(section);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`interaction-${section}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
   };
 
   React.useEffect(() => {
@@ -3266,14 +3196,14 @@ export default function App() {
               <section className="delivery-panel ds-acrylic" data-ds="">
                 <div className="activity-carousel-bar delivery-carousel-bar">
                   <div className="activity-tabs" role="tablist" aria-label="Delivery views">
-	                      {(['Release activity', 'Human traffic', 'SEO traffic', 'GEO traffic'] as const).map((label, page) => (
+	                      {(['Release activity', 'Human traffic', 'Unique visitors', 'SEO traffic', 'GEO traffic'] as const).map((label, page) => (
 	                      <button
                         type="button"
                         role="tab"
                         aria-selected={deliveryPage === page}
                         key={label}
 	                        onClick={() => {
-	                          setDeliveryPage(page as 0 | 1 | 2 | 3);
+	                          setDeliveryPage(page as 0 | 1 | 2 | 3 | 4);
 	                          setSelectedTrafficDate(null);
 	                          setDashboardRankingMetric(null);
 	                        }}
@@ -3283,11 +3213,11 @@ export default function App() {
                     ))}
                   </div>
                   <div className="delivery-toolbar">
-                    <span>{deliveryPage + 1} / 4</span>
+                    <span>{deliveryPage + 1} / 5</span>
                     <button
                       type="button"
 	                      onClick={() => {
-	                        setDeliveryPage(((deliveryPage + 3) % 4) as 0 | 1 | 2 | 3);
+	                        setDeliveryPage(((deliveryPage + 4) % 5) as 0 | 1 | 2 | 3 | 4);
 	                        setSelectedTrafficDate(null);
 	                        setDashboardRankingMetric(null);
 	                      }}
@@ -3298,7 +3228,7 @@ export default function App() {
                     <button
                       type="button"
 	                      onClick={() => {
-	                        setDeliveryPage(((deliveryPage + 1) % 4) as 0 | 1 | 2 | 3);
+	                        setDeliveryPage(((deliveryPage + 1) % 5) as 0 | 1 | 2 | 3 | 4);
 	                        setSelectedTrafficDate(null);
 	                        setDashboardRankingMetric(null);
 	                      }}
@@ -3329,7 +3259,8 @@ export default function App() {
                   ) : (
                     <TrafficWall
                       activity={trafficActivity}
-                      noun={trafficMode === 'human' ? 'human visit' : trafficMode === 'seo' ? 'search visit' : 'AI discovery'}
+                      countMetric={trafficMode === 'unique' ? 'unique_visitors' : 'visits'}
+                      noun={trafficMode === 'human' ? 'human visit' : trafficMode === 'unique' ? 'unique visitor' : trafficMode === 'seo' ? 'search visit' : 'AI discovery'}
                       selectedDate={selectedTrafficDate}
 	                      onSelect={(date) => {
 	                        setSelectedCommitDay(null);
@@ -3364,15 +3295,16 @@ export default function App() {
                   <div className={`traffic-result-list activity-result-list${trafficMode === 'geo' ? ' traffic-result-list--geo' : ''}`}>
                     {selectedTrafficDay.content.map((item, index) => {
                       const itemKey = `${item.content_type}-${item.title}`;
-                      const expanded = trafficMode === 'human' && expandedTrafficItem === itemKey;
+                      const canExpandVisitors = trafficMode === 'human' || trafficMode === 'unique';
+                      const expanded = canExpandVisitors && expandedTrafficItem === itemKey;
                       return (
                         <button
                         type="button"
                         key={itemKey}
                         className={expanded ? 'traffic-result-row traffic-result-row--expanded' : 'traffic-result-row'}
-                        aria-expanded={trafficMode === 'human' ? expanded : undefined}
+                        aria-expanded={canExpandVisitors ? expanded : undefined}
                         onClick={() => {
-                          if (trafficMode === 'human') {
+                          if (canExpandVisitors) {
                             setExpandedTrafficItem((current) => current === itemKey ? null : itemKey);
                           } else {
                             openShelf(item.content_type === 'episode' ? 'blog' : item.content_type as EntityFilter);
@@ -3381,29 +3313,47 @@ export default function App() {
                       >
                         <span>{index + 1}</span>
                         <strong>{item.title}</strong>
-                        <small>{item.visits} visits</small>
+                        <small>
+                          {trafficMode === 'unique'
+                            ? `${item.unique_visitors} unique visitors`
+                            : `${item.visits} visits`}
+                        </small>
                         <small className="traffic-row-tail">
-                          {item.comments} comments total
-                          {trafficMode === 'human' && <ChevronDown size={13} aria-hidden="true" />}
+                          {trafficMode === 'unique' ? `${item.visits} visits` : `${item.comments} comments total`}
+                          {canExpandVisitors && <ChevronDown size={13} aria-hidden="true" />}
                         </small>
                         {expanded && (
                           <span className="visitor-breakdown">
-                            {item.visitors.length > 0 ? item.visitors.map((visitor, visitorIndex) => (
-                              <span className="visitor-location" key={`${visitor.country_code}-${visitor.region_code}-${visitor.city}-${visitor.postal_code}-${visitor.place_name}-${visitorIndex}`}>
-                                <span className="visitor-location-heading">
-                                  <strong>{formatLocationLabel(visitor)}</strong>
-                                  <small>{visitor.visits} {visitor.visits === 1 ? 'visit' : 'visits'}</small>
+                            {item.visitors.length > 0 ? item.visitors.map((visitor, visitorIndex) => {
+                              const visitorFlag = formatCountryFlag(visitor.country_code);
+                              return (
+                                <span className="visitor-location" key={`${visitor.country_code}-${visitor.region_code}-${visitor.city}-${visitor.postal_code}-${visitor.place_name}-${visitorIndex}`}>
+                                  {visitorFlag && (
+                                    <span className="visitor-location-flag" aria-hidden="true">{visitorFlag}</span>
+                                  )}
+                                  <span className="visitor-location-copy">
+                                    <strong>{formatLocationLabel(visitor)}</strong>
+                                    {visitor.ip_addresses.length > 0 && (
+                                      <span className="visitor-ip-list">
+                                        {visitor.ip_addresses.map((ip) => <code key={ip}>{ip}</code>)}
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="visitor-location-metrics">
+                                    <small>
+                                      {trafficMode === 'unique'
+                                        ? `${visitor.unique_visitors} unique visitor${visitor.unique_visitors === 1 ? '' : 's'}`
+                                        : `${visitor.visits} ${visitor.visits === 1 ? 'visit' : 'visits'}`}
+                                    </small>
+                                    {trafficMode === 'unique' && (
+                                      <small className="visitor-visit-count">
+                                        {visitor.visits} {visitor.visits === 1 ? 'visit' : 'visits'}
+                                      </small>
+                                    )}
+                                  </span>
                                 </span>
-                                {formatLocationDetail(visitor) && (
-                                  <small className="visitor-coordinates">{formatLocationDetail(visitor)}</small>
-                                )}
-                                <span className="visitor-ip-list">
-                                  {visitor.ip_addresses.length > 0
-                                    ? visitor.ip_addresses.map((ip) => <code key={ip}>{ip}</code>)
-                                    : <small>IP unavailable</small>}
-                                </span>
-                              </span>
-                            )) : (
+                              );
+                            }) : (
                               <small className="visitor-empty">No visitor location was recorded for these visits.</small>
                             )}
                           </span>
@@ -3421,11 +3371,20 @@ export default function App() {
                                       <span className="traffic-agent-topics">
                                         {subjects.map((subject) => (
                                           <small key={`${subject.kind}-${subject.label}`}>
-                                            <span>{evidenceSubjectLabel(subject.kind)}</span>
-                                            {subject.label}
+                                            <span className="traffic-source-badge">{evidenceSourceLabel(subject.kind)}</span>
+                                            <span className="traffic-source-value">{subject.label}</span>
                                             <b>{subject.visits}</b>
                                           </small>
                                         ))}
+                                      </span>
+                                    )}
+                                    {subjects.length === 0 && (
+                                      <span className="traffic-agent-topics traffic-agent-topics--single">
+                                        <small>
+                                          <span className="traffic-source-badge">{evidenceEventSourceLabel(event)}</span>
+                                          <span className="traffic-source-value">{event}</span>
+                                          <b>{visits}</b>
+                                        </small>
                                       </span>
                                     )}
                                     <span className="traffic-agent-notes">
@@ -3442,9 +3401,16 @@ export default function App() {
                                   </span>
                                 ))
                               : item.evidence.map((evidence) => (
-                                  <span key={`${evidence.agent}-${evidence.event}-${evidence.subject_kind}-${evidence.subject}`}>
-                                    <strong>{evidence.subject || evidence.event}</strong>
-                                    <small>{evidenceSubjectLabel(evidence.subject_kind)} · {evidence.agent} · {evidence.visits}</small>
+                                  <span className="traffic-evidence-card" key={`${evidence.agent}-${evidence.event}-${evidence.subject_kind}-${evidence.subject}`}>
+                                    <span className="traffic-evidence-heading">
+                                      <strong>{evidence.subject || evidence.event}</strong>
+                                      <small>{evidence.visits} {evidence.visits === 1 ? 'visit' : 'visits'}</small>
+                                    </span>
+                                    <span className="traffic-evidence-meta">
+                                      <span>{evidence.subject_kind ? evidenceSourceLabel(evidence.subject_kind) : evidenceEventSourceLabel(evidence.event)}</span>
+                                      <span>{evidence.agent}</span>
+                                      <span>{evidence.event}</span>
+                                    </span>
                                     {!['keyword', 'search_query'].includes(evidence.subject_kind ?? '') && /\bindexing\b/i.test(evidence.event) && (
                                       <small className="traffic-query-note">Indexing crawls do not contain search queries</small>
                                     )}
@@ -3691,6 +3657,8 @@ export default function App() {
                           reviewFindings={selectedReviewFindings}
                           onReviewFindingActivate={languageReview.openReport}
                           onReviewFindingApplied={languageReview.resolveFinding}
+                          slashCommands={editorAssist.slashCommands}
+                          onImportImages={importImagesToSelected}
                           onSelectionAssist={requestSelectionAssist}
                           onChange={patchSelectedTranslationContent}
                         />
@@ -3815,8 +3783,8 @@ export default function App() {
         )}
 
         {confirmingDeploy && deploymentPlan && (
-          <div className="dialog-overlay" role="presentation" onClick={() => setConfirmingDeploy(false)}>
-            <div className="dialog-card deploy-confirm-card" role="dialog" aria-modal="true" aria-labelledby="deploy-confirm-title" onClick={(event) => event.stopPropagation()}>
+          <Dialog open onClose={() => setConfirmingDeploy(false)}>
+            <DialogCard aria-labelledby="deploy-confirm-title">
               <div className="dialog-headline">
                 <div className="new-project-badge">
                   <UploadCloud size={17} />
@@ -3827,21 +3795,21 @@ export default function App() {
                   onClose: () => setConfirmingDeploy(false),
                 })}
               </div>
-              <h3 id="deploy-confirm-title">Deploy content to production?</h3>
-              <p>This publishes committed content and media to {deploymentPlan.deploy_target}, then builds and atomically activates a fresh server-side SEO snapshot.</p>
+              <DialogTitle id="deploy-confirm-title">Deploy content to production?</DialogTitle>
+              <DialogDescription>This publishes committed content and media to {deploymentPlan.deploy_target}, then builds and atomically activates a fresh server-side SEO snapshot.</DialogDescription>
               <div className="deploy-confirm-summary">
                 <span>Local commit</span>
                 <strong>{deploymentPlan.head}</strong>
               </div>
-              <div className="dialog-actions">
-                <button type="button" className="secondary" onClick={() => setConfirmingDeploy(false)}>Cancel</button>
-                <button type="button" className="primary" onClick={() => void deployContent()}>
+              <DialogActions>
+                <Button type="button" variant="secondary" size="sm" onClick={() => setConfirmingDeploy(false)}>Cancel</Button>
+                <Button type="button" variant="primary" size="sm" onClick={() => void deployContent()}>
                   <UploadCloud size={14} />
                   Deploy content
-                </button>
-              </div>
-            </div>
-          </div>
+                </Button>
+              </DialogActions>
+            </DialogCard>
+          </Dialog>
         )}
 
         {creatingProject && (
@@ -4258,13 +4226,14 @@ export default function App() {
                     <button
                       type="button"
                       className="content-explorer-icon"
-                      aria-label="Open content details"
+                      aria-label="Open content settings"
+                      title="Open content settings"
                       onClick={() => {
                         setContentSettingsPage('overview');
                         setContentRailPanel('settings');
                       }}
                     >
-                      <Menu size={22} />
+                      <Cog size={20} aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -4286,32 +4255,30 @@ export default function App() {
                               <button
                                 type="button"
                                 key={episode.id}
-                                className={`content-tree-row ${contentRailPanel === 'reactions' && episode.id === selected.entity_id ? 'active' : ''}`}
+                                className={`content-tree-row ${episode.id === selected.entity_id ? 'active' : ''}`}
                                 onClick={() => openContentGroupInteraction(episode)}
                               >
                                 <span>{episode.episodeNumber != null ? `${episode.episodeNumber}. ` : ''}{episode.title}</span>
-                                <small>{episode.engagement.likes}/{episode.engagement.comments}</small>
                               </button>
                             ))}
                           </div>
                         )}
 
-                        <div className="content-tree-section" role="group" aria-label="Part interactions">
-                          {selectedContentGroup.documents.map((document) => (
-                            <button
-                              type="button"
-                              key={document.id}
-                              className={`content-tree-row ${contentRailPanel === 'reactions' && document.id === selected?.id ? 'active' : ''}`}
-                              onClick={() => {
-                                setContentRailMode('interaction');
-                                setContentRailPanel('reactions');
-                                setSelectedId(document.id);
-                              }}
-                            >
-                              <span>{document.role}</span>
-                              <small>{document.engagement.likes}/{document.engagement.comments}</small>
-                            </button>
-                          ))}
+                        <div className="content-tree-section content-tree-section--interactions" role="group" aria-label="Interaction sections">
+                          <button
+                            type="button"
+                            className={`content-tree-row content-tree-row--interaction ${interactionRailSection === 'likers' ? 'active' : ''}`}
+                            onClick={() => focusInteractionSection('likers')}
+                          >
+                            <span><Heart size={13} aria-hidden="true" />{chromeLanguage === 'zh' ? '点赞的人' : 'Liked by'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`content-tree-row content-tree-row--interaction ${interactionRailSection === 'comments' ? 'active' : ''}`}
+                            onClick={() => focusInteractionSection('comments')}
+                          >
+                            <span><MessageCircle size={13} aria-hidden="true" />{chromeLanguage === 'zh' ? '评论' : 'Comments'}</span>
+                          </button>
                         </div>
                       </>
                     ) : (
@@ -4440,14 +4407,6 @@ export default function App() {
                     aria-label="Content Markdown editor"
                     aria-hidden={contentRailPanel !== 'parts'}
                   >
-                    <header className="document-header content-document-header">
-                      <div className="document-identity">
-                        <div>
-                          <h2>{selected.title}</h2>
-                          <p>{selected.role} · {selectedTranslation?.source_path}</p>
-                        </div>
-                      </div>
-                    </header>
 
                     <div className="editor-frame content-editor-frame" data-entity={selected.entity_type} data-toolbar={toolbarVisible ? 'visible' : 'hidden'}>
                       {selectedTranslation ? (
@@ -4464,6 +4423,7 @@ export default function App() {
                           onReviewFindingActivate={languageReview.openReport}
                           onReviewFindingApplied={languageReview.resolveFinding}
                           slashCommands={editorAssist.slashCommands}
+                          onImportImages={importImagesToSelected}
                           onSelectionAssist={requestSelectionAssist}
                           onChange={patchSelectedTranslationContent}
                         />
@@ -4548,6 +4508,57 @@ export default function App() {
                                         />
                                       </label>
                                     )}
+                                    {selectedContentGroup.kind === 'moment' && (
+                                      <>
+                                        <div className="content-settings-control">
+                                          <span>Moment type</span>
+                                          <small>The semantic event class used by timeline and query surfaces.</small>
+                                          <Select
+                                            aria-label="Moment type"
+                                            value={metadataDraft.moment_type}
+                                            disabled={metadataSavingId === selectedContentGroup.id}
+                                            onChange={(event) => setMetadataDraft((current) => ({
+                                              ...current,
+                                              moment_type: event.target.value,
+                                            }))}
+                                          >
+                                            {momentTypes.map((momentType) => (
+                                              <option key={momentType} value={momentType}>{momentType}</option>
+                                            ))}
+                                          </Select>
+                                        </div>
+                                        <div className="content-settings-control">
+                                          <span>Priority</span>
+                                          <small>Editorial importance; independent from lifecycle and visibility.</small>
+                                          <Select
+                                            aria-label="Moment priority"
+                                            value={metadataDraft.priority}
+                                            disabled={metadataSavingId === selectedContentGroup.id}
+                                            onChange={(event) => setMetadataDraft((current) => ({
+                                              ...current,
+                                              priority: event.target.value,
+                                            }))}
+                                          >
+                                            {momentPriorities.map((priority) => (
+                                              <option key={priority} value={priority}>{priority}</option>
+                                            ))}
+                                          </Select>
+                                        </div>
+                                        <label className="content-settings-field content-settings-field--wide">
+                                          <span>Tags</span>
+                                          <small>Comma-separated semantic topics. A leading # is normalized automatically.</small>
+                                          <Input
+                                            value={metadataDraft.tags}
+                                            disabled={metadataSavingId === selectedContentGroup.id}
+                                            placeholder="research, systems, lexical"
+                                            onChange={(event) => setMetadataDraft((current) => ({
+                                              ...current,
+                                              tags: event.target.value,
+                                            }))}
+                                          />
+                                        </label>
+                                      </>
+                                    )}
                                   </div>
                                 </section>
                               </>
@@ -4622,7 +4633,7 @@ export default function App() {
                                     <label className="content-settings-field content-settings-field--wide">
                                       <span>Website address</span>
                                       <small>The live website used when the project cover is refreshed.</small>
-                                      <input
+                                      <Input
                                         type="url"
                                         value={metadataDraft.cover_website_url}
                                         onChange={(event) => setMetadataDraft((current) => ({ ...current, cover_website_url: event.target.value }))}
@@ -4673,7 +4684,7 @@ export default function App() {
                                     <label className="content-settings-field content-settings-field--wide">
                                       <span>Repository</span>
                                       <small>The source repository opened from the project page.</small>
-                                      <input
+                                      <Input
                                         type="text"
                                         value={metadataDraft.github_url}
                                         onChange={(event) => setMetadataDraft((current) => ({ ...current, github_url: event.target.value }))}
@@ -4684,7 +4695,7 @@ export default function App() {
                                     <label className="content-settings-field content-settings-field--wide">
                                       <span>Live demo</span>
                                       <small>The working product, paper companion, or deployed result readers can open directly.</small>
-                                      <input
+                                      <Input
                                         type="text"
                                         value={metadataDraft.demo_url}
                                         onChange={(event) => setMetadataDraft((current) => ({ ...current, demo_url: event.target.value }))}
@@ -4733,19 +4744,21 @@ export default function App() {
                                       <p>Move this article source into Moments and rewrite its frontmatter for the moment schema.</p>
                                     </div>
                                     <div className="content-settings-command-row">
-                                      <button
-                                        type="button"
-                                        className="content-settings-secondary-action"
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        className="content-settings-action"
                                         disabled={relationshipBusy !== ''}
+                                        loading={relationshipBusy === 'blog-to-moment'}
                                         onClick={() => void runRelationshipCommand(
                                           'blog-to-moment',
                                           'convert_blog_to_moment',
                                           { slug: selectedContentGroup.slug },
                                         )}
                                       >
-                                        {relationshipBusy === 'blog-to-moment' ? <LoaderCircle size={15} /> : <Radio size={15} />}
+                                        <Radio size={15} />
                                         Convert to moment
-                                      </button>
+                                      </Button>
                                     </div>
                                   </section>
                                 )}
@@ -4758,19 +4771,21 @@ export default function App() {
                                         <p>Move this moment source into Blog and rewrite its frontmatter for the article schema.</p>
                                       </div>
                                       <div className="content-settings-command-row">
-                                        <button
-                                          type="button"
-                                          className="content-settings-secondary-action"
+                                        <Button
+                                          size="sm"
+                                          variant="secondary"
+                                          className="content-settings-action"
                                           disabled={relationshipBusy !== ''}
+                                          loading={relationshipBusy === 'moment-to-blog'}
                                           onClick={() => void runRelationshipCommand(
                                             'moment-to-blog',
                                             'convert_moment_to_blog',
                                             { slug: selectedContentGroup.slug },
                                           )}
                                         >
-                                          {relationshipBusy === 'moment-to-blog' ? <LoaderCircle size={15} /> : <FileText size={15} />}
+                                          <FileText size={15} />
                                           Convert to blog
-                                        </button>
+                                        </Button>
                                       </div>
                                     </section>
 
@@ -4780,10 +4795,12 @@ export default function App() {
                                         <p>Create a new resource with fresh item identity, clone this moment body, and add an evolution relation from the moment.</p>
                                       </div>
                                       <div className="content-settings-command-row">
-                                        <button
-                                          type="button"
-                                          className="content-settings-secondary-action"
+                                        <Button
+                                          size="sm"
+                                          variant="secondary"
+                                          className="content-settings-action"
                                           disabled={relationshipBusy !== ''}
+                                          loading={relationshipBusy === 'moment-create-blog'}
                                           onClick={() => void runRelationshipCommand(
                                             'moment-create-blog',
                                             'create_blog_from_moment',
@@ -4791,13 +4808,15 @@ export default function App() {
                                             'overview',
                                           )}
                                         >
-                                          {relationshipBusy === 'moment-create-blog' ? <LoaderCircle size={15} /> : <FileText size={15} />}
+                                          <FileText size={15} />
                                           New blog
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="content-settings-secondary-action"
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="secondary"
+                                          className="content-settings-action"
                                           disabled={relationshipBusy !== ''}
+                                          loading={relationshipBusy === 'moment-create-project'}
                                           onClick={() => void runRelationshipCommand(
                                             'moment-create-project',
                                             'create_project_from_moment',
@@ -4805,93 +4824,35 @@ export default function App() {
                                             'overview',
                                           )}
                                         >
-                                          {relationshipBusy === 'moment-create-project' ? <LoaderCircle size={15} /> : <FolderPlus size={15} />}
+                                          <FolderPlus size={15} />
                                           New project
-                                        </button>
+                                        </Button>
                                       </div>
                                     </section>
 
-                                    <section className="resume-editor-section content-settings-section">
-                                      <div className="content-settings-section-heading">
-                                        <h3>Reference existing content</h3>
-                                        <p>Add or remove a structured reference from this moment to an existing blog or project slug.</p>
-                                      </div>
-                                      <div className="content-settings-grid">
-                                        <div className="content-settings-control">
-                                          <span>Target type</span>
-                                          <small>The existing resource collection that owns the target slug.</small>
-                                          <div className="content-cover-type-group" role="radiogroup" aria-label="Relation target type">
-                                            <button
-                                              type="button"
-                                              role="radio"
-                                              aria-checked={relationshipTargetKind === 'blog'}
-                                              className={relationshipTargetKind === 'blog' ? 'active' : ''}
-                                              disabled={relationshipBusy !== ''}
-                                              onClick={() => setRelationshipTargetKind('blog')}
-                                            >
-                                              Blog
-                                            </button>
-                                            <button
-                                              type="button"
-                                              role="radio"
-                                              aria-checked={relationshipTargetKind === 'project'}
-                                              className={relationshipTargetKind === 'project' ? 'active' : ''}
-                                              disabled={relationshipBusy !== ''}
-                                              onClick={() => setRelationshipTargetKind('project')}
-                                            >
-                                              Project
-                                            </button>
-                                          </div>
-                                        </div>
-                                        <label className="content-settings-field content-settings-field--wide">
-                                          <span>Target slug</span>
-                                          <small>The existing blog or project slug to reference from this moment.</small>
-                                          <input
-                                            type="text"
-                                            value={relationshipTargetSlug}
-                                            onChange={(event) => setRelationshipTargetSlug(event.target.value)}
-                                            disabled={relationshipBusy !== ''}
-                                            placeholder={relationshipTargetKind === 'blog' ? 'research-update' : 'silan-viking'}
-                                          />
-                                        </label>
-                                      </div>
-                                      <div className="content-settings-command-row">
-                                        <button
-                                          type="button"
-                                          className="content-settings-secondary-action"
-                                          disabled={relationshipBusy !== '' || !relationshipTargetSlug.trim()}
-                                          onClick={() => void runRelationshipCommand(
-                                            'moment-link',
-                                            'link_moment_to_content',
-                                            {
-                                              slug: selectedContentGroup.slug,
-                                              targetKind: relationshipTargetKind,
-                                              targetSlug: relationshipTargetSlug.trim(),
-                                            },
-                                          )}
-                                        >
-                                          {relationshipBusy === 'moment-link' ? <LoaderCircle size={15} /> : <Link2 size={15} />}
-                                          Link reference
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="content-settings-secondary-action"
-                                          disabled={relationshipBusy !== '' || !relationshipTargetSlug.trim()}
-                                          onClick={() => void runRelationshipCommand(
-                                            'moment-unlink',
-                                            'unlink_moment_from_content',
-                                            {
-                                              slug: selectedContentGroup.slug,
-                                              targetKind: relationshipTargetKind,
-                                              targetSlug: relationshipTargetSlug.trim(),
-                                            },
-                                          )}
-                                        >
-                                          {relationshipBusy === 'moment-unlink' ? <LoaderCircle size={15} /> : <Unlink2 size={15} />}
-                                          Unlink reference
-                                        </button>
-                                      </div>
-                                    </section>
+                                    <ContentRelationManager
+                                      relations={selectedContentGroup.relations || []}
+                                      targets={relationTargetOptions}
+                                      targetKind={relationshipTargetKind}
+                                      targetSlug={relationshipTargetSlug}
+                                      busyKey={relationshipBusy}
+                                      onTargetKindChange={(kind) => {
+                                        setRelationshipTargetKind(kind);
+                                        setRelationshipTargetSlug('');
+                                      }}
+                                      onTargetSlugChange={setRelationshipTargetSlug}
+                                      onOpen={openRelationTarget}
+                                      onUnlink={unlinkContentRelation}
+                                      onLink={() => void runRelationshipCommand(
+                                        'moment-link',
+                                        'link_moment_to_content',
+                                        {
+                                          slug: selectedContentGroup.slug,
+                                          targetKind: relationshipTargetKind,
+                                          targetSlug: relationshipTargetSlug,
+                                        },
+                                      )}
+                                    />
                                   </>
                                 )}
                               </>
@@ -4902,14 +4863,21 @@ export default function App() {
                                 <SettingsPageIntro
                                   eyebrow={`${selected.entity_type} settings`}
                                   title="Publishing"
-                                  description="Control whether this page is a draft, publicly available, hidden, or archived."
+                                  description={selectedContentGroup.kind === 'moment'
+                                    ? 'Manage progress and public visibility as independent Moment states.'
+                                    : 'Manage the authored lifecycle and public visibility without collapsing them into one field.'}
                                 />
                                 <section className="resume-editor-section content-settings-section">
                                   <div className="content-settings-section-heading">
                                     <h3>Availability</h3>
-                                    <p>Publishing actions change the content lifecycle immediately. Save open Markdown edits before changing state.</p>
+                                    <p>Choose the lifecycle and audience, then save both with the rest of this page. Open Markdown edits must be saved first.</p>
                                   </div>
-                                  {renderStateControls(selectedContentGroup, 'header')}
+                                  <ContentPublishingFields
+                                    kind={selectedContentGroup.kind}
+                                    value={publishingDraft}
+                                    disabled={metadataSavingId === selectedContentGroup.id}
+                                    onChange={setPublishingDraft}
+                                  />
                                 </section>
                               </>
                             )}
@@ -4960,8 +4928,8 @@ export default function App() {
                         <button
                           type="button"
                           className="resume-editor-save"
-                          disabled={!metadataDirty || !selectedMetadataTranslation || metadataSavingId === selectedContentGroup.id}
-                          onClick={() => void saveContentMetadata()}
+                          disabled={!contentSettingsDirty || !selectedMetadataTranslation || metadataSavingId === selectedContentGroup.id}
+                          onClick={() => void saveContentSettings()}
                         >
                           {metadataSavingId === selectedContentGroup.id ? 'Saving' : 'Save settings'}
                         </button>
@@ -4969,75 +4937,25 @@ export default function App() {
                     </section>
                   )}
                   {contentRailPanel === 'reactions' && (
-                    <section className="content-settings-panel" aria-label="Reaction management">
+                    <section className="content-settings-panel content-settings-panel--interactions" aria-label="Reader interactions">
                       <header className="content-settings-header">
                         <div>
-                          <span>REACTION MANAGEMENT</span>
+                          <span>READER INTERACTIONS</span>
                           <h2>{selectedContentGroup.title}</h2>
-                          <p>Manage local likes and comments counters for this content item.</p>
+                          <p>Review the website liker list and comment threads, then control which comments remain public.</p>
                         </div>
                       </header>
-                      <div className="content-settings-layout">
-                        <div className="content-settings-form">
-                          <section id="reaction-summary" className="content-settings-section">
-                            <h3>Summary</h3>
-                            <div className="content-reaction-metrics">
-                              <div>
-                                <ThumbsUp size={16} />
-                                <span>Likes</span>
-                                <strong>{selectedContentGroup.engagement.likes}</strong>
-                              </div>
-                              <div>
-                                <MessageCircle size={16} />
-                                <span>Comments</span>
-                                <strong>{selectedContentGroup.engagement.comments}</strong>
-                              </div>
-                            </div>
-                          </section>
-
-                          <section id="reaction-counters" className="content-settings-section">
-                            <h3>Counters</h3>
-                            <div className="content-settings-grid">
-                              <label className="content-settings-field">
-                                <span>Like count</span>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={reactionDraft.likes}
-                                  onChange={(event) => setReactionDraft((current) => ({ ...current, likes: event.target.value }))}
-                                  disabled={reactionSavingId === selectedContentGroup.id}
-                                />
-                              </label>
-                              <label className="content-settings-field">
-                                <span>Comment count</span>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={reactionDraft.comments}
-                                  onChange={(event) => setReactionDraft((current) => ({ ...current, comments: event.target.value }))}
-                                  disabled={reactionSavingId === selectedContentGroup.id}
-                                />
-                              </label>
-                            </div>
-                          </section>
-
-                          {reactionError && (
-                            <div className="content-settings-error" role="alert">
-                              <AlertCircle size={14} />
-                              <span>{reactionError}</span>
-                            </div>
-                          )}
-                        </div>
+                      <div className="content-interaction-canvas">
+                        <InteractionDetailsPanel
+                          state={interactionDetailsState}
+                          language={chromeLanguage}
+                          refreshing={interactionDetailsRefreshing}
+                          onRefresh={() => void loadInteractionDetails(true)}
+                          visibilityPendingId={commentVisibilityPendingId}
+                          visibilityError={commentVisibilityError}
+                          onVisibilityChange={(commentId, isPublic) => void setCommentVisibility(commentId, isPublic)}
+                        />
                       </div>
-                      <button
-                        type="button"
-                        className="content-settings-save"
-                        disabled={!reactionDirty || reactionSavingId === selectedContentGroup.id}
-                        onClick={() => void saveEngagementStats()}
-                      >
-                        {reactionSavingId === selectedContentGroup.id ? <LoaderCircle size={15} /> : <Save size={15} />}
-                        {reactionSavingId === selectedContentGroup.id ? 'Saving' : 'Save reactions'}
-                      </button>
                     </section>
                   )}
                 </div>
@@ -5144,6 +5062,9 @@ export default function App() {
         error={captureError}
         inputRef={captureInputRef}
         onAttachFiles={attachFilesToCapture}
+        onRemoveAttachment={(index) => {
+          setCaptureAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index));
+        }}
         onRequestClose={requestCaptureClose}
         onDiscard={discardCapture}
         onKeepWriting={() => setCapturePhase('editing')}

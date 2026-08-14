@@ -128,8 +128,19 @@ export type EditorDocument = {
   github_url?: string | null;
   demo_url?: string | null;
   article_attribution?: ArticleAttribution | null;
+  moment_type?: string | null;
+  priority?: string | null;
+  tags: string[];
+  relations: ContentRelation[];
   engagement: EngagementStats;
   translations: EditorTranslation[];
+};
+
+export type ContentRelation = {
+  relation_type: string;
+  target_uri: string;
+  target_kind: ContentKind;
+  target_slug: string;
 };
 
 export type ArticleResource = {
@@ -230,10 +241,12 @@ export type GeoEvidence = {
 export type DailyTraffic = {
   date: string;
   visits: number;
+  unique_visitors: number;
   content: Array<{
     content_type: string;
     title: string;
     visits: number;
+    unique_visitors: number;
     comments: number;
     evidence: TrafficEvidence[];
     visitors: VisitorLocation[];
@@ -255,6 +268,7 @@ export type VisitorLocation = {
   accuracy_radius: number;
   ip_addresses: string[];
   visits: number;
+  unique_visitors: number;
 };
 
 export type TrafficEvidence = {
@@ -431,6 +445,10 @@ export type ContentGroup = {
   visibility: string;
   date?: string | null;
   pinned?: boolean;
+  momentType?: string;
+  priority?: string;
+  tags?: string[];
+  relations?: ContentRelation[];
   coverUrl?: string;
   coverSourceType?: 'image' | 'website';
   coverWebsiteUrl?: string;
@@ -444,6 +462,34 @@ export type ContentGroup = {
   cardKind?: 'article' | 'series';
   episodeCount?: number;
   latestEpisode?: { title: string; episodeNumber?: number | null };
+};
+
+export type InteractionLiker = {
+  kind: string;
+  country_code: string;
+  visitor_number: string;
+  avatar_url: string;
+  label: string;
+};
+
+export type InteractionComment = {
+  id: string;
+  parent_id: string;
+  author_name: string;
+  author_avatar_url: string;
+  auth_provider: string;
+  country_code: string;
+  content: string;
+  created_at: string;
+  likes_count: number;
+  is_public: boolean;
+  replies: InteractionComment[];
+};
+
+export type InteractionDetails = {
+  is_complete: boolean;
+  likers: InteractionLiker[];
+  comments: InteractionComment[];
 };
 
 export type EpisodeGroup = ContentGroup & {

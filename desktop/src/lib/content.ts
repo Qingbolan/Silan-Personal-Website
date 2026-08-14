@@ -1,5 +1,3 @@
-import type { BlogCardData } from '../components/ds/BlogCard';
-import type { ProjectCardData } from '../components/ds/ProjectCard';
 import type {
   ContentGroup,
   ContentKind,
@@ -9,6 +7,67 @@ import type {
   EpisodeSeries,
 } from '../types';
 import { formatShortDate } from './format';
+
+/* --- Card view-model shapes ------------------------------------------------
+ * These were originally defined next to the design-system BlogCard /
+ * ProjectCard components. Those components were removed as unused (the
+ * workbench renders ContentCard instead), but the plain data shapes remain
+ * the contract produced by `toBlogCardData` / `toProjectCardData` below. */
+
+export interface BlogCardData {
+  id: string;
+  title: string;
+  /** Short summary / excerpt. */
+  excerpt?: string;
+  /** Topic tags. */
+  tags?: string[];
+  /** Publish date — any displayable string. */
+  date?: string;
+  author?: string;
+  /** Estimated read time, e.g. "5 min read". */
+  readTime?: string;
+  /** Article (single post) or series (multi-part). */
+  kind?: 'article' | 'series';
+  /** Episode count — shown for `series`. */
+  episodeCount?: number;
+  /** Latest episode in a series — surfaced as a dedicated meta row between
+   *  the excerpt and the tags so the reader can see what's freshest without
+   *  opening the series. Rendered only when `kind === 'series'`. */
+  latestEpisode?: { title: string; episodeNumber?: number };
+  /** Cover image. Omit for the branded placeholder. */
+  coverImage?: string;
+}
+
+export interface ProjectCardData {
+  id: string;
+  title: string;
+  description?: string;
+  /** Tech-stack / topic tags. */
+  tags?: string[];
+  /** Year — shown in the placeholder reference code + the cover meta strip. */
+  year?: number | string;
+  /** Author / owner — shown in the cover meta strip. */
+  author?: string;
+  githubUrl?: string;
+  demoUrl?: string;
+
+  /* --- Cover content — first one set wins, in this order ---------------- */
+  /** A static preview image / screenshot. */
+  coverImage?: string;
+  /** A cover video (MP4/WebM). Plays muted + looped automatically. */
+  coverVideo?: string;
+  /** Poster frame shown before `coverVideo` loads. */
+  coverPoster?: string;
+  /**
+   * Live, scaled, non-interactive iframe of `demoUrl`. Used only when no
+   * image/video is set. Falls back to the placeholder if embedding fails.
+   */
+  livePreview?: boolean;
+  coverSourceType?: 'image' | 'website';
+
+  /** Optional status pill (e.g. "Active", "Archived"). */
+  status?: { label: string; tone?: 'success' | 'neutral' | 'warning' };
+}
 
 export const docPath = (doc: EditorDocument) => {
   if (doc.entity_type === 'episode' && doc.series_slug) {
@@ -41,6 +100,10 @@ export const groupDocumentsByResource = (documents: EditorDocument[]) => {
         visibility: document.visibility,
         date: document.date || null,
         pinned: Boolean(document.pinned),
+        momentType: document.moment_type || undefined,
+        priority: document.priority || undefined,
+        tags: document.tags,
+        relations: document.relations,
         coverUrl: document.cover_url || undefined,
         coverSourceType: document.cover_source_type || 'image',
         coverWebsiteUrl: document.cover_website_url || undefined,
@@ -111,10 +174,11 @@ export const contentGroupUpdatedAt = (group: ContentGroup) => group.documents.re
   !latest || document.updated_at > latest ? document.updated_at : latest
 ), '');
 
-export const contentGroupTags = (group: ContentGroup, limit = 4) => group.documents
-  .map((document) => document.role)
-  .filter((role, index, roles) => role && roles.indexOf(role) === index)
-  .slice(0, limit);
+export const contentGroupTags = (group: ContentGroup, limit = 4) => (
+  group.tags
+  || selectPrimaryDocument(group)?.tags
+  || []
+).filter((tag, index, tags) => tag && tags.indexOf(tag) === index).slice(0, limit);
 
 export const arrangeBlogGroupsForGrid = (groups: ContentGroup[]) => {
   const series = groups.filter((group) => group.cardKind === 'series');

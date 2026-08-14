@@ -7,6 +7,7 @@ use crate::{
 };
 use rusqlite::{Connection, OpenFlags};
 use serde::Serialize;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -47,6 +48,7 @@ pub struct TrafficDetail {
 pub struct DailyTraffic {
     pub date: String,
     pub visits: i64,
+    pub unique_visitors: i64,
     pub content: Vec<DailyContentTraffic>,
 }
 
@@ -55,6 +57,7 @@ pub struct DailyContentTraffic {
     pub content_type: String,
     pub title: String,
     pub visits: i64,
+    pub unique_visitors: i64,
     pub comments: i64,
     pub evidence: Vec<TrafficEvidence>,
     pub visitors: Vec<VisitorLocation>,
@@ -76,6 +79,7 @@ pub struct VisitorLocation {
     pub accuracy_radius: i64,
     pub ip_addresses: Vec<String>,
     pub visits: i64,
+    pub unique_visitors: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -413,19 +417,41 @@ enum AcquisitionKind {
     Geo,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct LocationVisitorKey {
+    date: String,
+    content_type: String,
+    entity_id: String,
+    country_code: String,
+    region_code: String,
+    region_name: String,
+    city: String,
+    postal_code: String,
+    place_name: String,
+    place_feature_code: String,
+    place_distance_km: u64,
+    latitude: u64,
+    longitude: u64,
+    time_zone: String,
+    accuracy_radius: i64,
+}
+
 fn daily_acquisition(
     connection: &Connection,
-    titles: &std::collections::HashMap<(&str, &str), &str>,
-    comment_counts: &std::collections::HashMap<(String, String), i64>,
+    titles: &HashMap<(&str, &str), &str>,
+    comment_counts: &HashMap<(String, String), i64>,
     filter: &str,
     kind: AcquisitionKind,
 ) -> Result<Vec<DailyTraffic>, rusqlite::Error> {
     if !table_exists(connection, "stats_cache_visitor")? {
         return Ok(Vec::new());
     }
+    let daily_unique_visitors = unique_visitors_by_day(connection, filter)?;
+    let content_unique_visitors = unique_visitors_by_content_day(connection, filter)?;
+    let location_unique_visitors = unique_visitors_by_location_day(connection, filter)?;
     let sql = format!(
         "SELECT date(last_seen_at, '+8 hours'), entity_type, entity_id, visitor_kind,
-                referrer_kind, referrer, landing_url, crawler_name, ip_masked,
+                referrer_kind, referrer, landing_url, crawler_name, ip_address,
                 country_code, region_code, region_name, city, postal_code, place_name,
                 place_feature_code, place_distance_km, latitude, longitude, time_zone,
                 accuracy_radius, COUNT(*)
@@ -433,7 +459,7 @@ fn daily_acquisition(
          WHERE {filter}
            AND date(last_seen_at, '+8 hours') >= date('now', '+8 hours', '-1 year')
          GROUP BY date(last_seen_at, '+8 hours'), entity_type, entity_id, visitor_kind,
-                  referrer_kind, referrer, landing_url, crawler_name, ip_masked,
+                  referrer_kind, referrer, landing_url, crawler_name, ip_address,
                   country_code, region_code, region_name, city, postal_code, place_name,
                   place_feature_code, place_distance_km, latitude, longitude, time_zone,
                   accuracy_radius
@@ -477,7 +503,7 @@ fn daily_acquisition(
             referrer,
             landing_url,
             crawler_name,
-            ip_masked,
+            ip_address,
             country_code,
             region_code,
             region_name,
@@ -496,19 +522,46 @@ fn daily_acquisition(
             days.push(DailyTraffic {
                 date: date.clone(),
                 visits: 0,
+                unique_visitors: daily_unique_visitors.get(&date).copied().unwrap_or(0),
                 content: Vec::new(),
             });
         }
         let day = days.last_mut().expect("daily acquisition day");
         day.visits += visits;
-        let content = day.content.iter_mut().find(|item| {
-            item.content_type == content_type
-                && item.title
-                    == titles
-                        .get(&(content_type.as_str(), entity_id.as_str()))
-                        .copied()
-                        .unwrap_or(entity_id.as_str())
-        });
+        let title = titles
+            .get(&(content_type.as_str(), entity_id.as_str()))
+            .copied()
+            .unwrap_or(entity_id.as_str())
+            .to_owned();
+        let unique_visitors = content_unique_visitors
+            .get(&(date.clone(), content_type.clone(), entity_id.clone()))
+            .copied()
+            .unwrap_or(0);
+        let location_key = LocationVisitorKey {
+            date: date.clone(),
+            content_type: content_type.clone(),
+            entity_id: entity_id.clone(),
+            country_code: country_code.clone(),
+            region_code: region_code.clone(),
+            region_name: region_name.clone(),
+            city: city.clone(),
+            postal_code: postal_code.clone(),
+            place_name: place_name.clone(),
+            place_feature_code: place_feature_code.clone(),
+            place_distance_km: place_distance.to_bits(),
+            latitude: latitude.to_bits(),
+            longitude: longitude.to_bits(),
+            time_zone: time_zone.clone(),
+            accuracy_radius,
+        };
+        let location_unique_visitors = location_unique_visitors
+            .get(&location_key)
+            .copied()
+            .unwrap_or(0);
+        let content = day
+            .content
+            .iter_mut()
+            .find(|item| item.content_type == content_type && item.title == title);
         let evidence = (kind != AcquisitionKind::Human).then(|| {
             acquisition_evidence(
                 kind,
@@ -533,14 +586,16 @@ fn daily_acquisition(
             longitude: format_coordinate(longitude),
             time_zone,
             accuracy_radius,
-            ip_addresses: (!ip_masked.is_empty())
-                .then_some(ip_masked)
+            ip_addresses: (!ip_address.is_empty())
+                .then_some(ip_address)
                 .into_iter()
                 .collect(),
             visits,
+            unique_visitors: location_unique_visitors,
         });
         if let Some(content) = content {
             content.visits += visits;
+            content.unique_visitors = unique_visitors;
             if let Some(evidence) = evidence {
                 merge_traffic_evidence(&mut content.evidence, evidence);
             }
@@ -549,23 +604,116 @@ fn daily_acquisition(
             }
         } else {
             day.content.push(DailyContentTraffic {
-                title: titles
-                    .get(&(content_type.as_str(), entity_id.as_str()))
-                    .copied()
-                    .unwrap_or(entity_id.as_str())
-                    .to_owned(),
+                title,
                 comments: comment_counts
                     .get(&(content_type.clone(), entity_id))
                     .copied()
                     .unwrap_or(0),
                 content_type,
                 visits,
+                unique_visitors,
                 evidence: evidence.into_iter().collect(),
                 visitors: visitor.into_iter().collect(),
             });
         }
     }
     Ok(days)
+}
+
+fn unique_visitors_by_day(
+    connection: &Connection,
+    filter: &str,
+) -> Result<HashMap<String, i64>, rusqlite::Error> {
+    let sql = format!(
+        "SELECT date(last_seen_at, '+8 hours'), COUNT(DISTINCT fingerprint)
+         FROM stats_cache_visitor
+         WHERE {filter}
+           AND date(last_seen_at, '+8 hours') >= date('now', '+8 hours', '-1 year')
+         GROUP BY date(last_seen_at, '+8 hours')"
+    );
+    let mut statement = connection.prepare(&sql)?;
+    let counts = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?
+        .collect::<Result<HashMap<_, _>, _>>()?;
+    Ok(counts)
+}
+
+fn unique_visitors_by_content_day(
+    connection: &Connection,
+    filter: &str,
+) -> Result<HashMap<(String, String, String), i64>, rusqlite::Error> {
+    let sql = format!(
+        "SELECT date(last_seen_at, '+8 hours'), entity_type, entity_id,
+                COUNT(DISTINCT fingerprint)
+         FROM stats_cache_visitor
+         WHERE {filter}
+           AND date(last_seen_at, '+8 hours') >= date('now', '+8 hours', '-1 year')
+         GROUP BY date(last_seen_at, '+8 hours'), entity_type, entity_id"
+    );
+    let mut statement = connection.prepare(&sql)?;
+    let counts = statement
+        .query_map([], |row| {
+            Ok((
+                (
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ),
+                row.get::<_, i64>(3)?,
+            ))
+        })?
+        .collect::<Result<HashMap<_, _>, _>>()?;
+    Ok(counts)
+}
+
+fn unique_visitors_by_location_day(
+    connection: &Connection,
+    filter: &str,
+) -> Result<HashMap<LocationVisitorKey, i64>, rusqlite::Error> {
+    let sql = format!(
+        "SELECT date(last_seen_at, '+8 hours'), entity_type, entity_id,
+                country_code, region_code, region_name, city, postal_code, place_name,
+                place_feature_code, place_distance_km, latitude, longitude, time_zone,
+                accuracy_radius, COUNT(DISTINCT fingerprint)
+         FROM stats_cache_visitor
+         WHERE {filter}
+           AND date(last_seen_at, '+8 hours') >= date('now', '+8 hours', '-1 year')
+         GROUP BY date(last_seen_at, '+8 hours'), entity_type, entity_id,
+                  country_code, region_code, region_name, city, postal_code, place_name,
+                  place_feature_code, place_distance_km, latitude, longitude, time_zone,
+                  accuracy_radius"
+    );
+    let mut statement = connection.prepare(&sql)?;
+    let counts = statement
+        .query_map([], |row| {
+            let place_distance: f64 = row.get(10)?;
+            let latitude: f64 = row.get(11)?;
+            let longitude: f64 = row.get(12)?;
+            Ok((
+                LocationVisitorKey {
+                    date: row.get(0)?,
+                    content_type: row.get(1)?,
+                    entity_id: row.get(2)?,
+                    country_code: row.get(3)?,
+                    region_code: row.get(4)?,
+                    region_name: row.get(5)?,
+                    city: row.get(6)?,
+                    postal_code: row.get(7)?,
+                    place_name: row.get(8)?,
+                    place_feature_code: row.get(9)?,
+                    place_distance_km: place_distance.to_bits(),
+                    latitude: latitude.to_bits(),
+                    longitude: longitude.to_bits(),
+                    time_zone: row.get(13)?,
+                    accuracy_radius: row.get(14)?,
+                },
+                row.get::<_, i64>(15)?,
+            ))
+        })?
+        .collect::<Result<HashMap<_, _>, _>>()?;
+    Ok(counts)
 }
 
 fn format_coordinate(value: f64) -> String {
@@ -600,6 +748,7 @@ fn merge_visitor_location(locations: &mut Vec<VisitorLocation>, visitor: Visitor
             && location.accuracy_radius == visitor.accuracy_radius
     }) {
         existing.visits += visitor.visits;
+        existing.unique_visitors = existing.unique_visitors.max(visitor.unique_visitors);
         for ip in visitor.ip_addresses {
             if !existing.ip_addresses.contains(&ip) {
                 existing.ip_addresses.push(ip);
@@ -1020,8 +1169,10 @@ mod tests {
         connection
             .execute_batch(
                 "
-                INSERT INTO stats_cache_item VALUES
-                  ('blog', 'i_one', 12, 3, 2, '2026-07-17T00:00:00Z');
+                INSERT INTO stats_cache_item
+                  (entity_type, entity_id, views, likes, comments, details_complete, synced_at)
+                VALUES
+                  ('blog', 'i_one', 12, 3, 2, 1, '2026-07-17T00:00:00Z');
                 INSERT INTO stats_cache_crawler VALUES
                   ('blog', 'i_one', 'human', 9, '2026-07-17T00:00:00Z'),
                   ('blog', 'i_one', 'ai_crawler', 2, '2026-07-17T00:00:00Z');
@@ -1029,6 +1180,25 @@ mod tests {
                   ('blog', 'i_one', 'ai_chat', 4, '2026-07-17T00:00:00Z');
                 INSERT INTO stats_cache_location_v2 VALUES
                   ('SG', '', '', 'Singapore', '', 'Holland Village', 'PPLX', 1.4, 1.3239, 103.79, 'Asia/Singapore', 5, '[\"203.0.113.8\"]', 7, '2026-07-17T00:00:00Z');
+                INSERT INTO stats_cache_visitor
+                  (entity_type, entity_id, fingerprint, ip_masked, ip_address, visitor_kind,
+                   referrer_kind, referrer, landing_url, crawler_name, country_code,
+                   region_code, region_name, city, postal_code, place_name,
+                   place_feature_code, place_distance_km, latitude, longitude,
+                   time_zone, accuracy_radius, last_seen_at, synced_at)
+                VALUES
+                  ('blog', 'i_one', 'visitor-a', '203.0.113.x', '203.0.113.8', 'human',
+                   'direct', '', '/', '', 'SG', '', '', 'Singapore', '',
+                   'Holland Village', 'PPLX', 1.4, 1.3239, 103.79,
+                   'Asia/Singapore', 5, datetime('now'), '2026-07-17T00:00:00Z'),
+                  ('blog', 'i_one', 'visitor-a', '203.0.113.x', '203.0.113.8', 'human',
+                   'direct', '', '/', '', 'SG', '', '', 'Singapore', '',
+                   'Holland Village', 'PPLX', 1.4, 1.3239, 103.79,
+                   'Asia/Singapore', 5, datetime('now'), '2026-07-17T00:00:00Z'),
+                  ('blog', 'i_one', 'visitor-b', '203.0.113.x', '203.0.113.9', 'human',
+                   'direct', '', '/', '', 'SG', '', '', 'Singapore', '',
+                   'Holland Village', 'PPLX', 1.4, 1.3239, 103.79,
+                   'Asia/Singapore', 5, datetime('now'), '2026-07-17T00:00:00Z');
                 CREATE TABLE comments (is_approved INTEGER NOT NULL);
                 INSERT INTO comments VALUES (0), (1);
                 ",
@@ -1043,6 +1213,25 @@ mod tests {
         assert_eq!(snapshot.stats.human_interactions, 9);
         assert_eq!(snapshot.crawlers.ai, 2);
         assert_eq!(snapshot.ai_referrals.visits, 4);
+        assert_eq!(snapshot.traffic.daily_visits[0].visits, 3);
+        assert_eq!(snapshot.traffic.daily_visits[0].unique_visitors, 2);
+        assert_eq!(snapshot.traffic.daily_visits[0].content[0].visits, 3);
+        assert_eq!(
+            snapshot.traffic.daily_visits[0].content[0].unique_visitors,
+            2
+        );
+        assert_eq!(
+            snapshot.traffic.daily_visits[0].content[0].visitors[0].visits,
+            3
+        );
+        assert_eq!(
+            snapshot.traffic.daily_visits[0].content[0].visitors[0].unique_visitors,
+            2
+        );
+        assert_eq!(
+            snapshot.traffic.daily_visits[0].content[0].visitors[0].ip_addresses,
+            vec!["203.0.113.8".to_owned(), "203.0.113.9".to_owned()]
+        );
         assert_eq!(
             snapshot.traffic.top_countries,
             vec![TrafficCountry {

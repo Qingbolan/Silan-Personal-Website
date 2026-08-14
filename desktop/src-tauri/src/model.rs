@@ -29,8 +29,20 @@ pub(crate) struct EditorDocument {
     pub(crate) github_url: Option<String>,
     pub(crate) demo_url: Option<String>,
     pub(crate) article_attribution: Option<ArticleAttribution>,
+    pub(crate) moment_type: Option<String>,
+    pub(crate) priority: Option<String>,
+    pub(crate) tags: Vec<String>,
+    pub(crate) relations: Vec<EditorRelation>,
     pub(crate) engagement: EngagementStats,
     pub(crate) translations: Vec<EditorTranslation>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct EditorRelation {
+    pub(crate) relation_type: String,
+    pub(crate) target_uri: String,
+    pub(crate) target_kind: String,
+    pub(crate) target_slug: String,
 }
 
 #[derive(Debug, Default, Clone, Serialize)]
@@ -39,10 +51,35 @@ pub(crate) struct EngagementStats {
     pub(crate) comments: i64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub(crate) struct EngagementStatsInput {
-    pub(crate) likes: i64,
-    pub(crate) comments: i64,
+#[derive(Debug, Serialize)]
+pub(crate) struct InteractionDetails {
+    pub(crate) is_complete: bool,
+    pub(crate) likers: Vec<InteractionLiker>,
+    pub(crate) comments: Vec<InteractionComment>,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct InteractionLiker {
+    pub(crate) kind: String,
+    pub(crate) country_code: String,
+    pub(crate) visitor_number: String,
+    pub(crate) avatar_url: String,
+    pub(crate) label: String,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct InteractionComment {
+    pub(crate) id: String,
+    pub(crate) parent_id: String,
+    pub(crate) author_name: String,
+    pub(crate) author_avatar_url: String,
+    pub(crate) auth_provider: String,
+    pub(crate) country_code: String,
+    pub(crate) content: String,
+    pub(crate) created_at: String,
+    pub(crate) likes_count: i64,
+    pub(crate) is_public: bool,
+    pub(crate) replies: Vec<InteractionComment>,
 }
 
 #[derive(Debug, Serialize)]
@@ -89,6 +126,9 @@ pub(crate) struct ContentMetadataInput {
     pub(crate) github_url: Option<String>,
     pub(crate) demo_url: Option<String>,
     pub(crate) article_attribution: Option<ArticleAttribution>,
+    pub(crate) moment_type: Option<String>,
+    pub(crate) priority: Option<String>,
+    pub(crate) tags: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -168,6 +208,7 @@ pub(crate) struct DashboardData {
 pub(crate) struct DailyTraffic {
     pub(crate) date: String,
     pub(crate) visits: i64,
+    pub(crate) unique_visitors: i64,
     pub(crate) content: Vec<DailyContentTraffic>,
 }
 
@@ -176,6 +217,7 @@ pub(crate) struct DailyContentTraffic {
     pub(crate) content_type: String,
     pub(crate) title: String,
     pub(crate) visits: i64,
+    pub(crate) unique_visitors: i64,
     pub(crate) comments: i64,
     pub(crate) evidence: Vec<TrafficEvidence>,
     pub(crate) visitors: Vec<VisitorLocation>,
@@ -197,6 +239,7 @@ pub(crate) struct VisitorLocation {
     pub(crate) accuracy_radius: i64,
     pub(crate) ip_addresses: Vec<String>,
     pub(crate) visits: i64,
+    pub(crate) unique_visitors: i64,
 }
 
 #[derive(Debug, Serialize)]

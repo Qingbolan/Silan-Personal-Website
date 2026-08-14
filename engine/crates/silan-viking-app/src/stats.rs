@@ -12,7 +12,7 @@
 //! The HTTP client is `ureq` — blocking, no async runtime, matching the
 //! engine's runtime-free discipline.
 
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::time::Duration;
@@ -68,6 +68,8 @@ pub struct VisitorRow {
     pub fingerprint: String,
     /// Network-masked IP.
     pub ip_masked: String,
+    #[serde(default)]
+    pub ip_address: String,
     /// `human` / `search_crawler` / `ai_crawler`.
     pub visitor_kind: String,
     /// Referrer source kind.
@@ -146,6 +148,8 @@ struct SourceItem {
 #[derive(Debug, Clone, Deserialize)]
 struct SnapshotResponse {
     generated_at: String,
+    #[serde(default)]
+    interaction_details_complete: bool,
     items: Vec<SnapshotItem>,
     #[serde(default)]
     countries: Vec<CountryItem>,
@@ -187,6 +191,68 @@ struct SnapshotItem {
     visitors: Vec<VisitorRow>,
     crawlers: Vec<CrawlerItem>,
     sources: Vec<SourceItem>,
+    #[serde(default)]
+    likers: Vec<InteractionLiker>,
+    #[serde(default)]
+    comments: Vec<InteractionComment>,
+}
+
+/// Public-safe identity information for one content like.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct InteractionLiker {
+    pub kind: String,
+    #[serde(default)]
+    pub country_code: String,
+    #[serde(default)]
+    pub visitor_number: String,
+    #[serde(default)]
+    pub avatar_url: String,
+    #[serde(default)]
+    pub label: String,
+}
+
+/// One comment in a content discussion tree.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct InteractionComment {
+    pub id: String,
+    #[serde(default)]
+    pub parent_id: String,
+    pub author_name: String,
+    #[serde(default)]
+    pub author_avatar_url: String,
+    #[serde(default)]
+    pub auth_provider: String,
+    #[serde(default)]
+    pub country_code: String,
+    pub content: String,
+    pub created_at: String,
+    #[serde(default)]
+    pub likes_count: i64,
+    #[serde(default = "default_public")]
+    pub is_public: bool,
+    #[serde(default)]
+    pub replies: Vec<InteractionComment>,
+}
+
+fn default_public() -> bool {
+    true
+}
+
+/// Detailed human interactions cached for one content item.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct InteractionDetails {
+    pub is_complete: bool,
+    pub likers: Vec<InteractionLiker>,
+    pub comments: Vec<InteractionComment>,
+}
+
+/// Result of one protected comment publication-state mutation.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct CommentVisibility {
+    pub comment_id: String,
+    pub entity_type: String,
+    pub entity_id: String,
+    pub is_public: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -207,14 +273,21 @@ CREATE TABLE IF NOT EXISTS stats_cache_item (
     views       INTEGER NOT NULL,
     likes       INTEGER NOT NULL,
     comments    INTEGER NOT NULL,
+    details_complete INTEGER NOT NULL DEFAULT 0,
     synced_at   TEXT NOT NULL,
     PRIMARY KEY (entity_type, entity_id)
+);
+CREATE TABLE IF NOT EXISTS stats_cache_snapshot (
+    singleton        INTEGER PRIMARY KEY CHECK (singleton = 1),
+    details_complete INTEGER NOT NULL DEFAULT 0,
+    synced_at        TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS stats_cache_visitor (
     entity_type   TEXT NOT NULL,
     entity_id     TEXT NOT NULL,
     fingerprint   TEXT NOT NULL,
     ip_masked     TEXT NOT NULL,
+    ip_address    TEXT NOT NULL DEFAULT '',
     visitor_kind  TEXT NOT NULL,
     referrer_kind TEXT NOT NULL,
     referrer      TEXT NOT NULL DEFAULT '',
@@ -249,6 +322,35 @@ CREATE TABLE IF NOT EXISTS stats_cache_source (
     count       INTEGER NOT NULL,
     synced_at   TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS stats_cache_liker (
+    entity_type   TEXT NOT NULL,
+    entity_id     TEXT NOT NULL,
+    position      INTEGER NOT NULL,
+    kind          TEXT NOT NULL,
+    country_code  TEXT NOT NULL DEFAULT '',
+    visitor_number TEXT NOT NULL DEFAULT '',
+    avatar_url    TEXT NOT NULL DEFAULT '',
+    label         TEXT NOT NULL DEFAULT '',
+    synced_at     TEXT NOT NULL,
+    PRIMARY KEY (entity_type, entity_id, position)
+);
+CREATE TABLE IF NOT EXISTS stats_cache_comment (
+    entity_type      TEXT NOT NULL,
+    entity_id        TEXT NOT NULL,
+    comment_id       TEXT NOT NULL,
+    parent_id        TEXT NOT NULL DEFAULT '',
+    position         INTEGER NOT NULL,
+    author_name      TEXT NOT NULL,
+    author_avatar_url TEXT NOT NULL DEFAULT '',
+    auth_provider    TEXT NOT NULL DEFAULT '',
+    country_code     TEXT NOT NULL DEFAULT '',
+    content          TEXT NOT NULL,
+    created_at       TEXT NOT NULL,
+    likes_count      INTEGER NOT NULL DEFAULT 0,
+    is_public        INTEGER NOT NULL DEFAULT 1,
+    synced_at        TEXT NOT NULL,
+    PRIMARY KEY (entity_type, entity_id, comment_id)
+);
 CREATE TABLE IF NOT EXISTS stats_cache_location_v2 (
     country_code TEXT NOT NULL,
     region_code  TEXT NOT NULL,
@@ -271,10 +373,11 @@ CREATE TABLE IF NOT EXISTS stats_cache_location_v2 (
 
 /// Ensure the `stats_cache_*` tables exist in `db`.
 pub fn ensure_cache_schema(db: &Path) -> Result<(), StatsError> {
-    let conn = Connection::open(db)?;
+    let mut conn = Connection::open(db)?;
     conn.execute_batch(CACHE_SCHEMA)?;
     for (column, declaration) in [
         ("referrer", "TEXT NOT NULL DEFAULT ''"),
+        ("ip_address", "TEXT NOT NULL DEFAULT ''"),
         ("crawler_name", "TEXT NOT NULL DEFAULT ''"),
         ("landing_url", "TEXT NOT NULL DEFAULT ''"),
         ("country_code", "TEXT NOT NULL DEFAULT ''"),
@@ -304,6 +407,19 @@ pub fn ensure_cache_schema(db: &Path) -> Result<(), StatsError> {
     ] {
         ensure_cache_column(&conn, "stats_cache_location_v2", column, declaration)?;
     }
+    migrate_cache_location_v2_primary_key(&mut conn)?;
+    ensure_cache_column(
+        &conn,
+        "stats_cache_item",
+        "details_complete",
+        "INTEGER NOT NULL DEFAULT 0",
+    )?;
+    ensure_cache_column(
+        &conn,
+        "stats_cache_comment",
+        "is_public",
+        "INTEGER NOT NULL DEFAULT 1",
+    )?;
     Ok(())
 }
 
@@ -324,6 +440,68 @@ fn ensure_cache_column(
         )?;
     }
     Ok(())
+}
+
+fn migrate_cache_location_v2_primary_key(conn: &mut Connection) -> Result<(), StatsError> {
+    const TABLE: &str = "stats_cache_location_v2";
+    const MIGRATION_TABLE: &str = "stats_cache_location_v2_migration_old";
+    const EXPECTED_PRIMARY_KEY: &[&str] = &[
+        "country_code",
+        "region_code",
+        "region_name",
+        "city",
+        "postal_code",
+        "place_name",
+        "place_feature_code",
+        "place_distance_km",
+        "latitude",
+        "longitude",
+        "time_zone",
+        "accuracy_radius",
+    ];
+    let primary_key = cache_table_primary_key(conn, TABLE)?;
+    if primary_key == EXPECTED_PRIMARY_KEY {
+        return Ok(());
+    }
+
+    let tx = conn.transaction()?;
+    tx.execute(&format!("DROP TABLE IF EXISTS {MIGRATION_TABLE}"), [])?;
+    tx.execute(
+        &format!("ALTER TABLE {TABLE} RENAME TO {MIGRATION_TABLE}"),
+        [],
+    )?;
+    tx.execute_batch(CACHE_SCHEMA)?;
+    tx.execute(
+        &format!(
+            "INSERT INTO {TABLE}
+             (country_code, region_code, region_name, city, postal_code, place_name,
+              place_feature_code, place_distance_km, latitude, longitude, time_zone,
+              accuracy_radius, ip_addresses, count, synced_at)
+             SELECT country_code, region_code, region_name, city, postal_code, place_name,
+                    place_feature_code, place_distance_km, latitude, longitude, time_zone,
+                    accuracy_radius, MAX(ip_addresses), SUM(count), MAX(synced_at)
+             FROM {MIGRATION_TABLE}
+             GROUP BY country_code, region_code, region_name, city, postal_code, place_name,
+                      place_feature_code, place_distance_km, latitude, longitude, time_zone,
+                      accuracy_radius"
+        ),
+        [],
+    )?;
+    tx.execute(&format!("DROP TABLE {MIGRATION_TABLE}"), [])?;
+    tx.commit()?;
+    Ok(())
+}
+
+fn cache_table_primary_key(conn: &Connection, table: &str) -> Result<Vec<String>, StatsError> {
+    let mut columns = conn.prepare(&format!("PRAGMA table_info({table})"))?;
+    let mut primary_key = columns
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(5)?, row.get::<_, String>(1)?))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    primary_key.retain(|(ordinal, _)| *ordinal > 0);
+    primary_key.sort_by_key(|(ordinal, _)| *ordinal);
+    Ok(primary_key.into_iter().map(|(_, column)| column).collect())
 }
 
 /// Resolve the deployed Go API base URL from `<project_root>/silan-viking.toml`.
@@ -449,6 +627,8 @@ impl StatsSync {
             "stats_cache_visitor",
             "stats_cache_crawler",
             "stats_cache_source",
+            "stats_cache_liker",
+            "stats_cache_comment",
         ] {
             tx.execute(
                 &format!("DELETE FROM {table} WHERE entity_type = ?1 AND entity_id = ?2"),
@@ -472,17 +652,18 @@ impl StatsSync {
         for v in &visitors.visitors {
             tx.execute(
                 "INSERT INTO stats_cache_visitor
-                 (entity_type, entity_id, fingerprint, ip_masked, visitor_kind,
+                 (entity_type, entity_id, fingerprint, ip_masked, ip_address, visitor_kind,
                   referrer_kind, referrer, landing_url, crawler_name, country_code,
                   region_code, region_name, city, postal_code, place_name, place_feature_code,
                   place_distance_km, latitude, longitude, time_zone, accuracy_radius,
                   last_seen_at, synced_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23)",
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
                 rusqlite::params![
                     entity_type,
                     entity_id,
                     v.fingerprint,
                     v.ip_masked,
+                    v.ip_address,
                     v.visitor_kind,
                     v.referrer_kind,
                     v.referrer,
@@ -537,6 +718,8 @@ impl StatsSync {
             "stats_cache_visitor",
             "stats_cache_crawler",
             "stats_cache_source",
+            "stats_cache_liker",
+            "stats_cache_comment",
             "stats_cache_location_v2",
         ] {
             tx.execute(&format!("DELETE FROM {table}"), [])?;
@@ -545,31 +728,33 @@ impl StatsSync {
             let stats = &item.stats;
             tx.execute(
                 "INSERT INTO stats_cache_item
-                 (entity_type, entity_id, views, likes, comments, synced_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                 (entity_type, entity_id, views, likes, comments, details_complete, synced_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                 rusqlite::params![
                     stats.entity_type,
                     stats.entity_id,
                     stats.views,
                     stats.likes,
                     stats.comments,
+                    snapshot.interaction_details_complete,
                     stamp
                 ],
             )?;
             for visitor in &item.visitors {
                 tx.execute(
                     "INSERT INTO stats_cache_visitor
-                     (entity_type, entity_id, fingerprint, ip_masked, visitor_kind,
+                     (entity_type, entity_id, fingerprint, ip_masked, ip_address, visitor_kind,
                       referrer_kind, referrer, landing_url, crawler_name, country_code,
                       region_code, region_name, city, postal_code, place_name, place_feature_code,
                       place_distance_km, latitude, longitude, time_zone, accuracy_radius,
                       last_seen_at, synced_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23)",
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
                     rusqlite::params![
                         stats.entity_type,
                         stats.entity_id,
                         visitor.fingerprint,
                         visitor.ip_masked,
+                        visitor.ip_address,
                         visitor.visitor_kind,
                         visitor.referrer_kind,
                         visitor.referrer,
@@ -620,6 +805,36 @@ impl StatsSync {
                     ],
                 )?;
             }
+            for (position, liker) in item.likers.iter().enumerate() {
+                tx.execute(
+                    "INSERT INTO stats_cache_liker
+                     (entity_type, entity_id, position, kind, country_code, visitor_number,
+                      avatar_url, label, synced_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                    rusqlite::params![
+                        stats.entity_type,
+                        stats.entity_id,
+                        position as i64,
+                        liker.kind,
+                        liker.country_code,
+                        liker.visitor_number,
+                        liker.avatar_url,
+                        liker.label,
+                        stamp
+                    ],
+                )?;
+            }
+            let mut comment_position = 0_i64;
+            for comment in &item.comments {
+                cache_comment_tree(
+                    &tx,
+                    &stats.entity_type,
+                    &stats.entity_id,
+                    comment,
+                    &stamp,
+                    &mut comment_position,
+                )?;
+            }
         }
         for country in &snapshot.countries {
             tx.execute(
@@ -648,6 +863,14 @@ impl StatsSync {
                 ],
             )?;
         }
+        tx.execute(
+            "INSERT INTO stats_cache_snapshot (singleton, details_complete, synced_at)
+             VALUES (1, ?1, ?2)
+             ON CONFLICT(singleton) DO UPDATE SET
+               details_complete = excluded.details_complete,
+               synced_at = excluded.synced_at",
+            rusqlite::params![snapshot.interaction_details_complete, stamp],
+        )?;
         tx.commit()?;
         Ok(StatsSyncResult {
             item_count: snapshot.items.len(),
@@ -655,6 +878,74 @@ impl StatsSync {
             request_count: 1,
         })
     }
+
+    /// Publish or hide one comment through the protected operator API.
+    pub fn set_comment_visibility(
+        &self,
+        comment_id: &str,
+        is_public: bool,
+    ) -> Result<CommentVisibility, StatsError> {
+        let url = format!(
+            "{}/api/v1/stats/comments/{comment_id}/visibility",
+            self.base_url
+        );
+        let token = self
+            .bearer_token
+            .as_ref()
+            .ok_or(StatsError::MissingCredential)?;
+        let agent = ureq::AgentBuilder::new()
+            .timeout_connect(Duration::from_secs(3))
+            .timeout_read(Duration::from_secs(8))
+            .timeout_write(Duration::from_secs(3))
+            .build();
+        let response = agent
+            .put(&url)
+            .set("Authorization", &format!("Bearer {token}"))
+            .send_json(serde_json::json!({ "is_public": is_public }))
+            .map_err(|error| StatsError::Http(format!("{url}: {error}")))?;
+        response
+            .into_json::<CommentVisibility>()
+            .map_err(|error| StatsError::Decode(format!("{url}: {error}")))
+    }
+}
+
+fn cache_comment_tree(
+    tx: &rusqlite::Transaction<'_>,
+    entity_type: &str,
+    entity_id: &str,
+    comment: &InteractionComment,
+    stamp: &str,
+    position: &mut i64,
+) -> Result<(), StatsError> {
+    let current_position = *position;
+    *position += 1;
+    tx.execute(
+        "INSERT INTO stats_cache_comment
+         (entity_type, entity_id, comment_id, parent_id, position, author_name,
+          author_avatar_url, auth_provider, country_code, content, created_at,
+          likes_count, is_public, synced_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+        rusqlite::params![
+            entity_type,
+            entity_id,
+            comment.id,
+            comment.parent_id,
+            current_position,
+            comment.author_name,
+            comment.author_avatar_url,
+            comment.auth_provider,
+            comment.country_code,
+            comment.content,
+            comment.created_at,
+            comment.likes_count,
+            comment.is_public,
+            stamp
+        ],
+    )?;
+    for reply in &comment.replies {
+        cache_comment_tree(tx, entity_type, entity_id, reply, stamp, position)?;
+    }
+    Ok(())
 }
 
 pub(crate) fn private_api_token() -> Option<String> {
@@ -747,53 +1038,6 @@ impl StatsCache {
         })
     }
 
-    /// Update locally managed reaction counters for one item.
-    ///
-    /// Runtime stats are normally synced from production. This method is the
-    /// explicit operator override used by the desktop workbench: it preserves
-    /// the cached view count and only replaces the human-managed reaction
-    /// counters.
-    pub fn save_item_engagement(
-        &self,
-        entity_type: &str,
-        entity_id: &str,
-        likes: i64,
-        comments: i64,
-    ) -> Result<ItemStats, StatsError> {
-        ensure_cache_schema(&self.db)?;
-        let current_views = match self.item(entity_type, entity_id) {
-            Ok(stats) => stats.views,
-            Err(StatsError::NotSynced(_)) => 0,
-            Err(error) => return Err(error),
-        };
-        let synced_at = time::OffsetDateTime::now_utc().to_string();
-        let conn = Connection::open(&self.db)?;
-        conn.execute(
-            "INSERT INTO stats_cache_item
-             (entity_type, entity_id, views, likes, comments, synced_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-             ON CONFLICT(entity_type, entity_id) DO UPDATE SET
-               likes = excluded.likes,
-               comments = excluded.comments,
-               synced_at = excluded.synced_at",
-            rusqlite::params![
-                entity_type,
-                entity_id,
-                current_views,
-                likes,
-                comments,
-                synced_at
-            ],
-        )?;
-        Ok(ItemStats {
-            entity_type: entity_type.to_owned(),
-            entity_id: entity_id.to_owned(),
-            views: current_views,
-            likes,
-            comments,
-        })
-    }
-
     /// The cached visitors of one item.
     pub fn visitors(
         &self,
@@ -804,7 +1048,7 @@ impl StatsCache {
         let conn = Connection::open(&self.db)?;
         let mut stmt = conn
             .prepare(
-                "SELECT fingerprint, ip_masked, visitor_kind, referrer_kind, referrer,
+                "SELECT fingerprint, ip_masked, ip_address, visitor_kind, referrer_kind, referrer,
                         landing_url, crawler_name, country_code, region_code, region_name,
                         city, postal_code, place_name, place_feature_code, place_distance_km,
                         latitude, longitude, time_zone, accuracy_radius, last_seen_at
@@ -817,24 +1061,25 @@ impl StatsCache {
                 Ok(VisitorRow {
                     fingerprint: row.get(0)?,
                     ip_masked: row.get(1)?,
-                    visitor_kind: row.get(2)?,
-                    referrer_kind: row.get(3)?,
-                    referrer: row.get(4)?,
-                    landing_url: row.get(5)?,
-                    crawler_name: row.get(6)?,
-                    country_code: row.get(7)?,
-                    region_code: row.get(8)?,
-                    region_name: row.get(9)?,
-                    city: row.get(10)?,
-                    postal_code: row.get(11)?,
-                    place_name: row.get(12)?,
-                    place_feature_code: row.get(13)?,
-                    place_distance_km: row.get(14)?,
-                    latitude: row.get(15)?,
-                    longitude: row.get(16)?,
-                    time_zone: row.get(17)?,
-                    accuracy_radius: row.get(18)?,
-                    last_seen_at: row.get(19)?,
+                    ip_address: row.get(2)?,
+                    visitor_kind: row.get(3)?,
+                    referrer_kind: row.get(4)?,
+                    referrer: row.get(5)?,
+                    landing_url: row.get(6)?,
+                    crawler_name: row.get(7)?,
+                    country_code: row.get(8)?,
+                    region_code: row.get(9)?,
+                    region_name: row.get(10)?,
+                    city: row.get(11)?,
+                    postal_code: row.get(12)?,
+                    place_name: row.get(13)?,
+                    place_feature_code: row.get(14)?,
+                    place_distance_km: row.get(15)?,
+                    latitude: row.get(16)?,
+                    longitude: row.get(17)?,
+                    time_zone: row.get(18)?,
+                    accuracy_radius: row.get(19)?,
+                    last_seen_at: row.get(20)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -858,6 +1103,84 @@ impl StatsCache {
     /// The cached referrer-source breakdown of one item.
     pub fn sources(&self, entity_type: &str, entity_id: &str) -> Result<Vec<CountRow>, StatsError> {
         self.count_rows("stats_cache_source", "source", entity_type, entity_id)
+    }
+
+    /// The cached liker identities and recursively reconstructed comment tree.
+    pub fn interaction_details(
+        &self,
+        entity_type: &str,
+        entity_id: &str,
+    ) -> Result<InteractionDetails, StatsError> {
+        ensure_cache_schema(&self.db)?;
+        let what = format!("{entity_type}/{entity_id}");
+        let conn = Connection::open(&self.db)?;
+        let item_completeness = conn
+            .query_row(
+                "SELECT details_complete FROM stats_cache_item
+                 WHERE entity_type = ?1 AND entity_id = ?2",
+                rusqlite::params![entity_type, entity_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let snapshot_completeness = conn
+            .query_row(
+                "SELECT details_complete FROM stats_cache_snapshot WHERE singleton = 1",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?
+            .unwrap_or(false);
+        let is_complete = item_completeness.unwrap_or(snapshot_completeness);
+        let mut liker_stmt = conn
+            .prepare(
+                "SELECT kind, country_code, visitor_number, avatar_url, label
+                 FROM stats_cache_liker
+                 WHERE entity_type = ?1 AND entity_id = ?2 ORDER BY position",
+            )
+            .map_err(|error| Self::map_missing(error, &what))?;
+        let likers = liker_stmt
+            .query_map(rusqlite::params![entity_type, entity_id], |row| {
+                Ok(InteractionLiker {
+                    kind: row.get(0)?,
+                    country_code: row.get(1)?,
+                    visitor_number: row.get(2)?,
+                    avatar_url: row.get(3)?,
+                    label: row.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let mut comment_stmt = conn
+            .prepare(
+                "SELECT comment_id, parent_id, author_name, author_avatar_url, auth_provider,
+                        country_code, content, created_at, likes_count, is_public
+                 FROM stats_cache_comment
+                 WHERE entity_type = ?1 AND entity_id = ?2 ORDER BY position",
+            )
+            .map_err(|error| Self::map_missing(error, &what))?;
+        let flat_comments = comment_stmt
+            .query_map(rusqlite::params![entity_type, entity_id], |row| {
+                Ok(InteractionComment {
+                    id: row.get(0)?,
+                    parent_id: row.get(1)?,
+                    author_name: row.get(2)?,
+                    author_avatar_url: row.get(3)?,
+                    auth_provider: row.get(4)?,
+                    country_code: row.get(5)?,
+                    content: row.get(6)?,
+                    created_at: row.get(7)?,
+                    likes_count: row.get(8)?,
+                    is_public: row.get(9)?,
+                    replies: Vec::new(),
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        let comments = comment_children(&flat_comments, "");
+        Ok(InteractionDetails {
+            is_complete,
+            likers,
+            comments,
+        })
     }
 
     /// Shared reader for the two `(label, count)` breakdown tables.
@@ -889,13 +1212,58 @@ impl StatsCache {
     }
 }
 
+fn comment_children(comments: &[InteractionComment], parent_id: &str) -> Vec<InteractionComment> {
+    comments
+        .iter()
+        .filter(|comment| comment.parent_id == parent_id)
+        .map(|comment| {
+            let mut node = comment.clone();
+            node.replies = comment_children(comments, &comment.id);
+            node
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::io::{Read, Write};
-    use std::net::TcpListener;
+    use std::net::{TcpListener, TcpStream};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+
+    fn read_http_request(stream: &mut TcpStream) -> String {
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .expect("read timeout");
+        let mut request = Vec::new();
+        let mut buffer = [0_u8; 1024];
+        loop {
+            let read = stream.read(&mut buffer).expect("read");
+            if read == 0 {
+                break;
+            }
+            request.extend_from_slice(&buffer[..read]);
+            let Some(header_end) = request.windows(4).position(|window| window == b"\r\n\r\n")
+            else {
+                continue;
+            };
+            let headers = String::from_utf8_lossy(&request[..header_end]);
+            let content_length = headers
+                .lines()
+                .find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.eq_ignore_ascii_case("content-length")
+                        .then(|| value.trim().parse::<usize>().ok())
+                        .flatten()
+                })
+                .unwrap_or(0);
+            if request.len() >= header_end + 4 + content_length {
+                break;
+            }
+        }
+        String::from_utf8(request).expect("HTTP request must be UTF-8")
+    }
 
     #[test]
     fn cache_round_trips_an_item() {
@@ -942,7 +1310,7 @@ mod tests {
             assert!(request.starts_with("GET /api/v1/stats/snapshot "));
             assert!(request.contains("\r\nAuthorization: Bearer stats-contract-token\r\n"));
             observed.fetch_add(1, Ordering::SeqCst);
-            let body = r#"{"generated_at":"2026-07-17T00:00:00Z","items":[{"stats":{"entity_type":"blog","entity_id":"i_one","views":8,"likes":2,"comments":1},"visitors":[],"crawlers":[{"visitor_kind":"ai_crawler","count":3}],"sources":[{"source":"ai_chat","count":2}]}],"countries":[{"country_code":"SG","region_code":"","region_name":"","city":"Singapore","postal_code":"","place_name":"Holland Village","place_feature_code":"PPLX","place_distance_km":1.4,"latitude":1.3239,"longitude":103.79,"time_zone":"Asia/Singapore","accuracy_radius":5,"ip_addresses":["203.0.113.8"],"count":7}]}"#;
+            let body = r#"{"generated_at":"2026-07-17T00:00:00Z","interaction_details_complete":true,"items":[{"stats":{"entity_type":"blog","entity_id":"i_one","views":8,"likes":2,"comments":1},"visitors":[],"crawlers":[{"visitor_kind":"ai_crawler","count":3}],"sources":[{"source":"ai_chat","count":2}],"likers":[{"kind":"user","country_code":"SG","avatar_url":"https://example.com/ava.png","label":"Ari Tan"}],"comments":[{"id":"c_root","author_name":"Mei","content":"Root","created_at":"2026-07-17T08:00:00Z","likes_count":2,"is_public":true,"replies":[{"id":"c_reply","parent_id":"c_root","author_name":"Noah","content":"Reply","created_at":"2026-07-17T08:05:00Z","is_public":false,"replies":[]}]}]}],"countries":[{"country_code":"SG","region_code":"","region_name":"","city":"Singapore","postal_code":"","place_name":"Holland Village","place_feature_code":"PPLX","place_distance_km":1.4,"latitude":1.3239,"longitude":103.79,"time_zone":"Asia/Singapore","accuracy_radius":5,"ip_addresses":["203.0.113.8"],"count":7}]}"#;
             write!(
                 stream,
                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -962,8 +1330,23 @@ mod tests {
         assert_eq!(requests.load(Ordering::SeqCst), 1);
         assert_eq!(result.request_count, 1);
         assert_eq!(result.item_count, 1);
+        let interactions = StatsCache::open(&db)
+            .interaction_details("blog", "i_one")
+            .expect("interaction details");
+        assert!(interactions.is_complete);
+        assert_eq!(interactions.likers[0].label, "Ari Tan");
+        assert_eq!(interactions.comments[0].content, "Root");
+        assert!(interactions.comments[0].is_public);
+        assert_eq!(interactions.comments[0].replies[0].content, "Reply");
+        assert!(!interactions.comments[0].replies[0].is_public);
+        let empty_interactions = StatsCache::open(&db)
+            .interaction_details("blog", "i_zero")
+            .expect("complete snapshot can represent an empty interaction list");
+        assert!(empty_interactions.is_complete);
+        assert!(empty_interactions.likers.is_empty());
+        assert!(empty_interactions.comments.is_empty());
         assert_eq!(
-            StatsCache::open(db)
+            StatsCache::open(&db)
                 .item("blog", "i_one")
                 .expect("cache")
                 .views,
@@ -1033,6 +1416,115 @@ mod tests {
                 count: 7,
             }
         );
+    }
+
+    #[test]
+    fn legacy_snapshot_is_explicitly_incomplete_for_interaction_details() {
+        let snapshot: SnapshotResponse = serde_json::from_str(
+            r#"{"generated_at":"2026-07-17T00:00:00Z","items":[],"countries":[]}"#,
+        )
+        .expect("legacy snapshot");
+
+        assert!(!snapshot.interaction_details_complete);
+    }
+
+    #[test]
+    fn comment_visibility_uses_the_protected_operator_contract() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
+        let address = listener.local_addr().expect("address");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept");
+            let request = read_http_request(&mut stream);
+            assert!(request.starts_with("PUT /api/v1/stats/comments/c_root/visibility "));
+            assert!(request.contains("\r\nAuthorization: Bearer stats-contract-token\r\n"));
+            assert!(request.contains("\"is_public\""));
+            assert!(request.contains("false"));
+            let body = r#"{"comment_id":"c_root","entity_type":"blog","entity_id":"i_one","is_public":false}"#;
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .expect("respond");
+        });
+
+        let result = StatsSync::new(
+            format!("http://{address}"),
+            std::env::temp_dir().join("unused-comment-visibility.db"),
+        )
+        .with_bearer_token("stats-contract-token")
+        .set_comment_visibility("c_root", false)
+        .expect("visibility");
+        server.join().expect("server");
+        assert_eq!(result.comment_id, "c_root");
+        assert!(!result.is_public);
+    }
+
+    #[test]
+    fn legacy_location_cache_primary_key_is_migrated() {
+        let directory = tempfile::tempdir().expect("temp");
+        let db = directory.path().join("portfolio.db");
+        let connection = Connection::open(&db).expect("db");
+        connection
+            .execute_batch(
+                "
+                CREATE TABLE stats_cache_location_v2 (
+                    country_code TEXT NOT NULL,
+                    city TEXT NOT NULL,
+                    latitude REAL NOT NULL,
+                    longitude REAL NOT NULL,
+                    ip_addresses TEXT NOT NULL,
+                    count INTEGER NOT NULL,
+                    synced_at TEXT NOT NULL,
+                    PRIMARY KEY (country_code, city, latitude, longitude)
+                );
+                INSERT INTO stats_cache_location_v2 VALUES
+                  ('SG', 'Singapore', 1.3239, 103.79, '[\"203.0.113.8\"]', 7, '2026-07-17T00:00:00Z');
+                ",
+            )
+            .expect("legacy table");
+        drop(connection);
+
+        ensure_cache_schema(&db).expect("migrate schema");
+        let connection = Connection::open(&db).expect("db");
+        let primary_key =
+            cache_table_primary_key(&connection, "stats_cache_location_v2").expect("primary key");
+        assert_eq!(
+            primary_key,
+            vec![
+                "country_code",
+                "region_code",
+                "region_name",
+                "city",
+                "postal_code",
+                "place_name",
+                "place_feature_code",
+                "place_distance_km",
+                "latitude",
+                "longitude",
+                "time_zone",
+                "accuracy_radius",
+            ]
+        );
+        connection
+            .execute(
+                "INSERT INTO stats_cache_location_v2
+                 (country_code, region_code, region_name, city, postal_code, place_name,
+                  place_feature_code, place_distance_km, latitude, longitude, time_zone,
+                  accuracy_radius, ip_addresses, count, synced_at)
+                 VALUES ('SG', '', '', 'Singapore', '', 'Holland Village', 'PPLX',
+                         1.4, 1.3239, 103.79, 'Asia/Singapore', 5,
+                         '[\"203.0.113.9\"]', 3, '2026-07-18T00:00:00Z')",
+                [],
+            )
+            .expect("same city and coordinates can hold a distinct place bucket");
+        let count: i64 = connection
+            .query_row("SELECT COUNT(*) FROM stats_cache_location_v2", [], |row| {
+                row.get(0)
+            })
+            .expect("row count");
+        assert_eq!(count, 2);
     }
 
     #[test]
