@@ -174,17 +174,12 @@ body {
 }
 
 .onboarding-brand-mark {
-  display: grid;
+  display: block;
   width: 2rem;
   height: 2rem;
-  place-items: center;
-  color: #fff;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 700;
-  background: var(--ds-color-primary);
-  border-radius: 0.5rem 0.5rem 0.5rem 0.2rem;
-  box-shadow: 0 6px 18px rgba(42, 82, 173, 0.2);
+  object-fit: contain;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 6px 12px rgba(24, 32, 48, 0.14));
 }
 
 .onboarding-brand > div {

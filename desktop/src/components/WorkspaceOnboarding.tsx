@@ -103,6 +103,10 @@ const phaseIndex = (phase: Phase) => {
 };
 
 const shortRevision = (revision: string) => revision.slice(0, 10);
+const silanVikingLogoUrl = new URL(
+  '../../src-tauri/icons/64x64.png',
+  import.meta.url,
+).href;
 
 export function WorkspaceBootstrapGate({ children }: { children: React.ReactNode }) {
   const [phase, setPhase] = React.useState<Phase>(() => (isTauri() ? 'checking' : 'ready'));
@@ -241,7 +245,12 @@ export function WorkspaceBootstrapGate({ children }: { children: React.ReactNode
       <div className="workspace-onboarding-ambient" aria-hidden="true" />
       <aside className="onboarding-rail">
         <div className="onboarding-brand">
-          <span className="onboarding-brand-mark">S</span>
+          <img
+            className="onboarding-brand-mark"
+            src={silanVikingLogoUrl}
+            alt=""
+            aria-hidden="true"
+          />
           <div>
             <strong>Silan Context System</strong>
             <span>Local-first research publishing</span>
