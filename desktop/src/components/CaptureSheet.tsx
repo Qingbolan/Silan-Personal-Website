@@ -1,9 +1,28 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { AlertCircle, Check, LoaderCircle, Mic, Sparkles, Square } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  FileImage,
+  LoaderCircle,
+  Mic,
+  Paperclip,
+  Sparkles,
+  Square,
+  X,
+} from 'lucide-react';
 import { LanguageCloseControls } from './LanguageCloseControls';
+import { Button } from './ds/Button';
+import {
+  Dialog,
+  DialogActions,
+  DialogCard,
+  DialogDescription,
+  DialogTitle,
+} from './ds/Dialog';
 import MarkdownEditor, {
   type MarkdownEditorHandle,
+  type MarkdownImageImport,
   type MarkdownSelectionAssistRequest,
 } from './MarkdownEditor';
 import {
@@ -35,6 +54,7 @@ type CaptureSheetProps = {
   error: string | null;
   inputRef: React.Ref<MarkdownEditorHandle>;
   onAttachFiles: (files: File[]) => void;
+  onRemoveAttachment: (index: number) => void;
   onRequestClose: () => void;
   onDiscard: () => void;
   onKeepWriting: () => void;
@@ -45,6 +65,47 @@ type CaptureSheetProps = {
 };
 
 const MAX_DICTATION_MS = 60_000;
+
+function CaptureAttachmentPreview({
+  file,
+  index,
+  onRemove,
+}: {
+  file: File;
+  index: number;
+  onRemove: (index: number) => void;
+}) {
+  const [previewUrl, setPreviewUrl] = React.useState('');
+
+  React.useEffect(() => {
+    if (!file.type.startsWith('image/')) return undefined;
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <article className="capture-attachment">
+      <div className="capture-attachment__preview">
+        {previewUrl
+          ? <img src={previewUrl} alt={`Attachment preview: ${file.name}`} />
+          : <Paperclip size={16} />}
+      </div>
+      <div className="capture-attachment__copy">
+        <strong>{file.name}</strong>
+        <span>{Math.max(1, Math.ceil(file.size / 1024))} KB</span>
+      </div>
+      <button
+        type="button"
+        aria-label={`Remove ${file.name}`}
+        title="Remove attachment"
+        onClick={() => onRemove(index)}
+      >
+        <X size={13} />
+      </button>
+    </article>
+  );
+}
 
 export function CaptureSheet({
   phase,
@@ -62,6 +123,7 @@ export function CaptureSheet({
   error,
   inputRef,
   onAttachFiles,
+  onRemoveAttachment,
   onRequestClose,
   onDiscard,
   onKeepWriting,
@@ -85,6 +147,12 @@ export function CaptureSheet({
     references,
     onAttachFiles,
   });
+  const importCaptureImages = React.useCallback(async (
+    files: readonly File[],
+  ): Promise<readonly MarkdownImageImport[]> => {
+    onAttachFiles([...files]);
+    return [];
+  }, [onAttachFiles]);
   const requestSelectionAssist = React.useCallback(async (
     request: MarkdownSelectionAssistRequest,
   ) => invoke<MarkdownSelectionAssistResult>('edit_markdown_selection', {
@@ -286,6 +354,7 @@ export function CaptureSheet({
       <div className="capture-workspace">
         {target !== 'moment' && (
           <div className="capture-categories" role="radiogroup" aria-label="Content category">
+            <span className="capture-categories__label" aria-hidden="true">文章意图</span>
             {categories.map(({ value, label, Icon }) => (
               <button
                 type="button"
@@ -310,6 +379,7 @@ export function CaptureSheet({
             disabled={phase === 'submitting'}
             toolbarVisible
             slashCommands={editorAssist.slashCommands}
+            onImportImages={importCaptureImages}
             ariaLabel={target === 'moment' ? '事件内容' : '文章草稿'}
             placeholder={target === 'moment'
               ? '记录刚发生的进展、事件或状态变化... 输入 / 插入事件模板，[[ 连接已有内容'
@@ -320,6 +390,26 @@ export function CaptureSheet({
           />
           {editorAssist.fileInput}
         </div>
+
+        {attachments.length > 0 && (
+          <section className="capture-attachments" aria-label="Capture attachments">
+            <header>
+              <FileImage size={14} />
+              <strong>{attachments.length} attachment{attachments.length === 1 ? '' : 's'}</strong>
+              <span>Imported when this draft is saved</span>
+            </header>
+            <div>
+              {attachments.map((file, index) => (
+                <CaptureAttachmentPreview
+                  key={`${file.name}:${file.size}:${file.lastModified}:${index}`}
+                  file={file}
+                  index={index}
+                  onRemove={onRemoveAttachment}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {(error || voiceError) && (
           <div className="capture-error" role="alert">
@@ -366,14 +456,16 @@ export function CaptureSheet({
       </div>
 
       {phase === 'confirming-close' && (
-        <div className="capture-discard" role="alertdialog" aria-modal="true">
-          <div>
-            <strong>Discard this thought?</strong>
-            <span>Nothing has been written to content/ yet.</span>
-          </div>
-          <button type="button" onClick={onKeepWriting}>Keep writing</button>
-          <button type="button" className="destructive" onClick={onDiscard}>Discard</button>
-        </div>
+        <Dialog open onClose={onKeepWriting}>
+          <DialogCard role="alertdialog" aria-labelledby="capture-discard-title">
+            <DialogTitle id="capture-discard-title">Discard this thought?</DialogTitle>
+            <DialogDescription>Nothing has been written to content/ yet.</DialogDescription>
+            <DialogActions>
+              <Button type="button" variant="secondary" size="sm" onClick={onKeepWriting}>Keep writing</Button>
+              <Button type="button" variant="destructive" size="sm" onClick={onDiscard}>Discard</Button>
+            </DialogActions>
+          </DialogCard>
+        </Dialog>
       )}
     </section>
   );

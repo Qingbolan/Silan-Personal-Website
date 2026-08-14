@@ -113,6 +113,27 @@ cd engine
 - **前端**:Node.js 18+(`frontend/` 下 `npm install`)
 - **部署**:Docker + Docker Compose(`deploy/docker-compose.yml`)
 
+### 2.4 新设备加入已有工作区
+
+桌面应用在首次启动且找不到本地工作区时,会进入 **Join existing workspace**。
+这里填写的是 Git 仓库地址,不是生产服务器地址。应用按以下顺序完成加入:
+
+1. 用本机 SSH agent 或系统 Git credential manager 验证仓库读取权限;
+2. 新目录执行 clone,已有目录执行 fetch;
+3. 检查当前分支的 dirty / ahead / behind / diverged 状态,只对干净的
+   remote-ahead 分支做 fast-forward;
+4. 读取 `silan-viking.toml`,验证 `content/SCHEMA.md`,并从 Markdown 重建
+   本地 `portfolio.db`;
+5. 若配置声明了远程部署目标,单独选择这台设备上的部署私钥文件。
+
+OAuth token、SSH 私钥内容都不会写入工作区。桌面应用只保存仓库路径、工作区
+路径和部署私钥的本机路径。评论、访问记录等运行时数据仍以生产服务器为唯一
+真相源,不会从 Git clone 到新设备。
+
+首次加入完成后,跨设备发布仍遵循普通 Git 协作规则:离开旧设备前 push,在另一台
+设备继续前先确认已 fetch/fast-forward。系统不会自动合并 diverged 分支,也不会
+覆盖任一设备上的未提交修改。
+
 ---
 
 ## 3. 从零到一个能跑的站点
@@ -226,6 +247,42 @@ silan-viking index sync                  # 同步进库
 ```
 
 发布:把 frontmatter 的 `status` 改为 `published`,再 `index sync`。
+
+#### 桌面 Markdown 编辑器
+
+桌面应用的正文编辑器以 Markdown 为保存边界,编辑时由 Lexical 语法树承载
+标题、列表、链接、代码、表格和图片等结构。顶部工具栏适合发现功能,输入 `/`
+可按名称调用同一批块级指令;选中文本或表格单元格时,编辑器会显示就地工具栏。
+
+- **富文本 / 源码**:`⌘/`(Windows / Linux 为 `Ctrl+/`)切换模式。源码模式
+  直接编辑原始字符串,颜色来自与导入器相同的 mdast 语法树位置;着色层不会
+  改写空格、表格分隔线或光标位置。工作区的 Split 视图可并排查看源码和预览。
+- **表格**:`⌘⌥T` 插入表格。进入单元格后可设置当前列左/中/右对齐,也可在
+  当前行列前后插入、删除行列或删除整表;列对齐会写回 GFM 分隔行。
+- **图片**:可用工具栏、`/image`、`⌘⌃I`、系统粘贴板或拖放导入。单击图片
+  后可编辑 alt/title、复制图片与 Markdown、替换文件或删除;Delete/Backspace
+  删除后可正常撤销。已保存文档使用稳定媒体 URI;尚未保存的新 Capture 会先
+  显示可移除的待上传图片,获得文档 ID 后再导入。
+- **复制与粘贴**:普通复制保留 HTML 和纯文本格式;`⌘⇧C` 显式复制所选
+  Markdown,`⌘⇧V` 按纯文本粘贴。没有 HTML 的剪贴板文本会用当前编辑器实际
+  的 Markdown AST 语法判断是否应按结构导入,不会维护另一套正则语法。
+
+常用快捷键(`⌘` 在 Windows / Linux 上对应 `Ctrl`):
+
+| 操作 | 快捷键 |
+|---|---|
+| 段落 / 标题 1–6 | `⌘0` … `⌘6` |
+| 标题升 / 降一级 | `⌘=` / `⌘-` |
+| 链接 | `⌘K` |
+| 清除格式 | `⌘\` |
+| 引用 / 代码块 | `⌘⌥Q` / `⌘⌥C` |
+| 有序 / 无序列表 | `⌘⌥O` / `⌘⌥U` |
+| 表格 / 图片 | `⌘⌥T` / `⌘⌃I` |
+| 富文本 / 源码 | `⌘/` |
+| 复制 Markdown / 粘贴纯文本 | `⌘⇧C` / `⌘⇧V` |
+
+Windows / Linux 的块级备用键分别为 `Ctrl+Shift+Q/K/[/]`;图片为
+`Ctrl+Shift+I`。系统通用的加粗、斜体、撤销和重做快捷键保持不变。
 
 ### 5.3 开一个 idea / project
 

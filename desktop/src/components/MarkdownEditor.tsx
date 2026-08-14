@@ -1,71 +1,90 @@
 import React from 'react';
-import type { Editor } from '@tiptap/core';
+import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
+import { ContentEditable } from '@lexical/react/LexicalContentEditable';
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { ListPlugin } from '@lexical/react/LexicalListPlugin';
+import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin';
+import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
+import { ClickableLinkPlugin } from '@lexical/react/LexicalClickableLinkPlugin';
+import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
+import { SelectionAlwaysOnDisplay } from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
+import { $getExtensionOutput } from '@lexical/extension';
+import { MdastImportExtension } from '@lexical/mdast';
 import {
-  EditorBubble,
-  EditorBubbleItem,
-  EditorContent,
-  EditorRoot,
-  handleCommandNavigation,
-  ImageResizer,
-  type JSONContent,
-  useEditor as useNovelEditor,
-} from 'novel';
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  type LexicalEditor,
+} from 'lexical';
 import {
-  type LucideIcon,
-  Bold,
   Bot,
-  Braces,
-  Code2,
   Copy,
-  Heading2,
-  Italic,
-  Link2,
-  List,
-  ListOrdered,
-  Minus,
-  Quote,
-  Redo2,
   MessageSquareWarning,
   Sparkles,
-  Strikethrough,
-  Table2,
-  Undo2,
 } from 'lucide-react';
-import { coreMarkdownPlugin } from './editor/coreMarkdownPlugin';
-import { deepSeekReviewPlugin } from './editor/deepSeekReviewPlugin';
 import {
   type EditorReviewFinding,
+  LexicalEditorPluginRegistry,
+  type MarkdownImageImport,
+  type MarkdownImageImporter,
   type MarkdownEditorPlugin,
+  type MarkdownSelectionAssistAction,
+  type MarkdownSelectionAssistRequest,
+  type MarkdownSelectionAssistResult,
   type SlashCommandDefinition,
-  NovelEditorPluginRegistry,
-} from './editor/novelEditorPluginRegistry';
-import { highlightMarkdownSource } from './editor/markdownSourceHighlight';
+} from './editor/extensionPoints';
 import {
-  NovelSlashCommandMenu,
-  slashCommandPlugin,
-} from './editor/slashCommandPlugin';
+  $documentToMarkdown,
+  $insertMarkdown,
+  $replaceDocumentFromMarkdown,
+  createMarkdownEditorExtension,
+  EXTERNAL_MARKDOWN_SYNC_TAG,
+  readEditorSnapshot,
+  readMarkdown,
+  replaceMarkdown as replaceEditorMarkdown,
+  REVIEW_DECORATION_TAG,
+  SOURCE_TREE_SYNC_TAG,
+} from './editor/model/MarkdownDocument';
+import {
+  defaultSlashCommands,
+  SlashCommandPlugin,
+} from './editor/plugins/SlashCommandPlugin';
+import {
+  BlockDragPlugin,
+  CodeHighlightPlugin,
+  EditorKeymapPlugin,
+  MarkdownPastePlugin,
+} from './editor/plugins/EditorBehaviorPlugin';
+import { FormattingToolbar } from './editor/plugins/FormattingToolbarPlugin';
+import { SelectionBubblePlugin } from './editor/plugins/SelectionBubblePlugin';
+import { TableToolbarPlugin } from './editor/plugins/TableToolbarPlugin';
+import { ImageEditingPlugin } from './editor/plugins/ImageEditingPlugin';
+import {
+  $applyReviewSuggestion,
+  $focusReviewFinding,
+  ReviewPlugin,
+} from './editor/plugins/ReviewPlugin';
+import { quoteIssueComment } from './editor/interaction/SelectionAssist';
+import { resolveEditorShortcut } from './editor/interaction/EditorShortcutController';
+import { MarkdownSourceProjector } from './editor/model/MarkdownSourceProjection';
+import { MarkdownSourceHighlight } from './editor/plugins/MarkdownSourceHighlight';
+import { ArticleSkeleton } from './ds/Skeleton';
 
 export type {
   EditorReviewFinding,
+  MarkdownImageImport,
+  MarkdownImageImporter,
   MarkdownEditorPlugin,
+  MarkdownSelectionAssistAction,
+  MarkdownSelectionAssistRequest,
+  MarkdownSelectionAssistResult,
   SlashCommandDefinition,
-} from './editor/novelEditorPluginRegistry';
+} from './editor/extensionPoints';
 
 type EditorPhase = 'creating' | 'ready';
-type ToolbarCommand =
-  | 'heading'
-  | 'bold'
-  | 'italic'
-  | 'strike'
-  | 'bullet-list'
-  | 'ordered-list'
-  | 'quote'
-  | 'code-block'
-  | 'inline-code'
-  | 'divider'
-  | 'table'
-  | 'undo'
-  | 'redo';
 
 export type MarkdownEditorHandle = {
   focus: () => void;
@@ -77,18 +96,6 @@ export type MarkdownEditorHandle = {
 };
 
 export type MarkdownEditingMode = 'rich' | 'source';
-export type MarkdownSelectionAssistAction = 'agent_edit' | 'optimize_expression' | 'comment_issue';
-export type MarkdownSelectionAssistRequest = {
-  action: MarkdownSelectionAssistAction;
-  selectedText: string;
-  beforeContext: string;
-  afterContext: string;
-  instruction?: string;
-};
-export type MarkdownSelectionAssistResult = {
-  replacement?: string;
-  comment?: string;
-};
 
 export type MarkdownEditorProps = {
   value: string;
@@ -104,9 +111,12 @@ export type MarkdownEditorProps = {
   slashCommands?: SlashCommandDefinition[];
   reviewFindings?: EditorReviewFinding[];
   onChange?: (value: string) => void;
+  onImportImages?: MarkdownImageImporter;
   onEditingModeChange?: (mode: MarkdownEditingMode) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
-  onSelectionAssist?: (request: MarkdownSelectionAssistRequest) => Promise<MarkdownSelectionAssistResult>;
+  onSelectionAssist?: (
+    request: MarkdownSelectionAssistRequest,
+  ) => Promise<MarkdownSelectionAssistResult>;
   onReviewFindingActivate?: (findingId: string) => void;
   onReviewFindingApplied?: (findingId: string) => void;
 };
@@ -114,394 +124,45 @@ export type MarkdownEditorProps = {
 const emptyPlugins: MarkdownEditorPlugin[] = [];
 const emptySlashCommands: SlashCommandDefinition[] = [];
 
-const toolbarButtons: Array<{
-  command: ToolbarCommand;
-  label: string;
-  icon: LucideIcon;
-  dividerBefore?: boolean;
-}> = [
-  { command: 'heading', label: 'Heading', icon: Heading2 },
-  { command: 'bold', label: 'Bold', icon: Bold },
-  { command: 'italic', label: 'Italic', icon: Italic },
-  { command: 'strike', label: 'Strikethrough', icon: Strikethrough },
-  { command: 'bullet-list', label: 'Bullet list', icon: List, dividerBefore: true },
-  { command: 'ordered-list', label: 'Ordered list', icon: ListOrdered },
-  { command: 'quote', label: 'Blockquote', icon: Quote },
-  { command: 'code-block', label: 'Code block', icon: Braces, dividerBefore: true },
-  { command: 'inline-code', label: 'Inline code', icon: Braces },
-  { command: 'divider', label: 'Divider', icon: Minus },
-  { command: 'table', label: 'Table', icon: Table2 },
-  { command: 'undo', label: 'Undo', icon: Undo2, dividerBefore: true },
-  { command: 'redo', label: 'Redo', icon: Redo2 },
-];
-
-function getMarkdown(editor: Editor) {
-  return editor.storage.markdown.getMarkdown() as string;
+function focusEditorAtEnd(editor: LexicalEditor) {
+  editor.update(() => $getRoot().selectEnd(), { discrete: true });
+  editor.getRootElement()?.focus({ preventScroll: true });
 }
 
-function useEditorRevision(editor: Editor | null) {
-  const [, rerender] = React.useReducer((current) => current + 1, 0);
-
-  React.useEffect(() => {
-    if (!editor) return undefined;
-    const update = () => rerender();
-    editor.on('transaction', update);
-    return () => {
-      editor.off('transaction', update);
-    };
-  }, [editor]);
-}
-
-function MarkdownToolbar({
-  editor,
-  disabled,
+function EditorLifecycle({
+  onReady,
+  onMarkdownChange,
   sourceMode,
-  onCommand,
-  onLink,
-  onSourceModeChange,
 }: {
-  editor: Editor | null;
-  disabled: boolean;
+  onReady: (editor: LexicalEditor | null) => void;
+  onMarkdownChange: (markdown: string) => void;
   sourceMode: boolean;
-  onCommand: (command: ToolbarCommand) => void;
-  onLink: (href: string) => void;
-  onSourceModeChange: (sourceMode: boolean) => void;
 }) {
-  const [linkOpen, setLinkOpen] = React.useState(false);
-  const [href, setHref] = React.useState('https://');
-  useEditorRevision(editor);
+  const [editor] = useLexicalComposerContext();
+  const onMarkdownChangeRef = React.useRef(onMarkdownChange);
+  const sourceModeRef = React.useRef(sourceMode);
+  onMarkdownChangeRef.current = onMarkdownChange;
+  sourceModeRef.current = sourceMode;
 
-  const activeCommands = editor ? {
-    heading: editor.isActive('heading', { level: 2 }),
-    bold: editor.isActive('bold'),
-    italic: editor.isActive('italic'),
-    strike: editor.isActive('strike'),
-    'bullet-list': editor.isActive('bulletList'),
-    'ordered-list': editor.isActive('orderedList'),
-    quote: editor.isActive('blockquote'),
-    'code-block': editor.isActive('codeBlock'),
-    'inline-code': editor.isActive('code'),
-    divider: false,
-    table: editor.isActive('table'),
-    undo: false,
-    redo: false,
-    link: editor.isActive('link'),
-  } satisfies Record<ToolbarCommand, boolean> & { link: boolean } : null;
+  React.useLayoutEffect(() => {
+    onReady(editor);
+    return () => onReady(null);
+  }, [editor, onReady]);
 
-  const submitLink = (event: React.FormEvent) => {
-    event.preventDefault();
-    const nextHref = href.trim();
-    if (!nextHref) return;
-    onLink(nextHref);
-    setHref('https://');
-    setLinkOpen(false);
-  };
-
-  return (
-    <div className="novel-toolbar" role="toolbar" aria-label="Markdown formatting">
-      {toolbarButtons.map(({ command, label, icon: Icon, dividerBefore }) => (
-        <React.Fragment key={command}>
-          {dividerBefore && <span className="novel-toolbar-divider" aria-hidden="true" />}
-          <button
-            type="button"
-            disabled={disabled || sourceMode}
-            className={activeCommands?.[command] ? 'active' : ''}
-            title={label}
-            aria-label={label}
-            aria-pressed={activeCommands?.[command] || undefined}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => onCommand(command)}
-          >
-            <Icon size={15} />
-          </button>
-        </React.Fragment>
-      ))}
-      <span className="novel-toolbar-divider" aria-hidden="true" />
-      <button
-        type="button"
-        disabled={disabled || sourceMode}
-        className={linkOpen || activeCommands?.link ? 'active' : ''}
-        title="Link"
-        aria-label="Link"
-        aria-expanded={linkOpen}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => setLinkOpen((current) => !current)}
-      >
-        <Link2 size={15} />
-      </button>
-      <span className="novel-toolbar-divider" aria-hidden="true" />
-      <button
-        type="button"
-        disabled={disabled}
-        className={sourceMode ? 'active' : ''}
-        title={sourceMode ? 'Switch to rich editor' : 'Switch to source mode'}
-        aria-label={sourceMode ? 'Switch to rich editor' : 'Switch to source mode'}
-        aria-pressed={sourceMode}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => onSourceModeChange(!sourceMode)}
-      >
-        <Code2 size={15} />
-      </button>
-      {linkOpen && (
-        <form className="novel-link-popover" onSubmit={submitLink}>
-          <label htmlFor="novel-link-href">Link destination</label>
-          <div>
-            <input
-              id="novel-link-href"
-              value={href}
-              inputMode="url"
-              autoComplete="url"
-              autoFocus
-              onChange={(event) => setHref(event.target.value)}
-            />
-            <button type="submit" disabled={disabled || !href.trim()}>Apply</button>
-          </div>
-        </form>
-      )}
-    </div>
-  );
-}
-
-const bubbleItems: Array<{
-  label: string;
-  icon: LucideIcon;
-  active: (editor: Editor) => boolean;
-  run: (editor: Editor) => void;
-}> = [
-  {
-    label: 'Bold',
-    icon: Bold,
-    active: (editor) => editor.isActive('bold'),
-    run: (editor) => { editor.chain().focus().toggleBold().run(); },
-  },
-  {
-    label: 'Italic',
-    icon: Italic,
-    active: (editor) => editor.isActive('italic'),
-    run: (editor) => { editor.chain().focus().toggleItalic().run(); },
-  },
-  {
-    label: 'Strikethrough',
-    icon: Strikethrough,
-    active: (editor) => editor.isActive('strike'),
-    run: (editor) => { editor.chain().focus().toggleStrike().run(); },
-  },
-  {
-    label: 'Inline code',
-    icon: Code2,
-    active: (editor) => editor.isActive('code'),
-    run: (editor) => { editor.chain().focus().toggleCode().run(); },
-  },
-];
-
-function selectionText(editor: Editor) {
-  const { from, to } = editor.state.selection;
-  return editor.state.doc.textBetween(from, to, '\n').trim();
-}
-
-function selectionContext(editor: Editor) {
-  const { from, to } = editor.state.selection;
-  const documentEnd = editor.state.doc.content.size;
-  return {
-    from,
-    to,
-    selectedText: editor.state.doc.textBetween(from, to, '\n').trim(),
-    beforeContext: editor.state.doc.textBetween(Math.max(0, from - 1600), from, '\n').trim(),
-    afterContext: editor.state.doc.textBetween(to, Math.min(documentEnd, to + 1600), '\n').trim(),
-  };
-}
-
-const quoteComment = (comment: string) => {
-  const body = comment
-    .trim()
-    .split('\n')
-    .map((line) => `> ${line.trim()}`)
-    .join('\n');
-  return `\n\n> [!note] Issue\n${body}\n`;
-};
-
-function NovelSelectionBubble({
-  disabled,
-  onSelectionAssist,
-}: {
-  disabled: boolean;
-  onSelectionAssist?: MarkdownEditorProps['onSelectionAssist'];
-}) {
-  const { editor } = useNovelEditor();
-  const [linkOpen, setLinkOpen] = React.useState(false);
-  const [href, setHref] = React.useState('');
-  const [busyAction, setBusyAction] = React.useState<MarkdownSelectionAssistAction | 'copy' | null>(null);
-  const [assistError, setAssistError] = React.useState('');
-  useEditorRevision(editor);
-
-  if (!editor || disabled) return null;
-
-  const submitLink = (event: React.FormEvent) => {
-    event.preventDefault();
-    const nextHref = href.trim();
-    if (!nextHref) return;
-    editor.chain().focus().extendMarkRange('link').setLink({ href: nextHref }).run();
-    setHref('');
-    setLinkOpen(false);
-  };
-
-  const copySelection = async () => {
-    const text = selectionText(editor);
-    if (!text) return;
-    setAssistError('');
-    setBusyAction('copy');
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      setAssistError('Copy failed');
-    } finally {
-      setBusyAction(null);
+  React.useEffect(() => editor.registerUpdateListener(({ editorState, tags }) => {
+    if (
+      sourceModeRef.current
+      || tags.has(EXTERNAL_MARKDOWN_SYNC_TAG)
+      || tags.has(SOURCE_TREE_SYNC_TAG)
+      || tags.has(REVIEW_DECORATION_TAG)
+    ) {
+      return;
     }
-  };
+    const markdown = readEditorSnapshot(editor, editorState, () => $documentToMarkdown());
+    onMarkdownChangeRef.current(markdown);
+  }), [editor]);
 
-  const runAssist = async (action: MarkdownSelectionAssistAction) => {
-    const context = selectionContext(editor);
-    if (!context.selectedText) return;
-    const instruction = action === 'agent_edit'
-      ? window.prompt('Local instruction for the selected text', 'Improve this selected passage without changing surrounding text.')?.trim()
-      : undefined;
-    if (action === 'agent_edit' && !instruction) return;
-
-    setAssistError('');
-    setBusyAction(action);
-    try {
-      const result = onSelectionAssist
-        ? await onSelectionAssist({ action, ...context, instruction })
-        : { comment: 'Review this selected passage.' };
-      if (action === 'comment_issue') {
-        const comment = result.comment?.trim() || 'Review this selected passage.';
-        editor
-          .chain()
-          .focus()
-          .setTextSelection(context.to)
-          .insertContent(quoteComment(comment))
-          .run();
-        return;
-      }
-      const replacement = result.replacement?.trim();
-      if (!replacement) {
-        setAssistError('No local edit returned');
-        return;
-      }
-      editor
-        .chain()
-        .focus()
-        .insertContentAt({ from: context.from, to: context.to }, replacement)
-        .run();
-    } catch (reason) {
-      setAssistError(String(reason));
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
-  return (
-    <EditorBubble
-      className="novel-bubble-menu"
-      tippyOptions={{ placement: 'top', duration: [120, 90] }}
-    >
-      {bubbleItems.map(({ label, icon: Icon, active, run }) => (
-        <EditorBubbleItem
-          key={label}
-          asChild
-          onSelect={run}
-        >
-          <button
-            type="button"
-            className={active(editor) ? 'active' : ''}
-            aria-label={label}
-            title={label}
-            onMouseDown={(event) => event.preventDefault()}
-          >
-            <Icon size={14} />
-          </button>
-        </EditorBubbleItem>
-      ))}
-      <span className="novel-bubble-divider" aria-hidden="true" />
-      <button
-        type="button"
-        aria-label="Copy"
-        title="Copy"
-        disabled={Boolean(busyAction)}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => void copySelection()}
-      >
-        <Copy size={14} />
-      </button>
-      {onSelectionAssist && (
-        <>
-          <button
-            type="button"
-            aria-label="Optimize expression"
-            title="Optimize expression"
-            disabled={Boolean(busyAction)}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => void runAssist('optimize_expression')}
-          >
-            <Sparkles size={14} />
-          </button>
-          <button
-            type="button"
-            aria-label="Agent local edit"
-            title="Agent local edit"
-            disabled={Boolean(busyAction)}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => void runAssist('agent_edit')}
-          >
-            <Bot size={14} />
-          </button>
-        </>
-      )}
-      <button
-        type="button"
-        aria-label="Comment issue"
-        title="Comment issue"
-        disabled={Boolean(busyAction)}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => void runAssist('comment_issue')}
-      >
-        <MessageSquareWarning size={14} />
-      </button>
-      <span className="novel-bubble-divider" aria-hidden="true" />
-      <button
-        type="button"
-        className={editor.isActive('link') || linkOpen ? 'active' : ''}
-        aria-label="Link"
-        title="Link"
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => {
-          if (editor.isActive('link')) {
-            editor.chain().focus().unsetLink().run();
-            return;
-          }
-          setHref('');
-          setLinkOpen((current) => !current);
-        }}
-      >
-        <Link2 size={14} />
-      </button>
-      {linkOpen && (
-        <form className="novel-bubble-link" onSubmit={submitLink}>
-          <input
-            value={href}
-            inputMode="url"
-            autoComplete="url"
-            autoFocus
-            aria-label="Link destination"
-            placeholder="Paste a URL"
-            onChange={(event) => setHref(event.target.value)}
-          />
-          <button type="submit" disabled={!href.trim()}>Apply</button>
-        </form>
-      )}
-      {assistError && <span className="novel-bubble-error">{assistError}</span>}
-    </EditorBubble>
-  );
+  return null;
 }
 
 const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
@@ -519,6 +180,7 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
     slashCommands = emptySlashCommands,
     reviewFindings = [],
     onChange,
+    onImportImages,
     onEditingModeChange,
     onKeyDown,
     onSelectionAssist,
@@ -527,17 +189,14 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
   }, forwardedRef) {
     const sourceRef = React.useRef<HTMLTextAreaElement | null>(null);
     const sourceHighlightRef = React.useRef<HTMLPreElement | null>(null);
+    const initialValueRef = React.useRef(value);
     const valueRef = React.useRef(value);
     const onChangeRef = React.useRef(onChange);
     const reviewFindingsRef = React.useRef(reviewFindings);
-    const onReviewFindingActivateRef = React.useRef(onReviewFindingActivate);
     const onReviewFindingAppliedRef = React.useRef(onReviewFindingApplied);
-    const disabledRef = React.useRef(disabled || readOnly);
-    const placeholderRef = React.useRef(placeholder);
-    const slashCommandProviderRef = React.useRef<SlashCommandDefinition[]>([]);
     const [phase, setPhase] = React.useState<EditorPhase>('creating');
+    const [editor, setEditor] = React.useState<LexicalEditor | null>(null);
     const [uncontrolledMode, setUncontrolledMode] = React.useState<MarkdownEditingMode>('rich');
-    const [editor, setEditor] = React.useState<Editor | null>(null);
     const [sourceSelection, setSourceSelection] = React.useState<{
       start: number;
       end: number;
@@ -545,128 +204,157 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
     } | null>(null);
     const [sourceAssistBusy, setSourceAssistBusy] = React.useState<MarkdownSelectionAssistAction | 'copy' | null>(null);
     const [sourceAssistError, setSourceAssistError] = React.useState('');
-    const contextualSlashCommandPlugin = React.useMemo<MarkdownEditorPlugin | null>(() => {
-      if (slashCommands.length === 0) return null;
-      return {
-        id: 'contextual-slash-commands',
-        priority: 450,
-        slashCommands,
-        createExtensions: () => [],
-      };
-    }, [slashCommands]);
-    const composition = React.useMemo(() => (
-      new NovelEditorPluginRegistry([
-        coreMarkdownPlugin,
-        slashCommandPlugin,
-        deepSeekReviewPlugin,
-        ...plugins,
-        ...(contextualSlashCommandPlugin ? [contextualSlashCommandPlugin] : []),
-      ])
-    ), [contextualSlashCommandPlugin, plugins]);
-    const extensions = React.useMemo(() => composition.extensions({
-      placeholder: () => placeholderRef.current,
-      readOnly,
-      resolveSlashCommands: () => slashCommandProviderRef.current,
-      onReviewFindingActivate: (findingId) => {
-        onReviewFindingActivateRef.current?.(findingId);
-      },
-    }), [composition, readOnly]);
-    const availableSlashCommands = React.useMemo(() => composition.slashCommands(), [composition]);
+    const [sourceInstructionOpen, setSourceInstructionOpen] = React.useState(false);
+    const [sourceInstruction, setSourceInstruction] = React.useState('');
+
+    const registry = React.useMemo(() => new LexicalEditorPluginRegistry(plugins), [plugins]);
+    const extension = React.useMemo(
+      () => createMarkdownEditorExtension(readOnly, plugins, initialValueRef.current),
+      [plugins, readOnly],
+    );
+    const availableSlashCommands = React.useMemo(() => {
+      const commands = [...defaultSlashCommands, ...registry.slashCommands(), ...slashCommands];
+      const ids = new Set<string>();
+      commands.forEach((command) => {
+        if (ids.has(command.id)) throw new Error(`Duplicate slash command: ${command.id}`);
+        ids.add(command.id);
+      });
+      return commands;
+    }, [registry, slashCommands]);
     const activeEditingMode = editingMode ?? uncontrolledMode;
     const sourceMode = activeEditingMode === 'source';
-
-    placeholderRef.current = placeholder;
-    reviewFindingsRef.current = reviewFindings;
-    onReviewFindingActivateRef.current = onReviewFindingActivate;
-    onReviewFindingAppliedRef.current = onReviewFindingApplied;
-    slashCommandProviderRef.current = availableSlashCommands;
-
-    const highlightedSource = React.useMemo(
-      () => highlightMarkdownSource(value, reviewFindings),
-      [reviewFindings, value],
+    const inactive = disabled || readOnly;
+    const hasAppliedInitialFocusRef = React.useRef(false);
+    const previousEditingModeRef = React.useRef(activeEditingMode);
+    const sourceProjector = React.useMemo(() => (
+      editor
+        ? editor.read(() => new MarkdownSourceProjector(
+          $getExtensionOutput(MdastImportExtension).registry,
+        ))
+        : null
+    ), [editor]);
+    const sourceSegments = React.useMemo(
+      () => sourceProjector?.project(value) || [],
+      [sourceProjector, value],
     );
 
-    React.useEffect(() => {
-      onChangeRef.current = onChange;
-    }, [onChange]);
+    onChangeRef.current = onChange;
+    reviewFindingsRef.current = reviewFindings;
+    onReviewFindingAppliedRef.current = onReviewFindingApplied;
 
-    React.useEffect(() => {
-      disabledRef.current = disabled || readOnly;
-      editor?.setEditable(!disabledRef.current);
-    }, [disabled, editor, readOnly]);
-
-    React.useEffect(() => {
-      if (!editor || phase !== 'ready') return;
-      editor.commands.setDeepSeekReviewFindings(reviewFindings);
-    }, [editor, phase, reviewFindings]);
-
-    React.useEffect(() => {
-      if (!editor || phase !== 'ready') return;
-      const current = getMarkdown(editor);
-      if (current === value) {
-        valueRef.current = value;
-        return;
+    const handleReady = React.useCallback((createdEditor: LexicalEditor | null) => {
+      setEditor(createdEditor);
+      setPhase(createdEditor ? 'ready' : 'creating');
+      if (createdEditor && readMarkdown(createdEditor) !== valueRef.current) {
+        replaceEditorMarkdown(createdEditor, valueRef.current);
       }
+    }, []);
+
+    const emitMarkdown = React.useCallback((markdown: string) => {
+      if (markdown === valueRef.current) return;
+      valueRef.current = markdown;
+      onChangeRef.current?.(markdown);
+    }, []);
+
+    React.useEffect(() => {
+      if (!editor) return;
+      editor.setEditable(!inactive);
+    }, [editor, inactive]);
+
+    React.useEffect(() => {
+      if (!editor || phase !== 'ready' || value === valueRef.current) return;
       valueRef.current = value;
-      editor.commands.setContent(value, false);
+      replaceEditorMarkdown(editor, value);
     }, [editor, phase, value]);
 
+    React.useEffect(() => {
+      if (
+        hasAppliedInitialFocusRef.current
+        || !autoFocus
+        || readOnly
+        || phase !== 'ready'
+      ) return;
+      hasAppliedInitialFocusRef.current = true;
+      window.requestAnimationFrame(() => {
+        if (sourceMode) sourceRef.current?.focus();
+        else if (editor) focusEditorAtEnd(editor);
+      });
+    }, [autoFocus, editor, phase, readOnly, sourceMode]);
+
+    React.useEffect(() => {
+      const previousMode = previousEditingModeRef.current;
+      previousEditingModeRef.current = activeEditingMode;
+      if (previousMode === activeEditingMode || readOnly || phase !== 'ready') return;
+      let focusTimer: number | null = null;
+      const frame = window.requestAnimationFrame(() => {
+        if (sourceMode) sourceRef.current?.focus();
+        else focusTimer = window.setTimeout(() => {
+          editor?.getRootElement()?.focus({ preventScroll: true });
+        }, 0);
+      });
+      return () => {
+        window.cancelAnimationFrame(frame);
+        if (focusTimer !== null) window.clearTimeout(focusTimer);
+      };
+    }, [activeEditingMode, editor, phase, readOnly, sourceMode]);
+
+    const syncSourceToTree = React.useCallback((markdown: string) => {
+      valueRef.current = markdown;
+      onChangeRef.current?.(markdown);
+      if (editor) replaceEditorMarkdown(editor, markdown, SOURCE_TREE_SYNC_TAG);
+      return markdown;
+    }, [editor]);
+
     const focus = React.useCallback(() => {
-      if (sourceMode) {
-        sourceRef.current?.focus();
-        return;
-      }
-      editor?.commands.focus();
+      if (sourceMode) sourceRef.current?.focus();
+      else editor?.getRootElement()?.focus({ preventScroll: true });
     }, [editor, sourceMode]);
 
     const currentMarkdown = React.useCallback(
-      () => (sourceMode ? valueRef.current : editor ? getMarkdown(editor) : valueRef.current),
+      () => (sourceMode || !editor ? valueRef.current : readMarkdown(editor)),
       [editor, sourceMode],
     );
 
-    const applySourceValue = React.useCallback((nextValue: string) => {
-      valueRef.current = nextValue;
-      onChangeRef.current?.(nextValue);
-      return nextValue;
-    }, []);
-
     const insertMarkdown = React.useCallback((markdown: string) => {
+      if (inactive) return null;
       if (sourceMode) {
-        if (disabledRef.current) return null;
-        const textarea = sourceRef.current;
         const current = valueRef.current;
-        const start = textarea?.selectionStart ?? current.length;
-        const end = textarea?.selectionEnd ?? start;
-        const nextValue = `${current.slice(0, start)}${markdown}${current.slice(end)}`;
-        applySourceValue(nextValue);
+        const start = sourceRef.current?.selectionStart ?? current.length;
+        const end = sourceRef.current?.selectionEnd ?? start;
+        const next = `${current.slice(0, start)}${markdown}${current.slice(end)}`;
+        syncSourceToTree(next);
         window.requestAnimationFrame(() => {
-          const nextCaret = start + markdown.length;
+          const caret = start + markdown.length;
           sourceRef.current?.focus();
-          sourceRef.current?.setSelectionRange(nextCaret, nextCaret);
+          sourceRef.current?.setSelectionRange(caret, caret);
         });
-        return nextValue;
+        return next;
       }
-
-      if (!editor || phase !== 'ready' || disabledRef.current) return null;
-      editor.chain().focus().insertContent(markdown).run();
-      return getMarkdown(editor);
-    }, [applySourceValue, editor, phase, sourceMode]);
+      if (!editor || phase !== 'ready') return null;
+      editor.update(() => {
+        let selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          $getRoot().selectEnd();
+          selection = $getSelection();
+        }
+        if ($isRangeSelection(selection)) $insertMarkdown(markdown);
+      }, { discrete: true });
+      return readMarkdown(editor);
+    }, [editor, inactive, phase, sourceMode, syncSourceToTree]);
 
     const replaceMarkdown = React.useCallback((markdown: string) => {
+      if (inactive || !editor || phase !== 'ready') return null;
       if (sourceMode) {
-        if (disabledRef.current) return null;
-        applySourceValue(markdown);
+        syncSourceToTree(markdown);
         window.requestAnimationFrame(() => {
           sourceRef.current?.focus();
           sourceRef.current?.setSelectionRange(markdown.length, markdown.length);
         });
         return markdown;
       }
-
-      if (!editor || phase !== 'ready' || disabledRef.current) return null;
-      editor.commands.setContent(markdown, true);
-      return getMarkdown(editor);
-    }, [applySourceValue, editor, phase, sourceMode]);
+      editor.update(() => $replaceDocumentFromMarkdown(markdown), { discrete: true });
+      return readMarkdown(editor);
+    }, [editor, inactive, phase, sourceMode, syncSourceToTree]);
 
     const focusReviewFinding = React.useCallback((findingId: string) => {
       const finding = reviewFindingsRef.current.find((candidate) => candidate.id === findingId);
@@ -678,13 +366,24 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
         sourceRef.current?.setSelectionRange(offset, offset + finding.quote.length);
         return true;
       }
-      if (!editor || phase !== 'ready') return false;
-      editor.commands.focus();
-      return editor.commands.focusDeepSeekReviewFinding(findingId);
-    }, [editor, phase, sourceMode]);
+      if (!editor) return false;
+      let focused = false;
+      editor.update(() => {
+        focused = $focusReviewFinding(findingId);
+      }, { discrete: true });
+      if (focused) {
+        editor.focus();
+        window.requestAnimationFrame(() => {
+          editor.getRootElement()
+            ?.querySelector<HTMLElement>(`[data-review-finding="${CSS.escape(findingId)}"]`)
+            ?.scrollIntoView({ block: 'center' });
+        });
+      }
+      return focused;
+    }, [editor, sourceMode]);
 
     const applyReviewSuggestion = React.useCallback((findingId: string) => {
-      if (disabledRef.current) return null;
+      if (inactive) return null;
       const finding = reviewFindingsRef.current.find((candidate) => candidate.id === findingId);
       if (!finding) return null;
       if (sourceMode) {
@@ -692,29 +391,27 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
         const offset = current.indexOf(finding.quote);
         if (offset < 0) return null;
         const next = `${current.slice(0, offset)}${finding.suggestion}${current.slice(offset + finding.quote.length)}`;
-        applySourceValue(next);
+        syncSourceToTree(next);
         onReviewFindingAppliedRef.current?.(findingId);
-        window.requestAnimationFrame(() => {
-          const caret = offset + finding.suggestion.length;
-          sourceRef.current?.focus();
-          sourceRef.current?.setSelectionRange(caret, caret);
-        });
         return next;
       }
-      if (!editor || phase !== 'ready') return null;
-      if (!editor.commands.applyDeepSeekReviewSuggestion(findingId)) return null;
-      const next = getMarkdown(editor);
+      if (!editor) return null;
+      let applied = false;
+      editor.update(() => {
+        applied = $applyReviewSuggestion(findingId, finding.suggestion);
+      }, { discrete: true });
+      if (!applied) return null;
       onReviewFindingAppliedRef.current?.(findingId);
-      return next;
-    }, [applySourceValue, editor, phase, sourceMode]);
+      return readMarkdown(editor);
+    }, [editor, inactive, sourceMode, syncSourceToTree]);
 
     React.useImperativeHandle(forwardedRef, () => ({
+      applyReviewSuggestion,
       focus,
+      focusReviewFinding,
       getMarkdown: currentMarkdown,
       insertMarkdown,
       replaceMarkdown,
-      focusReviewFinding,
-      applyReviewSuggestion,
     }), [
       applyReviewSuggestion,
       currentMarkdown,
@@ -724,157 +421,73 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
       replaceMarkdown,
     ]);
 
-    const runCommand = React.useCallback((command: ToolbarCommand) => {
-      if (!editor || phase !== 'ready' || disabledRef.current) return;
-      switch (command) {
-        case 'heading':
-          editor.chain().focus().toggleHeading({ level: 2 }).run();
-          break;
-        case 'bold':
-          editor.chain().focus().toggleBold().run();
-          break;
-        case 'italic':
-          editor.chain().focus().toggleItalic().run();
-          break;
-        case 'strike':
-          editor.chain().focus().toggleStrike().run();
-          break;
-        case 'bullet-list':
-          editor.chain().focus().toggleBulletList().run();
-          break;
-        case 'ordered-list':
-          editor.chain().focus().toggleOrderedList().run();
-          break;
-        case 'quote':
-          editor.chain().focus().toggleBlockquote().run();
-          break;
-        case 'code-block':
-          editor.chain().focus().toggleCodeBlock().run();
-          break;
-        case 'inline-code':
-          editor.chain().focus().toggleCode().run();
-          break;
-        case 'divider':
-          editor.chain().focus().setHorizontalRule().run();
-          break;
-        case 'table':
-          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-          break;
-        case 'undo':
-          editor.chain().focus().undo().run();
-          break;
-        case 'redo':
-          editor.chain().focus().redo().run();
-          break;
-      }
-    }, [editor, phase]);
-
-    const applyLink = React.useCallback((href: string) => {
-      if (!editor || phase !== 'ready' || disabledRef.current) return;
-      editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
-    }, [editor, phase]);
-
     const updateSourceMode = React.useCallback((nextSourceMode: boolean) => {
-      if (!nextSourceMode && editor && getMarkdown(editor) !== valueRef.current) {
-        editor.commands.setContent(valueRef.current, false);
-      }
       const nextMode = nextSourceMode ? 'source' : 'rich';
-      if (editingMode === undefined) {
-        setUncontrolledMode(nextMode);
-      }
+      if (editingMode === undefined) setUncontrolledMode(nextMode);
       onEditingModeChange?.(nextMode);
-      window.requestAnimationFrame(() => {
-        if (nextSourceMode) sourceRef.current?.focus();
-        else editor?.commands.focus();
-      });
-    }, [editingMode, editor, onEditingModeChange]);
-
-    const focusDocumentEnd = React.useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-      if (sourceMode || readOnly || disabledRef.current || phase !== 'ready') return;
-      const target = event.target as HTMLElement;
-      if (
-        target !== event.currentTarget
-        && !target.classList.contains('novel-editor-root')
-        && !target.classList.contains('tiptap')
-      ) {
-        return;
-      }
-      event.preventDefault();
-      editor?.commands.focus('end');
-    }, [editor, phase, readOnly, sourceMode]);
-
-    const handleKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(event);
-    }, [onKeyDown]);
-
-    const handleSourceKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      onKeyDown?.(event as unknown as React.KeyboardEvent<HTMLDivElement>);
-    }, [onKeyDown]);
-
-    const syncSourceHighlightScroll = React.useCallback((event: React.UIEvent<HTMLTextAreaElement>) => {
-      const highlight = sourceHighlightRef.current;
-      if (!highlight) return;
-      highlight.scrollTop = event.currentTarget.scrollTop;
-      highlight.scrollLeft = event.currentTarget.scrollLeft;
-    }, []);
+    }, [editingMode, onEditingModeChange]);
+    const enterSourceMode = React.useCallback(
+      () => updateSourceMode(true),
+      [updateSourceMode],
+    );
 
     const updateSourceSelection = React.useCallback(() => {
       const textarea = sourceRef.current;
-      if (!textarea) {
-        setSourceSelection(null);
-        return;
-      }
+      if (!textarea) return setSourceSelection(null);
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const text = valueRef.current.slice(start, end);
       setSourceSelection(text.trim() ? { start, end, text } : null);
     }, []);
 
-    const copySourceSelection = React.useCallback(async () => {
-      if (!sourceSelection) return;
-      setSourceAssistError('');
-      setSourceAssistBusy('copy');
-      try {
-        await navigator.clipboard.writeText(sourceSelection.text);
-      } catch {
-        setSourceAssistError('Copy failed');
-      } finally {
-        setSourceAssistBusy(null);
-      }
-    }, [sourceSelection]);
+    const syncSourceScroll = React.useCallback(() => {
+      const textarea = sourceRef.current;
+      const highlight = sourceHighlightRef.current;
+      if (!textarea || !highlight) return;
+      highlight.scrollTop = textarea.scrollTop;
+      highlight.scrollLeft = textarea.scrollLeft;
+    }, []);
 
-    const runSourceSelectionAssist = React.useCallback(async (action: MarkdownSelectionAssistAction) => {
-      if (!sourceSelection) return;
-      const instruction = action === 'agent_edit'
-        ? window.prompt('Local instruction for the selected text', 'Improve this selected passage without changing surrounding text.')?.trim()
-        : undefined;
-      if (action === 'agent_edit' && !instruction) return;
+    React.useLayoutEffect(() => {
+      if (sourceMode) syncSourceScroll();
+    }, [sourceMode, sourceSegments, syncSourceScroll]);
 
+    React.useEffect(() => setSourceInstructionOpen(false), [sourceSelection]);
+
+    const runSourceSelectionAssist = React.useCallback(async (
+      action: MarkdownSelectionAssistAction,
+      instruction?: string,
+    ) => {
+      if (!sourceSelection || (action === 'agent_edit' && !instruction)) return;
       setSourceAssistError('');
       setSourceAssistBusy(action);
       try {
         const result = onSelectionAssist
           ? await onSelectionAssist({
             action,
-            selectedText: sourceSelection.text,
-            beforeContext: valueRef.current.slice(Math.max(0, sourceSelection.start - 1600), sourceSelection.start),
             afterContext: valueRef.current.slice(sourceSelection.end, sourceSelection.end + 1600),
+            beforeContext: valueRef.current.slice(Math.max(0, sourceSelection.start - 1600), sourceSelection.start),
             instruction,
+            selectedText: sourceSelection.text,
           })
           : { comment: 'Review this selected passage.' };
         const insertion = action === 'comment_issue'
-          ? quoteComment(result.comment?.trim() || 'Review this selected passage.')
+          ? quoteIssueComment(result.comment?.trim() || 'Review this selected passage.')
           : result.replacement?.trim();
-        if (!insertion) {
-          setSourceAssistError('No local edit returned');
+        if (!insertion) return setSourceAssistError('No local edit returned');
+        if (
+          valueRef.current.slice(sourceSelection.start, sourceSelection.end)
+          !== sourceSelection.text
+        ) {
+          setSourceAssistError('Selection changed before the edit completed');
           return;
         }
-        const insertAt = action === 'comment_issue' ? sourceSelection.end : sourceSelection.start;
-        const replaceEnd = action === 'comment_issue' ? sourceSelection.end : sourceSelection.end;
-        const nextValue = `${valueRef.current.slice(0, insertAt)}${insertion}${valueRef.current.slice(replaceEnd)}`;
-        applySourceValue(nextValue);
+        const start = action === 'comment_issue' ? sourceSelection.end : sourceSelection.start;
+        const end = sourceSelection.end;
+        const next = `${valueRef.current.slice(0, start)}${insertion}${valueRef.current.slice(end)}`;
+        syncSourceToTree(next);
         window.requestAnimationFrame(() => {
-          const caret = insertAt + insertion.length;
+          const caret = start + insertion.length;
           sourceRef.current?.focus();
           sourceRef.current?.setSelectionRange(caret, caret);
           setSourceSelection(null);
@@ -884,89 +497,121 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
       } finally {
         setSourceAssistBusy(null);
       }
-    }, [applySourceValue, onSelectionAssist, sourceSelection]);
+    }, [onSelectionAssist, sourceSelection, syncSourceToTree]);
 
     return (
       <div
         className={[
           'editor-host',
           'novel-editor',
+          'lexical-markdown-editor',
           readOnly ? 'novel-editor--preview' : '',
           className,
         ].filter(Boolean).join(' ')}
         data-state={phase}
         data-mode={activeEditingMode}
-        data-disabled={disabled || readOnly ? 'true' : 'false'}
+        data-disabled={inactive ? 'true' : 'false'}
         data-empty={value.trim() ? 'false' : 'true'}
-        onMouseDown={focusDocumentEnd}
-        onKeyDown={handleKeyDown}
+        data-source-model="lexical-ast"
+        data-toolbar={!readOnly && toolbarVisible ? 'visible' : 'hidden'}
+        onKeyDown={onKeyDown}
+        onMouseDown={(event) => {
+          if (sourceMode || inactive || !editor || phase !== 'ready') return;
+          const target = event.target as HTMLElement;
+          if (
+            target !== event.currentTarget
+            && !target.classList.contains('novel-editor-root')
+            && !target.classList.contains('lexical-editor-surface')
+          ) return;
+          focusEditorAtEnd(editor);
+        }}
       >
         {!readOnly && toolbarVisible && (
-          <MarkdownToolbar
+          <FormattingToolbar
             editor={editor}
             disabled={disabled || phase !== 'ready'}
+            imageImportEnabled={Boolean(onImportImages)}
             sourceMode={sourceMode}
-            onCommand={runCommand}
-            onLink={applyLink}
             onSourceModeChange={updateSourceMode}
           />
         )}
-        <EditorRoot>
-          <EditorContent
-            className="novel-editor-root"
-            initialContent={value as unknown as JSONContent}
-            extensions={extensions}
-            editable={!(disabled || readOnly)}
-            editorProps={{
-              attributes: {
-                'aria-label': ariaLabel,
-                ...(readOnly ? {} : { 'aria-multiline': 'true' }),
-                role: readOnly ? 'document' : 'textbox',
-                'data-novel-surface': readOnly ? 'preview' : 'editor',
-              },
-              handleDOMEvents: {
-                keydown: (_, event) => handleCommandNavigation(event) || false,
-              },
-            }}
-            onBeforeCreate={() => {
-              setPhase('creating');
-            }}
-            onCreate={({ editor: createdEditor }) => {
-              setEditor(createdEditor);
-              setPhase('ready');
-              if (autoFocus && !readOnly) {
-                window.requestAnimationFrame(() => {
-                  if (sourceMode) sourceRef.current?.focus();
-                  else createdEditor.commands.focus('end');
-                });
-              }
-            }}
-            onDestroy={() => {
-              setEditor(null);
-            }}
-            onUpdate={({ editor: updatedEditor }) => {
-              const markdown = getMarkdown(updatedEditor);
-              if (markdown === valueRef.current) return;
-              valueRef.current = markdown;
-              onChangeRef.current?.(markdown);
-            }}
-          >
+
+        <LexicalExtensionComposer extension={extension} contentEditable={null}>
+          <div className="novel-editor-root">
+            <RichTextPlugin
+              contentEditable={(
+                <ContentEditable
+                  className="lexical-editor-surface"
+                  aria-label={ariaLabel}
+                  aria-multiline={!readOnly || undefined}
+                  role={readOnly ? 'document' : 'textbox'}
+                  data-novel-surface={readOnly ? 'preview' : 'editor'}
+                />
+              )}
+              placeholder={placeholder ? <div className="lexical-placeholder">{placeholder}</div> : null}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+            {!readOnly && <HistoryPlugin />}
+            <ListPlugin />
+            <CheckListPlugin disableTakeFocusOnClick={readOnly} />
+            <LinkPlugin />
+            <ClickableLinkPlugin disabled={!readOnly} />
+            <TablePlugin hasCellMerge={false} hasHorizontalScroll />
+            <CodeHighlightPlugin />
+            {!readOnly && !sourceMode && <SelectionAlwaysOnDisplay />}
+            {!readOnly && <EditorKeymapPlugin onToggleSourceMode={enterSourceMode} />}
+            {!readOnly && (
+              <ImageEditingPlugin
+                disabled={disabled || sourceMode}
+                offsetForMainToolbar={toolbarVisible}
+                onImportImages={onImportImages}
+              />
+            )}
+            {!readOnly && <MarkdownPastePlugin disabled={disabled || sourceMode} />}
+            {!readOnly && <BlockDragPlugin disabled={disabled || sourceMode} />}
+            {!readOnly && (
+              <SlashCommandPlugin
+                commands={availableSlashCommands}
+                disabled={disabled || sourceMode}
+              />
+            )}
             {!readOnly && !sourceMode && (
               <>
-                <NovelSlashCommandMenu commands={availableSlashCommands} />
-                <NovelSelectionBubble disabled={disabled} onSelectionAssist={onSelectionAssist} />
-                <ImageResizer />
+                <TableToolbarPlugin
+                  disabled={disabled}
+                  offsetForMainToolbar={toolbarVisible}
+                />
+                <SelectionBubblePlugin
+                  disabled={disabled}
+                  offsetForMainToolbar={toolbarVisible}
+                  onSelectionAssist={onSelectionAssist}
+                />
               </>
             )}
-          </EditorContent>
-        </EditorRoot>
+            <ReviewPlugin
+              findings={reviewFindings}
+              onActivate={onReviewFindingActivate}
+            />
+            <EditorLifecycle
+              onReady={handleReady}
+              onMarkdownChange={emitMarkdown}
+              sourceMode={sourceMode}
+            />
+            {registry.components().map(({ id, Component }) => (
+              <Component key={id} readOnly={readOnly} />
+            ))}
+          </div>
+        </LexicalExtensionComposer>
+
         {!readOnly && sourceMode && (
-          <div className="novel-source-surface">
-            <pre
+          <div
+            className="novel-source-surface"
+            data-ast-synchronized="true"
+            data-syntax-highlighted={sourceProjector ? 'true' : 'false'}
+          >
+            <MarkdownSourceHighlight
               ref={sourceHighlightRef}
-              className="novel-source-highlight"
-              aria-hidden="true"
-              dangerouslySetInnerHTML={{ __html: highlightedSource }}
+              segments={sourceSegments}
             />
             <textarea
               ref={sourceRef}
@@ -976,65 +621,110 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
               spellCheck={false}
               aria-label={`${ariaLabel} source`}
               placeholder={placeholder}
-              onChange={(event) => applySourceValue(event.target.value)}
-              onKeyDown={handleSourceKeyDown}
+              onChange={(event) => syncSourceToTree(event.target.value)}
+              onKeyDown={(event) => {
+                const action = resolveEditorShortcut(event.nativeEvent, 'source');
+                if (action?.kind !== 'toggle-source') return;
+                event.preventDefault();
+                updateSourceMode(false);
+              }}
+              onScroll={syncSourceScroll}
               onKeyUp={updateSourceSelection}
               onMouseUp={updateSourceSelection}
               onSelect={updateSourceSelection}
-              onScroll={syncSourceHighlightScroll}
             />
             {sourceSelection && (
               <div className="novel-source-selection-menu" role="toolbar" aria-label="Selected text actions">
-                <button
-                  type="button"
-                  aria-label="Copy"
-                  title="Copy"
-                  disabled={Boolean(sourceAssistBusy)}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => void copySourceSelection()}
-                >
-                  <Copy size={14} />
-                </button>
-                {onSelectionAssist && (
+                {sourceInstructionOpen ? (
+                  <form
+                    className="novel-bubble-instruction"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const instruction = sourceInstruction.trim();
+                      if (!instruction) return;
+                      setSourceInstructionOpen(false);
+                      void runSourceSelectionAssist('agent_edit', instruction);
+                    }}
+                  >
+                    <input
+                      value={sourceInstruction}
+                      autoFocus
+                      aria-label="Local instruction for the selected text"
+                      placeholder="Instruction for the agent"
+                      onChange={(event) => setSourceInstruction(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') setSourceInstructionOpen(false);
+                      }}
+                    />
+                    <button type="submit" disabled={!sourceInstruction.trim()}>Apply</button>
+                  </form>
+                ) : (
                   <>
                     <button
                       type="button"
-                      aria-label="Optimize expression"
-                      title="Optimize expression"
+                      aria-label="Copy"
+                      title="Copy"
                       disabled={Boolean(sourceAssistBusy)}
                       onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => void runSourceSelectionAssist('optimize_expression')}
+                      onClick={() => {
+                        setSourceAssistBusy('copy');
+                        void navigator.clipboard.writeText(sourceSelection.text)
+                          .catch(() => setSourceAssistError('Copy failed'))
+                          .finally(() => setSourceAssistBusy(null));
+                      }}
                     >
-                      <Sparkles size={14} />
+                      <Copy size={14} />
                     </button>
+                    {onSelectionAssist && (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Optimize expression"
+                          title="Optimize expression"
+                          disabled={Boolean(sourceAssistBusy)}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => void runSourceSelectionAssist('optimize_expression')}
+                        >
+                          <Sparkles size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Agent local edit"
+                          title="Agent local edit"
+                          disabled={Boolean(sourceAssistBusy)}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => {
+                            setSourceInstruction('');
+                            setSourceInstructionOpen(true);
+                          }}
+                        >
+                          <Bot size={14} />
+                        </button>
+                      </>
+                    )}
                     <button
                       type="button"
-                      aria-label="Agent local edit"
-                      title="Agent local edit"
+                      aria-label="Comment issue"
+                      title="Comment issue"
                       disabled={Boolean(sourceAssistBusy)}
                       onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => void runSourceSelectionAssist('agent_edit')}
+                      onClick={() => void runSourceSelectionAssist('comment_issue')}
                     >
-                      <Bot size={14} />
+                      <MessageSquareWarning size={14} />
                     </button>
                   </>
                 )}
-                <button
-                  type="button"
-                  aria-label="Comment issue"
-                  title="Comment issue"
-                  disabled={Boolean(sourceAssistBusy)}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => void runSourceSelectionAssist('comment_issue')}
-                >
-                  <MessageSquareWarning size={14} />
-                </button>
                 {sourceAssistError && <span>{sourceAssistError}</span>}
               </div>
             )}
           </div>
         )}
-        {phase === 'creating' && <div className="novel-editor-state">Preparing editor…</div>}
+
+        {phase === 'creating' && (
+          <div className="novel-editor-state novel-editor-state--loading" role="status" aria-label="Preparing editor">
+            <ArticleSkeleton />
+          </div>
+        )}
       </div>
     );
   },

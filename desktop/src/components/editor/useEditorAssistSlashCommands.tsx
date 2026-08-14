@@ -1,7 +1,7 @@
 import React from 'react';
 import { Aperture, BookOpen, Briefcase, Paperclip, type LucideIcon } from 'lucide-react';
 import type { ContentKind } from '../../types';
-import type { SlashCommandDefinition } from './novelEditorPluginRegistry';
+import type { SlashCommandDefinition } from './extensionPoints';
 
 export type EditorAssistReference = {
   id: string;
@@ -26,9 +26,9 @@ const referenceKindMeta: Record<string, { label: string; Icon: LucideIcon; direc
 
 const supportedReferenceKinds = new Set(['blog', 'project', 'moment']);
 
-const insertMarkdown = (markdown: string): SlashCommandDefinition['run'] => (editor, range) => {
-  editor.chain().focus().deleteRange(range).insertContent(markdown).run();
-};
+const insertMarkdown = (markdown: string): SlashCommandDefinition['run'] => (
+  ({ insertMarkdown: insert }) => insert(markdown)
+);
 
 export function useEditorAssistSlashCommands({
   disabled = false,
@@ -54,8 +54,8 @@ export function useEditorAssistSlashCommands({
         description: 'Import images or video into this Markdown document.',
         keywords: ['attach', 'asset', 'media', 'image', 'video', 'file', 'upload'],
         icon: Paperclip,
-        run: (editor, range) => {
-          editor.chain().focus().deleteRange(range).run();
+        run: ({ deleteTrigger }) => {
+          deleteTrigger();
           window.requestAnimationFrame(() => fileInputRef.current?.click());
         },
       });

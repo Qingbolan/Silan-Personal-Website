@@ -42,7 +42,7 @@ type MarkdownDocumentWorkspaceProps = MarkdownEditorProps & {
 
 /**
  * Owns the explicit edit/preview lifecycle for one Markdown representation.
- * The controlled Markdown value is the only shared state: Novel emits it from
+ * The controlled Markdown value is the persistence boundary: Lexical emits it from
  * the writing pane and the preview consumes the same value on every render.
  * Split binds the left pane to styled Markdown source while keeping the right
  * pane as an independently scrollable rendered document.
@@ -52,12 +52,19 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
   MarkdownDocumentWorkspaceProps
 >(function MarkdownDocumentWorkspace({
   previewLabel,
-  defaultView = 'split',
+  defaultView = 'edit',
   activity,
   value,
+  onChange,
   ...editorProps
 }, forwardedRef) {
-  const [view, setView] = React.useState<WorkspaceView>(defaultView);
+  const [view, setView] = React.useState<WorkspaceView>(() => {
+    const stored = window.localStorage.getItem('sv-editor-view');
+    return stored === 'edit' || stored === 'split' || stored === 'preview'
+      ? stored
+      : defaultView;
+  });
+  const [liveValue, setLiveValue] = React.useState(value);
   const [splitPercent, setSplitPercent] = React.useState(() => {
     const stored = Number(window.localStorage.getItem('sv-editor-split-percent'));
     return Number.isFinite(stored) && stored >= 30 && stored <= 70 ? stored : 54;
@@ -67,6 +74,15 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
   const previewPaneRef = React.useRef<HTMLElement | null>(null);
   const previewVisible = view !== 'edit';
   const editorVisible = view !== 'preview';
+
+  React.useEffect(() => {
+    setLiveValue(value);
+  }, [value]);
+
+  const handleEditorChange = React.useCallback((nextValue: string) => {
+    setLiveValue(nextValue);
+    onChange?.(nextValue);
+  }, [onChange]);
 
   const resizeFromClientX = React.useCallback((clientX: number) => {
     const bounds = workspaceRef.current?.getBoundingClientRect();
@@ -84,6 +100,7 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
 
   const updateView = (nextView: WorkspaceView) => {
     setView(nextView);
+    window.localStorage.setItem('sv-editor-view', nextView);
     window.requestAnimationFrame(() => {
       if (nextView !== 'preview') return;
       previewPaneRef.current?.focus({ preventScroll: true });
@@ -106,9 +123,10 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
         <MarkdownEditor
           {...editorProps}
           ref={forwardedRef}
-          value={value}
+          value={liveValue}
           editingMode={view === 'split' ? 'source' : editorProps.editingMode}
           autoFocus={editorProps.autoFocus ?? false}
+          onChange={handleEditorChange}
         />
       </section>
 
@@ -172,7 +190,7 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
         }}
       >
         <MarkdownPreview
-          content={value}
+          content={liveValue}
           className="markdown-preview markdown-document-preview"
           reviewFindings={editorProps.reviewFindings}
           onReviewFindingActivate={editorProps.onReviewFindingActivate}
