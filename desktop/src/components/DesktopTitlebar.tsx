@@ -5,6 +5,10 @@ import {
   usesCustomWindowControls,
   windowNavigationInsetFor,
 } from '../lib/desktopWindow';
+import {
+  WorkspaceTabStrip,
+  type WorkspaceTitlebarTab,
+} from './WorkspaceTabStrip';
 
 type WorkspaceNavigationTitlebarProps = {
   showWorkspaceNavigation?: true;
@@ -15,15 +19,19 @@ type WorkspaceNavigationTitlebarProps = {
   onBack: () => void;
   onForward: () => void;
   onCompose: () => void;
+  tabs: WorkspaceTitlebarTab[];
+  activeTabId: string;
+  onTabSelect: (tabId: string) => void;
+  onTabClose: (tabId: string) => void;
+  onNewTab: () => void;
 };
 
 type StaticTitlebarProps = {
   showWorkspaceNavigation: false;
+  title: string;
 };
 
-type DesktopTitlebarProps = {
-  title: string;
-} & (WorkspaceNavigationTitlebarProps | StaticTitlebarProps);
+type DesktopTitlebarProps = WorkspaceNavigationTitlebarProps | StaticTitlebarProps;
 
 function TitlebarGlyph({
   name,
@@ -153,11 +161,20 @@ export function DesktopTitlebar(props: DesktopTitlebarProps) {
           </button>
         </nav>
       )}
-      <div className="desktop-titlebar-context">
-        <TitlebarGlyph name="library" />
-        <strong>{props.title}</strong>
-        <span className="desktop-titlebar-more" aria-hidden="true">•••</span>
-      </div>
+      {showWorkspaceNavigation ? (
+        <WorkspaceTabStrip
+          tabs={props.tabs}
+          activeTabId={props.activeTabId}
+          onTabSelect={props.onTabSelect}
+          onTabClose={props.onTabClose}
+          onNewTab={props.onNewTab}
+        />
+      ) : (
+        <div className="desktop-titlebar-context">
+          <TitlebarGlyph name="library" />
+          <strong>{props.title}</strong>
+        </div>
+      )}
       {usesCustomWindowControls && (
         <div className="desktop-window-controls" role="group" aria-label="Window controls">
           <button type="button" onClick={() => void getCurrentWindow().minimize()} aria-label="Minimize" title="Minimize">

@@ -170,10 +170,15 @@ import {
 import { useTranslationSyncWorkflow } from './lib/translationSyncWorkflow';
 import { desktopWindowChromeClassName } from './lib/desktopWindow';
 import {
-  canMoveWorkspaceNavigationHistory,
-  createWorkspaceNavigationHistory,
-  moveWorkspaceNavigationHistory,
-  recordWorkspaceLocation,
+  activateWorkspaceTab,
+  activeWorkspaceLocation,
+  addWorkspaceTab,
+  canMoveActiveWorkspaceTabHistory,
+  closeWorkspaceTab,
+  createWorkspaceTabs,
+  currentWorkspaceLocation,
+  moveActiveWorkspaceTabHistory,
+  recordActiveWorkspaceLocation,
   workspaceLocationFrom,
   workspaceLocationKey,
   type WorkspaceLocation,
@@ -397,8 +402,8 @@ export default function App() {
   );
   const [selectedSeriesId, setSelectedSeriesId] = React.useState('');
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const [workspaceNavigationHistory, setWorkspaceNavigationHistory] = React.useState(
-    () => createWorkspaceNavigationHistory({ kind: 'dashboard' }),
+  const [workspaceTabs, setWorkspaceTabs] = React.useState(
+    () => createWorkspaceTabs({ kind: 'dashboard' }),
   );
   const [creatingProject, setCreatingProject] = React.useState(false);
   const [newProjectTitle, setNewProjectTitle] = React.useState('');
@@ -480,8 +485,8 @@ export default function App() {
       }
       return;
     }
-    setWorkspaceNavigationHistory((current) => (
-      recordWorkspaceLocation(current, workspaceLocation)
+    setWorkspaceTabs((current) => (
+      recordActiveWorkspaceLocation(current, workspaceLocation)
     ));
   }, [workspaceLocation, workspaceLocationId]);
 
@@ -520,18 +525,65 @@ export default function App() {
     setContentEditorOpen(true);
   }, [screen]);
 
+  const restoreRecordedWorkspaceLocation = React.useCallback((location: WorkspaceLocation) => {
+    const destinationKey = workspaceLocationKey(location);
+    pendingWorkspaceLocationKeyRef.current = destinationKey === workspaceLocationId
+      ? null
+      : destinationKey;
+    restoreWorkspaceLocation(location);
+  }, [restoreWorkspaceLocation, workspaceLocationId]);
+
   const moveWorkspaceHistory = React.useCallback((direction: -1 | 1) => {
-    const nextHistory = moveWorkspaceNavigationHistory(workspaceNavigationHistory, direction);
-    if (nextHistory === workspaceNavigationHistory) return;
-    const destination = nextHistory.entries[nextHistory.index];
+    const nextTabs = moveActiveWorkspaceTabHistory(workspaceTabs, direction);
+    if (nextTabs === workspaceTabs) return;
+    const destination = activeWorkspaceLocation(nextTabs);
     if (!destination) return;
-    pendingWorkspaceLocationKeyRef.current = workspaceLocationKey(destination);
-    setWorkspaceNavigationHistory(nextHistory);
-    restoreWorkspaceLocation(destination);
-  }, [restoreWorkspaceLocation, workspaceNavigationHistory]);
+    setWorkspaceTabs(nextTabs);
+    restoreRecordedWorkspaceLocation(destination);
+  }, [restoreRecordedWorkspaceLocation, workspaceTabs]);
+
+  const selectWorkspaceTab = React.useCallback((tabId: string) => {
+    const nextTabs = activateWorkspaceTab(workspaceTabs, tabId);
+    if (nextTabs === workspaceTabs) return;
+    const destination = activeWorkspaceLocation(nextTabs);
+    if (!destination) return;
+    setWorkspaceTabs(nextTabs);
+    restoreRecordedWorkspaceLocation(destination);
+  }, [restoreRecordedWorkspaceLocation, workspaceTabs]);
+
+  const createWorkspaceTab = React.useCallback(() => {
+    const nextTabs = addWorkspaceTab(workspaceTabs);
+    const destination = activeWorkspaceLocation(nextTabs);
+    if (!destination) return;
+    setWorkspaceTabs(nextTabs);
+    restoreRecordedWorkspaceLocation(destination);
+  }, [restoreRecordedWorkspaceLocation, workspaceTabs]);
+
+  const closeTitlebarTab = React.useCallback((tabId: string) => {
+    const nextTabs = closeWorkspaceTab(workspaceTabs, tabId);
+    if (nextTabs === workspaceTabs) return;
+    const activeTabChanged = nextTabs.activeTabId !== workspaceTabs.activeTabId;
+    setWorkspaceTabs(nextTabs);
+    if (!activeTabChanged) return;
+    const destination = activeWorkspaceLocation(nextTabs);
+    if (destination) restoreRecordedWorkspaceLocation(destination);
+  }, [restoreRecordedWorkspaceLocation, workspaceTabs]);
 
   React.useEffect(() => {
     const handleWindowNavigationShortcut = (event: KeyboardEvent) => {
+      const commandKey = event.metaKey || event.ctrlKey;
+      const shortcutKey = event.key.toLowerCase();
+      if (commandKey && shortcutKey === 't') {
+        event.preventDefault();
+        createWorkspaceTab();
+        return;
+      }
+      if (commandKey && shortcutKey === 'w' && workspaceTabs.tabs.length > 1) {
+        event.preventDefault();
+        closeTitlebarTab(workspaceTabs.activeTabId);
+        return;
+      }
+
       const target = event.target;
       if (
         target instanceof HTMLInputElement
@@ -550,7 +602,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleWindowNavigationShortcut);
     return () => window.removeEventListener('keydown', handleWindowNavigationShortcut);
-  }, [moveWorkspaceHistory]);
+  }, [closeTitlebarTab, createWorkspaceTab, moveWorkspaceHistory, workspaceTabs]);
 
   const activeDocuments = React.useMemo(
     () => filterResourceDocuments(documents, { view: 'active' }),
@@ -2982,13 +3034,53 @@ export default function App() {
     };
   }, [versionScope, documents, dirtyIds.size]);
 
+  const workspaceTitlebarTabs = React.useMemo(() => workspaceTabs.tabs.map((tab) => {
+    const location = currentWorkspaceLocation(tab.history);
+    if (!location) {
+      return { id: tab.id, kind: 'dashboard' as const, label: 'Overview' };
+    }
+
+    if (location.kind === 'dashboard') {
+      return { id: tab.id, kind: location.kind, label: 'Overview' };
+    }
+    if (location.kind === 'settings') {
+      return { id: tab.id, kind: location.kind, label: 'Settings' };
+    }
+    if (location.kind === 'shelf') {
+      return {
+        id: tab.id,
+        kind: location.kind,
+        label: entityMeta[location.entityFilter]?.label || 'Workspace',
+      };
+    }
+    if (location.kind === 'series') {
+      const series = displayEpisodeSeries.find((candidate) => (
+        `series:${candidate.id}` === location.seriesId
+      ));
+      return {
+        id: tab.id,
+        kind: location.kind,
+        label: series?.title || 'Series',
+      };
+    }
+
+    const document = documents.find((candidate) => candidate.id === location.documentId);
+    return {
+      id: tab.id,
+      kind: location.kind,
+      label: document?.title || 'Editor',
+      dirty: document?.translations.some((translation) => dirtyIds.has(translation.id)) || false,
+    };
+  }), [dirtyIds, displayEpisodeSeries, documents, workspaceTabs.tabs]);
+
   return (
     <div className={`shell ${sidebarOpen && screen !== 'settings' ? 'sidebar-open' : ''} ${screen === 'settings' ? 'settings-open' : ''} ${desktopWindowChromeClassName}`}>
       <DesktopTitlebar
-        title="Silan-Viking"
         sidebarOpen={sidebarOpen}
-        canGoBack={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, -1)}
-        canGoForward={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, 1)}
+        canGoBack={canMoveActiveWorkspaceTabHistory(workspaceTabs, -1)}
+        canGoForward={canMoveActiveWorkspaceTabHistory(workspaceTabs, 1)}
+        tabs={workspaceTitlebarTabs}
+        activeTabId={workspaceTabs.activeTabId}
         onSidebarToggle={() => {
           if (screen === 'settings') {
             closeWorkspaceSettings();
@@ -3000,6 +3092,9 @@ export default function App() {
         onBack={() => moveWorkspaceHistory(-1)}
         onForward={() => moveWorkspaceHistory(1)}
         onCompose={() => openCapture('moment')}
+        onTabSelect={selectWorkspaceTab}
+        onTabClose={closeTitlebarTab}
+        onNewTab={createWorkspaceTab}
       />
       {screen !== 'settings' && (
         <WorkspaceSidebar
