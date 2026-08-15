@@ -21,6 +21,9 @@ path = "_deploy/api/portfolio.db"
 port          = 7700
 enable_deploy = false
 
+[desktop]
+default_language = "en"
+
 [desktop.moments]
 profile_alignment = "right"
 background_image = "resources/resume/assets/nus-computing-cover.png"
