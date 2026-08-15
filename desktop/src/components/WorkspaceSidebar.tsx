@@ -4,7 +4,6 @@ import type { EntityFilter } from '../types';
 type SidebarGlyphName =
   | 'blog'
   | 'dashboard'
-  | 'menu'
   | 'moment'
   | 'project'
   | 'resume'
@@ -32,7 +31,6 @@ type WorkspaceSidebarProps = {
   onItemOpen: (item: EntityFilter) => void;
   onQueryChange: (query: string) => void;
   onSettingsOpen: () => void;
-  onToggle: () => void;
 };
 
 const glyphForItem = (item: EntityFilter): SidebarGlyphName => {
@@ -67,13 +65,6 @@ function SidebarGlyph({
       aria-hidden="true"
       focusable="false"
     >
-      {name === 'menu' && (
-        <>
-          <path d="M4 5.25h12" />
-          <path d="M4 10h12" />
-          <path d="M4 14.75h12" />
-        </>
-      )}
       {name === 'dashboard' && (
         <>
           <rect x="3.25" y="3.25" width="5.25" height="5.25" rx="1" />
@@ -144,89 +135,76 @@ export function WorkspaceSidebar({
   onItemOpen,
   onQueryChange,
   onSettingsOpen,
-  onToggle,
 }: WorkspaceSidebarProps) {
   return (
-    <>
-      <button
-        type="button"
-        className="sidebar-toggle"
-        onClick={onToggle}
-        aria-label={open ? 'Hide sidebar' : 'Show sidebar'}
-        aria-expanded={open}
-      >
-        <SidebarGlyph name="menu" size={16} />
-      </button>
+    <aside className={`sidebar ${open ? 'open' : ''}`} aria-label="Workspace sidebar">
+      <header className="brand">
+        <div className="brand-avatar" data-empty={!avatarUrl}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt="" aria-hidden="true" />
+            : <span aria-hidden="true">{avatarLabel}</span>}
+        </div>
+        <div className="brand-copy">
+          <div className="brand-title">{displayName}</div>
+          <div className="brand-subtitle">Silan-Viking workspace</div>
+        </div>
+      </header>
 
-      <aside className={`sidebar ${open ? 'open' : ''}`} aria-label="Workspace sidebar">
-        <header className="brand">
-          <div className="brand-avatar" data-empty={!avatarUrl}>
-            {avatarUrl
-              ? <img src={avatarUrl} alt="" aria-hidden="true" />
-              : <span aria-hidden="true">{avatarLabel}</span>}
-          </div>
-          <div className="brand-copy">
-            <div className="brand-title">{displayName}</div>
-            <div className="brand-subtitle">Silan-Viking workspace</div>
-          </div>
-        </header>
+      <nav className="entity-nav" aria-label="Workspace navigation">
+        <div className="sidebar-section-label">Workspace</div>
+        <button
+          type="button"
+          className={`entity-button ${dashboardActive ? 'active' : ''}`}
+          onClick={onDashboardOpen}
+          aria-current={dashboardActive ? 'page' : undefined}
+        >
+          <span className="entity-button-icon"><SidebarGlyph name="dashboard" /></span>
+          <span>Dashboard</span>
+          <strong>{attentionCount}</strong>
+        </button>
 
-        <nav className="entity-nav" aria-label="Workspace navigation">
-          <div className="sidebar-section-label">Workspace</div>
-          <button
-            type="button"
-            className={`entity-button ${dashboardActive ? 'active' : ''}`}
-            onClick={onDashboardOpen}
-            aria-current={dashboardActive ? 'page' : undefined}
-          >
-            <span className="entity-button-icon"><SidebarGlyph name="dashboard" /></span>
-            <span>Dashboard</span>
-            <strong>{attentionCount}</strong>
-          </button>
-
-          <div className="sidebar-section-label sidebar-section-label-library">Library</div>
-          {items.map((item) => {
-            const active = activeItem === item.id;
-            return (
-              <button
-                type="button"
-                key={item.id}
-                className={`entity-button ${active ? 'active' : ''}`}
-                onClick={() => onItemOpen(item.id)}
-                aria-current={active ? 'page' : undefined}
-              >
-                <span className="entity-button-icon"><SidebarGlyph name={glyphForItem(item.id)} /></span>
-                <span>{item.label}</span>
-                <strong>{item.count}</strong>
-              </button>
-            );
-          })}
-        </nav>
-
-        <footer className="sidebar-footer">
-          <label className="search">
-            <SidebarGlyph name="search" size={16} />
-            <input
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Search workspace"
-              aria-label="Search workspace"
-            />
-          </label>
-          <div className="source-note">
-            <SidebarGlyph name="source" size={15} />
-            <span><strong>content/</strong> is the source</span>
+        <div className="sidebar-section-label sidebar-section-label-library">Library</div>
+        {items.map((item) => {
+          const active = activeItem === item.id;
+          return (
             <button
               type="button"
-              onClick={onSettingsOpen}
-              title="Workspace settings"
-              aria-label="Workspace settings"
+              key={item.id}
+              className={`entity-button ${active ? 'active' : ''}`}
+              onClick={() => onItemOpen(item.id)}
+              aria-current={active ? 'page' : undefined}
             >
-              <SidebarGlyph name="settings" size={16} />
+              <span className="entity-button-icon"><SidebarGlyph name={glyphForItem(item.id)} /></span>
+              <span>{item.label}</span>
+              <strong>{item.count}</strong>
             </button>
-          </div>
-        </footer>
-      </aside>
-    </>
+          );
+        })}
+      </nav>
+
+      <footer className="sidebar-footer">
+        <label className="search">
+          <SidebarGlyph name="search" size={16} />
+          <input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Search workspace"
+            aria-label="Search workspace"
+          />
+        </label>
+        <div className="source-note">
+          <SidebarGlyph name="source" size={15} />
+          <span><strong>content/</strong> is the source</span>
+          <button
+            type="button"
+            onClick={onSettingsOpen}
+            title="Workspace settings"
+            aria-label="Workspace settings"
+          >
+            <SidebarGlyph name="settings" size={16} />
+          </button>
+        </div>
+      </footer>
+    </aside>
   );
 }

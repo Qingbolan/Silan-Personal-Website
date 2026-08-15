@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "node scripts/start-dev-server.mjs",
     "build": "tsc && vite build",
-    "test": "npm run test:resource-visibility && npm run test:cover-generation && npm run test:language-review && npm run test:editor-workflows && npm run test:onboarding && npm run test:lexical-editor",
+    "test": "npm run test:resource-visibility && npm run test:navigation && npm run test:desktop-window && npm run test:cover-generation && npm run test:language-review && npm run test:editor-workflows && npm run test:onboarding && npm run test:lexical-editor",
     "test:cover-generation": "node --experimental-strip-types --test src/lib/coverGeneration.test.mjs",
     "test:resource-visibility": "node --experimental-strip-types --test src/lib/resourceVisibility.test.mjs",
+    "test:navigation": "node --experimental-strip-types --test src/lib/workspaceNavigation.test.mjs",
+    "test:desktop-window": "node --experimental-strip-types --test src/lib/desktopWindow.test.mjs",
     "test:language-review": "node --experimental-strip-types --test src/lib/languageReviewWorkflow.test.mjs",
     "test:editor-workflows": "node --experimental-strip-types --test src/lib/markdownBlockDiff.test.mjs src/lib/translationSyncWorkflow.test.mjs",
     "test:onboarding": "node --experimental-strip-types --test src/lib/workspaceOnboardingModel.test.mjs",

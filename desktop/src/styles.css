@@ -72,6 +72,7 @@
   --editor-rail-fg-muted: rgba(255, 255, 255, 0.52);
   --editor-rail-fg-strong: #ffffff;
   --editor-rail-focus: rgba(255, 255, 255, 0.62);
+  --desktop-titlebar-height: 52px;
 }
 
 html,
@@ -858,28 +859,80 @@ textarea:focus-visible {
 }
 
 .shell {
+  --workspace-sidebar-width: 256px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   width: 100%;
-  height: 100vh;
+  height: 100%;
   min-width: 680px;
   overflow: hidden;
   transition: grid-template-columns 170ms ease;
 }
 
 .shell.sidebar-open {
-  grid-template-columns: 256px minmax(0, 1fr);
+  grid-template-columns: var(--workspace-sidebar-width) minmax(0, 1fr);
 }
 
 .shell.settings-open {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.sidebar-toggle {
+.desktop-titlebar-enabled {
+  --window-titlebar-surface: #151515;
+  --window-titlebar-sidebar-surface: #272c32;
+  --window-titlebar-border: #303030;
+  --window-titlebar-context-border: #353535;
+  --window-titlebar-context-left: 124px;
+  --window-titlebar-controls-width: 138px;
+}
+
+.desktop-platform-macos {
+  --desktop-titlebar-height: 52px;
+  --window-titlebar-context-left: 188px;
+  --window-titlebar-controls-width: 0px;
+}
+
+.desktop-platform-windows,
+.desktop-platform-linux {
+  --desktop-titlebar-height: 44px;
+}
+
+.shell.desktop-titlebar-enabled {
+  grid-template-rows: var(--desktop-titlebar-height) minmax(0, 1fr);
+}
+
+.workspace-onboarding.desktop-titlebar-enabled {
+  grid-template-rows: var(--desktop-titlebar-height) minmax(0, 1fr);
+}
+
+.workspace-onboarding.desktop-titlebar-enabled .onboarding-rail,
+.workspace-onboarding.desktop-titlebar-enabled .onboarding-stage {
+  grid-row: 2;
+}
+
+.desktop-titlebar {
+  display: contents;
+}
+
+.desktop-titlebar-sidebar-surface,
+.desktop-titlebar-drag-region,
+.desktop-titlebar-context {
+  display: none;
+}
+
+.window-navigation {
   position: fixed;
   top: 17px;
   left: 14px;
   z-index: 10;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.window-navigation-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -889,35 +942,175 @@ textarea:focus-visible {
   border-radius: 4px;
   padding: 0;
   background: #0a0a0a;
-  color: rgba(255, 255, 255, 0.68);
+  color: inherit;
   transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
-.sidebar-toggle:hover {
+.window-navigation-button:hover:not(:disabled) {
   border-color: #393939;
   background: #171717;
   color: #fff;
 }
 
-.sidebar-toggle:active {
+.window-navigation-button:active:not(:disabled) {
   transform: scale(0.96);
 }
 
-.shell.sidebar-open .sidebar-toggle {
+.window-navigation-button:disabled {
+  cursor: default;
+  opacity: 0.28;
+}
+
+.desktop-titlebar-enabled .window-navigation {
+  position: absolute;
+  top: calc((var(--desktop-titlebar-height) - 28px) / 2);
+  left: 14px;
+  z-index: 3;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.desktop-platform-macos .window-navigation {
+  left: 78px;
+}
+
+.desktop-titlebar-enabled .window-navigation-button {
   border-color: transparent;
   background: transparent;
 }
 
-.shell.sidebar-open .sidebar-toggle:hover {
-  border-color: #292929;
-  background: #151515;
+.desktop-titlebar-enabled .window-navigation-button:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.desktop-titlebar-enabled > .desktop-titlebar {
+  position: relative;
+  z-index: 8;
+  display: block;
+  min-width: 0;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  overflow: hidden;
+  border-bottom: 1px solid var(--window-titlebar-border);
+  background: var(--window-titlebar-surface);
+}
+
+.desktop-titlebar-enabled > .desktop-titlebar .desktop-titlebar-sidebar-surface {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  width: 0;
+  background: var(--window-titlebar-sidebar-surface);
+  transition: width 170ms ease;
+}
+
+.shell.desktop-titlebar-enabled.sidebar-open .desktop-titlebar-sidebar-surface {
+  width: var(--workspace-sidebar-width);
+}
+
+.desktop-titlebar-enabled > .desktop-titlebar .desktop-titlebar-drag-region {
+  position: absolute;
+  inset: 0;
+  display: block;
+  z-index: 1;
+}
+
+.desktop-titlebar-enabled > .desktop-titlebar .desktop-titlebar-context {
+  position: absolute;
+  top: 0;
+  right: var(--window-titlebar-controls-width);
+  bottom: 0;
+  left: var(--window-titlebar-context-left);
+  z-index: 2;
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+  border-left: 1px solid var(--window-titlebar-context-border);
+  padding: 0 22px;
+  color: rgba(255, 255, 255, 0.68);
+  pointer-events: none;
+  transition: left 170ms ease;
+}
+
+.shell.desktop-titlebar-enabled.sidebar-open .desktop-titlebar-context {
+  left: var(--workspace-sidebar-width);
+}
+
+.desktop-titlebar-enabled > .desktop-titlebar[data-workspace-navigation='hidden'] .desktop-titlebar-context {
+  left: 16px;
+  border-left: 0;
+  padding-left: 0;
+}
+
+.desktop-platform-macos > .desktop-titlebar[data-workspace-navigation='hidden'] .desktop-titlebar-context {
+  left: 78px;
+}
+
+.desktop-titlebar-context strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 17px;
+  font-weight: 540;
+  letter-spacing: -0.012em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-titlebar-more {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+
+.desktop-window-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  align-items: stretch;
+}
+
+.desktop-window-controls button {
+  display: grid;
+  width: 46px;
+  height: 100%;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+  transition: color 100ms ease, background 100ms ease;
+}
+
+.desktop-window-controls button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.desktop-window-controls .desktop-window-close:hover {
+  background: #c42b1c;
+}
+
+.desktop-window-controls button:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.8);
+  outline-offset: -2px;
 }
 
 .sidebar {
   position: relative;
   display: none;
-  width: 256px;
+  width: var(--workspace-sidebar-width);
   min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
   flex-direction: column;
   border-right: 1px solid #202020;
   background: #090909;
@@ -929,7 +1122,20 @@ textarea:focus-visible {
   display: flex;
 }
 
+.shell.desktop-titlebar-enabled .sidebar,
+.shell.desktop-titlebar-enabled .main {
+  grid-row: 2;
+}
+
+.shell.desktop-titlebar-enabled .brand {
+  padding-left: 14px;
+}
+
 .shell.sidebar-open .topbar {
+  padding-left: 24px;
+}
+
+.shell.desktop-titlebar-enabled .topbar {
   padding-left: 24px;
 }
 
@@ -1102,7 +1308,8 @@ textarea:focus-visible {
   color: rgba(255, 255, 255, 0.58);
 }
 
-.sidebar-glyph {
+.sidebar-glyph,
+.window-navigation-glyph {
   display: block;
   overflow: visible;
   stroke: currentColor;
@@ -1198,7 +1405,7 @@ textarea:focus-visible {
 }
 
 .sidebar button:focus-visible,
-.sidebar-toggle:focus-visible {
+.window-navigation-button:focus-visible {
   outline: 1px solid rgba(255, 255, 255, 0.72);
   outline-offset: 2px;
 }
@@ -1207,9 +1414,15 @@ textarea:focus-visible {
   position: relative;
   display: flex;
   min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
   flex-direction: column;
   overflow: hidden;
   background: var(--ds-color-canvas);
+}
+
+.shell.sidebar-open .main {
+  grid-column: 2;
 }
 
 .main-moments {
@@ -5820,10 +6033,10 @@ h1 {
 
 @media (max-width: 800px) {
   .sidebar {
-    width: min(280px, 82vw);
+    width: var(--workspace-sidebar-width);
   }
 
-  .brand {
+  .shell:not(.desktop-titlebar-enabled) .brand {
     padding-left: 52px;
   }
 

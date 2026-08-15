@@ -16,7 +16,8 @@
         "label": "main",
         "title": "Silan Context System",
         "width": 1440,
-        "height": 980
+        "height": 980,
+        "decorations": false
       }
     ],
     "security": {
@@ -33,10 +34,6 @@
       "icons/icon.icns",
       "icons/icon.ico",
       "icons/icon.png"
-    ],
-    "targets": ["app"],
-    "macOS": {
-      "bundleName": "Silan Context System"
-    }
+    ]
   }
 }

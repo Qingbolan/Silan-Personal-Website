@@ -16,12 +16,14 @@ import {
 import { Badge } from './ds/Badge';
 import { Button } from './ds/Button';
 import { Field, Input } from './ds/Input';
+import { DesktopTitlebar } from './DesktopTitlebar';
 import {
   authenticationLabel,
   conciseOnboardingError,
   defaultWorkspaceDestination,
   type GitAuthenticationKind,
 } from '../lib/workspaceOnboardingModel';
+import { desktopWindowChromeClassName } from '../lib/desktopWindow';
 
 type BootstrapStatus = {
   state: 'ready' | 'needs_workspace' | 'invalid_workspace' | 'deployment_key';
@@ -241,7 +243,14 @@ export function WorkspaceBootstrapGate({ children }: { children: React.ReactNode
   };
 
   return (
-    <main className="workspace-onboarding" aria-busy={phase === 'checking' || phase === 'joining' || phase === 'completing'}>
+    <main
+      className={`workspace-onboarding ${desktopWindowChromeClassName}`}
+      aria-busy={phase === 'checking' || phase === 'joining' || phase === 'completing'}
+    >
+      <DesktopTitlebar
+        title="Silan Context System"
+        showWorkspaceNavigation={false}
+      />
       <div className="workspace-onboarding-ambient" aria-hidden="true" />
       <aside className="onboarding-rail">
         <div className="onboarding-brand">

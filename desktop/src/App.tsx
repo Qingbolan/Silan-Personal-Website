@@ -75,6 +75,7 @@ import {
   useEditorAssistSlashCommands,
 } from './components/editor/useEditorAssistSlashCommands';
 import { NewProjectDialog } from './components/NewProjectDialog';
+import { DesktopTitlebar } from './components/DesktopTitlebar';
 import { WorkspaceSettingsPage } from './components/WorkspaceSettingsPage';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { ResumePage, ResumeMediaField } from './components/ResumePage';
@@ -167,6 +168,16 @@ import {
   isArchivedResource,
 } from './lib/resourceVisibility';
 import { useTranslationSyncWorkflow } from './lib/translationSyncWorkflow';
+import { desktopWindowChromeClassName } from './lib/desktopWindow';
+import {
+  canMoveWorkspaceNavigationHistory,
+  createWorkspaceNavigationHistory,
+  moveWorkspaceNavigationHistory,
+  recordWorkspaceLocation,
+  workspaceLocationFrom,
+  workspaceLocationKey,
+  type WorkspaceLocation,
+} from './lib/workspaceNavigation';
 import type {
   CapturePhase,
   CaptureTarget,
@@ -386,6 +397,9 @@ export default function App() {
   );
   const [selectedSeriesId, setSelectedSeriesId] = React.useState('');
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [workspaceNavigationHistory, setWorkspaceNavigationHistory] = React.useState(
+    () => createWorkspaceNavigationHistory({ kind: 'dashboard' }),
+  );
   const [creatingProject, setCreatingProject] = React.useState(false);
   const [newProjectTitle, setNewProjectTitle] = React.useState('');
   const [newProjectSubmitting, setNewProjectSubmitting] = React.useState(false);
@@ -429,6 +443,7 @@ export default function App() {
   const captureInputRef = React.useRef<MarkdownEditorHandle | null>(null);
   const newProjectInputRef = React.useRef<HTMLInputElement | null>(null);
   const settingsReturnScreenRef = React.useRef<'dashboard' | 'content'>('dashboard');
+  const pendingWorkspaceLocationKeyRef = React.useRef<string | null>(null);
   const languageReview = useLanguageReviewWorkflow();
   const translationSync = useTranslationSyncWorkflow();
   const syncingTranslation = (
@@ -437,6 +452,105 @@ export default function App() {
   )
     ? translationSync.state.key || ''
     : '';
+
+  const workspaceLocation = React.useMemo(() => workspaceLocationFrom({
+    screen,
+    entityFilter,
+    selectedDocumentId: selectedId,
+    selectedSeriesId,
+    editorOpen: contentEditorOpen,
+    railMode: contentRailMode,
+    railPanel: contentRailPanel,
+  }), [
+    contentEditorOpen,
+    contentRailMode,
+    contentRailPanel,
+    entityFilter,
+    screen,
+    selectedId,
+    selectedSeriesId,
+  ]);
+  const workspaceLocationId = workspaceLocationKey(workspaceLocation);
+
+  React.useEffect(() => {
+    const pendingLocationKey = pendingWorkspaceLocationKeyRef.current;
+    if (pendingLocationKey) {
+      if (pendingLocationKey === workspaceLocationId) {
+        pendingWorkspaceLocationKeyRef.current = null;
+      }
+      return;
+    }
+    setWorkspaceNavigationHistory((current) => (
+      recordWorkspaceLocation(current, workspaceLocation)
+    ));
+  }, [workspaceLocation, workspaceLocationId]);
+
+  const restoreWorkspaceLocation = React.useCallback((location: WorkspaceLocation) => {
+    if (location.kind === 'settings') {
+      settingsReturnScreenRef.current = screen === 'content' ? 'content' : 'dashboard';
+      setSidebarOpen(false);
+      setScreen('settings');
+      return;
+    }
+
+    if (location.kind === 'dashboard') {
+      setContentEditorOpen(false);
+      setSelectedSeriesId('');
+      setScreen('dashboard');
+      return;
+    }
+
+    setEntityFilter(location.entityFilter);
+    setScreen('content');
+    if (location.kind === 'shelf') {
+      setContentEditorOpen(false);
+      setSelectedSeriesId('');
+      return;
+    }
+    if (location.kind === 'series') {
+      setContentEditorOpen(false);
+      setSelectedSeriesId(location.seriesId);
+      return;
+    }
+
+    setSelectedId(location.documentId);
+    setSelectedSeriesId(location.seriesId);
+    setContentRailMode(location.railMode);
+    setContentRailPanel(location.railPanel);
+    setContentEditorOpen(true);
+  }, [screen]);
+
+  const moveWorkspaceHistory = React.useCallback((direction: -1 | 1) => {
+    const nextHistory = moveWorkspaceNavigationHistory(workspaceNavigationHistory, direction);
+    if (nextHistory === workspaceNavigationHistory) return;
+    const destination = nextHistory.entries[nextHistory.index];
+    if (!destination) return;
+    pendingWorkspaceLocationKeyRef.current = workspaceLocationKey(destination);
+    setWorkspaceNavigationHistory(nextHistory);
+    restoreWorkspaceLocation(destination);
+  }, [restoreWorkspaceLocation, workspaceNavigationHistory]);
+
+  React.useEffect(() => {
+    const handleWindowNavigationShortcut = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || (target instanceof HTMLElement && target.isContentEditable)
+      ) return;
+
+      const back = (event.altKey && event.key === 'ArrowLeft')
+        || (event.metaKey && event.key === '[');
+      const forward = (event.altKey && event.key === 'ArrowRight')
+        || (event.metaKey && event.key === ']');
+      if (!back && !forward) return;
+      event.preventDefault();
+      moveWorkspaceHistory(back ? -1 : 1);
+    };
+
+    window.addEventListener('keydown', handleWindowNavigationShortcut);
+    return () => window.removeEventListener('keydown', handleWindowNavigationShortcut);
+  }, [moveWorkspaceHistory]);
 
   const activeDocuments = React.useMemo(
     () => filterResourceDocuments(documents, { view: 'active' }),
@@ -2869,7 +2983,29 @@ export default function App() {
   }, [versionScope, documents, dirtyIds.size]);
 
   return (
-    <div className={`shell ${sidebarOpen && screen !== 'settings' ? 'sidebar-open' : ''} ${screen === 'settings' ? 'settings-open' : ''}`}>
+    <div className={`shell ${sidebarOpen && screen !== 'settings' ? 'sidebar-open' : ''} ${screen === 'settings' ? 'settings-open' : ''} ${desktopWindowChromeClassName}`}>
+      <DesktopTitlebar
+        title={screen === 'dashboard'
+          ? 'Overview'
+          : screen === 'settings'
+            ? 'Settings'
+            : editingSeries?.title
+              || (contentEditorOpen ? selected?.title : selectedSeries?.title)
+              || currentShelf.label}
+        sidebarOpen={sidebarOpen}
+        canGoBack={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, -1)}
+        canGoForward={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, 1)}
+        onSidebarToggle={() => {
+          if (screen === 'settings') {
+            closeWorkspaceSettings();
+            setSidebarOpen(true);
+            return;
+          }
+          setSidebarOpen((open) => !open);
+        }}
+        onBack={() => moveWorkspaceHistory(-1)}
+        onForward={() => moveWorkspaceHistory(1)}
+      />
       {screen !== 'settings' && (
         <WorkspaceSidebar
           open={sidebarOpen}
@@ -2891,7 +3027,6 @@ export default function App() {
           onItemOpen={openShelf}
           onQueryChange={setQuery}
           onSettingsOpen={openWorkspaceSettings}
-          onToggle={() => setSidebarOpen((open) => !open)}
         />
       )}
 

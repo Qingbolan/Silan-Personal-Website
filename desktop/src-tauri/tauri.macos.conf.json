@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Silan Context System",
+        "width": 1440,
+        "height": 980,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 14,
+          "y": 16
+        }
+      }
+    ]
+  },
+  "bundle": {
+    "targets": ["app"],
+    "macOS": {
+      "bundleName": "Silan Context System"
+    }
+  }
+}
