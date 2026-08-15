@@ -2985,13 +2985,7 @@ export default function App() {
   return (
     <div className={`shell ${sidebarOpen && screen !== 'settings' ? 'sidebar-open' : ''} ${screen === 'settings' ? 'settings-open' : ''} ${desktopWindowChromeClassName}`}>
       <DesktopTitlebar
-        title={screen === 'dashboard'
-          ? 'Overview'
-          : screen === 'settings'
-            ? 'Settings'
-            : editingSeries?.title
-              || (contentEditorOpen ? selected?.title : selectedSeries?.title)
-              || currentShelf.label}
+        title="Silan-Viking"
         sidebarOpen={sidebarOpen}
         canGoBack={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, -1)}
         canGoForward={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, 1)}
@@ -3005,6 +2999,7 @@ export default function App() {
         }}
         onBack={() => moveWorkspaceHistory(-1)}
         onForward={() => moveWorkspaceHistory(1)}
+        onCompose={() => openCapture('moment')}
       />
       {screen !== 'settings' && (
         <WorkspaceSidebar

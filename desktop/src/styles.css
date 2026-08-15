@@ -879,17 +879,17 @@ textarea:focus-visible {
 }
 
 .desktop-titlebar-enabled {
-  --window-titlebar-surface: #151515;
+  --window-titlebar-surface: #171717;
   --window-titlebar-sidebar-surface: #272c32;
   --window-titlebar-border: #303030;
   --window-titlebar-context-border: #353535;
-  --window-titlebar-context-left: 124px;
+  --window-titlebar-context-left: 156px;
   --window-titlebar-controls-width: 138px;
 }
 
 .desktop-platform-macos {
   --desktop-titlebar-height: 52px;
-  --window-titlebar-context-left: 188px;
+  --window-titlebar-context-left: 220px;
   --window-titlebar-controls-width: 0px;
 }
 
@@ -1025,10 +1025,9 @@ textarea:focus-visible {
   z-index: 2;
   display: flex;
   min-width: 0;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  border-left: 1px solid var(--window-titlebar-context-border);
-  padding: 0 22px;
+  padding: 0 18px;
   color: rgba(255, 255, 255, 0.68);
   pointer-events: none;
   transition: left 170ms ease;
@@ -1036,11 +1035,22 @@ textarea:focus-visible {
 
 .shell.desktop-titlebar-enabled.sidebar-open .desktop-titlebar-context {
   left: var(--workspace-sidebar-width);
+  border-left: 1px solid var(--window-titlebar-context-border);
+}
+
+.shell.desktop-titlebar-enabled:not(.sidebar-open) > .desktop-titlebar[data-workspace-navigation='visible'] .desktop-titlebar-context::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 1px;
+  height: 20px;
+  content: '';
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-50%);
 }
 
 .desktop-titlebar-enabled > .desktop-titlebar[data-workspace-navigation='hidden'] .desktop-titlebar-context {
   left: 16px;
-  border-left: 0;
   padding-left: 0;
 }
 
@@ -1052,19 +1062,24 @@ textarea:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: rgba(255, 255, 255, 0.96);
-  font-size: 17px;
-  font-weight: 540;
+  font-size: 16px;
+  font-weight: 520;
   letter-spacing: -0.012em;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.desktop-titlebar-context > .window-navigation-glyph {
+  width: 16px;
+  height: 16px;
+}
+
 .desktop-titlebar-more {
   flex: 0 0 auto;
   color: rgba(255, 255, 255, 0.48);
-  font-size: 13px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  letter-spacing: 0.1em;
 }
 
 .desktop-window-controls {

@@ -10,6 +10,7 @@ type WorkspaceNavigationTitlebarProps = {
   onSidebarToggle: () => void;
   onBack: () => void;
   onForward: () => void;
+  onCompose: () => void;
 };
 
 type StaticTitlebarProps = {
@@ -23,7 +24,7 @@ type DesktopTitlebarProps = {
 function TitlebarGlyph({
   name,
 }: {
-  name: 'sidebar' | 'back' | 'forward' | 'library' | 'minimize' | 'maximize' | 'close';
+  name: 'sidebar' | 'back' | 'forward' | 'compose' | 'library' | 'minimize' | 'maximize' | 'close';
 }) {
   return (
     <svg
@@ -43,6 +44,12 @@ function TitlebarGlyph({
       )}
       {name === 'back' && <path d="m12.5 4.5-5.5 5.5 5.5 5.5" />}
       {name === 'forward' && <path d="m7.5 4.5 5.5 5.5-5.5 5.5" />}
+      {name === 'compose' && (
+        <>
+          <path d="M10.75 4H5.25A1.25 1.25 0 0 0 4 5.25v9.5A1.25 1.25 0 0 0 5.25 16h9.5A1.25 1.25 0 0 0 16 14.75V9.5" />
+          <path d="m9.25 11.75.35-2.1 5.65-5.65.75-.75 1.75.25 1.75 1s.25 1-.5 1.75L12.6 12.4l-2.1.35-1.25-1Z" />
+        </>
+      )}
       {name === 'library' && (
         <>
           <path d="M3.25 6.25h13.5v9.5a1 1 0 0 1-1 1H4.25a1 1 0 0 1-1-1v-9.5Z" />
@@ -104,6 +111,15 @@ export function DesktopTitlebar(props: DesktopTitlebarProps) {
             title="Go forward"
           >
             <TitlebarGlyph name="forward" />
+          </button>
+          <button
+            type="button"
+            className="window-navigation-button"
+            onClick={props.onCompose}
+            aria-label="Catch a moment"
+            title="Catch a moment"
+          >
+            <TitlebarGlyph name="compose" />
           </button>
         </nav>
       )}
