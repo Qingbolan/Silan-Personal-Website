@@ -863,10 +863,7 @@ textarea:focus-visible {
   --workspace-sidebar-surface: #090909;
   --workspace-sidebar-edge: #202020;
   --workspace-sidebar-divider: #1d1d1d;
-  --workspace-sidebar-control-border: #262626;
   --workspace-sidebar-control-hover-border: #333333;
-  --workspace-sidebar-control-focus-border: #555555;
-  --workspace-sidebar-control-fill: #0d0d0d;
   --workspace-sidebar-control-hover: #151515;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -891,10 +888,7 @@ textarea:focus-visible {
   --workspace-sidebar-surface: #272c32;
   --workspace-sidebar-edge: rgba(255, 255, 255, 0.1);
   --workspace-sidebar-divider: rgba(255, 255, 255, 0.08);
-  --workspace-sidebar-control-border: rgba(255, 255, 255, 0.12);
   --workspace-sidebar-control-hover-border: rgba(255, 255, 255, 0.2);
-  --workspace-sidebar-control-focus-border: rgba(255, 255, 255, 0.32);
-  --workspace-sidebar-control-fill: rgba(0, 0, 0, 0.12);
   --workspace-sidebar-control-hover: rgba(255, 255, 255, 0.07);
   --window-titlebar-border: #303030;
   --window-titlebar-context-left: 156px;
@@ -1311,63 +1305,9 @@ textarea:focus-visible {
 
 .sidebar-footer {
   display: grid;
-  gap: 9px;
   margin-top: auto;
-  padding: 11px 10px 10px;
+  padding: 10px;
   border-top: 1px solid var(--workspace-sidebar-divider);
-}
-
-.search {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  height: 34px;
-  padding: 0 9px;
-  border: 1px solid var(--workspace-sidebar-control-border);
-  border-radius: 4px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.46);
-  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
-}
-
-.search:hover {
-  border-color: var(--workspace-sidebar-control-hover-border);
-}
-
-.search:focus-within {
-  border-color: var(--workspace-sidebar-control-focus-border);
-  background: var(--workspace-sidebar-control-fill);
-  color: rgba(255, 255, 255, 0.74);
-}
-
-.search input {
-  min-width: 0;
-  width: 100%;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 11.5px;
-}
-
-.search input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.source-note {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 2px;
-  color: rgba(255, 255, 255, 0.32);
-  font-size: 10px;
-}
-
-.source-note strong {
-  color: rgba(255, 255, 255, 0.64);
-  font-family: var(--font-mono);
-  font-weight: 500;
 }
 
 .sidebar-account {
@@ -1404,7 +1344,7 @@ textarea:focus-visible {
   overflow: hidden;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 7px;
+  border-radius: 50%;
   background: rgba(0, 0, 0, 0.18);
   color: rgba(255, 255, 255, 0.86);
   font-family: var(--font-rounded);
@@ -6106,10 +6046,6 @@ h1 {
 }
 
 @media (max-width: 980px) {
-  .source-note {
-    display: none;
-  }
-
   .workspace {
     grid-template-columns: 220px minmax(0, 1fr);
   }

@@ -7,7 +7,6 @@ type SidebarGlyphName =
   | 'moment'
   | 'project'
   | 'resume'
-  | 'search'
   | 'settings'
   | 'source';
 
@@ -26,10 +25,8 @@ type WorkspaceSidebarProps = {
   avatarUrl: string;
   displayName: string;
   items: WorkspaceSidebarItem[];
-  query: string;
   onDashboardOpen: () => void;
   onItemOpen: (item: EntityFilter) => void;
-  onQueryChange: (query: string) => void;
   onSettingsOpen: () => void;
 };
 
@@ -99,12 +96,6 @@ function SidebarGlyph({
           <path d="M8.5 10.5v1.25h3V10.5" />
         </>
       )}
-      {name === 'search' && (
-        <>
-          <circle cx="8.75" cy="8.75" r="5.25" />
-          <path d="m12.75 12.75 3.75 3.75" />
-        </>
-      )}
       {name === 'source' && (
         <>
           <path d="M5 2.75h6l4 4v10.5H5V2.75Z" />
@@ -130,10 +121,8 @@ export function WorkspaceSidebar({
   avatarUrl,
   displayName,
   items,
-  query,
   onDashboardOpen,
   onItemOpen,
-  onQueryChange,
   onSettingsOpen,
 }: WorkspaceSidebarProps) {
   const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
@@ -215,19 +204,6 @@ export function WorkspaceSidebar({
       </nav>
 
       <footer className="sidebar-footer">
-        <label className="search">
-          <SidebarGlyph name="search" size={16} />
-          <input
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Search workspace"
-            aria-label="Search workspace"
-          />
-        </label>
-        <div className="source-note">
-          <SidebarGlyph name="source" size={15} />
-          <span><strong>content/</strong> is the source</span>
-        </div>
         <div className="sidebar-account" ref={accountMenuRef}>
           {accountMenuOpen && (
             <div

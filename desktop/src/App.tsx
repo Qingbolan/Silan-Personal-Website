@@ -3017,10 +3017,8 @@ export default function App() {
             label: entityMeta[filter].label,
             count: entityCounts.get(filter) || 0,
           }))}
-          query={query}
           onDashboardOpen={returnToDashboard}
           onItemOpen={openShelf}
-          onQueryChange={setQuery}
           onSettingsOpen={openWorkspaceSettings}
         />
       )}
