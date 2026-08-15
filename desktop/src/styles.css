@@ -993,6 +993,11 @@ textarea:focus-visible {
   background: transparent;
 }
 
+.desktop-titlebar-enabled .window-navigation-button .window-navigation-glyph {
+  width: 16px;
+  height: 16px;
+}
+
 .desktop-titlebar-enabled .window-navigation-button:hover:not(:disabled) {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.07);

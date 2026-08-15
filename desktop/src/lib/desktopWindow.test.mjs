@@ -62,6 +62,7 @@ test('Tauri configuration keeps macOS native traffic lights and gives other desk
   assert.equal(macOsConfig.app.windows[0].decorations, true);
   assert.equal(macOsConfig.app.windows[0].titleBarStyle, 'Overlay');
   assert.equal(macOsConfig.app.windows[0].hiddenTitle, true);
+  assert.deepEqual(macOsConfig.app.windows[0].trafficLightPosition, { x: 14, y: 26 });
   assert.deepEqual(macOsConfig.bundle.targets, ['app']);
   assert.equal(macOsConfig.bundle.macOS.bundleName, 'Silan Context System');
   assert.ok(permissions.includes('core:window:allow-close'));
