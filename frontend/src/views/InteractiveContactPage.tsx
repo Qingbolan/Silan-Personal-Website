@@ -24,6 +24,8 @@ import {
   Skeleton,
 } from '../components/ds';
 
+const TAB_PANEL_STACK_CLASS = 'mt-4 grid auto-rows-max content-start gap-2';
+
 /** A single tappable list row — title + one-line description. */
 const ListRow: React.FC<{
   title: string;
@@ -33,7 +35,7 @@ const ListRow: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className="group w-full rounded-ds-md border border-transparent bg-ds-surface-1 px-3 py-2.5 text-left transition-[background-color,border-color,transform] duration-ds-fast hover:border-ds-border hover:bg-ds-surface-2 active:scale-[0.99]"
+    className="group block h-auto w-full self-start rounded-ds-md border border-transparent bg-ds-surface-1 px-3 py-2.5 text-left transition-[background-color,border-color,transform] duration-ds-fast hover:border-ds-border hover:bg-ds-surface-2 active:scale-[0.99]"
   >
     <div className="line-clamp-1 text-ds-sm font-medium text-ds-fg group-hover:text-ds-primary">{title}</div>
     {description && <div className="mt-0.5 line-clamp-2 text-ds-xs leading-5 text-ds-fg-muted">{description}</div>}
@@ -249,7 +251,7 @@ const InteractiveContactPageContent: React.FC = () => {
 
               {/* Recent thoughts. */}
               {activeTab === 'thoughts' && (
-                <div className="mt-4 space-y-2">
+                <div className={TAB_PANEL_STACK_CLASS}>
                   {thoughtsResource.status === 'loading' ? (
                     <PanelLoading label={language === 'en' ? 'Loading recent moments' : '正在加载最新瞬间'} />
                   ) : thoughtsResource.status === 'error' ? (
@@ -289,7 +291,7 @@ const InteractiveContactPageContent: React.FC = () => {
 
               {/* Expected jobs. */}
               {activeTab === 'jobs' && (
-                <div className="mt-4 space-y-2">
+                <div className={TAB_PANEL_STACK_CLASS}>
                   {jobsResource.status === 'loading' ? (
                     <PanelLoading label={language === 'en' ? 'Loading preferred roles' : '正在加载期待职位'} />
                   ) : jobsResource.status === 'error' ? (
@@ -330,7 +332,7 @@ const InteractiveContactPageContent: React.FC = () => {
 
               {/* Quick contact. */}
               {activeTab === 'contact' && (
-                <div className="mt-4 space-y-3">
+                <div className="mt-4 grid auto-rows-max content-start gap-3">
                   {contactResource.status === 'loading' ? (
                     <PanelLoading label={language === 'en' ? 'Loading contact information' : '正在加载联系信息'} />
                   ) : contactResource.status === 'error' ? (
