@@ -164,7 +164,7 @@ const ModernContactForm: React.FC<ModernContactFormProps> = ({ onSuccess, onMess
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Message Type Selector — ds Segmented, NUS-orange active state. */}
       <Segmented
         tone="primary"
@@ -191,14 +191,14 @@ const ModernContactForm: React.FC<ModernContactFormProps> = ({ onSuccess, onMess
       />
 
       {/* Publication is always explicit and privacy-preserving by default. */}
-      <div className="rounded-ds-lg border border-ds-border bg-ds-surface-2 p-4">
+      <div className="rounded-ds-lg border border-ds-border bg-ds-surface-2 p-3">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+              <div className="flex min-w-0 items-center gap-2.5 pr-3">
                 <div className={`rounded-ds-md p-1.5 ${isPublic ? 'bg-ds-success-soft' : 'bg-ds-surface-3'}`}>
                   {isPublic ? <Globe size={16} className="text-ds-success" /> : <Lock size={16} className="text-ds-fg-subtle" />}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-ds-sm font-medium text-ds-fg">
                     {t('Publish on the message wall', '发布到公开留言墙')}
                   </div>
@@ -244,32 +244,39 @@ const ModernContactForm: React.FC<ModernContactFormProps> = ({ onSuccess, onMess
 
       {/* Login required for a general message. */}
       {authLoading && messageType === 'general' ? (
-        <div className="flex min-h-48 items-center justify-center" aria-live="polite">
+        <div className="flex min-h-24 items-center justify-center rounded-ds-lg border border-ds-border bg-ds-surface-1" aria-live="polite">
           <Spinner label={t('Checking sign-in session', '正在检查登录状态')} />
         </div>
       ) : !isAuthenticated && messageType === 'general' ? (
-        <div className="space-y-4 py-8 text-center">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-ds-primary">
-            <LogIn className="size-7 text-white" aria-hidden />
+        <section className="rounded-ds-lg border border-ds-border bg-ds-surface-1 p-4 min-[520px]:flex min-[520px]:items-center min-[520px]:justify-between min-[520px]:gap-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-ds-primary-soft text-ds-primary">
+              <LogIn className="size-5" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-ds-base font-semibold text-ds-fg">
+                {t('Sign in to write', '登录后留言')}
+              </h3>
+              <p className="mt-1 max-w-[24rem] text-ds-xs leading-5 text-ds-fg-muted">
+                {t(
+                  'Use Google to send a private or public note.',
+                  '使用 Google 登录后，可发送私密或公开留言。',
+                )}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="mb-2 text-ds-lg font-semibold text-ds-fg">
-              {t('Sign In', '登录')}
-            </h3>
-            <p className="mb-4 text-ds-sm text-ds-fg-muted">
-              {t('Login to send messages and share your thoughts', '登录以发送留言和分享想法')}
-            </p>
-          </div>
-          <div className="flex justify-center">
+          <div className="mt-4 flex shrink-0 justify-start pl-[3.25rem] min-[520px]:mt-0 min-[520px]:justify-end min-[520px]:pl-0">
             <GoogleLogin
               onSuccess={handleGoogleLogin}
               onError={handleGoogleError}
               useOneTap
               theme="outline"
               size="large"
+              text="signin_with"
+              locale={language === 'en' ? 'en' : 'zh_CN'}
             />
           </div>
-        </div>
+        </section>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Job-specific fields. */}

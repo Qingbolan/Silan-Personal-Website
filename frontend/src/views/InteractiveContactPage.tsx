@@ -14,7 +14,6 @@ import { resolveSocialLink } from '../utils/socialPlatform';
 import { canonicalInternalPath } from '../utils/navigation';
 import { useRemoteResource } from '../hooks/useRemoteResource';
 import {
-  BlogHeader,
   Card,
   CardContent,
   Tabs,
@@ -59,10 +58,65 @@ const PanelError: React.FC<{ title: string; retryLabel: string; onRetry: () => v
   </Alert>
 );
 
+const formatContactLocation = (value: string, language: string) => {
+  const normalized = value
+    .replace(/🇸🇬|🇨🇳/g, '')
+    .replace(/,\s*(China|中国)/gi, '')
+    .replace(/\s*\/\s*/g, ' · ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (/Singapore/i.test(normalized) && /Beijing/i.test(normalized)) {
+    return language === 'zh' ? '新加坡 · 北京' : 'Singapore · Beijing';
+  }
+  return normalized;
+};
+
+const ContactIntro: React.FC<{
+  language: string;
+  isAuthenticated: boolean;
+  username?: string;
+}> = ({ language, isAuthenticated, username }) => {
+  const zh = language === 'zh';
+  const title = isAuthenticated
+    ? (zh ? `欢迎回来，${username}。` : `Welcome back, ${username}.`)
+    : (zh ? '来聊聊。' : "Let's connect.");
+
+  return (
+    <header className="mb-7 grid gap-7 border-b border-ds-border pb-7 sm:mb-10 sm:grid-cols-[minmax(0,1fr)_15rem] sm:items-end sm:pb-10 lg:mb-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="min-w-0">
+        <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.17em] text-ds-primary">
+          {zh ? '联系' : 'Contact'}
+        </p>
+        <h1 className="mt-3 max-w-[12ch] text-balance text-4xl font-semibold leading-[0.96] tracking-[-0.045em] text-ds-fg sm:text-5xl lg:text-6xl">
+          {title}
+        </h1>
+        <p className="mt-4 max-w-[42rem] text-pretty text-ds-base leading-7 text-ds-fg-muted sm:text-ds-lg">
+          {zh
+            ? '欢迎研究合作、系统工程项目与有价值的技术交流。'
+            : 'Research collaborations, systems work, and thoughtful technical conversations.'}
+        </p>
+      </div>
+
+      <aside className="hidden border-l border-ds-border pl-5 sm:block">
+        <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.14em] text-ds-fg-subtle">
+          {zh ? '工作坐标' : 'Working coordinates'}
+        </p>
+        <p className="mt-2 text-ds-sm font-medium text-ds-fg">
+          {zh ? '新加坡 · 北京' : 'Singapore · Beijing'}
+        </p>
+        <p className="mt-1 text-ds-xs leading-5 text-ds-fg-muted">
+          {zh ? '通常会在几天内认真回复。' : 'Thoughtful replies, usually within a few days.'}
+        </p>
+      </aside>
+    </header>
+  );
+};
+
 const InteractiveContactPageContent: React.FC = () => {
   const { language } = useLanguage();
   const { isAuthenticated, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('thoughts');
+  const [activeTab, setActiveTab] = useState('contact');
   const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
 
@@ -95,10 +149,11 @@ const InteractiveContactPageContent: React.FC = () => {
       profile.location && { type: 'location', value: profile.location },
     ].filter(Boolean).map((entry) => {
       const { type, value } = entry as { type: string; value: string };
+      const displayValue = type === 'location' ? formatContactLocation(value, language) : value;
       return {
         icon: type === 'email' ? <Mail size={18} /> : type === 'phone' ? <Phone size={18} /> : <MapPin size={18} />,
         title: type === 'email' ? (language === 'en' ? 'Email' : '邮箱') : type === 'phone' ? (language === 'en' ? 'Phone' : '电话') : (language === 'en' ? 'Location' : '位置'),
-        value,
+        value: displayValue,
         href: type === 'email' ? `mailto:${value}` : type === 'phone' ? `tel:${value.replace(/\s+/g, '')}` : `https://maps.google.com/?q=${encodeURIComponent(value)}`,
       };
     });
@@ -113,7 +168,7 @@ const InteractiveContactPageContent: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen py-20">
+    <div className="min-h-screen pb-32 pt-8 sm:pb-20 sm:pt-12 lg:pt-16">
       <Seo
         title={language === 'en' ? 'Contact' : '联系'}
         description={
@@ -124,32 +179,31 @@ const InteractiveContactPageContent: React.FC = () => {
         path="/contact"
         lang={language as 'en' | 'zh'}
       />
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Hero header — same BlogHeader hero used by blog/moments/projects,
-            but hero-only (no search / filter toolbar). */}
-        <BlogHeader
-          className="mb-12"
-          eyebrow={language === 'en' ? 'Contact' : '联系'}
-          title={
-            isAuthenticated
-              ? (language === 'en' ? `Hi, ${user?.username}!` : `你好，${user?.username}！`)
-              : (language === 'en' ? "Let's Connect" : '联系我')
-          }
-          description={
-            language === 'en'
-              ? 'Open to collaborations, job opportunities, and interesting conversations'
-              : '开放合作、工作机会和有趣的对话'
-          }
+      <div className="mx-auto max-w-6xl px-4 sm:px-8">
+        <ContactIntro
+          language={language}
+          isAuthenticated={isAuthenticated}
+          username={user?.username}
         />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 [&>*]:self-start">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(20rem,0.92fr)] lg:gap-8 [&>*]:self-start">
           {/* Left — contact form. */}
-          <Card>
-            <CardContent>
+          <Card variant="outline" padding="none" className="overflow-hidden">
+            <CardContent className="p-4 sm:p-5">
+              <header className="mb-4 flex items-start justify-between gap-4 border-b border-ds-border pb-4">
+                <div>
+                  <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.14em] text-ds-primary">
+                    {language === 'en' ? 'Message / 01' : '留言 / 01'}
+                  </p>
+                  <h2 className="mt-1 text-ds-lg font-semibold tracking-[-0.015em] text-ds-fg">
+                    {language === 'en' ? 'Send a note' : '发送留言'}
+                  </h2>
+                </div>
+                <p className="max-w-32 text-right text-ds-xs leading-5 text-ds-fg-subtle">
+                  {language === 'en' ? 'Private by default' : '默认仅你我可见'}
+                </p>
+              </header>
               <ModernContactForm
-                onMessageTypeChange={(type) => {
-                  setActiveTab(type === 'general' ? 'thoughts' : 'jobs');
-                }}
                 onMessageSent={() => {
                   setRefreshKey((prev) => prev + 1);
                 }}
@@ -158,8 +212,16 @@ const InteractiveContactPageContent: React.FC = () => {
           </Card>
 
           {/* Right — tabbed content. */}
-          <Card>
-            <CardContent>
+          <Card variant="outline" padding="none" className="overflow-hidden">
+            <CardContent className="p-4 sm:p-5">
+              <header className="mb-4">
+                <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.14em] text-ds-primary">
+                  {language === 'en' ? 'Context / 02' : '更多信息 / 02'}
+                </p>
+                <h2 className="mt-1 text-ds-lg font-semibold tracking-[-0.015em] text-ds-fg">
+                  {language === 'en' ? 'More ways to connect' : '更多联系线索'}
+                </h2>
+              </header>
               <Tabs
                 value={activeTab}
                 onChange={setActiveTab}
@@ -168,9 +230,9 @@ const InteractiveContactPageContent: React.FC = () => {
                 fullWidth
                 items={[
                   {
-                    value: 'thoughts',
-                    icon: <Aperture />,
-                    label: language === 'en' ? 'Moments' : '瞬间',
+                    value: 'contact',
+                    icon: <Contact />,
+                    label: language === 'en' ? 'Contact' : '联系',
                   },
                   {
                     value: 'jobs',
@@ -178,9 +240,9 @@ const InteractiveContactPageContent: React.FC = () => {
                     label: language === 'en' ? 'Roles' : '职位',
                   },
                   {
-                    value: 'contact',
-                    icon: <Contact />,
-                    label: language === 'en' ? 'Contact' : '联系',
+                    value: 'thoughts',
+                    icon: <Aperture />,
+                    label: language === 'en' ? 'Moments' : '瞬间',
                   },
                 ]}
               />
@@ -340,7 +402,7 @@ const InteractiveContactPageContent: React.FC = () => {
         </div>
 
         {/* Public messages wall — full width. */}
-        <div className="mt-16">
+        <div className="mt-12 sm:mt-16">
           <PublicMessagesWall key={refreshKey} />
         </div>
       </div>
