@@ -860,6 +860,14 @@ textarea:focus-visible {
 
 .shell {
   --workspace-sidebar-width: 256px;
+  --workspace-sidebar-surface: #090909;
+  --workspace-sidebar-edge: #202020;
+  --workspace-sidebar-divider: #1d1d1d;
+  --workspace-sidebar-control-border: #262626;
+  --workspace-sidebar-control-hover-border: #333333;
+  --workspace-sidebar-control-focus-border: #555555;
+  --workspace-sidebar-control-fill: #0d0d0d;
+  --workspace-sidebar-control-hover: #151515;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
@@ -880,9 +888,16 @@ textarea:focus-visible {
 
 .desktop-titlebar-enabled {
   --window-titlebar-surface: #171717;
-  --window-titlebar-sidebar-surface: #272c32;
+  --workspace-sidebar-surface: #272c32;
+  --workspace-sidebar-edge: rgba(255, 255, 255, 0.1);
+  --workspace-sidebar-divider: rgba(255, 255, 255, 0.08);
+  --workspace-sidebar-control-border: rgba(255, 255, 255, 0.12);
+  --workspace-sidebar-control-hover-border: rgba(255, 255, 255, 0.2);
+  --workspace-sidebar-control-focus-border: rgba(255, 255, 255, 0.32);
+  --workspace-sidebar-control-fill: rgba(0, 0, 0, 0.12);
+  --workspace-sidebar-control-hover: rgba(255, 255, 255, 0.07);
   --window-titlebar-border: #303030;
-  --window-titlebar-context-border: #353535;
+  --window-titlebar-context-border: var(--workspace-sidebar-edge);
   --window-titlebar-context-left: 156px;
   --window-titlebar-controls-width: 138px;
 }
@@ -992,8 +1007,23 @@ textarea:focus-visible {
   grid-column: 1 / -1;
   grid-row: 1;
   overflow: hidden;
-  border-bottom: 1px solid var(--window-titlebar-border);
   background: var(--window-titlebar-surface);
+}
+
+.desktop-titlebar-enabled > .desktop-titlebar::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  height: 1px;
+  content: '';
+  background: var(--window-titlebar-border);
+  pointer-events: none;
+}
+
+.shell.desktop-titlebar-enabled.sidebar-open > .desktop-titlebar::after {
+  left: var(--workspace-sidebar-width);
 }
 
 .desktop-titlebar-enabled > .desktop-titlebar .desktop-titlebar-sidebar-surface {
@@ -1001,7 +1031,7 @@ textarea:focus-visible {
   inset: 0 auto 0 0;
   display: block;
   width: 0;
-  background: var(--window-titlebar-sidebar-surface);
+  background: var(--workspace-sidebar-surface);
   transition: width 170ms ease;
 }
 
@@ -1127,8 +1157,8 @@ textarea:focus-visible {
   grid-column: 1;
   grid-row: 1;
   flex-direction: column;
-  border-right: 1px solid #202020;
-  background: #090909;
+  border-right: 1px solid var(--workspace-sidebar-edge);
+  background: var(--workspace-sidebar-surface);
   color: rgba(255, 255, 255, 0.78);
   transform: none;
 }
@@ -1160,7 +1190,7 @@ textarea:focus-visible {
   align-items: center;
   min-height: 62px;
   padding: 13px 14px 13px 50px;
-  border-bottom: 1px solid #1d1d1d;
+  border-bottom: 1px solid var(--workspace-sidebar-divider);
 }
 
 .brand-avatar {
@@ -1172,7 +1202,7 @@ textarea:focus-visible {
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 6px;
-  background: #141414;
+  background: rgba(0, 0, 0, 0.18);
   color: rgba(255, 255, 255, 0.86);
   font-family: var(--font-rounded);
   font-size: 11px;
@@ -1339,7 +1369,7 @@ textarea:focus-visible {
   gap: 9px;
   margin-top: auto;
   padding: 11px 10px 10px;
-  border-top: 1px solid #1d1d1d;
+  border-top: 1px solid var(--workspace-sidebar-divider);
 }
 
 .search {
@@ -1348,7 +1378,7 @@ textarea:focus-visible {
   align-items: center;
   height: 34px;
   padding: 0 9px;
-  border: 1px solid #262626;
+  border: 1px solid var(--workspace-sidebar-control-border);
   border-radius: 4px;
   background: transparent;
   color: rgba(255, 255, 255, 0.46);
@@ -1356,12 +1386,12 @@ textarea:focus-visible {
 }
 
 .search:hover {
-  border-color: #333;
+  border-color: var(--workspace-sidebar-control-hover-border);
 }
 
 .search:focus-within {
-  border-color: #555;
-  background: #0d0d0d;
+  border-color: var(--workspace-sidebar-control-focus-border);
+  background: var(--workspace-sidebar-control-fill);
   color: rgba(255, 255, 255, 0.74);
 }
 
@@ -1404,8 +1434,8 @@ textarea:focus-visible {
 }
 
 .source-note button:hover:not(:disabled) {
-  border-color: #292929;
-  background: #151515;
+  border-color: var(--workspace-sidebar-control-hover-border);
+  background: var(--workspace-sidebar-control-hover);
   color: rgba(255, 255, 255, 0.92);
 }
 
