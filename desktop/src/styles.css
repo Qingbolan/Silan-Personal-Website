@@ -977,14 +977,11 @@ textarea:focus-visible {
 .desktop-titlebar-enabled .window-navigation {
   position: absolute;
   top: calc((var(--desktop-titlebar-height) - 28px) / 2);
-  left: 14px;
+  left: var(--window-navigation-inset, 14px);
   z-index: 3;
   color: rgba(255, 255, 255, 0.66);
   justify-content: flex-start;
-}
-
-.desktop-platform-macos .window-navigation {
-  left: 78px;
+  transition: left 170ms ease;
 }
 
 .desktop-titlebar-enabled .window-navigation-button {

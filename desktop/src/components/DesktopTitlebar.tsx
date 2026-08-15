@@ -1,6 +1,10 @@
 import React from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { usesCustomWindowControls } from '../lib/desktopWindow';
+import {
+  desktopWindowPlatform,
+  usesCustomWindowControls,
+  windowNavigationInsetFor,
+} from '../lib/desktopWindow';
 
 type WorkspaceNavigationTitlebarProps = {
   showWorkspaceNavigation?: true;
@@ -65,11 +69,38 @@ function TitlebarGlyph({
 
 export function DesktopTitlebar(props: DesktopTitlebarProps) {
   const showWorkspaceNavigation = props.showWorkspaceNavigation !== false;
+  const [fullscreen, setFullscreen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (desktopWindowPlatform !== 'macos') return undefined;
+
+    const appWindow = getCurrentWindow();
+    let active = true;
+    let stopListening: (() => void) | undefined;
+    const syncFullscreenState = async () => {
+      const nextFullscreen = await appWindow.isFullscreen();
+      if (active) setFullscreen(nextFullscreen);
+    };
+
+    void syncFullscreenState();
+    void appWindow.onResized(() => void syncFullscreenState()).then((unlisten) => {
+      if (active) stopListening = unlisten;
+      else unlisten();
+    });
+
+    return () => {
+      active = false;
+      stopListening?.();
+    };
+  }, []);
+
+  const navigationInset = windowNavigationInsetFor(desktopWindowPlatform, fullscreen);
 
   return (
     <header
       className="desktop-titlebar"
       data-workspace-navigation={showWorkspaceNavigation ? 'visible' : 'hidden'}
+      style={{ '--window-navigation-inset': `${navigationInset}px` } as React.CSSProperties}
     >
       <div
         className="desktop-titlebar-drag-region"

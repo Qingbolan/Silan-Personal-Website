@@ -23,6 +23,13 @@ export function usesCustomWindowControlsFor(platform: DesktopWindowPlatform) {
   return platform === 'windows' || platform === 'linux';
 }
 
+export function windowNavigationInsetFor(
+  platform: DesktopWindowPlatform,
+  fullscreen: boolean,
+) {
+  return platform === 'macos' && !fullscreen ? 78 : 14;
+}
+
 const userAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent;
 export const desktopWindowPlatform = detectDesktopWindowPlatform(isTauri(), userAgent);
 

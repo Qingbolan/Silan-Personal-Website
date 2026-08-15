@@ -5,6 +5,7 @@ import {
   desktopWindowChromeClassFor,
   detectDesktopWindowPlatform,
   usesCustomWindowControlsFor,
+  windowNavigationInsetFor,
 } from './desktopWindow.ts';
 
 const readJson = (relativePath) => JSON.parse(
@@ -50,6 +51,15 @@ test('desktop platform classes select a shared titlebar with platform-specific c
   assert.equal(usesCustomWindowControlsFor('macos'), false);
   assert.equal(usesCustomWindowControlsFor('windows'), true);
   assert.equal(usesCustomWindowControlsFor('linux'), true);
+});
+
+test('macOS navigation only reserves space while native traffic lights are visible', () => {
+  assert.equal(windowNavigationInsetFor('macos', false), 78);
+  assert.equal(windowNavigationInsetFor('macos', true), 14);
+  assert.equal(windowNavigationInsetFor('windows', false), 14);
+  assert.equal(windowNavigationInsetFor('windows', true), 14);
+  assert.equal(windowNavigationInsetFor('linux', false), 14);
+  assert.equal(windowNavigationInsetFor('web', false), 14);
 });
 
 test('Tauri configuration keeps macOS native traffic lights and gives other desktops custom chrome', () => {
