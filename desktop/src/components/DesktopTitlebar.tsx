@@ -71,7 +71,6 @@ export function DesktopTitlebar(props: DesktopTitlebarProps) {
       className="desktop-titlebar"
       data-workspace-navigation={showWorkspaceNavigation ? 'visible' : 'hidden'}
     >
-      <div className="desktop-titlebar-sidebar-surface" aria-hidden="true" />
       <div
         className="desktop-titlebar-drag-region"
         data-tauri-drag-region

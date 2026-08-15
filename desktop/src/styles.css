@@ -897,7 +897,6 @@ textarea:focus-visible {
   --workspace-sidebar-control-fill: rgba(0, 0, 0, 0.12);
   --workspace-sidebar-control-hover: rgba(255, 255, 255, 0.07);
   --window-titlebar-border: #303030;
-  --window-titlebar-context-border: var(--workspace-sidebar-edge);
   --window-titlebar-context-left: 156px;
   --window-titlebar-controls-width: 138px;
 }
@@ -930,7 +929,6 @@ textarea:focus-visible {
   display: contents;
 }
 
-.desktop-titlebar-sidebar-surface,
 .desktop-titlebar-drag-region,
 .desktop-titlebar-context {
   display: none;
@@ -982,6 +980,7 @@ textarea:focus-visible {
   left: 14px;
   z-index: 3;
   color: rgba(255, 255, 255, 0.66);
+  justify-content: flex-start;
 }
 
 .desktop-platform-macos .window-navigation {
@@ -1012,7 +1011,20 @@ textarea:focus-visible {
   grid-column: 1 / -1;
   grid-row: 1;
   overflow: hidden;
+  background: transparent;
+}
+
+.desktop-titlebar-enabled > .desktop-titlebar::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: '';
   background: var(--window-titlebar-surface);
+  transition: left 170ms ease;
+}
+
+.shell.desktop-titlebar-enabled.sidebar-open > .desktop-titlebar::before {
+  left: var(--workspace-sidebar-width);
 }
 
 .desktop-titlebar-enabled > .desktop-titlebar::after {
@@ -1029,19 +1041,6 @@ textarea:focus-visible {
 
 .shell.desktop-titlebar-enabled.sidebar-open > .desktop-titlebar::after {
   left: var(--workspace-sidebar-width);
-}
-
-.desktop-titlebar-enabled > .desktop-titlebar .desktop-titlebar-sidebar-surface {
-  position: absolute;
-  inset: 0 auto 0 0;
-  display: block;
-  width: 0;
-  background: var(--workspace-sidebar-surface);
-  transition: width 170ms ease;
-}
-
-.shell.desktop-titlebar-enabled.sidebar-open .desktop-titlebar-sidebar-surface {
-  width: var(--workspace-sidebar-width);
 }
 
 .desktop-titlebar-enabled > .desktop-titlebar .desktop-titlebar-drag-region {
@@ -1070,7 +1069,6 @@ textarea:focus-visible {
 
 .shell.desktop-titlebar-enabled.sidebar-open .desktop-titlebar-context {
   left: var(--workspace-sidebar-width);
-  border-left: 1px solid var(--window-titlebar-context-border);
 }
 
 .shell.desktop-titlebar-enabled:not(.sidebar-open) > .desktop-titlebar[data-workspace-navigation='visible'] .desktop-titlebar-context::before {
@@ -1163,6 +1161,7 @@ textarea:focus-visible {
   grid-row: 1;
   flex-direction: column;
   border-right: 1px solid var(--workspace-sidebar-edge);
+  padding-top: var(--desktop-titlebar-height);
   background: var(--workspace-sidebar-surface);
   color: rgba(255, 255, 255, 0.78);
   transform: none;
@@ -1177,8 +1176,9 @@ textarea:focus-visible {
   grid-row: 2;
 }
 
-.shell.desktop-titlebar-enabled .brand {
-  padding-left: 14px;
+.shell.desktop-titlebar-enabled .sidebar {
+  z-index: 1;
+  grid-row: 1 / -1;
 }
 
 .shell.sidebar-open .topbar {
@@ -1187,63 +1187,6 @@ textarea:focus-visible {
 
 .shell.desktop-titlebar-enabled .topbar {
   padding-left: 24px;
-}
-
-.brand {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  min-height: 62px;
-  padding: 13px 14px 13px 50px;
-  border-bottom: 1px solid var(--workspace-sidebar-divider);
-}
-
-.brand-avatar {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  overflow: hidden;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.18);
-  color: rgba(255, 255, 255, 0.86);
-  font-family: var(--font-rounded);
-  font-size: 11px;
-  font-weight: 650;
-}
-
-.brand-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.brand-copy {
-  min-width: 0;
-}
-
-.brand-title {
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.96);
-  font-size: 13px;
-  font-weight: 610;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.brand-subtitle {
-  margin-top: 3px;
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.38);
-  font-size: 9.5px;
-  letter-spacing: 0.005em;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .entity-nav {
@@ -1424,34 +1367,132 @@ textarea:focus-visible {
   font-size: 10px;
 }
 
-.source-note button {
-  display: grid;
-  width: 26px;
-  height: 26px;
-  margin-left: auto;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.48);
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
-}
-
-.source-note button:hover:not(:disabled) {
-  border-color: var(--workspace-sidebar-control-hover-border);
-  background: var(--workspace-sidebar-control-hover);
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.source-note button:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
 .source-note strong {
   color: rgba(255, 255, 255, 0.64);
   font-family: var(--font-mono);
   font-weight: 500;
+}
+
+.sidebar-account {
+  position: relative;
+}
+
+.sidebar-account-trigger {
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  grid-template-columns: 32px minmax(0, 1fr) 26px;
+  gap: 9px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 7px 7px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.76);
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.sidebar-account-trigger:hover,
+.sidebar-account-trigger[aria-expanded='true'] {
+  border-color: var(--workspace-sidebar-control-hover-border);
+  background: var(--workspace-sidebar-control-hover);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.sidebar-account-avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.86);
+  font-family: var(--font-rounded);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.sidebar-account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sidebar-account-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.sidebar-account-copy strong,
+.sidebar-account-copy small {
+  overflow: hidden;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-account-copy strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 12.5px;
+  font-weight: 610;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-account-copy small {
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 9.5px;
+}
+
+.sidebar-account-settings {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.sidebar-account-trigger:hover .sidebar-account-settings,
+.sidebar-account-trigger[aria-expanded='true'] .sidebar-account-settings {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.sidebar-account-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 7px);
+  left: 0;
+  z-index: 12;
+  padding: 5px;
+  border: 1px solid var(--workspace-sidebar-control-hover-border);
+  border-radius: 7px;
+  background: #202429;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+}
+
+.sidebar-account-menu button {
+  display: grid;
+  width: 100%;
+  height: 36px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11.5px;
+  text-align: left;
+}
+
+.sidebar-account-menu button:hover,
+.sidebar-account-menu button:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
 }
 
 .sidebar button:focus-visible,
@@ -6084,10 +6125,6 @@ h1 {
 @media (max-width: 800px) {
   .sidebar {
     width: var(--workspace-sidebar-width);
-  }
-
-  .shell:not(.desktop-titlebar-enabled) .brand {
-    padding-left: 52px;
   }
 
   .dashboard-grid {
