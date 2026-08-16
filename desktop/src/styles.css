@@ -884,14 +884,26 @@ textarea:focus-visible {
 }
 
 .desktop-titlebar-enabled {
-  --window-titlebar-surface: #171717;
+  --window-titlebar-surface: var(--ds-color-canvas);
+  --window-titlebar-foreground: rgba(28, 28, 28, 0.62);
+  --window-titlebar-hover: rgba(0, 0, 0, 0.045);
+  --window-titlebar-hover-border: rgba(0, 0, 0, 0.08);
+  --window-titlebar-focus: rgba(28, 28, 28, 0.72);
   --workspace-sidebar-surface: #272c32;
   --workspace-sidebar-edge: rgba(255, 255, 255, 0.1);
   --workspace-sidebar-divider: rgba(255, 255, 255, 0.08);
   --workspace-sidebar-control-hover-border: rgba(255, 255, 255, 0.2);
   --workspace-sidebar-control-hover: rgba(255, 255, 255, 0.07);
-  --window-titlebar-border: #303030;
+  --window-titlebar-border: var(--ds-color-border);
   --window-titlebar-controls-width: 138px;
+}
+
+.shell.desktop-titlebar-enabled.sidebar-open {
+  --window-navigation-foreground: rgba(255, 255, 255, 0.66);
+  --window-navigation-hover: rgba(255, 255, 255, 0.07);
+  --window-navigation-hover-border: rgba(255, 255, 255, 0.08);
+  --window-navigation-hover-foreground: #fff;
+  --window-navigation-focus: rgba(255, 255, 255, 0.72);
 }
 
 .desktop-platform-macos {
@@ -968,12 +980,13 @@ textarea:focus-visible {
 
 .desktop-titlebar-enabled .window-navigation {
   position: absolute;
-  top: calc((var(--desktop-titlebar-height) - 28px) / 2);
+  top: 50%;
   left: var(--window-navigation-inset, 14px);
   z-index: 3;
-  color: rgba(255, 255, 255, 0.66);
   justify-content: flex-start;
-  transition: left 170ms ease;
+  color: var(--window-navigation-foreground, var(--window-titlebar-foreground));
+  transform: translateY(-50%);
+  transition: left 170ms ease, color 140ms ease;
 }
 
 .desktop-titlebar-enabled .window-navigation-button {
@@ -987,9 +1000,9 @@ textarea:focus-visible {
 }
 
 .desktop-titlebar-enabled .window-navigation-button:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  border-color: var(--window-navigation-hover-border, var(--window-titlebar-hover-border));
+  background: var(--window-navigation-hover, var(--window-titlebar-hover));
+  color: var(--window-navigation-hover-foreground, var(--ink));
 }
 
 .desktop-titlebar-enabled > .desktop-titlebar {
@@ -1051,7 +1064,7 @@ textarea:focus-visible {
   gap: 10px;
   align-items: center;
   padding: 0 18px;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--window-titlebar-foreground);
   pointer-events: none;
   transition: left 170ms ease;
 }
@@ -1068,7 +1081,7 @@ textarea:focus-visible {
 .desktop-titlebar-context strong {
   min-width: 0;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
   font-size: 16px;
   font-weight: 520;
   letter-spacing: -0.012em;
@@ -1100,22 +1113,23 @@ textarea:focus-visible {
   border: 0;
   border-radius: 0;
   padding: 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--window-titlebar-foreground);
   background: transparent;
   transition: color 100ms ease, background 100ms ease;
 }
 
 .desktop-window-controls button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+  background: var(--window-titlebar-hover);
 }
 
 .desktop-window-controls .desktop-window-close:hover {
   background: #c42b1c;
+  color: #fff;
 }
 
 .desktop-window-controls button:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.8);
+  outline: 1px solid var(--window-titlebar-focus);
   outline-offset: -2px;
 }
 
@@ -1410,7 +1424,7 @@ textarea:focus-visible {
 
 .sidebar button:focus-visible,
 .window-navigation-button:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.72);
+  outline: 1px solid var(--window-navigation-focus, var(--window-titlebar-focus, rgba(255, 255, 255, 0.72)));
   outline-offset: 2px;
 }
 
