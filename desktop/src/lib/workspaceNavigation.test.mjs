@@ -1,17 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  activateWorkspaceTab,
-  activeWorkspaceLocation,
-  addWorkspaceTab,
-  canMoveActiveWorkspaceTabHistory,
   canMoveWorkspaceNavigationHistory,
-  closeWorkspaceTab,
   createWorkspaceNavigationHistory,
-  createWorkspaceTabs,
-  moveActiveWorkspaceTabHistory,
   moveWorkspaceNavigationHistory,
-  recordActiveWorkspaceLocation,
   recordWorkspaceLocation,
   workspaceLocationFrom,
 } from './workspaceNavigation.ts';
@@ -87,45 +79,4 @@ test('recording the current location does not create duplicate history entries',
   const initial = createWorkspaceNavigationHistory({ kind: 'dashboard' });
   const next = recordWorkspaceLocation(initial, { kind: 'dashboard' });
   assert.equal(next, initial);
-});
-
-test('workspace tabs keep independent browser-style histories', () => {
-  let state = createWorkspaceTabs({ kind: 'dashboard' });
-  state = recordActiveWorkspaceLocation(state, { kind: 'shelf', entityFilter: 'moment' });
-  const firstTabId = state.activeTabId;
-
-  state = addWorkspaceTab(state);
-  const secondTabId = state.activeTabId;
-  state = recordActiveWorkspaceLocation(state, { kind: 'shelf', entityFilter: 'blog' });
-
-  assert.notEqual(firstTabId, secondTabId);
-  assert.deepEqual(activeWorkspaceLocation(state), { kind: 'shelf', entityFilter: 'blog' });
-  assert.equal(canMoveActiveWorkspaceTabHistory(state, -1), true);
-
-  state = activateWorkspaceTab(state, firstTabId);
-  assert.deepEqual(activeWorkspaceLocation(state), { kind: 'shelf', entityFilter: 'moment' });
-  state = moveActiveWorkspaceTabHistory(state, -1);
-  assert.deepEqual(activeWorkspaceLocation(state), { kind: 'dashboard' });
-
-  state = activateWorkspaceTab(state, secondTabId);
-  assert.deepEqual(activeWorkspaceLocation(state), { kind: 'shelf', entityFilter: 'blog' });
-});
-
-test('closing an active tab selects its right neighbor before its left neighbor', () => {
-  let state = createWorkspaceTabs({ kind: 'dashboard' });
-  const firstTabId = state.activeTabId;
-  state = addWorkspaceTab(state, { kind: 'shelf', entityFilter: 'moment' });
-  const middleTabId = state.activeTabId;
-  state = addWorkspaceTab(state, { kind: 'shelf', entityFilter: 'blog' });
-  const rightTabId = state.activeTabId;
-
-  state = activateWorkspaceTab(state, middleTabId);
-  state = closeWorkspaceTab(state, middleTabId);
-  assert.equal(state.activeTabId, rightTabId);
-  assert.deepEqual(activeWorkspaceLocation(state), { kind: 'shelf', entityFilter: 'blog' });
-
-  state = closeWorkspaceTab(state, rightTabId);
-  assert.equal(state.activeTabId, firstTabId);
-  assert.deepEqual(activeWorkspaceLocation(state), { kind: 'dashboard' });
-  assert.equal(closeWorkspaceTab(state, firstTabId), state);
 });

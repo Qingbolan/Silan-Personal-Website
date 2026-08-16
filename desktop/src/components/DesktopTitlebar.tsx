@@ -5,10 +5,6 @@ import {
   usesCustomWindowControls,
   windowNavigationInsetFor,
 } from '../lib/desktopWindow';
-import {
-  WorkspaceTabStrip,
-  type WorkspaceTitlebarTab,
-} from './WorkspaceTabStrip';
 
 type WorkspaceNavigationTitlebarProps = {
   showWorkspaceNavigation?: true;
@@ -19,11 +15,6 @@ type WorkspaceNavigationTitlebarProps = {
   onBack: () => void;
   onForward: () => void;
   onCompose: () => void;
-  tabs: WorkspaceTitlebarTab[];
-  activeTabId: string;
-  onTabSelect: (tabId: string) => void;
-  onTabClose: (tabId: string) => void;
-  onNewTab: () => void;
 };
 
 type StaticTitlebarProps = {
@@ -161,15 +152,7 @@ export function DesktopTitlebar(props: DesktopTitlebarProps) {
           </button>
         </nav>
       )}
-      {showWorkspaceNavigation ? (
-        <WorkspaceTabStrip
-          tabs={props.tabs}
-          activeTabId={props.activeTabId}
-          onTabSelect={props.onTabSelect}
-          onTabClose={props.onTabClose}
-          onNewTab={props.onNewTab}
-        />
-      ) : (
+      {!showWorkspaceNavigation && (
         <div className="desktop-titlebar-context">
           <TitlebarGlyph name="library" />
           <strong>{props.title}</strong>
