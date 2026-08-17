@@ -11,6 +11,8 @@ type WorkspaceNavigationTitlebarProps = {
   sidebarOpen: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
+  titlebarTitle?: string;
+  titlebarOptions?: React.ReactNode;
   onSidebarToggle: () => void;
   onBack: () => void;
   onForward: () => void;
@@ -156,6 +158,12 @@ export function DesktopTitlebar(props: DesktopTitlebarProps) {
         <div className="desktop-titlebar-context">
           <TitlebarGlyph name="library" />
           <strong>{props.title}</strong>
+        </div>
+      )}
+      {showWorkspaceNavigation && (props.titlebarTitle || props.titlebarOptions) && (
+        <div className="desktop-titlebar-options">
+          {props.titlebarTitle && <strong className="desktop-titlebar-page-title">{props.titlebarTitle}</strong>}
+          {props.titlebarOptions}
         </div>
       )}
       {usesCustomWindowControls && (

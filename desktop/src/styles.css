@@ -1095,6 +1095,46 @@ textarea:focus-visible {
   height: 16px;
 }
 
+.desktop-titlebar-options {
+  position: absolute;
+  top: 0;
+  right: var(--window-titlebar-controls-width);
+  bottom: 0;
+  left: calc(var(--window-navigation-inset, 14px) + 142px);
+  z-index: 4;
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 14px;
+  color: var(--window-titlebar-foreground);
+  pointer-events: none;
+  transition: left 170ms ease;
+}
+
+.shell.desktop-titlebar-enabled.sidebar-open > .desktop-titlebar .desktop-titlebar-options {
+  left: calc(var(--workspace-sidebar-width) + 18px);
+}
+
+.desktop-titlebar-page-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-titlebar-options > .language-close-controls,
+.desktop-titlebar-options > .workspace-settings-close {
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+
 .desktop-window-controls {
   position: absolute;
   top: 0;
@@ -1455,7 +1495,10 @@ textarea:focus-visible {
 }
 
 .topbar {
-  display: block;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
   min-height: 68px;
   padding: 16px 24px 10px 58px;
 }
@@ -1464,59 +1507,8 @@ textarea:focus-visible {
   padding-left: 28px;
 }
 
-.topbar-primary {
-  display: flex;
-  min-width: 0;
-  min-height: 30px;
-  gap: 20px;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .title-block {
   min-width: 0;
-}
-
-.topbar-primary > .title-block {
-  flex: 1 1 auto;
-}
-
-.topbar-primary > .language-close-controls,
-.topbar-primary > .workspace-settings-close {
-  flex: 0 0 auto;
-}
-
-.topbar-primary > .title-block > .meta {
-  margin-top: 6px;
-}
-
-.topbar-primary > .title-block > .eyebrow,
-.topbar-primary > .title-block > h1 {
-  display: block;
-}
-
-.topbar-primary-options > .title-block {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  column-gap: 12px;
-  align-items: baseline;
-}
-
-.topbar-primary-options > .title-block > .eyebrow {
-  grid-column: 1;
-  grid-row: 1;
-  margin-bottom: 0;
-}
-
-.topbar-primary-options > .title-block > h1 {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.topbar-primary-options > .title-block > .meta {
-  grid-column: 1 / -1;
-  grid-row: 2;
 }
 
 .eyebrow {
