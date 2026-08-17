@@ -2989,6 +2989,26 @@ export default function App() {
       : screen === 'content'
         ? currentShelf.label
         : undefined;
+  const titlebarMeta = screen === 'dashboard' ? (
+    <>
+      <span>{displayedHumanInteractions} human interactions</span>
+      <span>{displayedAiCrawlerInteractions} AI · {displayedSearchCrawlerInteractions} search crawler hits</span>
+      <span>{attentionCount} delivery moments</span>
+      <span>{workspaceChangeCount} uncommitted workspace changes</span>
+      <span>{dirtyIds.size} unsaved Markdown files</span>
+    </>
+  ) : screen === 'settings' ? (
+    <>
+      <span>Manage profile, language, integrations, and archived content</span>
+      <span>Workspace identity stays source-backed · credentials stay local</span>
+    </>
+  ) : (
+    <>
+      <span>{contentSummary}</span>
+      <span>{dirtyIds.size} unsaved</span>
+      {selected && <span>{docPath(selected)}</span>}
+    </>
+  );
   const titlebarOptions = screen === 'settings' ? (
     <button
       type="button"
@@ -3012,6 +3032,7 @@ export default function App() {
         canGoBack={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, -1)}
         canGoForward={canMoveWorkspaceNavigationHistory(workspaceNavigationHistory, 1)}
         titlebarTitle={titlebarTitle}
+        titlebarMeta={titlebarMeta}
         titlebarOptions={titlebarOptions}
         onSidebarToggle={() => {
           if (screen === 'settings') {
@@ -3052,38 +3073,6 @@ export default function App() {
         data-has-moments-background={updatesShellActive && momentsCoverImage ? 'true' : undefined}
         style={mainStyle}
       >
-        {!updatesShellActive && (
-          <header className="topbar">
-            <div className="title-block">
-              <div className="eyebrow">
-                {screen === 'dashboard' ? 'Workspace' : screen === 'settings' ? 'Preferences' : currentShelf.eyebrow}
-              </div>
-              <div className="meta">
-                {screen === 'dashboard' ? (
-                  <>
-                    <span>{displayedHumanInteractions} human interactions</span>
-                    <span>{displayedAiCrawlerInteractions} AI · {displayedSearchCrawlerInteractions} search crawler hits</span>
-                    <span>{attentionCount} delivery moments</span>
-                    <span>{workspaceChangeCount} uncommitted workspace changes</span>
-                    <span>{dirtyIds.size} unsaved Markdown files</span>
-                  </>
-                ) : screen === 'settings' ? (
-                  <>
-                    <span>Manage profile, language, integrations, and archived content</span>
-                    <span>Workspace identity stays source-backed · credentials stay local</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{contentSummary}</span>
-                    <span>{dirtyIds.size} unsaved</span>
-                    {selected && <span>{docPath(selected)}</span>}
-                  </>
-                )}
-              </div>
-            </div>
-          </header>
-        )}
-
         {error && (
           <div className="error" role="alert">
             <AlertCircle size={16} />

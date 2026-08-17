@@ -12,6 +12,7 @@ type WorkspaceNavigationTitlebarProps = {
   canGoBack: boolean;
   canGoForward: boolean;
   titlebarTitle?: string;
+  titlebarMeta?: React.ReactNode;
   titlebarOptions?: React.ReactNode;
   onSidebarToggle: () => void;
   onBack: () => void;
@@ -160,9 +161,12 @@ export function DesktopTitlebar(props: DesktopTitlebarProps) {
           <strong>{props.title}</strong>
         </div>
       )}
-      {showWorkspaceNavigation && (props.titlebarTitle || props.titlebarOptions) && (
+      {showWorkspaceNavigation && (props.titlebarTitle || props.titlebarMeta || props.titlebarOptions) && (
         <div className="desktop-titlebar-options">
-          {props.titlebarTitle && <strong className="desktop-titlebar-page-title">{props.titlebarTitle}</strong>}
+          <div className="desktop-titlebar-heading">
+            {props.titlebarTitle && <strong className="desktop-titlebar-page-title">{props.titlebarTitle}</strong>}
+            {props.titlebarMeta && <div className="desktop-titlebar-meta">{props.titlebarMeta}</div>}
+          </div>
           {props.titlebarOptions}
         </div>
       )}

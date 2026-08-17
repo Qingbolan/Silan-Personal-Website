@@ -1118,6 +1118,7 @@ textarea:focus-visible {
 }
 
 .desktop-titlebar-page-title {
+  flex: 0 0 auto;
   min-width: 0;
   overflow: hidden;
   color: var(--ink);
@@ -1127,6 +1128,34 @@ textarea:focus-visible {
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.desktop-titlebar-heading {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 16px;
+  align-items: baseline;
+  overflow: hidden;
+}
+
+.desktop-titlebar-meta {
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  overflow: hidden;
+  color: var(--window-titlebar-foreground);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.desktop-titlebar-meta > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .desktop-titlebar-options > .language-close-controls,
@@ -1200,14 +1229,6 @@ textarea:focus-visible {
 .shell.desktop-titlebar-enabled .sidebar {
   z-index: 1;
   grid-row: 1 / -1;
-}
-
-.shell.sidebar-open .topbar {
-  padding-left: 24px;
-}
-
-.shell.desktop-titlebar-enabled .topbar {
-  padding-left: 24px;
 }
 
 .entity-nav {
@@ -1492,23 +1513,6 @@ textarea:focus-visible {
 
 .main-settings {
   background: var(--paper-solid);
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  min-height: 68px;
-  padding: 16px 24px 10px 58px;
-}
-
-.main-settings .topbar {
-  padding-left: 28px;
-}
-
-.title-block {
-  min-width: 0;
 }
 
 .eyebrow {
