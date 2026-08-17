@@ -891,6 +891,8 @@ export default function App() {
     && isVersionScope(entityFilter)
     ? entityFilter
     : null;
+  const topbarUsesOptions = screen === 'settings'
+    || (screen === 'content' && !contentEditorOpen);
   const otherDirtyCount = selected
     ? selected.translations.filter((translation) => translation.id !== selectedTranslation?.id && dirtyIds.has(translation.id)).length
     : 0;
@@ -3029,50 +3031,51 @@ export default function App() {
       >
         {!updatesShellActive && (
           <header className="topbar">
-            <div className="title-block">
-              <div className="eyebrow">
-                {screen === 'dashboard' ? 'Workspace' : screen === 'settings' ? 'Preferences' : currentShelf.eyebrow}
+            <div className={`topbar-primary ${topbarUsesOptions ? 'topbar-primary-options' : ''}`}>
+              <div className="title-block">
+                <div className="eyebrow">
+                  {screen === 'dashboard' ? 'Workspace' : screen === 'settings' ? 'Preferences' : currentShelf.eyebrow}
+                </div>
+                <h1>{screen === 'dashboard' ? 'Overview' : screen === 'settings' ? 'Settings' : currentShelf.label}</h1>
+                <div className="meta">
+                  {screen === 'dashboard' ? (
+                    <>
+                      <span>{displayedHumanInteractions} human interactions</span>
+                      <span>{displayedAiCrawlerInteractions} AI · {displayedSearchCrawlerInteractions} search crawler hits</span>
+                      <span>{attentionCount} delivery moments</span>
+                      <span>{workspaceChangeCount} uncommitted workspace changes</span>
+                      <span>{dirtyIds.size} unsaved Markdown files</span>
+                    </>
+                  ) : screen === 'settings' ? (
+                    <>
+                      <span>Manage profile, language, integrations, and archived content</span>
+                      <span>Workspace identity stays source-backed · credentials stay local</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{contentSummary}</span>
+                      <span>{dirtyIds.size} unsaved</span>
+                      {selected && <span>{docPath(selected)}</span>}
+                    </>
+                  )}
+                </div>
               </div>
-              <h1>{screen === 'dashboard' ? 'Overview' : screen === 'settings' ? 'Settings' : currentShelf.label}</h1>
-              <div className="meta">
-                {screen === 'dashboard' ? (
-                  <>
-                    <span>{displayedHumanInteractions} human interactions</span>
-                    <span>{displayedAiCrawlerInteractions} AI · {displayedSearchCrawlerInteractions} search crawler hits</span>
-                    <span>{attentionCount} delivery moments</span>
-                    <span>{workspaceChangeCount} uncommitted workspace changes</span>
-                    <span>{dirtyIds.size} unsaved Markdown files</span>
-                  </>
-                ) : screen === 'settings' ? (
-                  <>
-                    <span>Manage profile, language, integrations, and archived content</span>
-                    <span>Workspace identity stays source-backed · credentials stay local</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{contentSummary}</span>
-                    <span>{dirtyIds.size} unsaved</span>
-                    {selected && <span>{docPath(selected)}</span>}
-                  </>
-                )}
-              </div>
+              {screen === 'settings' ? (
+                <button
+                  type="button"
+                  className="workspace-settings-close"
+                  onClick={closeWorkspaceSettings}
+                  title="Close settings"
+                  aria-label="Close settings"
+                >
+                  <X size={18} />
+                </button>
+              ) : screen === 'content' && !contentEditorOpen ? renderLanguageCloseControls({
+                  closeLabel: 'Back to Overview',
+                  closeTitle: 'Back to Overview',
+                  onClose: returnToDashboard,
+                }) : null}
             </div>
-            {screen === 'settings' ? (
-              <button
-                type="button"
-                className="workspace-settings-close"
-                onClick={closeWorkspaceSettings}
-                title="Close settings"
-                aria-label="Close settings"
-              >
-                <X size={18} />
-              </button>
-            ) : screen === 'content' && !contentEditorOpen ? renderLanguageCloseControls({
-                fixed: true,
-                closeLabel: 'Back to Overview',
-                closeTitle: 'Back to Overview',
-                onClose: returnToDashboard,
-              }) : null}
           </header>
         )}
         {updatesShellActive && renderLanguageCloseControls({
