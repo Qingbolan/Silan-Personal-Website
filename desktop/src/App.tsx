@@ -2982,11 +2982,13 @@ export default function App() {
     };
   }, [versionScope, documents, dirtyIds.size]);
 
-  const titlebarTitle = screen === 'settings'
-    ? 'Settings'
-    : screen === 'content'
-      ? currentShelf.label
-      : undefined;
+  const titlebarTitle = screen === 'dashboard'
+    ? 'Overview'
+    : screen === 'settings'
+      ? 'Settings'
+      : screen === 'content'
+        ? currentShelf.label
+        : undefined;
   const titlebarOptions = screen === 'settings' ? (
     <button
       type="button"
@@ -3056,7 +3058,6 @@ export default function App() {
               <div className="eyebrow">
                 {screen === 'dashboard' ? 'Workspace' : screen === 'settings' ? 'Preferences' : currentShelf.eyebrow}
               </div>
-              {screen === 'dashboard' && <h1>Overview</h1>}
               <div className="meta">
                 {screen === 'dashboard' ? (
                   <>

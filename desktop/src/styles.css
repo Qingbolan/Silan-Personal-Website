@@ -1106,7 +1106,7 @@ textarea:focus-visible {
   min-width: 0;
   gap: 12px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 14px;
   color: var(--window-titlebar-foreground);
   pointer-events: none;
