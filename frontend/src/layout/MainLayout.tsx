@@ -123,7 +123,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           TopNavigation own the row. Desktop (sm+) keeps the full chrome. */}
       <header
         className={[
-          'relative z-10 flex-shrink-0 items-center gap-2 px-3 py-1.5 sm:gap-2.5 sm:px-4',
+          'relative z-10 flex-shrink-0 items-center gap-1.5 px-2.5 py-1 sm:gap-2 sm:px-3',
           isSearchRoute ? 'hidden sm:flex' : 'flex',
         ].join(' ')}
       >
@@ -132,17 +132,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         {/* Left control capsule: back / forward / reload */}
         <div
-          className="hidden flex-shrink-0 items-center gap-0.5 rounded-full p-1 sm:flex"
+          className="hidden flex-shrink-0 items-center gap-0.5 rounded-full p-0.5 sm:flex"
           style={{ backgroundColor: capsuleBg, boxShadow: colors.shadowSm }}
         >
           <ControlButton label="Back" onClick={() => navigate(-1)}>
-            <ArrowLeft size={16} />
+            <ArrowLeft size={14} />
           </ControlButton>
           <ControlButton label="Forward" onClick={() => navigate(1)}>
-            <ArrowRight size={16} />
+            <ArrowRight size={14} />
           </ControlButton>
           <ControlButton label="Reload" onClick={() => window.location.reload()}>
-            <RotateCw size={14} />
+            <RotateCw size={13} />
           </ControlButton>
         </div>
 

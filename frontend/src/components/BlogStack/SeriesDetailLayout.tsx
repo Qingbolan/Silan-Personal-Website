@@ -192,7 +192,6 @@ const SeriesDetailLayout: React.FC<SeriesDetailLayoutProps> = ({
         wordCount={wordCount}
         likes={engagement.likes}
         commentsCount={engagement.commentsCount}
-        contentClassName="max-w-[82rem] lg:px-12"
         outlineHeadingSelector="header h1, h2, h3"
       >
         {isOverview ? (

@@ -262,7 +262,6 @@ const EpisodeDetail: React.FC = () => {
         wordCount={wordCount}
         likes={!isOverview ? engagement.likes : undefined}
         commentsCount={!isOverview ? engagement.commentsCount : undefined}
-        contentClassName="max-w-[82rem] lg:px-12"
         outlineHeadingSelector="header h1, h2, h3"
       >
         {isOverview ? (

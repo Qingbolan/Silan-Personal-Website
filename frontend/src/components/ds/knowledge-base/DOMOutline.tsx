@@ -129,6 +129,8 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
   const outlineLabel = 'Article outline';
 
   if (collapsed) {
+    const lineGap = headings.length > 24 ? 3 : headings.length > 14 ? 4 : 6;
+
     return (
       <nav data-ds aria-label={outlineLabel} className={cn('flex w-full justify-center', className)}>
         <button
@@ -137,23 +139,28 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
           title="Expand outline"
           onClick={() => onCollapsedChange?.(false)}
           className={cn(
-            'group flex max-h-[calc(100dvh-6rem)] w-8 flex-col items-center gap-[6px] overflow-hidden rounded-full py-3',
+            'group flex max-h-[calc(100dvh-6rem)] w-8 flex-col items-center overflow-y-auto rounded-full py-3',
+            '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
             'bg-ds-surface-1/80 transition-colors hover:bg-ds-surface-2',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/30',
           )}
+          style={{ gap: lineGap }}
         >
           {headings.map((h) => {
             const active = h.id === activeHeading.id;
             const width = h.level <= 1 ? 22 : h.level === 2 ? 18 : 13;
+            const height = h.level <= 1 ? 3 : h.level === 2 ? 2.5 : 2;
             return (
               <span
                 key={h.id}
                 aria-hidden
                 className={cn(
-                  'block h-[3px] rounded-full transition-colors',
-                  active ? 'bg-ds-primary' : 'bg-ds-fg-subtle/45 group-hover:bg-ds-fg-muted/70',
+                  'block h-[3px] rounded-full transition-[background-color,opacity]',
+                  active
+                    ? 'bg-ds-primary opacity-100'
+                    : 'bg-ds-fg-subtle opacity-50 group-hover:opacity-75',
                 )}
-                style={{ width }}
+                style={{ width, height, minHeight: height }}
               />
             );
           })}

@@ -22,6 +22,12 @@ import { Select } from '../Controls';
 import { scrollToAnchor } from '../../../lib/scrollToAnchor';
 
 const MOBILE_OVERVIEW_ID = '__mobile_overview__';
+const READER_MAX_WIDTH = '82rem';
+const LEFT_RAIL_WIDTH = '16.5rem';
+const OUTLINE_TRACK_MINIMUM = {
+  collapsed: '3.5rem',
+  expanded: '15rem',
+} as const;
 
 export interface KnowledgeBaseShellProps {
   // Left rail
@@ -80,6 +86,16 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
 }) => {
   const centreRef = useRef<HTMLDivElement>(null);
   const [outlineCollapsed, setOutlineCollapsed] = useState(outlineDefaultCollapsed);
+  const outlineMode = outlineCollapsed ? 'collapsed' : 'expanded';
+  // The document measure and the Outline are sibling tracks. The reader grows
+  // to its explicit maximum first; only then does the Outline consume the
+  // remaining right-side space. This prevents a wide, empty centre track from
+  // squeezing the Outline back to its minimum width.
+  const gridTemplateColumns = [
+    ...(showLeftRail ? [LEFT_RAIL_WIDTH] : []),
+    `minmax(0, ${READER_MAX_WIDTH})`,
+    `minmax(${OUTLINE_TRACK_MINIMUM[outlineMode]}, 1fr)`,
+  ].join(' ');
   // Tab semantics: caller drives currentChapterId. Fall back to first chapter
   // so something is highlighted even before a click.
   const activeChapter = currentChapterId ?? chapters[0]?.id ?? '';
@@ -130,13 +146,12 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
       )}
 
       <div
+        data-kb-shell
+        data-outline-mode={outlineMode}
         className={cn(
           'lg:grid lg:min-h-[calc(100dvh-3.5rem)] lg:items-stretch',
           showLeftRail
             ? [
-                outlineCollapsed
-                  ? 'lg:grid-cols-[16.5rem_minmax(0,1fr)_3.5rem]'
-                  : 'lg:grid-cols-[16.5rem_minmax(0,1fr)_15rem]',
                 // MainLayout supplies page padding. Reading shells with a
                 // chapter rail are full reading surfaces, so their rails must
                 // align to that surface edge instead of inheriting inner text
@@ -144,10 +159,9 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
                 'lg:relative lg:left-1/2 lg:w-[calc(100%+4rem)] lg:-translate-x-1/2',
                 'xl:w-[calc(100%+4rem)]',
               ]
-            : outlineCollapsed
-              ? 'lg:grid-cols-[minmax(0,1fr)_3.5rem]'
-              : 'lg:grid-cols-[minmax(0,1fr)_15rem]',
+            : undefined,
         )}
+        style={{ gridTemplateColumns }}
       >
         {/* Left rail — book nav. Hidden below lg. Width matches Yuque
             (288px). Border is inline-styled because Tailwind's `border-r`
@@ -186,10 +200,13 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
         )}
 
         {/* Centre — flow content. */}
-        <div className="min-w-0">
+        <div data-kb-reader-track className="min-w-0">
           <div
             ref={centreRef}
-            className={cn('mx-auto max-w-3xl py-6 sm:py-8 lg:px-10', contentClassName)}
+            className={cn(
+              'mx-auto w-full max-w-[82rem] py-6 sm:py-8 lg:px-12',
+              contentClassName,
+            )}
           >
             {children}
           </div>
@@ -197,13 +214,19 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
 
         {/* Right rail — outline. Hidden below lg. */}
         <aside
+          data-kb-outline-rail
           className={cn(
             'relative z-30 hidden lg:block',
             'min-h-full transition-[padding] duration-ds-base',
-            outlineCollapsed ? 'px-2' : 'px-5',
+            outlineCollapsed ? 'px-2' : 'px-4 2xl:px-5',
           )}
         >
-          <div className="sticky top-0 max-h-[calc(100dvh-4rem)] overflow-y-auto pt-6">
+          <div
+            className={cn(
+              'sticky top-0 max-h-[calc(100dvh-4rem)] overflow-y-auto pt-6',
+              outlineCollapsed ? 'max-w-14' : 'max-w-[34rem]',
+            )}
+          >
             <DOMOutline
               containerSelector={outlineContainerSelector}
               headingSelector={outlineHeadingSelector}

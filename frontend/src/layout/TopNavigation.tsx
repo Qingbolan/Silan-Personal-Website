@@ -26,10 +26,10 @@ interface Route {
 }
 
 const ROUTES = (zh: boolean): Route[] => [
-  { path: '/',         label: zh ? '主页' : 'Home',     icon: <Home size={16} /> },
-  { path: '/moments',  label: zh ? '瞬间' : 'Moments',  icon: <Aperture size={16} /> },
-  { path: '/blog',     label: zh ? '博客' : 'Blog',     icon: <BookOpen size={16} /> },
-  { path: '/projects', label: zh ? '项目' : 'Projects', icon: <Briefcase size={16} /> },
+  { path: '/',         label: zh ? '主页' : 'Home',     icon: <Home size={14} /> },
+  { path: '/moments',  label: zh ? '瞬间' : 'Moments',  icon: <Aperture size={14} /> },
+  { path: '/blog',     label: zh ? '博客' : 'Blog',     icon: <BookOpen size={14} /> },
+  { path: '/projects', label: zh ? '项目' : 'Projects', icon: <Briefcase size={14} /> },
   // Contact page disabled (2026-08): route commented out; avatar now goes home.
   // { path: '/contact',  label: zh ? '联系' : 'Contact',  icon: <Mail size={16} /> },
 ];
@@ -103,7 +103,7 @@ const NavGroup: React.FC<{ routes: Route[]; activePath: string; ariaLabel: strin
   return (
     <nav
       aria-label={ariaLabel}
-      className="flex flex-shrink-0 items-center gap-1 rounded-full p-1"
+      className="flex flex-shrink-0 items-center gap-0.5 rounded-full p-0.5"
       style={{ backgroundColor: capsuleBg, boxShadow: colors.shadowSm }}
     >
       {routes.map((r) => {
@@ -174,7 +174,7 @@ export const NavAvatar: React.FC = () => {
       aria-label={label}
       title={label}
       onClick={() => navigate(canonicalInternalPath('/'))}
-      className="group flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform hover:scale-105"
+      className="group flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform hover:scale-105"
     >
       <span
         className="flex h-full w-full items-center justify-center overflow-hidden rounded-full"
@@ -296,7 +296,7 @@ const MenuCrumb: React.FC<{
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center rounded-full px-1.5 py-0.5 font-medium transition-colors"
+        className="flex items-center rounded-full px-1 py-0 font-medium transition-colors"
         style={{ color: accent }}
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = hoverBg)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -497,7 +497,7 @@ const TopNavigation: React.FC = () => {
     buttonRef,
     onPointerDown,
   }) => {
-    const classes = `flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors sm:h-7 sm:w-7 ${className ?? ''}`;
+    const classes = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors sm:h-7 sm:w-7 ${className ?? ''}`;
     const onMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
       event.currentTarget.style.backgroundColor = hoverBg;
     };
@@ -545,13 +545,13 @@ const TopNavigation: React.FC = () => {
       <div className="relative min-w-0 flex-1">
         {/* ── Address field ── */}
         <div
-          className="flex items-center gap-1 rounded-full py-0.5 pl-1 pr-1"
+          className="flex items-center gap-0.5 rounded-full p-0.5"
           style={{ backgroundColor: fieldBg, boxShadow: colors.shadowSm }}
         >
           {/* Breadcrumb trail — section, then the content title on detail pages */}
           <nav
             aria-label={zh ? '当前位置' : 'Breadcrumb'}
-            className="flex min-w-0 flex-1 items-center justify-center gap-1 px-3 py-0.5 text-ds-sm"
+            className="flex min-w-0 flex-1 items-center justify-center gap-1 px-2.5 text-ds-xs"
           >
             {crumbs.map((c, i) => {
               const isLeaf = i === crumbs.length - 1;
@@ -566,7 +566,7 @@ const TopNavigation: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => navigate(canonicalInternalPath(c.to!))}
-                      className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-1 transition-colors [&_svg]:h-[14px] [&_svg]:w-[14px]"
+                      className="flex flex-shrink-0 items-center gap-1 rounded-full px-1 transition-colors [&_svg]:h-[13px] [&_svg]:w-[13px]"
                       style={{ color: colors.textTertiary }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = accent)}
                       onMouseLeave={(e) => (e.currentTarget.style.color = colors.textTertiary)}
@@ -577,7 +577,7 @@ const TopNavigation: React.FC = () => {
                   ) : (
                     <span
                       aria-current={isLeaf ? 'page' : undefined}
-                      className={`flex items-center gap-1.5 [&_svg]:h-[14px] [&_svg]:w-[14px] ${
+                      className={`flex items-center gap-1 [&_svg]:h-[13px] [&_svg]:w-[13px] ${
                         isLeaf && crumbs.length > 1 ? 'min-w-0' : 'flex-shrink-0'
                       }`}
                       style={{
@@ -632,7 +632,7 @@ const TopNavigation: React.FC = () => {
           {/* Tools */}
           <div className="flex flex-shrink-0 items-center">
             <Tool buttonRef={searchTriggerRef} label={zh ? '搜索' : 'Search'} onClick={openSearch} onPointerDown={primeMobileKeyboard}>
-              <Search size={15} />
+              <Search size={14} />
             </Tool>
             <Tool
               className="hidden sm:flex"
@@ -640,14 +640,14 @@ const TopNavigation: React.FC = () => {
               href={languageHref(targetLanguage)}
               onClick={() => selectLanguage(targetLanguage)}
             >
-              <Globe size={15} />
+              <Globe size={14} />
             </Tool>
             <Tool
               className="hidden sm:flex"
               label={zh ? '切换主题' : 'Toggle theme'}
               onClick={toggleTheme}
             >
-              {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
+              {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
             </Tool>
           </div>
         </div>

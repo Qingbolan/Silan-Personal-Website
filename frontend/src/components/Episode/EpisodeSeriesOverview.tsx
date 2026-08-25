@@ -116,7 +116,6 @@ const EpisodeSeriesOverview: React.FC = () => {
         chapters={chapters}
         currentChapterId={SERIES_OVERVIEW_ID}
         wordCount={wordCount}
-        contentClassName="max-w-[82rem] lg:px-12"
         outlineHeadingSelector="header h1, h2, h3"
       >
         <header id={SERIES_HEADER_ID} data-ds className="pb-8 pt-6">

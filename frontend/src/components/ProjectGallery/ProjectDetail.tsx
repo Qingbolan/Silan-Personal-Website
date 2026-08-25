@@ -537,7 +537,6 @@ const ProjectDetail: React.FC = () => {
         currentChapterId={activeSection}
         wordCount={wordCount}
         showLeftRail={false}
-        contentClassName="max-w-[82rem] lg:px-12"
         outlineContainerSelector="#project-detail-document"
         outlineHeadingSelector="header h1, h2, h3"
       >
