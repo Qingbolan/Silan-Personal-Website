@@ -58,7 +58,6 @@ const Moments: React.FC = () => {
 
   const copy = language === 'en'
     ? {
-        eyebrow: 'Now',
         title: 'Recent moments',
         description: 'A concise log of current research, projects, and milestones.',
         coverAlt: 'NUS School of Computing',
@@ -70,7 +69,6 @@ const Moments: React.FC = () => {
         related: 'Related',
       }
     : {
-        eyebrow: '近况',
         title: '最新动态',
         description: '研究、项目与阶段成果的简洁时间线。',
         coverAlt: '新加坡国立大学计算机学院',
@@ -275,9 +273,6 @@ const Moments: React.FC = () => {
       />
 
       <MomentsProfileHero
-        eyebrow={copy.eyebrow}
-        title={copy.title}
-        description={copy.description}
         name={profileName}
         role={profileRole}
         avatarUrl={avatarUrl}

@@ -4,9 +4,6 @@ import { dsRoot } from '../ds/dsAttr';
 import { EDITORIAL_CONTENT_FRAME_CLASS } from '../../layout/contentFrame';
 
 interface MomentsProfileHeroProps {
-  eyebrow: string;
-  title: string;
-  description: string;
   name: string;
   role?: string;
   avatarUrl: string;
@@ -22,9 +19,6 @@ interface MomentsProfileHeroProps {
  * while the public site keeps its own navigation and responsive proportions.
  */
 const MomentsProfileHero: React.FC<MomentsProfileHeroProps> = ({
-  eyebrow,
-  title,
-  description,
   name,
   role,
   avatarUrl,
@@ -39,7 +33,7 @@ const MomentsProfileHero: React.FC<MomentsProfileHeroProps> = ({
       className,
     )}
   >
-    <div className="relative min-h-[17rem] overflow-hidden bg-ds-surface-3 sm:min-h-[clamp(26rem,24vw,34rem)]">
+    <div className="relative min-h-[13rem] overflow-hidden bg-ds-surface-3 sm:min-h-[clamp(18rem,18vw,24rem)]">
       <img
         src={coverUrl}
         alt={coverAlt}
@@ -49,20 +43,6 @@ const MomentsProfileHero: React.FC<MomentsProfileHeroProps> = ({
         aria-hidden
         className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,13,18,0.16)_0%,rgba(7,13,18,0.08)_34%,rgba(7,13,18,0.76)_100%)]"
       />
-
-      <div className="absolute inset-x-0 bottom-0 text-white">
-        <div className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'pb-7 sm:pb-9 2xl:pb-14')}>
-          <div className="mb-2 text-ds-xs font-semibold uppercase tracking-[0.16em] text-orange-200">
-            {eyebrow}
-          </div>
-          <h1 className="max-w-4xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] sm:text-5xl 2xl:text-6xl">
-            {title}
-          </h1>
-          <p className="mt-3 max-w-[60ch] text-sm leading-6 text-white/78 sm:text-base sm:leading-7 2xl:text-lg 2xl:leading-8">
-            {description}
-          </p>
-        </div>
-      </div>
     </div>
 
     <div className="absolute -bottom-16 inset-x-0 2xl:-bottom-20">
