@@ -316,7 +316,7 @@ const ContentParts: React.FC<ContentPartsProps> = ({
               ) : summaryStyle ? (
                 <div className="max-w-[68rem]">
                   <Markdown
-                    className="text-ds-lg font-medium leading-[1.65] text-ds-fg"
+                    className="text-ds-lg font-medium leading-[1.55] text-ds-fg"
                     documentTitle={documentTitle}
                     sectionTitle={label}
                   >

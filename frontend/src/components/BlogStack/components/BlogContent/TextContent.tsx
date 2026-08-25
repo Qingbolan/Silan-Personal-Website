@@ -397,7 +397,7 @@ export const TextContent: React.FC<TextContentProps> = ({
             } else {
               // Render regular text with <p> wrapper
               return (
-                <p className={`font-article text-theme-text-primary/85 text-ds-lg leading-[1.74] font-normal
+                <p className={`font-article text-theme-text-primary/85 text-ds-lg leading-[1.58] font-normal
                                selection:bg-theme-accent/20
                                ${
                                  isFirstParagraph ? 'first-letter:text-theme-accent first-letter:font-bold' : ''

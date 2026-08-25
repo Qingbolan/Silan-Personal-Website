@@ -35,7 +35,7 @@ const MomentsProfileHero: React.FC<MomentsProfileHeroProps> = ({
   <header
     {...dsRoot}
     className={cn(
-      'relative mb-24 sm:mb-28 lg:-mx-8 lg:w-[calc(100%_+_4rem)]',
+      'relative mb-16 sm:mb-20 lg:-mx-8 lg:w-[calc(100%_+_4rem)]',
       className,
     )}
   >

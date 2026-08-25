@@ -147,7 +147,7 @@ const PartPanel: React.FC<{
       <section id={part.role} className="max-w-[68rem] scroll-mt-24">
         {coverNode}
         <Markdown
-          className="text-ds-lg font-medium leading-[1.65] text-ds-fg"
+          className="text-ds-lg font-medium leading-[1.55] text-ds-fg"
           documentTitle={documentTitle}
           sectionTitle={label}
         >

@@ -142,8 +142,8 @@ const Markdown: React.FC<MarkdownProps> = ({
       className={[
         'markdown-content font-article',
         inline
-          ? 'text-ds-base leading-[1.8] text-theme-secondary'
-          : 'text-ds-lg leading-[1.74] text-theme-text-primary',
+          ? 'text-ds-base leading-[1.5] text-theme-secondary'
+          : 'text-ds-lg leading-[1.58] text-theme-text-primary',
         inline ? 'markdown-content--inline' : '',
         className || '',
       ].filter(Boolean).join(' ')}

@@ -130,7 +130,7 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
 
   if (collapsed) {
     return (
-      <nav aria-label={outlineLabel} className={cn('flex w-full justify-center', className)}>
+      <nav data-ds aria-label={outlineLabel} className={cn('flex w-full justify-center', className)}>
         <button
           type="button"
           aria-label="Expand article outline"
@@ -163,8 +163,8 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
   }
 
   return (
-    <nav aria-label="Outline" className={cn('w-full', className)}>
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <nav data-ds aria-label="Outline" className={cn('w-full', className)}>
+      <div className="mb-2 flex items-center justify-between gap-2">
         <span className="font-mono text-ds-2xs font-semibold uppercase tracking-[0.08em] text-ds-fg-subtle">
           Outline
         </span>
@@ -178,7 +178,7 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
           Min
         </button>
       </div>
-      <ol className="space-y-1">
+      <ol className="space-y-0.5">
         {headings.map((h) => {
           const active = h.id === activeId;
           return (
@@ -187,11 +187,11 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
                 type="button"
                 onClick={() => scrollToAnchor(h.id)}
                 className={cn(
-                  'block w-full rounded-ds-sm py-1.5 pr-1 text-left leading-[1.45] transition-colors',
+                  'block w-full rounded-ds-sm py-1 pr-1 text-left leading-[1.32] transition-colors',
                   'break-words focus:outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/30',
-                  h.level === 1 && 'text-ds-base',
-                  h.level === 2 && 'pl-3 text-ds-sm',
-                  h.level === 3 && 'pl-5 text-ds-sm',
+                  h.level === 1 && 'text-ds-sm',
+                  h.level === 2 && 'pl-2.5 text-ds-xs',
+                  h.level === 3 && 'pl-4 text-ds-xs',
                   active
                     ? 'font-semibold text-ds-primary'
                     : h.level === 1

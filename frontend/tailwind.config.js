@@ -233,44 +233,49 @@ export default {
       // Typography Scale - Optimized for iPhone SE and small screens
       fontSize: {
         // Mobile-first approach with better scaling
-        'xs': ['0.75rem', { lineHeight: '1rem' }],        // 12px - Smaller text
-        'sm': ['0.875rem', { lineHeight: '1.25rem' }],    // 14px - Small but readable
-        'base': ['1rem', { lineHeight: '1.5rem' }],       // 16px - Standard base
-        'lg': ['1.125rem', { lineHeight: '1.75rem' }],    // 18px 
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],     // 20px
-        '2xl': ['1.5rem', { lineHeight: '2rem' }],        // 24px
-        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],   // 30px
-        '4xl': ['2.25rem', { lineHeight: '2.5rem' }],     // 36px
-        '5xl': ['3rem', { lineHeight: '1' }],             // 48px
-        '6xl': ['3.75rem', { lineHeight: '1' }],          // 60px
-        '7xl': ['4.5rem', { lineHeight: '1' }],           // 72px
-        '8xl': ['6rem', { lineHeight: '1' }],             // 96px
-        '9xl': ['8rem', { lineHeight: '1' }],             // 128px
+        'xs': ['0.71875rem', { lineHeight: '1rem' }],
+        'sm': ['0.8125rem', { lineHeight: '1.125rem' }],
+        'base': ['0.9375rem', { lineHeight: '1.375rem' }],
+        'lg': ['1.0625rem', { lineHeight: '1.5rem' }],
+        'xl': ['1.25rem', { lineHeight: '1.625rem' }],
+        '2xl': ['1.375rem', { lineHeight: '1.75rem' }],
+        '3xl': ['1.75rem', { lineHeight: '2.125rem' }],
+        '4xl': ['2.125rem', { lineHeight: '2.375rem' }],
+        '5xl': ['2.75rem', { lineHeight: '1' }],
+        '6xl': ['3.375rem', { lineHeight: '1' }],
+        '7xl': ['4rem', { lineHeight: '1' }],
+        '8xl': ['5.25rem', { lineHeight: '1' }],
+        '9xl': ['7rem', { lineHeight: '1' }],
         
         // Mobile-specific sizes for iPhone SE
-        'mobile-xs': ['0.875rem', { lineHeight: '1.25rem' }],  // 14px
-        'mobile-sm': ['1rem', { lineHeight: '1.5rem' }],       // 16px  
-        'mobile-base': ['1.125rem', { lineHeight: '1.75rem' }], // 18px
-        'mobile-lg': ['1.25rem', { lineHeight: '1.75rem' }],   // 20px
-        'mobile-xl': ['1.375rem', { lineHeight: '1.875rem' }], // 22px
-        'mobile-2xl': ['1.5rem', { lineHeight: '2rem' }],      // 24px
-        'mobile-3xl': ['1.75rem', { lineHeight: '2.25rem' }],  // 28px
-        'mobile-4xl': ['2rem', { lineHeight: '2.5rem' }],      // 32px
+        'mobile-xs': ['0.75rem', { lineHeight: '1.0625rem' }],
+        'mobile-sm': ['0.875rem', { lineHeight: '1.25rem' }],
+        'mobile-base': ['1rem', { lineHeight: '1.4rem' }],
+        'mobile-lg': ['1.125rem', { lineHeight: '1.5rem' }],
+        'mobile-xl': ['1.25rem', { lineHeight: '1.625rem' }],
+        'mobile-2xl': ['1.375rem', { lineHeight: '1.75rem' }],
+        'mobile-3xl': ['1.625rem', { lineHeight: '2rem' }],
+        'mobile-4xl': ['1.875rem', { lineHeight: '2.25rem' }],
 
         // Design-system type ramp. These map `text-ds-*` to the
         // `--ds-text-*` variables defined in src/styles/design-system.css.
         // Without these entries every `ds/` component's `text-ds-*` class is
         // a no-op and falls back to the inherited body size.
-        'ds-2xs': ['var(--ds-text-2xs)', { lineHeight: '1.4' }],
-        'ds-xs': ['var(--ds-text-xs)', { lineHeight: '1.45' }],
-        'ds-sm': ['var(--ds-text-sm)', { lineHeight: '1.5' }],
-        'ds-base': ['var(--ds-text-base)', { lineHeight: '1.55' }],
-        'ds-md': ['var(--ds-text-md)', { lineHeight: '1.55' }],
-        'ds-lg': ['var(--ds-text-lg)', { lineHeight: '1.5' }],
-        'ds-xl': ['var(--ds-text-xl)', { lineHeight: '1.4' }],
-        'ds-2xl': ['var(--ds-text-2xl)', { lineHeight: '1.3' }],
-        'ds-3xl': ['var(--ds-text-3xl)', { lineHeight: '1.2' }],
-        'ds-4xl': ['var(--ds-text-4xl)', { lineHeight: '1.1' }],
+        'ds-2xs': ['var(--ds-text-2xs)', { lineHeight: '1.3' }],
+        'ds-xs': ['var(--ds-text-xs)', { lineHeight: '1.35' }],
+        'ds-sm': ['var(--ds-text-sm)', { lineHeight: '1.4' }],
+        'ds-base': ['var(--ds-text-base)', { lineHeight: '1.45' }],
+        'ds-md': ['var(--ds-text-md)', { lineHeight: '1.45' }],
+        'ds-lg': ['var(--ds-text-lg)', { lineHeight: '1.42' }],
+        'ds-xl': ['var(--ds-text-xl)', { lineHeight: '1.3' }],
+        'ds-2xl': ['var(--ds-text-2xl)', { lineHeight: '1.22' }],
+        'ds-3xl': ['var(--ds-text-3xl)', { lineHeight: '1.12' }],
+        'ds-4xl': ['var(--ds-text-4xl)', { lineHeight: '1.05' }],
+      },
+
+      lineHeight: {
+        relaxed: '1.5',
+        loose: '1.65',
       },
 
       // Legacy shadows stay off (un-migrated components rely on this).

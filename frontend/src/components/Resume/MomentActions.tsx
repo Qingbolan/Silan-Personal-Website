@@ -70,7 +70,7 @@ const CompactEngagementControls: React.FC<CompactEngagementControlsProps> = ({
   onLike,
   onComment,
 }) => (
-  <span className="inline-flex shrink-0 items-center gap-3">
+  <span className="inline-flex shrink-0 items-center gap-2.5">
     <button
       type="button"
       aria-label={likeLabel}
@@ -81,7 +81,7 @@ const CompactEngagementControls: React.FC<CompactEngagementControlsProps> = ({
         liked ? 'text-red-500' : 'text-ds-fg-subtle hover:text-ds-fg'
       }`}
     >
-      <Heart className="size-4" fill={liked ? 'currentColor' : 'none'} aria-hidden />
+      <Heart className="size-3.5" fill={liked ? 'currentColor' : 'none'} aria-hidden />
       {likes}
     </button>
     <button
@@ -90,7 +90,7 @@ const CompactEngagementControls: React.FC<CompactEngagementControlsProps> = ({
       onClick={onComment}
       className="inline-flex items-center gap-1.5 rounded-ds-xs text-ds-xs font-medium tabular-nums text-ds-fg-subtle transition-colors hover:text-ds-fg focus-visible:shadow-ds-focus"
     >
-      <MessageCircle className="size-4" aria-hidden />
+      <MessageCircle className="size-3.5" aria-hidden />
       {comments}
     </button>
   </span>
@@ -200,7 +200,7 @@ const MomentActions: React.FC<MomentActionsProps> = ({
     return (
       <div>
         {(timestampDisplay !== 'hidden' || !hasThreadPreview) && (
-          <div className="flex min-h-9 items-center justify-end gap-4">
+          <div className="flex min-h-7 items-center justify-end gap-3">
             {timestampDisplay !== 'hidden' && (
               <time
                 dateTime={timestamp}
@@ -226,8 +226,8 @@ const MomentActions: React.FC<MomentActionsProps> = ({
         )}
 
         {hasThreadPreview && (
-          <div className="mt-3 border-t border-ds-border pt-3">
-            <div className="rounded-ds-sm bg-ds-surface-3 px-3 py-2.5">
+          <div className="mt-2 border-t border-ds-border pt-2">
+            <div className="rounded-ds-sm bg-ds-surface-3 px-3 py-2">
               <div className="flex w-full items-center justify-between gap-3">
                 <span className="inline-flex min-w-0 items-center gap-2 text-ds-xs font-medium text-ds-fg-muted">
                   <MessageCircle className="size-3.5 shrink-0" aria-hidden />

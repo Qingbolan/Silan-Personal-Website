@@ -43,6 +43,9 @@ interface MomentYearGroup {
   dateGroups: MomentDateGroup[];
 }
 
+const MOMENT_ROW_CLASS =
+  'grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 overflow-hidden rounded-ds-md bg-ds-surface-2 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-5';
+
 const Moments: React.FC = () => {
   const { language } = useLanguage();
   const [moments, setUpdates] = useState<Moment[]>([]);
@@ -287,14 +290,14 @@ const Moments: React.FC = () => {
           <div
             {...dsRoot}
             aria-label={language === 'en' ? 'Loading moments' : '正在加载动态'}
-            className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'divide-y divide-ds-border border-t border-ds-border')}
+            className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'space-y-2')}
           >
             {[0, 1, 2].map((item) => (
-              <div key={item} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 py-7 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-6">
-                <Skeleton className="w-12" />
-                <div className="grid gap-8 xl:grid-cols-2">
+              <div key={item} className={cn(MOMENT_ROW_CLASS, 'px-3 py-4 sm:px-4')}>
+                <Skeleton className="w-10" />
+                <div className="grid gap-5 xl:grid-cols-2">
                   {[0, 1].map((column) => (
-                    <div key={column} className="space-y-3">
+                    <div key={column} className="space-y-2">
                       <Skeleton className="w-2/3" />
                       <Skeleton className="w-full" />
                       <Skeleton className="w-4/5" />
@@ -322,10 +325,10 @@ const Moments: React.FC = () => {
         )}
 
         {loadState === 'ready' && filtered.length > 0 && (
-          <div className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'space-y-14')}>
+          <div className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'space-y-8')}>
             {yearGroups.map((group) => (
               <section {...dsRoot} key={group.year} aria-labelledby={`year-${group.year}`}>
-                <header className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-end gap-3 border-b border-ds-border pb-5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-6 sm:pb-6">
+                <header className="mb-2 grid grid-cols-[3.5rem_minmax(0,1fr)] items-end gap-3 border-b border-ds-border pb-3 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-5">
                   <h2
                     id={`year-${group.year}`}
                     className="font-mono text-3xl font-bold leading-[0.9] tabular-nums tracking-[-0.075em] text-ds-fg sm:text-4xl lg:text-5xl"
@@ -335,7 +338,7 @@ const Moments: React.FC = () => {
                   <div aria-hidden />
                 </header>
 
-                <ol>
+                <ol className="space-y-2">
                   {group.dateGroups.map((dateGroup) => {
                     const isMultiEntryDay = dateGroup.items.length > 1;
                     const day = dateGroup.date
@@ -350,12 +353,12 @@ const Moments: React.FC = () => {
                     return (
                       <li
                         key={dateGroup.key}
-                        className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 border-b border-ds-border sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-6"
+                        className={MOMENT_ROW_CLASS}
                       >
-                        <div className="pt-7 sm:pt-8">
+                        <div className="px-3 pt-4 sm:pl-4 sm:pr-0">
                           <time
                             dateTime={dateGroup.key}
-                            className="block font-mono text-2xl font-medium leading-none tabular-nums tracking-[-0.06em] text-ds-fg sm:text-3xl"
+                            className="block font-mono text-xl font-medium leading-none tabular-nums tracking-[-0.05em] text-ds-fg sm:text-2xl"
                           >
                             {day}
                           </time>
@@ -366,7 +369,7 @@ const Moments: React.FC = () => {
 
                         <div
                           className={cn(
-                            'grid min-w-0 gap-x-8 xl:gap-x-10',
+                            'grid min-w-0 gap-x-5',
                             isMultiEntryDay && 'xl:grid-cols-2',
                           )}
                         >
@@ -382,9 +385,9 @@ const Moments: React.FC = () => {
                                   else momentElements.current.delete(moment.id);
                                 }}
                                 className={cn(
-                                  'min-w-0 scroll-mt-24 py-7 sm:py-8',
+                                  'min-w-0 scroll-mt-24 px-3 py-4 sm:px-4',
                                   index > 0 && 'border-t border-ds-border',
-                                  isMultiEntryDay && index % 2 === 1 && 'xl:border-l xl:pl-10',
+                                  isMultiEntryDay && index % 2 === 1 && 'xl:border-l xl:pl-5',
                                   isMultiEntryDay && index === 1 && 'xl:border-t-0',
                                 )}
                                 initial={{ opacity: 0, y: 12 }}
@@ -401,17 +404,17 @@ const Moments: React.FC = () => {
                                         {language === 'en' ? 'Pin' : '置顶'}
                                       </span>
                                     )}
-                                    <div className="flex items-start gap-3">
-                                      <h3 className="min-w-0 flex-1 text-balance text-ds-xl font-semibold leading-tight tracking-[-0.025em] text-ds-fg transition-colors group-hover:text-ds-primary sm:text-ds-2xl">
+                                    <div className="flex items-start gap-2.5">
+                                      <h3 className="min-w-0 flex-1 text-balance text-ds-lg font-semibold leading-[1.25] tracking-[-0.02em] text-ds-fg transition-colors group-hover:text-ds-primary sm:text-ds-xl">
                                         {moment.title}
                                       </h3>
-                                      <ArrowUpRight className="mt-1 size-4 shrink-0 text-ds-fg-subtle opacity-0 transition-[opacity,transform,color] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ds-primary group-hover:opacity-100" aria-hidden />
+                                      <ArrowUpRight className="mt-1 size-3.5 shrink-0 text-ds-fg-subtle opacity-0 transition-[opacity,transform,color] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ds-primary group-hover:opacity-100" aria-hidden />
                                     </div>
 
                                     {excerpt && (
                                       <p
                                         className={cn(
-                                          'mt-3 text-pretty text-ds-sm leading-6 text-ds-fg-muted sm:text-ds-base sm:leading-7',
+                                          'mt-2 text-pretty text-ds-sm leading-[1.55] text-ds-fg-muted sm:text-ds-base',
                                           isMultiEntryDay ? 'line-clamp-3' : 'line-clamp-4',
                                         )}
                                       >
@@ -420,7 +423,7 @@ const Moments: React.FC = () => {
                                     )}
 
                                     {moment.tags?.length > 0 && (
-                                      <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5">
+                                      <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
                                         {moment.tags.map((tag) => (
                                           <span key={tag} className="font-mono text-ds-xs text-ds-fg-subtle">
                                             #{tag}
@@ -437,7 +440,7 @@ const Moments: React.FC = () => {
                                       labels={{
                                         title: copy.related,
                                       }}
-                                      className="mt-5"
+                                      className="mt-3"
                                     />
                                   )}
                                   <MomentActions

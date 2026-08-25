@@ -165,7 +165,7 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
               borderRight: '1px solid var(--color-backgroundTertiary, #e5e5e5)',
             }}
           >
-            <div className="sticky top-0 flex max-h-dvh flex-col px-3.5 py-5">
+            <div className="sticky top-0 flex max-h-dvh flex-col px-3 py-4">
               <BookNav
                 overview={overview}
                 chapters={chapters}
@@ -174,8 +174,8 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
               {typeof wordCount === 'number' && (
                 <div
                   className={cn(
-                    'pointer-events-none shrink-0 select-none px-2 pt-4',
-                    'font-mono text-ds-2xs leading-5 text-ds-fg-subtle',
+                    'pointer-events-none shrink-0 select-none px-2 pt-3',
+                    'font-mono text-ds-2xs leading-[1.3] text-ds-fg-subtle',
                   )}
                 >
                   {wordCount} Word

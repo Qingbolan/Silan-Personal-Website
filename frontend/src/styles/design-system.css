@@ -54,10 +54,10 @@
   --ds-elevation-4: 0 24px 56px oklch(0 0 0 / 0.16), 0 8px 18px oklch(0 0 0 / 0.10);
 
   /* --- Typography scale --------------------------------------------------- */
-  --ds-text-2xs: 0.6875rem; --ds-text-xs: 0.75rem;  --ds-text-sm: 0.8125rem;
-  --ds-text-base: 0.9375rem; --ds-text-md: 1rem;    --ds-text-lg: 1.125rem;
-  --ds-text-xl: 1.375rem;  --ds-text-2xl: 1.75rem;  --ds-text-3xl: 2.25rem;
-  --ds-text-4xl: 3rem;
+  --ds-text-2xs: 0.65625rem; --ds-text-xs: 0.71875rem; --ds-text-sm: 0.78125rem;
+  --ds-text-base: 0.875rem;  --ds-text-md: 0.9375rem;  --ds-text-lg: 1.0625rem;
+  --ds-text-xl: 1.25rem;     --ds-text-2xl: 1.625rem;  --ds-text-3xl: 2rem;
+  --ds-text-4xl: 2.625rem;
 
   /* --- Z-index ladder ----------------------------------------------------- */
   --ds-z-raised: 10;  --ds-z-sticky: 100;  --ds-z-overlay: 1000;
