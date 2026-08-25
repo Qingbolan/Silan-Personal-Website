@@ -2,12 +2,27 @@ import { useState, useEffect } from 'react';
 import { UserAnnotation, SelectedText } from '../types/blog';
 import { getClientFingerprint } from '../../../utils/fingerprint';
 
+// Viewport-anchored position of the current text selection. `top`/`bottom`
+// are the selection rectangle edges; `left` is its horizontal center — the
+// toolbar and the composer popover both anchor off these.
+export interface SelectionAnchor {
+  contentId: string;
+  top: number;
+  bottom: number;
+  left: number;
+}
+
 export const useAnnotations = (postId?: string) => {
   const [userAnnotations, setUserAnnotations] = useState<Record<string, UserAnnotation>>({});
   const [showAnnotationForm, setShowAnnotationForm] = useState<string | null>(null);
   const [newAnnotationText, setNewAnnotationText] = useState('');
   const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
   const [highlightedAnnotation, setHighlightedAnnotation] = useState<string | null>(null);
+  // Two-step annotation UX (Medium-style): selecting text only floats a
+  // small toolbar near the selection (`selectionMenu`); the composer opens
+  // (`showAnnotationForm` + `formAnchor`) only after the user clicks it.
+  const [selectionMenu, setSelectionMenu] = useState<SelectionAnchor | null>(null);
+  const [formAnchor, setFormAnchor] = useState<SelectionAnchor | null>(null);
 
   // Load annotations from localStorage when component mounts
   useEffect(() => {
@@ -33,6 +48,28 @@ export const useAnnotations = (postId?: string) => {
     }
   }, [userAnnotations, postId]);
 
+  // Hide the floating toolbar when the selection collapses (click elsewhere,
+  // Esc) or the page scrolls out from under it. The composer popover stays
+  // open on selection loss — it is dismissed explicitly via Cancel / Save /
+  // the click-catcher. Capture phase so inner scroll containers (the app's
+  // #browser-window) count too.
+  useEffect(() => {
+    const onSelectionChange = () => {
+      if (showAnnotationForm) return;
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+        setSelectionMenu(null);
+      }
+    };
+    const onScroll = () => setSelectionMenu(null);
+    document.addEventListener('selectionchange', onSelectionChange);
+    document.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('selectionchange', onSelectionChange);
+      document.removeEventListener('scroll', onScroll, true);
+    };
+  }, [showAnnotationForm]);
+
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (!selection || !selection.toString().trim()) {
@@ -41,13 +78,13 @@ export const useAnnotations = (postId?: string) => {
 
     const selectedTextContent = selection.toString().trim();
     const range = selection.getRangeAt(0);
-    
+
     // Find the content container by traversing up the DOM
     let element: Node | null = range.commonAncestorContainer;
     if (element.nodeType === Node.TEXT_NODE) {
       element = element.parentNode;
     }
-    
+
     let contentId = '';
     let containerElement: Element | null = null;
 
@@ -60,7 +97,7 @@ export const useAnnotations = (postId?: string) => {
       }
       element = element.parentNode;
     }
-    
+
     if (!contentId || !containerElement) {
       console.warn('Could not find content container for selection');
       return;
@@ -68,7 +105,7 @@ export const useAnnotations = (postId?: string) => {
 
     // Calculate more precise text offsets
     const containerText = containerElement.textContent || '';
-    
+
     // Use the range to get more accurate positioning
     const preCaretRange = range.cloneRange();
     preCaretRange.selectNodeContents(containerElement);
@@ -78,13 +115,14 @@ export const useAnnotations = (postId?: string) => {
 
     // Validate that the selected text matches what we expect
     const extractedText = containerText.substring(startOffset, endOffset);
-    if (extractedText.trim() !== selectedTextContent.trim()) {
-      // Fallback to indexOf if range calculation fails
+
+    if (extractedText !== selectedTextContent) {
+      // Fallback: use simple string search if positioning is off
       const fallbackStart = containerText.indexOf(selectedTextContent);
       if (fallbackStart !== -1) {
-        setSelectedText({ 
-          text: selectedTextContent, 
-          contentId, 
+        setSelectedText({
+          text: selectedTextContent,
+          contentId,
           startOffset: fallbackStart,
           endOffset: fallbackStart + selectedTextContent.length
         });
@@ -93,18 +131,36 @@ export const useAnnotations = (postId?: string) => {
         return;
       }
     } else {
-      setSelectedText({ 
-        text: selectedTextContent, 
-        contentId, 
+      setSelectedText({
+        text: selectedTextContent,
+        contentId,
         startOffset,
         endOffset
       });
     }
-    
-    setShowAnnotationForm(contentId);
-    
-    // Clear the selection to avoid visual confusion
-    selection.removeAllRanges();
+
+    // Only float the toolbar. The selection is left untouched so the user
+    // can still copy; nothing modal opens until the toolbar is clicked.
+    const rect = range.getBoundingClientRect();
+    setSelectionMenu({
+      contentId,
+      top: rect.top,
+      bottom: rect.bottom,
+      left: rect.left + rect.width / 2,
+    });
+  };
+
+  // The toolbar button was clicked — now open the composer, anchored where
+  // the selection was. Clearing the selection is safe at this point: the
+  // user explicitly chose to annotate instead of copy.
+  const openAnnotationForm = () => {
+    setSelectionMenu((menu) => {
+      if (!menu) return null;
+      setFormAnchor(menu);
+      setShowAnnotationForm(menu.contentId);
+      return null;
+    });
+    window.getSelection()?.removeAllRanges();
   };
 
   const addUserAnnotation = (contentId: string) => {
@@ -125,18 +181,19 @@ export const useAnnotations = (postId?: string) => {
       ...prev,
       [annotationId]: newAnnotation
     }));
-    
+
     // Reset form state
     setNewAnnotationText('');
     setShowAnnotationForm(null);
     setSelectedText(null);
+    setFormAnchor(null);
   };
 
   const removeUserAnnotation = (annotationId: string) => {
     setUserAnnotations(prev => {
       const newAnnotations = { ...prev };
       delete newAnnotations[annotationId];
-      
+
       // Update localStorage immediately
       if (postId) {
         const storageKey = `annotations_${postId}`;
@@ -146,7 +203,7 @@ export const useAnnotations = (postId?: string) => {
           localStorage.setItem(storageKey, JSON.stringify(newAnnotations));
         }
       }
-      
+
       return newAnnotations;
     });
   };
@@ -160,6 +217,8 @@ export const useAnnotations = (postId?: string) => {
     setShowAnnotationForm(null);
     setNewAnnotationText('');
     setSelectedText(null);
+    setFormAnchor(null);
+    setSelectionMenu(null);
   };
 
   // Clear all annotations for the current post
@@ -177,13 +236,16 @@ export const useAnnotations = (postId?: string) => {
     newAnnotationText,
     selectedText,
     highlightedAnnotation,
+    selectionMenu,
+    formAnchor,
     setNewAnnotationText,
     setShowAnnotationForm,
     handleTextSelection,
+    openAnnotationForm,
     addUserAnnotation,
     removeUserAnnotation,
     highlightAnnotation,
     cancelAnnotation,
     clearAllAnnotations
   };
-}; 
+};

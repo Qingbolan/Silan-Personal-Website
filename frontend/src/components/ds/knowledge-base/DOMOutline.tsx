@@ -165,7 +165,7 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
   return (
     <nav aria-label="Outline" className={cn('w-full', className)}>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-ds-fg-subtle">
+        <span className="font-mono text-ds-2xs font-semibold uppercase tracking-[0.08em] text-ds-fg-subtle">
           Outline
         </span>
         <button
@@ -173,7 +173,7 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
           aria-label="Collapse article outline"
           title="Collapse outline"
           onClick={() => onCollapsedChange?.(true)}
-          className="rounded-ds-sm px-2 py-1 font-mono text-[10.5px] font-semibold text-ds-fg-subtle transition-colors hover:bg-ds-surface-2 hover:text-ds-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/30"
+          className="rounded-ds-sm px-2 py-1 font-mono text-ds-2xs font-semibold text-ds-fg-subtle transition-colors hover:bg-ds-surface-2 hover:text-ds-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/30"
         >
           Min
         </button>
@@ -189,9 +189,9 @@ const DOMOutline: React.FC<DOMOutlineProps> = ({
                 className={cn(
                   'block w-full rounded-ds-sm py-1.5 pr-1 text-left leading-[1.45] transition-colors',
                   'break-words focus:outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/30',
-                  h.level === 1 && 'text-[15px]',
-                  h.level === 2 && 'pl-3 text-[14px]',
-                  h.level === 3 && 'pl-5 text-[13.5px]',
+                  h.level === 1 && 'text-ds-base',
+                  h.level === 2 && 'pl-3 text-ds-sm',
+                  h.level === 3 && 'pl-5 text-ds-sm',
                   active
                     ? 'font-semibold text-ds-primary'
                     : h.level === 1

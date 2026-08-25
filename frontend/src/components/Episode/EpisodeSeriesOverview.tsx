@@ -120,14 +120,14 @@ const EpisodeSeriesOverview: React.FC = () => {
         outlineHeadingSelector="header h1, h2, h3"
       >
         <header id={SERIES_HEADER_ID} data-ds className="pb-8 pt-6">
-          <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] leading-5 text-ds-fg-subtle">
+          <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-ds-xs leading-5 text-ds-fg-subtle">
             <span>{zh ? '系列' : 'Series'}</span>
             <span>
               {series.episodes.length} {zh ? '集' : 'episodes'}
             </span>
             {series.status && <span>{series.status}</span>}
           </div>
-          <h1 className="max-w-[70rem] break-words text-balance font-display text-[2.5rem] font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-[3.25rem] lg:text-[4.5rem]">
+          <h1 className="max-w-[70rem] break-words text-balance font-display text-ds-3xl font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-ds-4xl lg:text-7xl">
             {series.title}
           </h1>
         </header>
@@ -145,7 +145,7 @@ const EpisodeSeriesOverview: React.FC = () => {
 
         {series.description && (
           <section className="mt-8 border-l border-ds-border pl-5">
-            <p className="max-w-[58rem] text-pretty text-[17px] font-medium leading-7 text-ds-fg sm:text-[19px] sm:leading-[1.55]">
+            <p className="max-w-[58rem] text-pretty text-ds-lg font-medium leading-7 text-ds-fg sm:leading-[1.55]">
               {series.description}
             </p>
           </section>
@@ -153,7 +153,7 @@ const EpisodeSeriesOverview: React.FC = () => {
 
         <section className="mt-12 max-w-[68rem] space-y-1" aria-labelledby="series-episodes">
           <div className="mb-4 flex items-center gap-3">
-            <h2 id="series-episodes" className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
+            <h2 id="series-episodes" className="font-mono text-ds-2xs font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
               {zh ? '章节' : 'Episodes'}
             </h2>
             <span className="h-px flex-1 bg-ds-border" aria-hidden />
@@ -166,11 +166,11 @@ const EpisodeSeriesOverview: React.FC = () => {
                   onClick={() => navigate(`/episodes/${episode.slug}`)}
                   className="group flex w-full items-start gap-4 rounded-ds-md px-3 py-3 text-left transition-colors hover:bg-ds-surface-2"
                 >
-                  <span className="pt-1 font-mono text-[12px] text-ds-fg-subtle">
+                  <span className="pt-1 font-mono text-ds-xs text-ds-fg-subtle">
                     {String(episode.episode_number || index + 1).padStart(2, '0')}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[17px] font-medium leading-7 text-ds-fg group-hover:text-ds-primary">
+                    <span className="block text-ds-lg font-medium leading-7 text-ds-fg group-hover:text-ds-primary">
                       {episode.title}
                     </span>
                     <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-ds-xs text-ds-fg-subtle">

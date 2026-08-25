@@ -324,7 +324,9 @@ export const highlightCodeElement = (codeElement: HTMLElement) => {
   }
 
   codeElement.classList.add(`language-${language}`);
-  codeElement.parentElement?.classList.add(`language-${language}`);
+  if (codeElement.parentElement?.tagName === 'PRE') {
+    codeElement.parentElement.classList.add(`language-${language}`);
+  }
   codeElement.innerHTML = highlightCodeToHtml(raw, language);
   codeElement.dataset.syntaxHighlighted = highlightKey;
 };

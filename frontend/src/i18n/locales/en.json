@@ -88,16 +88,6 @@
     "RESEARCH": "Research",
     "PUBLICATION": "Publication",
     "PROJECT": "Project",
-    "status": {
-      "active": "Active",
-      "ongoing": "Ongoing",
-      "completed": "Completed"
-    },
-    "priority": {
-      "high": "High Priority",
-      "medium": "Medium Priority",
-      "low": "Low Priority"
-    },
     "days_ago": "{{days}} days ago",
     "months_ago": "{{months}} months ago",
     "years_ago": "{{years}} years ago"

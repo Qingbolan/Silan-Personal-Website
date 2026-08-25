@@ -91,7 +91,7 @@ export const GuestIdentityEditor: React.FC<GuestIdentityEditorProps> = ({
           {signedInAvatar ? (
             <img src={signedInAvatar} alt="" className="size-4 shrink-0 rounded-full object-cover" />
           ) : (
-            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-ds-primary-soft text-[9px] font-semibold text-ds-primary">
+            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-ds-primary-soft text-[10px] font-semibold text-ds-primary">
               {signedInInitial}
             </span>
           )}

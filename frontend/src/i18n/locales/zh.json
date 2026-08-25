@@ -83,16 +83,6 @@
     "research": "研究",
     "publication": "论文",
     "project": "项目",
-    "status": {
-      "active": "进行中",
-      "ongoing": "持续中",
-      "completed": "已完成"
-    },
-    "priority": {
-      "high": "高优先级",
-      "medium": "中等优先级",
-      "low": "低优先级"
-    },
     "days_ago": "{{days}}天前",
     "months_ago": "{{months}}个月前",
     "years_ago": "{{years}}年前"

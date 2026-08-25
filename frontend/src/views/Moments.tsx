@@ -1,14 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, Outlet, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpRight,
-  Briefcase,
   CalendarDays,
-  FileText,
-  FolderGit2,
-  GraduationCap,
-  Lightbulb,
 } from 'lucide-react';
 import { useLanguage } from '../components/LanguageContext';
 import { Seo } from '../components/Seo';
@@ -32,41 +27,15 @@ import { cn } from '../lib/utils';
 import { publicAssetUrl } from '../utils/publicAsset';
 import { dsRoot } from '../components/ds/dsAttr';
 
-type UpdateKind = 'work' | 'education' | 'research' | 'publication' | 'project' | 'other';
-
-const normalizeKind = (value: string): UpdateKind => {
-  const kind = value.toLowerCase();
-  if (['work', 'job', 'career'].includes(kind)) return 'work';
-  if (['education', 'school', 'study'].includes(kind)) return 'education';
-  if (['research', 'r&d', 'rd'].includes(kind)) return 'research';
-  if (['publication', 'paper', 'pub'].includes(kind)) return 'publication';
-  if (['project', 'projects', 'proj'].includes(kind)) return 'project';
-  return 'other';
-};
-
-const KIND_ICONS = {
-  work: Briefcase,
-  education: GraduationCap,
-  research: Lightbulb,
-  publication: FileText,
-  project: FolderGit2,
-  other: CalendarDays,
-} as const;
-
 const validDate = (value: string): Date | null => {
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-interface MomentTimelineItem {
-  moment: Moment;
-  kind: UpdateKind;
-}
-
 interface MomentDateGroup {
   key: string;
   date: Date | null;
-  items: MomentTimelineItem[];
+  items: Moment[];
 }
 
 interface MomentYearGroup {
@@ -95,8 +64,7 @@ const Moments: React.FC = () => {
         emptyTitle: 'No moments in this view',
         emptyBody: 'Change the time filter to see other entries.',
         allTime: 'All time',
-        outputs: 'Outputs',
-        outputKinds: { blog: 'Article', project: 'Project' },
+        related: 'Related',
       }
     : {
         eyebrow: '近况',
@@ -108,8 +76,7 @@ const Moments: React.FC = () => {
         emptyTitle: '当前筛选下没有动态',
         emptyBody: '更改时间筛选以查看其他内容。',
         allTime: '全部时间',
-        outputs: '输出',
-        outputKinds: { blog: '文章', project: '项目' },
+        related: '关联内容',
       };
 
   const load = useCallback(async () => {
@@ -132,11 +99,6 @@ const Moments: React.FC = () => {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const normalized = useMemo(
-    () => moments.map((moment) => ({ moment, kind: normalizeKind(moment.type) })),
-    [moments],
-  );
 
   const monthNames = useMemo(
     () =>
@@ -206,31 +168,31 @@ const Moments: React.FC = () => {
   );
 
   const filtered = useMemo(
-    () => normalized.filter(({ moment }) => {
+    () => moments.filter((moment) => {
       if (!selectedTime) return true;
       const date = validDate(moment.date);
       if (!date || date.getFullYear() !== selectedTime.year) return false;
       return selectedTime.month === undefined || date.getMonth() === selectedTime.month;
     }).sort((left, right) =>
-      (validDate(right.moment.date)?.getTime() ?? 0) - (validDate(left.moment.date)?.getTime() ?? 0),
+      (validDate(right.date)?.getTime() ?? 0) - (validDate(left.date)?.getTime() ?? 0),
     ),
-    [normalized, selectedTime],
+    [moments, selectedTime],
   );
 
   const yearGroups = useMemo<MomentYearGroup[]>(() => {
     const groups = new Map<string, Map<string, MomentDateGroup>>();
-    filtered.forEach((item) => {
-      const date = validDate(item.moment.date);
+    filtered.forEach((moment) => {
+      const date = validDate(moment.date);
       const year = date ? String(date.getFullYear()) : language === 'en' ? 'Undated' : '未标注日期';
       if (!groups.has(year)) {
         groups.set(year, new Map());
       }
-      const dateKey = date ? item.moment.date : 'undated';
+      const dateKey = date ? moment.date : 'undated';
       const dateGroups = groups.get(year)!;
       if (!dateGroups.has(dateKey)) {
         dateGroups.set(dateKey, { key: dateKey, date, items: [] });
       }
-      dateGroups.get(dateKey)!.items.push(item);
+      dateGroups.get(dateKey)!.items.push(moment);
     });
 
     return [...groups.entries()].map(([year, dateGroups]) => ({
@@ -239,13 +201,13 @@ const Moments: React.FC = () => {
         .map((dateGroup) => ({
           ...dateGroup,
           items: [...dateGroup.items].sort((left, right) =>
-            Number(Boolean(right.moment.pinned)) - Number(Boolean(left.moment.pinned)),
+            Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)),
           ),
         }))
         .sort((left, right) => {
           const pinnedOrder =
-            Number(right.items.some(({ moment }) => moment.pinned))
-            - Number(left.items.some(({ moment }) => moment.pinned));
+            Number(right.items.some((moment) => moment.pinned))
+            - Number(left.items.some((moment) => moment.pinned));
           return pinnedOrder || (right.date?.getTime() ?? 0) - (left.date?.getTime() ?? 0);
         }),
     }));
@@ -277,13 +239,6 @@ const Moments: React.FC = () => {
     });
   }, [loadState, moments, selectedMomentId]);
 
-  const kindLabel = (value: UpdateKind) => {
-    const labels = language === 'en'
-      ? { work: 'Work', education: 'Education', research: 'Research', publication: 'Publication', project: 'Project', other: 'Other' }
-      : { work: '工作', education: '教育', research: '研究', publication: '论文', project: '项目', other: '其他' };
-    return labels[value];
-  };
-
   if (loadState === 'error') {
     return (
       <>
@@ -299,7 +254,6 @@ const Moments: React.FC = () => {
           description={copy.errorBody}
           onRetry={() => void load()}
         />
-        <Outlet />
       </>
     );
   }
@@ -386,7 +340,7 @@ const Moments: React.FC = () => {
                     const isMultiEntryDay = dateGroup.items.length > 1;
                     const day = dateGroup.date
                       ? String(dateGroup.date.getDate())
-                      : dateGroup.items[0]?.moment.date;
+                      : dateGroup.items[0]?.date;
                     const month = dateGroup.date
                       ? dateGroup.date.toLocaleDateString(
                         language === 'en' ? 'en-SG' : 'zh-CN',
@@ -405,7 +359,7 @@ const Moments: React.FC = () => {
                           >
                             {day}
                           </time>
-                          <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.1em] text-ds-fg-subtle">
+                          <span className="mt-1 block font-mono text-ds-2xs uppercase tracking-[0.1em] text-ds-fg-subtle">
                             {month}
                           </span>
                         </div>
@@ -416,8 +370,7 @@ const Moments: React.FC = () => {
                             isMultiEntryDay && 'xl:grid-cols-2',
                           )}
                         >
-                          {dateGroup.items.map(({ moment, kind: momentKind }, index) => {
-                            const Icon = KIND_ICONS[momentKind];
+                          {dateGroup.items.map((moment, index) => {
                             const momentPath = `/moments/${encodeURIComponent(moment.slug || moment.id)}`;
                             const excerpt = markdownToPlainExcerpt(moment.description, moment.title);
 
@@ -443,20 +396,11 @@ const Moments: React.FC = () => {
                                     to={momentPath}
                                     className="block rounded-ds-sm outline-none focus-visible:shadow-ds-focus"
                                   >
-                                    <span className="mb-2 inline-flex items-center gap-2 text-ds-xs text-ds-fg-subtle">
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <Icon className="size-3.5" aria-hidden />
-                                        {kindLabel(momentKind)}
+                                    {moment.pinned && (
+                                      <span className="mb-2 block font-mono text-ds-2xs font-semibold uppercase tracking-[0.12em] text-ds-primary">
+                                        {language === 'en' ? 'Pin' : '置顶'}
                                       </span>
-                                      {moment.pinned && (
-                                        <>
-                                          <span aria-hidden>·</span>
-                                          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-ds-primary">
-                                            {language === 'en' ? 'Pin' : '置顶'}
-                                          </span>
-                                        </>
-                                      )}
-                                    </span>
+                                    )}
                                     <div className="flex items-start gap-3">
                                       <h3 className="min-w-0 flex-1 text-balance text-ds-xl font-semibold leading-tight tracking-[-0.025em] text-ds-fg transition-colors group-hover:text-ds-primary sm:text-ds-2xl">
                                         {moment.title}
@@ -491,8 +435,7 @@ const Moments: React.FC = () => {
                                       outputs={moment.related_outputs}
                                       variant="feed"
                                       labels={{
-                                        title: copy.outputs,
-                                        kinds: copy.outputKinds,
+                                        title: copy.related,
                                       }}
                                       className="mt-5"
                                     />
@@ -521,10 +464,6 @@ const Moments: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* The detail overlay renders here when the route matches
-          /moments/:slug — a modal on top of this list, not a page swap. */}
-      <Outlet />
     </motion.div>
   );
 };

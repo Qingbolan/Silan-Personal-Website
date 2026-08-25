@@ -13,6 +13,10 @@ export const markdownToPlainExcerpt = (
   maxLength = 220,
 ) => {
   const plain = withoutRepeatedTitle(markdown ?? '', title)
+    // An excerpt is always rendered beside its own title. If the document
+    // opens with an alternate/editorial heading, omit that heading as well
+    // instead of repeating it as summary prose.
+    .replace(/^\s*#{1,6}\s+[^\r\n]+(?:\r?\n|$)/, ' ')
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')

@@ -59,7 +59,7 @@ const SkillsCloud: React.FC<SkillsCloudProps> = ({ skills }) => {
           transition={{ duration: 0.35, delay: gIndex * 0.06 }}
         >
           {group.label && (
-            <span className="flex-shrink-0 font-mono text-[0.7rem] font-medium uppercase tracking-wider text-theme-tertiary sm:w-32 sm:text-right">
+            <span className="flex-shrink-0 font-mono text-ds-2xs font-medium uppercase tracking-wider text-theme-tertiary sm:w-32 sm:text-right">
               {group.label}
             </span>
           )}

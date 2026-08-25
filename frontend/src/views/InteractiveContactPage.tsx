@@ -87,7 +87,7 @@ const ContactIntro: React.FC<{
   return (
     <header className="mb-7 grid gap-7 border-b border-ds-border pb-7 sm:mb-10 sm:grid-cols-[minmax(0,1fr)_15rem] sm:items-end sm:pb-10 lg:mb-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="min-w-0">
-        <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.17em] text-ds-primary">
+        <p className="font-mono text-ds-2xs font-medium uppercase tracking-[0.17em] text-ds-primary">
           {zh ? '联系' : 'Contact'}
         </p>
         <h1 className="mt-3 max-w-[12ch] text-balance text-4xl font-semibold leading-[0.96] tracking-[-0.045em] text-ds-fg sm:text-5xl lg:text-6xl">
@@ -101,7 +101,7 @@ const ContactIntro: React.FC<{
       </div>
 
       <aside className="hidden border-l border-ds-border pl-5 sm:block">
-        <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.14em] text-ds-fg-subtle">
+        <p className="font-mono text-ds-2xs font-medium uppercase tracking-[0.14em] text-ds-fg-subtle">
           {zh ? '工作坐标' : 'Working coordinates'}
         </p>
         <p className="mt-2 text-ds-sm font-medium text-ds-fg">
@@ -194,7 +194,7 @@ const InteractiveContactPageContent: React.FC = () => {
             <CardContent className="p-4 sm:p-5">
               <header className="mb-4 flex items-start justify-between gap-4 border-b border-ds-border pb-4">
                 <div>
-                  <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.14em] text-ds-primary">
+                  <p className="font-mono text-ds-2xs font-medium uppercase tracking-[0.14em] text-ds-primary">
                     {language === 'en' ? 'Message / 01' : '留言 / 01'}
                   </p>
                   <h2 className="mt-1 text-ds-lg font-semibold tracking-[-0.015em] text-ds-fg">
@@ -217,7 +217,7 @@ const InteractiveContactPageContent: React.FC = () => {
           <Card variant="outline" padding="none" className="overflow-hidden">
             <CardContent className="p-4 sm:p-5">
               <header className="mb-4">
-                <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.14em] text-ds-primary">
+                <p className="font-mono text-ds-2xs font-medium uppercase tracking-[0.14em] text-ds-primary">
                   {language === 'en' ? 'Context / 02' : '更多信息 / 02'}
                 </p>
                 <h2 className="mt-1 text-ds-lg font-semibold tracking-[-0.015em] text-ds-fg">

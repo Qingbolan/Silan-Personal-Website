@@ -67,7 +67,7 @@ const Timeline: React.FC<TimelineProps> = ({ items }) => {
                   <h4 className="min-w-0 text-lg font-bold leading-tight tracking-[-0.01em] text-theme-primary">
                     {item.title}
                   </h4>
-                  <span className="shrink-0 font-mono text-[0.7rem] font-medium uppercase tracking-[0.18em] text-theme-tertiary">
+                  <span className="shrink-0 font-mono text-ds-2xs font-medium uppercase tracking-[0.18em] text-theme-tertiary">
                     {item.date}
                   </span>
                 </div>

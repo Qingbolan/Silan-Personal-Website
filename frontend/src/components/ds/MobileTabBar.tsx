@@ -15,7 +15,6 @@ import {
   Briefcase,
   Aperture,
   BookOpen,
-  Mail,
   MoreHorizontal,
   X,
   Globe,
@@ -42,9 +41,11 @@ const PRIMARY_ROUTES = (zh: boolean): TabRoute[] => [
   { path: '/projects', label: zh ? '项目' : 'Projects', icon: <Briefcase size={18} strokeWidth={2} /> },
 ];
 
-// Everything else, revealed through the "More" sheet.
-const MORE_ROUTES = (zh: boolean): TabRoute[] => [
-  { path: '/contact', label: zh ? '联系' : 'Contact', icon: <Mail size={18} strokeWidth={2} /> },
+// Everything else, revealed through the "More" sheet. Currently empty
+// (contact page disabled 2026-08) — the sheet still carries the language
+// and theme switches, so the More button stays.
+const MORE_ROUTES = (): TabRoute[] => [
+  // { path: '/contact', label: zh ? '联系' : 'Contact', icon: <Mail size={18} strokeWidth={2} /> },
 ];
 
 /** One dock slot — icon-only, with a floating active pill behind it. */
@@ -90,7 +91,7 @@ export const MobileTabBar: React.FC = () => {
   const [moreOpen, setMoreOpen] = useState(false);
 
   const primaryRoutes = PRIMARY_ROUTES(zh);
-  const moreRoutes = MORE_ROUTES(zh);
+  const moreRoutes = MORE_ROUTES();
   const moreActive = moreRoutes.some((r) => isNavigationPathActive(pathname, r.path));
 
   // Close the sheet on navigation (own route change, not just More items).
@@ -148,7 +149,9 @@ export const MobileTabBar: React.FC = () => {
                 );
               })}
 
-              <div className="my-1 border-t border-ds-border" role="separator" />
+              {moreRoutes.length > 0 && (
+                <div className="my-1 border-t border-ds-border" role="separator" />
+              )}
               <a
                 href={languageHref(targetLanguage)}
                 onClick={() => selectLanguage(targetLanguage)}

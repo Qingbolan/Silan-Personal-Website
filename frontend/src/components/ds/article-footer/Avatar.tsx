@@ -30,7 +30,7 @@ const firstChar = (name: string): string => {
 };
 
 const SIZE = {
-  xs: 'h-6 w-6 text-[10px]',
+  xs: 'h-6 w-6 text-ds-2xs',
   sm: 'h-8 w-8 text-xs',
   md: 'h-10 w-10 text-sm',
   lg: 'h-9 w-9 text-sm',
@@ -52,7 +52,7 @@ const Avatar: React.FC<AvatarProps> = ({ name, src, countryCode, visitorNumber, 
           onError={() => setFlagFailed(true)}
         />
         {visitorNumber && (
-          <span className="absolute bottom-0 right-0 flex min-w-[16px] items-center justify-center rounded-[5px] border border-ds-surface-1 bg-ds-fg px-0.5 font-mono text-[8px] font-semibold leading-[12px] tabular-nums text-ds-surface-1 shadow-sm">
+          <span className="absolute bottom-0 right-0 flex min-w-[16px] items-center justify-center rounded-[5px] border border-ds-surface-1 bg-ds-fg px-0.5 font-mono text-[10px] font-semibold leading-[12px] tabular-nums text-ds-surface-1 shadow-sm">
             {visitorNumber}
           </span>
         )}
@@ -74,7 +74,7 @@ const Avatar: React.FC<AvatarProps> = ({ name, src, countryCode, visitorNumber, 
     <div
       className={cn(
         'flex shrink-0 items-center justify-center rounded-full font-medium text-white',
-        visitorNumber && 'font-mono text-[11px] tabular-nums',
+        visitorNumber && 'font-mono text-ds-2xs tabular-nums',
         PALETTE[hashIndex(name)],
         SIZE[size],
         className,

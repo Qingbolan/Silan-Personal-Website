@@ -6,7 +6,6 @@ import {
   Briefcase,
   Aperture,
   BookOpen,
-  Mail,
   Globe,
   Sun,
   Moon,
@@ -31,7 +30,8 @@ const ROUTES = (zh: boolean): Route[] => [
   { path: '/moments',  label: zh ? '瞬间' : 'Moments',  icon: <Aperture size={16} /> },
   { path: '/blog',     label: zh ? '博客' : 'Blog',     icon: <BookOpen size={16} /> },
   { path: '/projects', label: zh ? '项目' : 'Projects', icon: <Briefcase size={16} /> },
-  { path: '/contact',  label: zh ? '联系' : 'Contact',  icon: <Mail size={16} /> },
+  // Contact page disabled (2026-08): route commented out; avatar now goes home.
+  // { path: '/contact',  label: zh ? '联系' : 'Contact',  icon: <Mail size={16} /> },
 ];
 
 /**
@@ -153,7 +153,7 @@ export const NavAfter: React.FC = () => {
  * Personal avatar — a fixed headshot acting as a brand mark.
  *
  * Sits at the leading edge of the chrome bar; clicking it navigates to
- * the contact page. The photo is served from `public/image.png`; if it
+ * the home page. The photo is served from `public/image.png`; if it
  * is missing, the button falls back to an initial so the chrome bar
  * never shows a broken image.
  */
@@ -173,7 +173,7 @@ export const NavAvatar: React.FC = () => {
       type="button"
       aria-label={label}
       title={label}
-      onClick={() => navigate(canonicalInternalPath('/contact'))}
+      onClick={() => navigate(canonicalInternalPath('/'))}
       className="group flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform hover:scale-105"
     >
       <span
@@ -191,7 +191,7 @@ export const NavAvatar: React.FC = () => {
         ) : (
           <span
             aria-hidden
-            className="text-[13px] font-semibold leading-none"
+            className="text-ds-sm font-semibold leading-none"
             style={{ color: colors.dsPrimary }}
           >
             S
@@ -551,7 +551,7 @@ const TopNavigation: React.FC = () => {
           {/* Breadcrumb trail — section, then the content title on detail pages */}
           <nav
             aria-label={zh ? '当前位置' : 'Breadcrumb'}
-            className="flex min-w-0 flex-1 items-center justify-center gap-1 px-3 py-0.5 text-[13px]"
+            className="flex min-w-0 flex-1 items-center justify-center gap-1 px-3 py-0.5 text-ds-sm"
           >
             {crumbs.map((c, i) => {
               const isLeaf = i === crumbs.length - 1;

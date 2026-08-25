@@ -150,14 +150,14 @@ export const BlogCard: React.FC<BlogCardProps> = ({
               Article
             </Badge>
             {readTime && (
-              <span className="font-mono text-[11px] text-ds-fg-subtle">
+              <span className="font-mono text-ds-2xs text-ds-fg-subtle">
                 {readTime}
               </span>
             )}
           </div>
 
           <blockquote className="relative z-10 mt-5 flex-1">
-            <p className="line-clamp-6 text-[1.05rem] leading-7 tracking-[-0.01em] text-ds-fg sm:text-[1.12rem] sm:leading-8">
+            <p className="line-clamp-6 text-ds-lg leading-7 tracking-[-0.01em] text-ds-fg sm:text-ds-lg sm:leading-8">
               {quote.lead && (
                 <span
                   className="box-decoration-clone rounded-[0.18rem] px-1 text-ds-fg"
@@ -176,7 +176,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
           </blockquote>
 
           <div className="relative z-10 mt-5 space-y-3">
-            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-ds-fg-subtle">
+            <div className="flex items-center gap-2 font-mono text-ds-2xs uppercase tracking-[0.12em] text-ds-fg-subtle">
               {date && (
                 <span className="inline-flex items-center gap-1.5">
                   <Calendar className="size-3" />
@@ -307,7 +307,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
         <h3
           className={cn(
             'min-w-0 flex-1 font-semibold leading-tight tracking-[-0.018em] text-ds-fg',
-            isFeature ? 'line-clamp-2 text-ds-xl' : 'line-clamp-2 text-[1.45rem]',
+            isFeature ? 'line-clamp-2 text-ds-xl' : 'line-clamp-2 text-ds-xl',
           )}
         >
           {title}
@@ -326,7 +326,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
       <div className="relative z-10 mt-auto overflow-hidden rounded-ds-md border border-ds-primary/20 bg-ds-primary-soft/65 p-3">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-ds-primary">
+            <div className="font-mono text-ds-2xs uppercase tracking-[0.14em] text-ds-primary">
               Latest episode
             </div>
             <p className="mt-1 line-clamp-1 text-ds-sm font-semibold leading-snug text-ds-fg">
@@ -338,7 +338,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
               <div className="font-mono text-ds-lg font-semibold leading-none text-ds-primary">
                 {latestEpisode?.episodeNumber ?? episodeCount}
               </div>
-              <div className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-ds-fg-subtle">
+              <div className="mt-0.5 font-mono text-ds-2xs uppercase tracking-[0.1em] text-ds-fg-subtle">
                 of {episodeCount}
               </div>
             </div>

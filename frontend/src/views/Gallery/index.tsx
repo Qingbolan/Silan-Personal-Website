@@ -220,7 +220,7 @@ const Gallery: React.FC = () => {
                     Secondary — 13px, muted. Captions and supporting copy.
                   </div>
                   <div className="font-mono text-ds-xs text-ds-fg-subtle">
-                    Mono — JetBrains Mono, for code and tokens.
+                    Unified — Inter Variable across every text role.
                   </div>
                 </Stage>
               </Subsection>

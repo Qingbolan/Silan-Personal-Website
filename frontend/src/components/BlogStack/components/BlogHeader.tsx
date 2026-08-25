@@ -60,7 +60,6 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
                 className="flex items-center gap-2 hover:opacity-70 transition-opacity"
                 style={{ 
                   color: colors.textSecondary,
-                  fontFamily: 'Georgia, "Times New Roman", serif'
                 }}
               >
                 <ArrowLeft size={18} />
@@ -71,7 +70,6 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-6 text-sm" style={{ 
                 color: colors.textTertiary,
-                fontFamily: 'Georgia, "Times New Roman", serif'
               }}>
                 <span className="flex items-center gap-2">
                   <Eye size={14} />

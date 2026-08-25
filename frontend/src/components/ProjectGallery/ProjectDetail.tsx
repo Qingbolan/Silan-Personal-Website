@@ -147,7 +147,7 @@ const PartPanel: React.FC<{
       <section id={part.role} className="max-w-[68rem] scroll-mt-24">
         {coverNode}
         <Markdown
-          className="text-[19px] font-medium leading-[1.65] text-ds-fg"
+          className="text-ds-lg font-medium leading-[1.65] text-ds-fg"
           documentTitle={documentTitle}
           sectionTitle={label}
         >
@@ -551,7 +551,7 @@ const ProjectDetail: React.FC = () => {
         <article data-ds id="project-detail-document" className="w-full">
           <header id={PROJECT_HEADER_ID} className="scroll-mt-24 pb-8 pt-6">
             {(project.status?.lifecycle || project.year || hasReportedBuildStatus) && (
-              <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] leading-5 text-ds-fg-subtle">
+              <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-ds-xs leading-5 text-ds-fg-subtle">
                 {project.status?.lifecycle && <span>{project.status.lifecycle}</span>}
                 {project.year > 0 && <span>{project.year}</span>}
                 {hasReportedBuildStatus && buildStatus && (
@@ -569,13 +569,13 @@ const ProjectDetail: React.FC = () => {
             )}
 
             <h1
-              className="max-w-[70rem] break-words text-balance font-display text-[2.5rem] font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-[3.5rem] lg:text-[5rem]"
+              className="max-w-[70rem] break-words text-balance font-display text-ds-3xl font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-ds-4xl lg:text-7xl"
             >
               {title}
             </h1>
 
             {project.description && (
-              <p className="mt-7 max-w-[58rem] text-pretty text-[17px] font-medium leading-7 text-ds-fg-muted sm:text-[19px] sm:leading-[1.55]">
+              <p className="mt-7 max-w-[58rem] text-pretty text-ds-lg font-medium leading-7 text-ds-fg-muted sm:leading-[1.55]">
                 {project.description}
               </p>
             )}
@@ -675,7 +675,7 @@ const ProjectDetail: React.FC = () => {
                     setActivePanel(tab.id);
                   }}
                   className={cn(
-                    'inline-flex h-12 items-center gap-2 rounded-t-ds-md px-4 text-[15px] font-semibold transition',
+                    'inline-flex h-12 items-center gap-2 rounded-t-ds-md px-4 text-ds-base font-semibold transition',
                     active ? 'text-ds-primary' : 'text-ds-fg-muted hover:text-ds-primary dark:text-white dark:hover:text-ds-primary',
                   )}
                 >

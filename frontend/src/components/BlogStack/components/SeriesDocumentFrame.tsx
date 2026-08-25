@@ -74,7 +74,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
   return (
     <div data-ds id={id} className="prose-content markdown-body w-full scroll-mt-24">
       <header id={SERIES_HEADER_ID} className="scroll-mt-24 pb-8 pt-6">
-        <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] leading-5 text-ds-fg-subtle">
+        <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-ds-xs leading-5 text-ds-fg-subtle">
           <span>{eyebrow}</span>
           {meta.map((item) => {
             const Icon = item.icon;
@@ -92,7 +92,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
         </div>
 
         <h1
-          className="max-w-[70rem] break-words text-balance font-display text-[2.5rem] font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-[3.25rem] lg:text-[4.5rem]"
+          className="max-w-[70rem] break-words text-balance font-display text-ds-3xl font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-ds-4xl lg:text-7xl"
         >
           {title}
         </h1>
@@ -119,7 +119,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
                 type="button"
                 onClick={() => handleSectionClick(tab.id)}
                 className={cn(
-                  'inline-flex h-12 items-center gap-2 rounded-t-ds-md px-4 text-[15px] font-semibold transition-colors',
+                  'inline-flex h-12 items-center gap-2 rounded-t-ds-md px-4 text-ds-base font-semibold transition-colors',
                   active
                     ? 'text-ds-primary'
                     : 'text-ds-fg-muted hover:text-ds-primary',
@@ -138,7 +138,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
           id={SERIES_SUMMARY_ID}
           className="scroll-mt-24 rounded-b-ds-lg bg-ds-surface-2 px-6 py-6 sm:px-8"
         >
-          <p className="max-w-[58rem] text-pretty text-[17px] font-medium leading-7 text-ds-fg sm:text-[19px] sm:leading-[1.55]">
+          <p className="max-w-[58rem] text-pretty text-ds-lg font-medium leading-7 text-ds-fg sm:leading-[1.55]">
             {summary}
           </p>
         </section>
@@ -146,7 +146,7 @@ export const SeriesDocumentFrame: React.FC<SeriesDocumentFrameProps> = ({
 
       <section id={SERIES_BODY_ID} className="mt-12 max-w-[68rem] scroll-mt-24">
         <div className="mb-6 flex items-center gap-3">
-          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
+          <span className="font-mono text-ds-2xs font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
             {language === 'zh' ? '正文' : 'Body'}
           </span>
           <span className="h-px flex-1 bg-ds-border" aria-hidden />

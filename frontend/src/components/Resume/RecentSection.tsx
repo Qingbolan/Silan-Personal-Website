@@ -1,27 +1,20 @@
 // src/components/Resume/RecentSection.tsx
 //
 // Résumé "recent moments" panel — a year/month grouped activity timeline.
-// The homepage and dedicated moments page share the same chronological model;
-// filtering changes the entries, never the layout mode.
-import React, { useState, useMemo, useEffect } from 'react';
+// The homepage and dedicated moments page share the same chronological model.
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Zap, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Markdown from '../ui/Markdown';
-import { Segmented, Badge } from '../../components/ds';
-import type { SegmentedOption } from '../../components/ds';
-import { withoutRepeatedTitle } from '../../lib/markdown';
+import { dsRoot } from '../../components/ds/dsAttr';
+import { markdownToPlainExcerpt } from '../../lib/markdown';
 
 export interface RecentItem {
   id: string;
-  type: 'work' | 'education' | 'research' | 'publication' | 'project';
   title: string;
   description: string;
   date: string;
   tags: string[];
-  status: 'active' | 'ongoing' | 'completed';
-  priority: 'high' | 'medium' | 'low';
   pinned?: boolean;
 }
 
@@ -31,34 +24,9 @@ interface RecentSectionProps {
   delay?: number;
 }
 
-type NormalizedType = 'work' | 'education' | 'research' | 'publication' | 'project' | 'other';
-
-/** Normalize free-form types to a known set. */
-const normalizeType = (raw: string): NormalizedType => {
-  const s = (raw || '').toLowerCase();
-  if (['work', 'job', 'career'].includes(s)) return 'work';
-  if (['education', 'school', 'study'].includes(s)) return 'education';
-  if (['research', 'r&d', 'rd'].includes(s)) return 'research';
-  if (['publication', 'paper', 'pub'].includes(s)) return 'publication';
-  if (['project', 'projects', 'proj'].includes(s)) return 'project';
-  return 'other';
-};
-
-const TYPE_ORDER: Array<Exclude<NormalizedType, 'other'>> = [
-  'work', 'education', 'research', 'publication', 'project',
-];
-
-/** Status → Badge tone. */
-const STATUS_TONE: Record<RecentItem['status'], 'success' | 'primary' | 'neutral'> = {
-  active: 'success',
-  ongoing: 'primary',
-  completed: 'neutral',
-};
-
 const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 }) => {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage?.startsWith('zh') ? 'zh-CN' : 'en';
-  const [filter, setFilter] = useState<string>('all');
   const navigate = useNavigate();
 
   /* --- Relative time label. --------------------------------------------- */
@@ -75,51 +43,13 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
     return formatter.format(-diffDays, 'day');
   };
 
-  /* --- Priority dot. ----------------------------------------------------- */
-  const priorityIcon = (priority: RecentItem['priority']) => {
-    if (priority === 'high') return <Zap className="size-3 text-ds-error" />;
-    if (priority === 'medium') return <Clock className="size-3 text-ds-warning" />;
-    return <Eye className="size-3 text-ds-fg-subtle" />;
-  };
-
-  /* --- Normalize + derive the available type filters. ------------------- */
-  const normalized = useMemo(
-    () => data.map((item) => ({ ...item, _type: normalizeType(item.type) })),
-    [data],
-  );
-
-  const typeOptions = useMemo<SegmentedOption[]>(() => {
-    const counts: Record<string, number> = {};
-    normalized.forEach((i) => { counts[i._type] = (counts[i._type] || 0) + 1; });
-    const labelMap: Record<string, string> = {
-      work: t('resume.work', { defaultValue: 'Work' }),
-      education: t('resume.education', { defaultValue: 'Education' }),
-      research: t('resume.research', { defaultValue: 'Research' }),
-      publication: t('resume.publication', { defaultValue: 'Publication' }),
-      project: t('resume.project', { defaultValue: 'Project' }),
-    };
-    return [
-      { value: 'all', label: t('resume.all_types', { defaultValue: 'All Types' }) },
-      ...TYPE_ORDER.filter((ty) => (counts[ty] || 0) > 0).map((ty) => ({
-        value: ty,
-        label: labelMap[ty] ?? ty,
-      })),
-    ];
-  }, [normalized, t]);
-
-  useEffect(() => {
-    if (!typeOptions.some((o) => o.value === filter)) setFilter('all');
-  }, [typeOptions, filter]);
-
-  const filteredData = useMemo(() => {
-    const source = filter === 'all'
-      ? normalized
-      : normalized.filter((item) => item._type === filter);
-    return [...source].sort(
+  const sortedData = useMemo(
+    () => [...data].sort(
       (a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))
         || new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
-  }, [normalized, filter]);
+    ),
+    [data],
+  );
 
   const groupedData = useMemo(() => {
     const groups = new Map<string, {
@@ -127,9 +57,9 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
       year: number;
       month: number;
       pinned: boolean;
-      items: typeof filteredData;
+      items: typeof sortedData;
     }>();
-    filteredData.forEach((item) => {
+    sortedData.forEach((item) => {
       const date = new Date(item.date);
       const valid = !Number.isNaN(date.getTime());
       const year = valid ? date.getFullYear() : 0;
@@ -160,46 +90,41 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
       || b.year - a.year
       || b.month - a.month,
     );
-  }, [filteredData, locale]);
+  }, [sortedData, locale]);
 
   return (
     <motion.section
+      {...dsRoot}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
     >
       <div>
-          {/* Header — title + a primary-tone Segmented type filter. */}
-          <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+          <div className="mb-4">
             <h3 className="text-xl font-bold tracking-[-0.015em] text-ds-fg sm:text-2xl">
               {title}
             </h3>
-            {typeOptions.length > 1 && (
-              <Segmented
-                value={filter}
-                onChange={setFilter}
-                options={typeOptions}
-                size="sm"
-                tone="primary"
-              />
-            )}
           </div>
 
           {/* Year/month groups with day-led entries, like a chronological journal. */}
           <div
-            className="space-y-10"
+            className="space-y-5 sm:space-y-6"
             role="list"
             aria-label={t('resume.moments', { defaultValue: 'Recent moments' })}
           >
             {groupedData.map((group) => (
-              <section key={`${group.year}-${group.month}`} aria-label={group.label}>
-                <h4 className="mb-4 border-b border-ds-border pb-2 font-mono text-ds-xs font-medium uppercase tracking-[0.08em] text-ds-fg-subtle">
+              <section
+                key={group.pinned ? 'pinned' : `${group.year}-${group.month}`}
+                aria-label={group.label}
+              >
+                <h4 className="border-b border-ds-border pb-2 font-mono text-ds-xs font-medium uppercase tracking-[0.08em] text-ds-fg-subtle">
                   {group.label}
                 </h4>
                 <div className="divide-y divide-ds-border">
                   {group.items.map((item, index) => {
                     const date = new Date(item.date);
                     const day = Number.isNaN(date.getTime()) ? '—' : String(date.getDate()).padStart(2, '0');
+                    const summary = markdownToPlainExcerpt(item.description, item.title, 280);
                     return (
                       <motion.article
                         key={item.id}
@@ -216,46 +141,36 @@ const RecentSection: React.FC<RecentSectionProps> = ({ data, title, delay = 0 })
                           }
                         }}
                         aria-label={`${t('resume.view_details', { defaultValue: 'View details' })}: ${item.title}`}
-                        className="group grid cursor-pointer grid-cols-[3rem_minmax(0,1fr)] gap-4 py-5 outline-none transition-colors hover:bg-ds-surface-2 focus-visible:shadow-ds-focus sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-6"
+                        className="group grid cursor-pointer grid-cols-[3rem_minmax(0,1fr)] gap-3 py-3.5 outline-none transition-colors hover:bg-ds-surface-2 focus-visible:rounded-ds-sm focus-visible:shadow-ds-focus sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-4 sm:py-4"
                       >
                         <time
                           dateTime={item.date}
-                          className="font-mono text-2xl font-medium tabular-nums text-ds-fg sm:text-3xl"
+                          className="pt-0.5 font-mono text-2xl font-medium leading-none tabular-nums tracking-[-0.06em] text-ds-fg sm:text-3xl"
                         >
                           {day}
                         </time>
                         <div className="min-w-0">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="flex min-w-0 items-center gap-2">
+                          <div className="grid min-w-0 gap-1.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-3">
+                            <div className="flex min-w-0 items-start gap-1.5">
                               {item.pinned && (
-                                <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-ds-primary">
+                                <span className="mt-1 shrink-0 font-mono text-ds-2xs font-semibold uppercase tracking-[0.12em] text-ds-primary">
                                   {locale.startsWith('zh') ? '置顶' : 'PIN'}
                                 </span>
                               )}
-                              {priorityIcon(item.priority)}
-                              <h5 className="truncate text-ds-base font-semibold text-ds-fg transition-colors group-hover:text-ds-primary">
+                              <h5 className="min-w-0 text-pretty text-ds-base font-semibold leading-6 text-ds-fg transition-colors group-hover:text-ds-primary sm:text-ds-lg sm:leading-7">
                                 {item.title}
                               </h5>
                             </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                              <Badge
-                                tone={STATUS_TONE[item.status]}
-                                appearance="soft"
-                                size="sm"
-                                dot
-                                className="border-0"
-                              >
-                                {t(`resume.status.${item.status}`)}
-                              </Badge>
+                            <div className="flex shrink-0 items-center sm:justify-end">
                               <span className="whitespace-nowrap text-ds-xs text-ds-fg-subtle">
                                 {getRelativeTime(item.date)}
                               </span>
                             </div>
                           </div>
-                          {item.description && (
-                            <Markdown className="moment-home-summary mt-2 text-ds-sm leading-6 text-ds-fg-muted">
-                              {withoutRepeatedTitle(item.description, item.title)}
-                            </Markdown>
+                          {summary && (
+                            <p className="mt-1.5 line-clamp-2 max-w-[88ch] text-pretty text-ds-sm leading-[1.5] text-ds-fg-muted sm:text-ds-base">
+                              {summary}
+                            </p>
                           )}
                         </div>
                       </motion.article>

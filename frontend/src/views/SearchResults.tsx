@@ -46,13 +46,13 @@ const KIND_ICONS = {
 const KIND_ORDER: SearchResultKind[] = ['blog', 'episode', 'project', 'moment'];
 const SEARCH_HISTORY_KEY = 'silan.search.history.v1';
 const MOBILE_TYPE = {
-  meta: 'text-[0.75rem] leading-4',
-  action: 'text-[0.8125rem] leading-[1.125rem]',
-  body: 'text-[0.875rem] leading-5',
-  input: 'text-[1rem] leading-5',
-  title: 'text-[0.9375rem] leading-[1.375rem]',
-  sectionTitle: 'text-[1rem] leading-6',
-  suggestion: 'text-[0.875rem] leading-5',
+  meta: 'text-ds-xs leading-4',
+  action: 'text-ds-sm leading-[1.125rem]',
+  body: 'text-ds-base leading-5',
+  input: 'text-ds-md leading-5',
+  title: 'text-ds-base leading-[1.375rem]',
+  sectionTitle: 'text-ds-md leading-6',
+  suggestion: 'text-ds-base leading-5',
 } as const;
 const MOBILE_SUGGESTIONS = {
   en: ['sumariki', '2026 KDD Cup', 'EasyNet Axon', 'Open-Sora 2.0', 'AAAI 2027 timeline', 'NUS graduation'],

@@ -51,7 +51,7 @@ const BookNav: React.FC<BookNavProps> = ({
             type="button"
             onClick={overview.onClick}
             className={cn(
-              'flex w-full items-center gap-2.5 rounded-ds-md px-2 py-1.5 text-left text-[15px] leading-6',
+              'flex w-full items-center gap-2.5 rounded-ds-md px-2 py-1.5 text-left text-ds-base leading-6',
               'transition-colors duration-ds-fast',
               overview.isActive
                 ? 'font-semibold text-ds-primary'
@@ -83,7 +83,7 @@ const BookNav: React.FC<BookNavProps> = ({
                   type="button"
                   onClick={c.onClick}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-ds-md px-2 py-1.5 text-left text-[13px] leading-5',
+                    'flex w-full items-center gap-2 rounded-ds-md px-2 py-1.5 text-left text-ds-sm leading-5',
                     'transition-colors duration-ds-fast',
                     active
                       ? 'font-semibold text-ds-primary'

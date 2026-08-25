@@ -9,7 +9,6 @@ interface MomentRelatedOutputsProps {
   outputs: MomentRelatedOutput[];
   labels: {
     title: string;
-    kinds: Record<MomentRelatedOutput['kind'], string>;
   };
   variant?: 'card' | 'feed';
   className?: string;
@@ -34,7 +33,7 @@ const MomentRelatedOutputs: React.FC<MomentRelatedOutputsProps> = ({
         {...dsRoot}
         className={cn('border-l border-ds-border pl-4', className)}
       >
-        <div className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-ds-fg-subtle">
+        <div className="mb-1 font-mono text-ds-2xs font-semibold uppercase tracking-[0.12em] text-ds-fg-subtle">
           {labels.title}
         </div>
         <div className="divide-y divide-ds-border">
@@ -49,9 +48,6 @@ const MomentRelatedOutputs: React.FC<MomentRelatedOutputsProps> = ({
                 <Icon className="size-3.5 shrink-0 text-ds-fg-subtle" aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-ds-sm font-medium text-ds-fg transition-colors group-hover:text-ds-primary">
                   {output.title}
-                </span>
-                <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] text-ds-fg-subtle">
-                  {labels.kinds[output.kind]}
                 </span>
                 <ArrowUpRight className="size-3.5 shrink-0 text-ds-fg-subtle transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ds-primary" aria-hidden />
               </Link>
@@ -80,12 +76,6 @@ const MomentRelatedOutputs: React.FC<MomentRelatedOutputsProps> = ({
                 <Icon className="size-4" aria-hidden />
               </span>
               <span className="min-w-0">
-                <span className="mb-0.5 flex items-center gap-1.5 text-ds-xs font-medium text-ds-primary">
-                  {labels.kinds[output.kind]}
-                  {output.relation && (
-                    <span className="truncate font-normal text-ds-fg-subtle">/ {output.relation}</span>
-                  )}
-                </span>
                 <span className="block truncate text-ds-sm font-semibold text-ds-fg group-hover:text-ds-primary">
                   {output.title}
                 </span>

@@ -80,7 +80,7 @@ const MomentLikerAvatar: React.FC<MomentLikerAvatarProps> = ({
       )}
 
       {showVisitorNumber && isVisitor && liker.visitor_number && (
-        <span className="absolute bottom-0 right-0 flex min-w-[16px] items-center justify-center rounded-[5px] border border-ds-surface-1 bg-ds-fg px-0.5 font-mono text-[8px] font-semibold leading-[12px] tabular-nums text-ds-surface-1 shadow-sm">
+        <span className="absolute bottom-0 right-0 flex min-w-[16px] items-center justify-center rounded-[5px] border border-ds-surface-1 bg-ds-fg px-0.5 font-mono text-[10px] font-semibold leading-[12px] tabular-nums text-ds-surface-1 shadow-sm">
           {liker.visitor_number}
         </span>
       )}

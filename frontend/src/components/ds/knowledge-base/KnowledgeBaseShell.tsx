@@ -175,7 +175,7 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
                 <div
                   className={cn(
                     'pointer-events-none shrink-0 select-none px-2 pt-4',
-                    'font-mono text-[10.5px] leading-5 text-ds-fg-subtle',
+                    'font-mono text-ds-2xs leading-5 text-ds-fg-subtle',
                   )}
                 >
                   {wordCount} Word

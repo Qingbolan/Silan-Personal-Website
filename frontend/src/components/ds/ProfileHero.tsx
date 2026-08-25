@@ -136,7 +136,7 @@ export const ProfileHero: React.FC<ProfileHeroProps> = ({
       <div className="relative z-10 min-w-0 max-w-3xl pt-24 sm:pt-20">
         <motion.p
           {...fade(0.03)}
-          className="max-w-[12rem] font-mono text-[0.6875rem] font-medium uppercase leading-5 tracking-[0.18em] text-ds-primary sm:max-w-none"
+          className="max-w-[12rem] font-mono text-ds-2xs font-medium uppercase leading-5 tracking-[0.18em] text-ds-primary sm:max-w-none"
         >
           NUS · Computing / AI Systems
         </motion.p>

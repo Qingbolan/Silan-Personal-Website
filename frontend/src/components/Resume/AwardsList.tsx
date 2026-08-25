@@ -89,7 +89,7 @@ const AwardsList: React.FC<AwardsListProps> = ({ awards }) => {
               </div>
 
               {meta && (
-                <div className="font-mono text-[0.68rem] font-medium uppercase tracking-[0.16em] text-theme-tertiary">
+                <div className="font-mono text-ds-2xs font-medium uppercase tracking-[0.16em] text-theme-tertiary">
                   {meta}
                 </div>
               )}

@@ -66,7 +66,8 @@ const Footer: React.FC = () => {
   ];
   const research: InternalLink[] = [
     { label: zh ? '瞬间' : 'Moments', to: '/moments/' },
-    { label: zh ? '联系' : 'Contact', to: '/contact/' },
+    // Contact page disabled (2026-08)
+    // { label: zh ? '联系' : 'Contact', to: '/contact/' },
   ];
 
   return (
@@ -108,17 +109,17 @@ const Footer: React.FC = () => {
         </section>
 
         <nav aria-label={zh ? '浏览' : 'Explore'}>
-          <h2 className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/90">{zh ? '浏览' : 'Explore'}</h2>
+          <h2 className="font-mono text-ds-2xs font-semibold uppercase tracking-[0.18em] text-white/90">{zh ? '浏览' : 'Explore'}</h2>
           <div className="mt-3 flex flex-col">{explore.map((item) => <FooterLink key={item.to} item={item} />)}</div>
         </nav>
 
         <nav aria-label={zh ? '研究' : 'Research'}>
-          <h2 className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/90">{zh ? '研究' : 'Research'}</h2>
+          <h2 className="font-mono text-ds-2xs font-semibold uppercase tracking-[0.18em] text-white/90">{zh ? '研究' : 'Research'}</h2>
           <div className="mt-3 flex flex-col">{research.map((item) => <FooterLink key={item.to} item={item} />)}</div>
         </nav>
 
         <section className="col-span-2 lg:col-span-1">
-          <h2 className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/90">{zh ? '所在' : 'Based in'}</h2>
+          <h2 className="font-mono text-ds-2xs font-semibold uppercase tracking-[0.18em] text-white/90">{zh ? '所在' : 'Based in'}</h2>
           <p className="mt-3 text-sm leading-6 text-white/55">Singapore / Beijing<br />NUS Computing</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <button

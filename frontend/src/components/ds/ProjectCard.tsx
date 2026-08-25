@@ -339,7 +339,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       <h3
         className={cn(
           'font-semibold leading-snug tracking-[-0.012em] text-ds-fg',
-          isFeature ? 'text-ds-2xl sm:text-[1.65rem]' : 'text-ds-base',
+          isFeature ? 'text-ds-2xl sm:text-ds-2xl' : 'text-ds-base',
         )}
       >
         {title}

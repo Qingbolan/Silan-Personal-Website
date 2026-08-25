@@ -50,16 +50,16 @@ export function ArticleResourceStrip({
             <Paperclip className="size-[17px]" aria-hidden />
           </span>
           <span className="min-w-0">
-            <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ds-fg-subtle">
+            <span className="block font-mono text-ds-2xs font-semibold uppercase tracking-[0.14em] text-ds-fg-subtle">
               {language === 'zh' ? '项目附件' : 'Project attachments'}
             </span>
             {projectName && (
-              <strong className="mt-0.5 block truncate text-[14px] font-semibold text-ds-fg">
+              <strong className="mt-0.5 block truncate text-ds-sm font-semibold text-ds-fg">
                 {projectName}
               </strong>
             )}
             {publicationVenue && (
-              <span className="block text-[12px] text-ds-fg-muted">{publicationVenue}</span>
+              <span className="block text-ds-xs text-ds-fg-muted">{publicationVenue}</span>
             )}
           </span>
         </div>
@@ -76,10 +76,10 @@ export function ArticleResourceStrip({
               >
                 <Icon className="size-[17px] shrink-0 text-ds-fg-subtle transition group-hover:text-ds-primary" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-ds-fg-subtle">
+                  <span className="block font-mono text-ds-2xs font-semibold uppercase tracking-[0.12em] text-ds-fg-subtle">
                     {resource.kind}
                   </span>
-                  <span className="block truncate text-[13px] font-semibold">{resource.label}</span>
+                  <span className="block truncate text-ds-sm font-semibold">{resource.label}</span>
                 </span>
                 <ExternalLink className="size-[13px] shrink-0 text-ds-fg-subtle" aria-hidden />
               </a>

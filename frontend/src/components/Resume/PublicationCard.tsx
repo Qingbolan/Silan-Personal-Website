@@ -94,8 +94,8 @@ const CcfBadge: React.FC<{ rank: 'A' | 'B' | 'C' }> = ({ rank }) => (
     title={`CCF ${rank} conference`}
     className="inline-flex h-7 items-center gap-1 rounded-full bg-[#003D7C]/[0.08] py-0.5 pl-2 pr-1 text-[#003D7C] dark:bg-[#8AB5F5]/10 dark:text-[#A8C7FA]"
   >
-    <span className="font-mono text-[0.625rem] font-semibold tracking-[0.12em]">CCF</span>
-    <span className="flex size-5 items-center justify-center rounded-full bg-[#003D7C] text-[0.6875rem] font-bold text-white dark:bg-[#A8C7FA] dark:text-[#10213D]">
+    <span className="font-mono text-ds-2xs font-semibold tracking-[0.12em]">CCF</span>
+    <span className="flex size-5 items-center justify-center rounded-full bg-[#003D7C] text-ds-2xs font-bold text-white dark:bg-[#A8C7FA] dark:text-[#10213D]">
       {rank}
     </span>
   </span>
@@ -135,6 +135,7 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
     url, pdfUrl, githubUrl, slidesUrl, blogUrl, image, publicationType,
   } = publication;
   const yearMonth = formatYearMonth(year);
+  const imageOnRight = Boolean(image && index % 2 === 1);
 
   return (
     <motion.article
@@ -143,12 +144,19 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
       className={cn(
-        'group grid gap-4 py-5 first:pt-0 sm:grid-cols-[minmax(12rem,0.7fr)_minmax(0,1fr)] sm:gap-5 sm:py-6',
+        'group grid gap-3 py-4 first:pt-0 last:pb-0 md:items-start md:gap-5 md:py-5',
+        image && !imageOnRight && 'md:grid-cols-[minmax(12rem,28rem)_minmax(0,1fr)]',
+        imageOnRight && 'md:grid-cols-[minmax(0,1fr)_minmax(12rem,28rem)]',
       )}
     >
       {/* Figure — a restrained teaser, no additional card frame. */}
       {image && (
-        <div className="aspect-[16/9] overflow-hidden rounded-ds-md bg-ds-surface-2">
+        <div
+          className={cn(
+            'aspect-[2/1] overflow-hidden rounded-ds-md bg-ds-surface-2',
+            imageOnRight && 'md:col-start-2 md:row-start-1',
+          )}
+        >
           <img
             src={image}
             alt={title}
@@ -158,9 +166,14 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+      <div
+        className={cn(
+          'flex min-w-0 flex-1 flex-col gap-2',
+          imageOnRight && 'md:col-start-1 md:row-start-1',
+        )}
+      >
         {/* Title. */}
-        <h3 className="text-ds-lg font-semibold leading-snug tracking-[-0.02em] text-ds-fg sm:text-xl">
+        <h3 className="text-ds-lg font-semibold leading-[1.35] tracking-[-0.02em] text-ds-fg">
           {title}
         </h3>
 
@@ -169,7 +182,7 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {ccfRank && <CcfBadge rank={ccfRank} />}
             {publicationType && (
-              <span className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
+              <span className="font-mono text-ds-2xs font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
                 {publicationType}
               </span>
             )}
@@ -227,7 +240,7 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
 
         {/* Abstract — a concise Markdown preview, not an essay in the list. */}
         {abstract && (
-          <Markdown className="text-ds-sm leading-6 text-ds-fg-muted [&>div]:!my-0 [&>div]:line-clamp-3">
+          <Markdown className="text-ds-sm leading-5 text-ds-fg-muted [&_.markdown-body>p]:!m-0 [&_.markdown-body>p]:line-clamp-2">
             {abstract}
           </Markdown>
         )}
@@ -248,7 +261,7 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-ds-sm bg-ds-surface-2 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-[0.06em] text-ds-fg-subtle"
+                className="rounded-ds-sm bg-ds-surface-2 px-2 py-0.5 text-ds-2xs font-medium uppercase tracking-[0.06em] text-ds-fg-subtle"
               >
                 {tag}
               </span>
@@ -258,7 +271,7 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
 
         {/* Links — outlined pills. */}
         {(url || pdfUrl || githubUrl || slidesUrl || blogUrl) && (
-          <div className="mt-auto flex flex-wrap gap-2 pt-0.5">
+          <div className="flex flex-wrap gap-2 pt-0.5">
             {url && <LinkPill href={url} icon={<FileText />} label="Paper" />}
             {pdfUrl && <LinkPill href={pdfUrl} icon={<FileText />} label="PDF" />}
             {githubUrl && <LinkPill href={githubUrl} icon={<Github />} label="Code" />}

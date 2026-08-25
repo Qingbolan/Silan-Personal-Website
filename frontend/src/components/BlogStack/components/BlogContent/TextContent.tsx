@@ -14,6 +14,9 @@ interface TextContentProps {
   interactiveAnnotations: boolean;
   userAnnotations: Record<string, UserAnnotation>;
   annotations: Record<string, boolean>;
+  // The composer moved out of this component into BlogDetail's AnnotationUI
+  // (selection toolbar + anchored popover). These props remain only because
+  // the layouts/BlogContentRenderer still thread them through.
   showAnnotationForm: string | null;
   newAnnotationText: string;
   selectedText: SelectedText | null;
@@ -35,17 +38,11 @@ export const TextContent: React.FC<TextContentProps> = ({
   interactiveAnnotations,
   userAnnotations,
   annotations,
-  showAnnotationForm,
-  newAnnotationText,
-  selectedText,
   highlightedAnnotation,
   onTextSelection,
   onToggleAnnotation,
-  onSetNewAnnotationText,
-  onAddUserAnnotation,
   onRemoveUserAnnotation,
-  onHighlightAnnotation,
-  onCancelAnnotation
+  onHighlightAnnotation
 }) => {
   const { colors } = useTheme();
   const { language } = useLanguage();
@@ -190,19 +187,13 @@ export const TextContent: React.FC<TextContentProps> = ({
                               rounded-lg p-3 shadow-xl w-72 max-w-sm relative">
                 {/* Original quoted text */}
                 <p className="text-xs text-theme-primary leading-relaxed italic text-left mb-2 px-2 py-1 
-                             bg-theme-accent/8 rounded border-l-2 border-theme-accent/30"
-                   style={{ 
-                     fontFamily: 'Georgia, "Times New Roman", Charter, serif'
-                   }}>
+                             bg-theme-accent/8 rounded border-l-2 border-theme-accent/30">
                   "{actualSelectedText}"
                 </p>
                 
                 {/* Annotation content */}
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs text-theme-secondary leading-relaxed flex-1 text-left"
-                     style={{ 
-                       fontFamily: 'Georgia, "Times New Roman", Charter, serif'
-                     }}>
+                  <p className="text-xs text-theme-secondary leading-relaxed flex-1 text-left">
                     {annotation.text}
                   </p>
                     {clickedAnnotation === annotationId && userAnnotations[annotationId]?.fingerprint === (typeof window !== 'undefined' ? (localStorage.getItem('client_fingerprint_v1') || '') : '') && (
@@ -307,7 +298,7 @@ export const TextContent: React.FC<TextContentProps> = ({
     <Markdown
       inline={inline}
       className={`text-theme-text-primary selection:bg-theme-accent/20 ${
-        isWideScreen ? 'text-[17px] sm:text-[18px]' : 'text-[16px]'
+        isWideScreen ? 'text-ds-lg' : 'text-ds-md'
       }`}
     >
       {markdown}
@@ -406,7 +397,7 @@ export const TextContent: React.FC<TextContentProps> = ({
             } else {
               // Render regular text with <p> wrapper
               return (
-                <p className={`font-article text-theme-text-primary/85 text-[17px] leading-[1.74] font-normal sm:text-[18px]
+                <p className={`font-article text-theme-text-primary/85 text-ds-lg leading-[1.74] font-normal
                                selection:bg-theme-accent/20
                                ${
                                  isFirstParagraph ? 'first-letter:text-theme-accent first-letter:font-bold' : ''
@@ -466,10 +457,7 @@ export const TextContent: React.FC<TextContentProps> = ({
                 className="overflow-hidden"
               >
                 <div className=" -secondary rounded-lg p-4 border border-theme-card">
-                  <p className="text-sm text-theme-secondary leading-relaxed italic font-light"
-                     style={{ 
-                       fontFamily: 'Georgia, "Times New Roman", Charter, serif'
-                     }}>
+                  <p className="text-sm text-theme-secondary leading-relaxed italic font-light">
                     {item.annotation}
                   </p>
                 </div>
@@ -493,92 +481,6 @@ export const TextContent: React.FC<TextContentProps> = ({
 
 
 
-      {/* Annotation Form - Modal Popup */}
-      <AnimatePresence>
-        {interactiveAnnotations && showAnnotationForm === item.id && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
-              onClick={onCancelAnnotation}
-            />
-            
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                         w-full max-w-md mx-4 z-50"
-            >
-              <div className="bg-theme-surface-elevated rounded-xl p-5 shadow-xl border border-theme-card-border">
-                {selectedText && selectedText.contentId === item.id && (
-                  <div className="mb-4 p-3 bg-theme-accent/5 rounded-lg border border-theme-accent/20">
-                    <p className="text-xs text-theme-tertiary mb-1 font-sans uppercase tracking-wider">
-                      {language === 'en' ? 'Selected Text' : '选中文本'}
-                    </p>
-                    <p className="text-sm text-theme-secondary italic leading-relaxed"
-                       style={{ fontFamily: 'Georgia, "Times New Roman", Charter, serif' }}>
-                      "{selectedText.text.substring(0, 80)}{selectedText.text.length > 80 ? '...' : ''}"
-                    </p>
-                  </div>
-                )}
-                
-                <textarea
-                  value={newAnnotationText}
-                  onChange={(e) => onSetNewAnnotationText(e.target.value)}
-                  placeholder={language === 'en' ? 'Write your note...' : '写下你的批注...'}
-                  className="w-full p-3   border border-theme-card rounded-lg
-                             text-theme-primary placeholder-theme-tertiary resize-none
-                             focus:outline-none focus:ring-2 ring-theme-primary 
-                             focus:border-transparent transition-all duration-200 leading-relaxed text-sm"
-                  style={{
-                    fontFamily: 'Georgia, "Times New Roman", Charter, serif'
-                  }}
-                  rows={4}
-                  autoFocus
-                  maxLength={500}
-                />
-                
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onAddUserAnnotation(item.id)}
-                      disabled={!newAnnotationText.trim()}
-                      className="px-4 py-2 bg-theme-accent text-white rounded-lg 
-                                 font-medium text-sm hover:bg-theme-accent-hover 
-                                 disabled:opacity-50 disabled:cursor-not-allowed 
-                                 transition-all duration-200 focus:outline-none focus:ring-2 
-                                 ring-theme-primary font-sans"
-                    >
-                      {language === 'en' ? 'Save' : '保存'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onCancelAnnotation}
-                      className="px-4 py-2 text-theme-secondary hover:text-theme-primary 
-                                 hover:bg-theme-hover rounded-lg transition-all duration-200
-                                 focus:outline-none focus:ring-2 ring-theme-primary 
-                                 font-sans text-sm"
-                    >
-                      {language === 'en' ? 'Cancel' : '取消'}
-                    </button>
-                  </div>
-                  <p className="text-xs text-theme-tertiary font-mono opacity-70">
-                    {newAnnotationText.length}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </article>
   );
 }; 

@@ -160,7 +160,7 @@ const Composer: React.FC<{
             placeholder={placeholder}
             className={cn(
               'min-h-10 flex-1 bg-transparent text-ds-sm text-ds-fg outline-none placeholder:text-ds-fg-subtle',
-              surface === 'sidebar' && 'min-w-0 text-[15px]',
+              surface === 'sidebar' && 'min-w-0 text-ds-base',
             )}
           />
           <button
@@ -228,12 +228,12 @@ const CommentRow: React.FC<{
       <div className="min-w-0 flex-1">
         <div className={cn(
           'flex min-h-5 items-center gap-1.5 font-medium leading-5 text-ds-fg-muted',
-          sidebar ? 'text-[14px]' : 'text-[15px]',
+          sidebar ? 'text-ds-sm' : 'text-ds-base',
         )}>
           {comment.authorName}
           <AuthProviderBadge provider={comment.authProvider} className="size-3 shrink-0 text-ds-fg-subtle" />
         </div>
-        <div className={cn('mt-1 leading-6 text-ds-fg', sidebar ? 'text-[15px]' : 'text-[16px]')}>
+        <div className={cn('mt-1 leading-6 text-ds-fg', sidebar ? 'text-ds-base' : 'text-ds-md')}>
           {replyToName && (
             <span className="mr-1 text-ds-fg-subtle">
               {language === 'zh' ? '回复 ' : 'Reply to '}
@@ -247,14 +247,14 @@ const CommentRow: React.FC<{
         </div>
         <div className={cn(
           'mt-1.5 flex items-center gap-2 leading-5 text-ds-fg-subtle',
-          sidebar ? 'text-[12px]' : 'text-[14px]',
+          sidebar ? 'text-ds-xs' : 'text-ds-sm',
         )}>
           <span>{formatTimelineTime(comment.createdAt, language)}</span>
           {ipRegion && <span>{ipRegion}</span>}
         </div>
         <div className={cn(
           'mt-2 flex items-center font-medium leading-none text-ds-fg-muted',
-          sidebar ? 'gap-4 text-[13px]' : 'gap-5 text-[14px]',
+          sidebar ? 'gap-4 text-ds-sm' : 'gap-5 text-ds-sm',
         )}>
           <button
             type="button"

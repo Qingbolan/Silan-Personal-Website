@@ -41,21 +41,21 @@ export const HeadingContent: React.FC<HeadingContentProps> = ({
   const sizeClass = isWideScreen
     ? [
         '',
-        'text-[2rem] sm:text-[2.25rem]',
-        'text-[1.65rem] sm:text-[2rem]',
-        'text-[1.35rem] sm:text-[1.55rem]',
-        'text-[1.15rem] sm:text-[1.28rem]',
-        'text-[1rem] sm:text-[1.1rem]',
-        'text-[0.94rem] sm:text-[0.98rem]',
+        'text-ds-2xl sm:text-ds-3xl',
+        'text-ds-2xl sm:text-ds-3xl',
+        'text-ds-xl',
+        'text-ds-lg sm:text-xl',
+        'text-ds-md sm:text-ds-lg',
+        'text-ds-base sm:text-ds-md',
       ][level]
     : [
         '',
-        'text-[1.75rem] sm:text-[1.9rem]',
-        'text-[1.55rem] sm:text-[1.72rem]',
-        'text-[1.25rem] sm:text-[1.35rem]',
-        'text-[1.05rem] sm:text-[1.12rem]',
-        'text-[0.94rem] sm:text-[0.98rem]',
-        'text-[0.88rem] sm:text-[0.9rem]',
+        'text-ds-2xl',
+        'text-ds-xl sm:text-ds-2xl',
+        'text-xl sm:text-ds-xl',
+        'text-ds-lg',
+        'text-ds-base sm:text-ds-md',
+        'text-ds-sm',
       ][level];
   const weightClass = level <= 2 ? 'font-bold' : level === 3 ? 'font-semibold' : 'font-medium';
   const leadingClass = level <= 2 ? 'leading-[1.16]' : 'leading-[1.26]';

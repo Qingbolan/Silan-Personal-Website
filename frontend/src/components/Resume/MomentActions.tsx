@@ -49,6 +49,53 @@ const pickHottestComment = (comments: RemoteDiscussionComment[]): RemoteDiscussi
   })[0];
 };
 
+interface CompactEngagementControlsProps {
+  likes: number;
+  comments: number;
+  liked: boolean;
+  likePending: boolean;
+  likeLabel: string;
+  commentLabel: string;
+  onLike: () => void;
+  onComment: () => void;
+}
+
+const CompactEngagementControls: React.FC<CompactEngagementControlsProps> = ({
+  likes,
+  comments,
+  liked,
+  likePending,
+  likeLabel,
+  commentLabel,
+  onLike,
+  onComment,
+}) => (
+  <span className="inline-flex shrink-0 items-center gap-3">
+    <button
+      type="button"
+      aria-label={likeLabel}
+      aria-pressed={liked}
+      disabled={likePending}
+      onClick={onLike}
+      className={`inline-flex items-center gap-1.5 rounded-ds-xs text-ds-xs font-medium tabular-nums transition-colors focus-visible:shadow-ds-focus disabled:cursor-wait disabled:opacity-50 ${
+        liked ? 'text-red-500' : 'text-ds-fg-subtle hover:text-ds-fg'
+      }`}
+    >
+      <Heart className="size-4" fill={liked ? 'currentColor' : 'none'} aria-hidden />
+      {likes}
+    </button>
+    <button
+      type="button"
+      aria-label={commentLabel}
+      onClick={onComment}
+      className="inline-flex items-center gap-1.5 rounded-ds-xs text-ds-xs font-medium tabular-nums text-ds-fg-subtle transition-colors hover:text-ds-fg focus-visible:shadow-ds-focus"
+    >
+      <MessageCircle className="size-4" aria-hidden />
+      {comments}
+    </button>
+  </span>
+);
+
 const MomentActions: React.FC<MomentActionsProps> = ({
   momentKey,
   timestamp,
@@ -142,8 +189,9 @@ const MomentActions: React.FC<MomentActionsProps> = ({
   if (variant === 'compact') {
     const likeLabel = language === 'zh' ? `点赞，${engagement.likes} 个赞` : `Like, ${engagement.likes} likes`;
     const commentLabel = language === 'zh' ? `评论，${engagement.comments} 条评论` : `Comment, ${engagement.comments} comments`;
-    const detailLabel = language === 'zh' ? '查看讨论' : 'View thread';
+    const discussionLabel = language === 'zh' ? '讨论' : 'Discussion';
     const openDetail = () => navigate(`/moments/${encodeURIComponent(momentKey)}`);
+    const hasThreadPreview = engagement.comments > 0;
     const omittedCount = Math.max(0, engagement.comments - (compactPreview ? 1 : 0));
     const previewText = compactPreview
       ? markdownToPlainExcerpt(compactPreview.content, '', 96)
@@ -151,70 +199,58 @@ const MomentActions: React.FC<MomentActionsProps> = ({
 
     return (
       <div>
-        <div className="flex min-h-9 items-center justify-end gap-4">
-          {timestampDisplay !== 'hidden' && (
-            <time
-              dateTime={timestamp}
-              className="mr-auto font-mono text-ds-xs tabular-nums text-ds-fg-subtle"
-            >
-              {formattedTimestamp}
-            </time>
-          )}
+        {(timestampDisplay !== 'hidden' || !hasThreadPreview) && (
+          <div className="flex min-h-9 items-center justify-end gap-4">
+            {timestampDisplay !== 'hidden' && (
+              <time
+                dateTime={timestamp}
+                className="mr-auto font-mono text-ds-xs tabular-nums text-ds-fg-subtle"
+              >
+                {formattedTimestamp}
+              </time>
+            )}
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-label={likeLabel}
-              disabled={likePending}
-              onClick={(event) => { event.preventDefault(); void toggleLike(); }}
-              className={`inline-flex items-center gap-1.5 text-ds-xs font-medium tabular-nums transition-colors disabled:cursor-wait disabled:opacity-50 ${
-                engagement.is_liked_by_user ? 'text-red-500' : 'text-ds-fg-subtle hover:text-ds-fg'
-              }`}
-            >
-              <Heart className="size-4" fill={engagement.is_liked_by_user ? 'currentColor' : 'none'} />
-              {engagement.likes}
-            </button>
-            <button
-              type="button"
-              aria-label={commentLabel}
-              onClick={(event) => {
-                event.preventDefault();
-                openDetail();
-              }}
-              className="inline-flex items-center gap-1.5 text-ds-xs font-medium tabular-nums text-ds-fg-subtle transition-colors hover:text-ds-fg"
-            >
-              <MessageCircle className="size-4" />
-              {engagement.comments}
-            </button>
+            {!hasThreadPreview && (
+              <CompactEngagementControls
+                likes={engagement.likes}
+                comments={engagement.comments}
+                liked={engagement.is_liked_by_user}
+                likePending={likePending}
+                likeLabel={likeLabel}
+                commentLabel={commentLabel}
+                onLike={() => void toggleLike()}
+                onComment={openDetail}
+              />
+            )}
           </div>
-        </div>
+        )}
 
-        {engagement.comments > 0 && (
-          <div className="mt-2 border-t border-ds-border py-3">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                openDetail();
-              }}
-              className="flex w-full flex-col gap-2 rounded-ds-sm bg-ds-surface-3 px-3 py-2.5 text-left transition-colors hover:bg-ds-surface-1"
-            >
-              <span className="flex w-full items-center justify-between gap-3">
+        {hasThreadPreview && (
+          <div className="mt-3 border-t border-ds-border pt-3">
+            <div className="rounded-ds-sm bg-ds-surface-3 px-3 py-2.5">
+              <div className="flex w-full items-center justify-between gap-3">
                 <span className="inline-flex min-w-0 items-center gap-2 text-ds-xs font-medium text-ds-fg-muted">
                   <MessageCircle className="size-3.5 shrink-0" aria-hidden />
-                  <span>
-                    {language === 'zh'
-                      ? `${engagement.comments} 条评论`
-                      : `${engagement.comments} ${engagement.comments === 1 ? 'comment' : 'comments'}`}
-                  </span>
+                  <span>{discussionLabel}</span>
                 </span>
-                <span className="shrink-0 text-ds-xs font-medium text-ds-fg-subtle">
-                  {detailLabel}
-                </span>
-              </span>
+                <CompactEngagementControls
+                  likes={engagement.likes}
+                  comments={engagement.comments}
+                  liked={engagement.is_liked_by_user}
+                  likePending={likePending}
+                  likeLabel={likeLabel}
+                  commentLabel={commentLabel}
+                  onLike={() => void toggleLike()}
+                  onComment={openDetail}
+                />
+              </div>
 
               {compactPreview && (
-                <span className="flex w-full min-w-0 items-start gap-2.5">
+                <button
+                  type="button"
+                  onClick={openDetail}
+                  className="mt-2 flex w-full min-w-0 items-start gap-2.5 rounded-ds-xs text-left outline-none transition-colors hover:text-ds-primary focus-visible:shadow-ds-focus"
+                >
                   <Avatar
                     name={compactPreview.author_name}
                     src={compactPreview.author_avatar_url}
@@ -229,7 +265,7 @@ const MomentActions: React.FC<MomentActionsProps> = ({
                         {compactPreview.author_name}
                       </span>
                       {(compactPreview.likes_count ?? 0) > 0 && (
-                        <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] tabular-nums text-ds-primary">
+                        <span className="inline-flex shrink-0 items-center gap-1 font-mono text-ds-2xs tabular-nums text-ds-primary">
                           <Heart className="size-3" fill="currentColor" aria-hidden />
                           {compactPreview.likes_count}
                         </span>
@@ -239,20 +275,23 @@ const MomentActions: React.FC<MomentActionsProps> = ({
                       {previewText}
                     </span>
                   </span>
-                </span>
+                </button>
               )}
 
               {omittedCount > 0 && (
-                <span className="text-ds-xs text-ds-fg-subtle">
+                <button
+                  type="button"
+                  onClick={openDetail}
+                  className="mt-2 block rounded-ds-xs text-left text-ds-xs text-ds-fg-subtle transition-colors hover:text-ds-fg focus-visible:shadow-ds-focus"
+                >
                   {language === 'zh'
                     ? `其余 ${omittedCount} 条已省略`
                     : `${omittedCount} more omitted`}
-                </span>
+                </button>
               )}
-            </button>
+            </div>
           </div>
         )}
-
       </div>
     );
   }

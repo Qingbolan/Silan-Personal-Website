@@ -1,16 +1,12 @@
 // Markdown — the single source of truth for article typography.
 //
-// Public reading surfaces use a static React renderer, not an editor runtime.
-// Callers pass Markdown text; this component owns embedded-title cleanup,
-// GFM parsing, outline IDs, media resolution, links, and article typography.
+// Public reading surfaces use a read-only Lexical document. Callers pass
+// Markdown text; this component owns authored-content normalization, resource
+// routing, link navigation, and the stable public rendering contract.
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import ReactMarkdown, { type Components } from 'react-markdown';
-import rehypeSlug from 'rehype-slug';
-import remarkGfm from 'remark-gfm';
-import { isVideoResource, mediaUrl, routeFromSilanResource } from '../../api/utils';
-import { iconSrcForHref } from '../../utils/linkIcon';
-import { highlightCodeElement } from '../../utils/syntaxHighlight';
+import { mediaUrl, routeFromSilanResource } from '../../api/utils';
+import LexicalMarkdownRenderer from './lexical/LexicalMarkdownRenderer';
 
 interface MarkdownProps {
   children: string;
@@ -81,36 +77,25 @@ const unwrapSoftBreaks = (markdown: string): string => {
 const normalizeStrongLabelSpacing = (markdown: string): string =>
   markdown.replace(/\*\*([^*\r\n]{1,80}?[：:])\*\*(?=\S)/g, '**$1** ');
 
+const resolveContentReferences = (markdown: string): string => (
+  markdown.replace(
+    /(\]\()((?:silan:\/\/resources\/|resources\/)[^)\s]+)(?=[\s)])/g,
+    (_match, opening: string, reference: string) => (
+      `${opening}${routeFromSilanResource(reference) ?? mediaUrl(reference)}`
+    ),
+  )
+);
+
 const prepareMarkdown = (markdown: string, documentTitle?: string, sectionTitle?: string): string =>
-  normalizeStrongLabelSpacing(
-    unwrapSoftBreaks(
-      shiftLocalOutline(
-        stripLeadingHeading(stripLeadingHeading(markdown ?? '', documentTitle), sectionTitle),
+  resolveContentReferences(
+    normalizeStrongLabelSpacing(
+      unwrapSoftBreaks(
+        shiftLocalOutline(
+          stripLeadingHeading(stripLeadingHeading(markdown ?? '', documentTitle), sectionTitle),
+        ),
       ),
     ),
   );
-
-const shouldEnhanceAnchor = (href: string, children: React.ReactNode): boolean => {
-  if (!href || href.startsWith('#')) return false;
-  return React.Children.toArray(children).some((child) => (
-    typeof child === 'string' || typeof child === 'number'
-  ));
-};
-
-const preserveTrustedContentUrl = (url: string): string => {
-  const normalized = url.trim();
-  if (
-    !normalized
-    || normalized.startsWith('#')
-    || normalized.startsWith('/')
-    || normalized.startsWith('./')
-    || normalized.startsWith('../')
-    || /^(?:https?:|mailto:|tel:|silan:)/i.test(normalized)
-  ) {
-    return normalized;
-  }
-  return '';
-};
 
 const Markdown: React.FC<MarkdownProps> = ({
   children,
@@ -121,74 +106,10 @@ const Markdown: React.FC<MarkdownProps> = ({
   richLinks = true,
 }) => {
   const navigate = useNavigate();
-  const previewRef = React.useRef<HTMLDivElement | null>(null);
   const content = React.useMemo(
     () => prepareMarkdown(children, documentTitle, sectionTitle),
     [children, documentTitle, sectionTitle],
   );
-
-  React.useEffect(() => {
-    const element = previewRef.current;
-    if (!element) return;
-    element.querySelectorAll<HTMLElement>('pre code').forEach(highlightCodeElement);
-  }, [content]);
-
-  const components = React.useMemo<Components>(() => ({
-    a: ({ children: linkChildren, href = '', node: _node, ...props }) => {
-      const external = /^https?:\/\//i.test(href);
-      const enhanced = richLinks && shouldEnhanceAnchor(href, linkChildren);
-      return (
-        <a
-          {...props}
-          href={href}
-          className={enhanced ? 'markdown-rich-link' : props.className}
-          data-ds={enhanced ? 'rich-link' : undefined}
-          data-rich-link={enhanced ? 'true' : undefined}
-          target={external ? '_blank' : undefined}
-          rel={external ? 'noopener noreferrer' : undefined}
-        >
-          {enhanced && (
-            <img
-              src={iconSrcForHref(href)}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="markdown-rich-link__icon"
-              onError={(event) => {
-                event.currentTarget.src = '/avatar-icon-32.png';
-              }}
-            />
-          )}
-          {linkChildren}
-        </a>
-      );
-    },
-    img: ({ src = '', alt = '', node: _node, ...props }) => (
-      isVideoResource(src) ? (
-        <video
-          controls
-          preload="metadata"
-          className={props.className}
-          aria-label={alt || 'Embedded video'}
-        >
-          <source src={mediaUrl(src)} />
-        </video>
-      ) : (
-        <img
-          {...props}
-          src={mediaUrl(src)}
-          alt={alt}
-          loading="lazy"
-          decoding="async"
-        />
-      )
-    ),
-    table: ({ children: tableChildren, node: _node, ...props }) => (
-      <div className="markdown-table-scroll" role="region" aria-label="Scrollable table" tabIndex={0}>
-        <table {...props}>{tableChildren}</table>
-      </div>
-    ),
-  }), [richLinks]);
 
   const onClick = React.useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as Element | null;
@@ -221,23 +142,14 @@ const Markdown: React.FC<MarkdownProps> = ({
       className={[
         'markdown-content font-article',
         inline
-          ? 'text-[15px] leading-[1.8] text-theme-secondary'
-          : 'text-[18px] leading-[1.74] text-theme-text-primary',
+          ? 'text-ds-base leading-[1.8] text-theme-secondary'
+          : 'text-ds-lg leading-[1.74] text-theme-text-primary',
         inline ? 'markdown-content--inline' : '',
         className || '',
       ].filter(Boolean).join(' ')}
       onClick={onClick}
     >
-      <div ref={previewRef} className="markdown-body">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={inline ? [] : [rehypeSlug]}
-          components={components}
-          urlTransform={preserveTrustedContentUrl}
-        >
-          {content}
-        </ReactMarkdown>
-      </div>
+      <LexicalMarkdownRenderer content={content} richLinks={richLinks} />
     </div>
   );
 };

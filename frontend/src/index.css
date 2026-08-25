@@ -1,12 +1,3 @@
-/* Self-hosted display face — used only for the oversized personal sign-off. */
-@font-face {
-  font-family: 'DM Serif Display';
-  src: url('/fonts/dm-serif-display-latin.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* Tailwind Base with Enhanced CSS Variables */
 @tailwind base;
 @tailwind components;
@@ -14,11 +5,13 @@
 
 /* Modern Typography Variables */
 :root {
-  /* Typography - Clean, modern font stack */
-  --font-system: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-body: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace;
+  /* One global family across web and desktop. Hierarchy comes from size,
+     weight, spacing, and surface treatment — never a second typeface. */
+  --font-app: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-system: var(--font-app);
+  --font-display: var(--font-app);
+  --font-body: var(--font-app);
+  --font-mono: var(--font-app);
   
   /* Spacing and sizing - Apple's spacing scale */
   --content-max-width: 1120px;
@@ -690,48 +683,45 @@ img {
   animation: gradient-shift 3s ease infinite;
 }
 
-/* Modern Typography Scale — Yuque-aligned global heading sizes.
-   Measured from yuque.com/yuque/careers reference screenshots:
+/* Modern Typography Scale.
      h1 32 / 700 / 1.3   h2 22 / 600 / 1.4   h3 18 / 600 / 1.45
      h4 16 / 600 / 1.5   h5/h6 13 / 600 / 1.4 (uppercase eyebrow)
-     p  15 / 400 / 1.8   font-family system + PingFang SC first
+     p  15 / 400 / 1.8
    Design-system components opt out via `data-ds` on an ancestor; they own
    their own heading sizes. */
 :is(h1, h2, h3, h4, h5, h6):not([data-ds] *) {
-  font-family: -apple-system, BlinkMacSystemFont,
-    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-app);
   letter-spacing: -0.01em;
   margin: 0;
 }
 
 h1:not([data-ds] *) {
-  font-size: 32px;
+  font-size: var(--ds-text-2xl);
   font-weight: 700;
   line-height: 1.3;
 }
 
 h2:not([data-ds] *) {
-  font-size: 22px;
+  font-size: var(--ds-text-xl);
   font-weight: 600;
   line-height: 1.4;
 }
 
 h3:not([data-ds] *) {
-  font-size: 18px;
+  font-size: var(--ds-text-lg);
   font-weight: 600;
   line-height: 1.45;
 }
 
 h4:not([data-ds] *) {
-  font-size: 16px;
+  font-size: var(--ds-text-md);
   font-weight: 600;
   line-height: 1.5;
 }
 
 h5:not([data-ds] *),
 h6:not([data-ds] *) {
-  font-size: 13px;
+  font-size: var(--ds-text-sm);
   font-weight: 600;
   line-height: 1.4;
   text-transform: uppercase;
@@ -739,27 +729,25 @@ h6:not([data-ds] *) {
 }
 
 p:not([data-ds] *) {
-  font-size: 15px;
+  font-size: var(--ds-text-base);
   line-height: 1.8;
   font-weight: 400;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont,
-    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-app);
 }
 
 .text-sm {
-  font-size: 0.875rem; /* 14px */
+  font-size: var(--ds-text-sm); /* 13px */
   line-height: 1.5;
 }
 
 .text-lg {
-  font-size: 1.125rem; /* 18px */
+  font-size: var(--ds-text-lg); /* 18px */
   line-height: 1.6;
 }
 
 .text-xl {
-  font-size: 1.25rem; /* 20px */
+  font-size: var(--ds-text-xl); /* 22px */
   line-height: 1.5;
 }
 
@@ -1268,14 +1256,14 @@ code[class*="language-"] .token.italic { font-style: italic; }
 
 /* Level-specific styles */
 .simple-toc-item.level-1 {
-  font-size: 13px;
+  font-size: var(--ds-text-sm);
   font-weight: 500;
   margin-left: 0;
   margin-bottom: 1px; /* 减少底部间距 */
 }
 
 .simple-toc-item.level-2 {
-  font-size: 12px;
+  font-size: var(--ds-text-xs);
   font-weight: 400;
   margin-left: 16px;
   margin-bottom: 1px; /* 减少底部间距 */
@@ -1291,7 +1279,7 @@ code[class*="language-"] .token.italic { font-style: italic; }
 }
 
 .simple-toc-item.level-3 {
-  font-size: 11px;
+  font-size: var(--ds-text-2xs);
   font-weight: 400;
   margin-left: 28px;
   margin-bottom: 1px; /* 减少底部间距 */
@@ -1304,7 +1292,7 @@ code[class*="language-"] .token.italic { font-style: italic; }
   left: -12px;
   color: var(--theme-tertiary, var(--ant-color-text-quaternary, #bbb));
   font-weight: bold;
-  font-size: 10px;
+  font-size: var(--ds-text-2xs);
 }
 
 /* Active state - use theme primary color */
@@ -1397,14 +1385,14 @@ code[class*="language-"] .token.italic { font-style: italic; }
 .hljs-emphasis { font-style: italic; }
 .hljs-strong { font-weight: 600; }
 
-/* Static GFM reading surface. Parsing/rendering lives in
-   src/components/ui/Markdown.tsx; this block maps semantic HTML onto the
-   site tokens without shipping an editor runtime to public pages. */
+/* Read-only Lexical Markdown surface. The document engine owns semantic DOM;
+   this block maps that DOM onto the site's public reading tokens. */
 .markdown-content .markdown-body {
   color: color-mix(in srgb, var(--color-textPrimary, #171717) 84%, transparent);
   font-family: var(--font-body);
-  font-size: 17px;
+  font-size: var(--ds-text-lg);
   line-height: 1.74;
+  outline: none;
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
@@ -1423,28 +1411,28 @@ code[class*="language-"] .token.italic { font-style: italic; }
   scroll-margin-top: 6rem;
 }
 
-.markdown-content .markdown-body h1 { margin: 2.25rem 0 0.85rem; font-size: 2rem; font-weight: 760; line-height: 1.18; }
-.markdown-content .markdown-body h2 { margin: 2.5rem 0 0.9rem; font-size: 1.65rem; font-weight: 760; line-height: 1.2; }
-.markdown-content .markdown-body h3 { margin: 2.1rem 0 0.8rem; font-size: 1.35rem; font-weight: 680; }
-.markdown-content .markdown-body h4 { margin: 1.6rem 0 0.6rem; font-size: 1.15rem; }
+.markdown-content .markdown-body h1 { margin: 2.25rem 0 0.85rem; font-size: var(--ds-text-2xl); font-weight: 760; line-height: 1.18; }
+.markdown-content .markdown-body h2 { margin: 2.5rem 0 0.9rem; font-size: var(--ds-text-xl); font-weight: 760; line-height: 1.2; }
+.markdown-content .markdown-body h3 { margin: 2.1rem 0 0.8rem; font-size: var(--ds-text-lg); font-weight: 680; }
+.markdown-content .markdown-body h4 { margin: 1.6rem 0 0.6rem; font-size: var(--ds-text-md); }
 .markdown-content .markdown-body h5,
 .markdown-content .markdown-body h6 {
   margin: 1.25rem 0 0.5rem;
   color: var(--color-textTertiary, #737373);
-  font-size: 0.8125rem;
+  font-size: var(--ds-text-sm);
   font-weight: 650;
   text-transform: uppercase;
 }
 
 @media (min-width: 640px) {
   .markdown-content .markdown-body {
-    font-size: 18px;
+    font-size: var(--ds-text-lg);
   }
 
-  .markdown-content .markdown-body h1 { margin: 3.25rem 0 1.05rem; font-size: 2.25rem; line-height: 1.16; }
-  .markdown-content .markdown-body h2 { margin: 3.25rem 0 1.05rem; font-size: 2rem; line-height: 1.16; }
-  .markdown-content .markdown-body h3 { margin: 2.4rem 0 0.85rem; font-size: 1.55rem; }
-  .markdown-content .markdown-body h4 { margin: 1.9rem 0 0.7rem; font-size: 1.28rem; }
+  .markdown-content .markdown-body h1 { margin: 3.25rem 0 1.05rem; font-size: var(--ds-text-3xl); line-height: 1.16; }
+  .markdown-content .markdown-body h2 { margin: 3.25rem 0 1.05rem; font-size: var(--ds-text-2xl); line-height: 1.16; }
+  .markdown-content .markdown-body h3 { margin: 2.4rem 0 0.85rem; font-size: var(--ds-text-xl); }
+  .markdown-content .markdown-body h4 { margin: 1.9rem 0 0.7rem; font-size: var(--ds-text-lg); }
 }
 
 .markdown-content .markdown-body p,
@@ -1452,6 +1440,7 @@ code[class*="language-"] .token.italic { font-style: italic; }
 .markdown-content .markdown-body ol,
 .markdown-content .markdown-body blockquote,
 .markdown-content .markdown-body pre,
+.markdown-content .markdown-body code.markdown-code-block,
 .markdown-content .markdown-body table {
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -1502,6 +1491,19 @@ code[class*="language-"] .token.italic { font-style: italic; }
 .rich-link:active {
   transform: translateY(0);
 }
+.markdown-content .markdown-body a.markdown-rich-link::before {
+  background-color: var(--color-background, #ffffff);
+  background-image: var(--markdown-link-icon, url('/avatar-icon-32.png'));
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-cardBorder, #e5e7eb) 72%, transparent);
+  content: '';
+  flex: 0 0 auto;
+  height: 1.12em;
+  width: 1.12em;
+}
 .markdown-content .markdown-body .markdown-rich-link__icon,
 .rich-link__icon {
   background: var(--color-background, #ffffff);
@@ -1520,10 +1522,26 @@ code[class*="language-"] .token.italic { font-style: italic; }
 .markdown-content .markdown-body li { margin: 0.25rem 0; }
 .markdown-content .markdown-body li.task-list-item {
   list-style: none;
+  position: relative;
 }
-.markdown-content .markdown-body li.task-list-item > input {
-  margin: 0 0.48rem 0 -1.3rem;
-  accent-color: var(--color-accent, #f97316);
+.markdown-content .markdown-body li.task-list-item::before {
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-textPrimary, #171717) 32%, transparent);
+  border-radius: 0.22rem;
+  color: var(--color-background, #ffffff);
+  content: '';
+  display: inline-flex;
+  font-size: 0.68em;
+  height: 0.95rem;
+  justify-content: center;
+  margin: 0 0.45rem 0 -1.35rem;
+  vertical-align: -0.08rem;
+  width: 0.95rem;
+}
+.markdown-content .markdown-body li.task-list-item--checked::before {
+  background: var(--color-accent, #f97316);
+  border-color: var(--color-accent, #f97316);
+  content: '✓';
 }
 .markdown-content .markdown-body blockquote {
   border-left: 2px solid color-mix(in srgb, var(--color-accent, #f97316) 45%, transparent);
@@ -1531,7 +1549,7 @@ code[class*="language-"] .token.italic { font-style: italic; }
   font-style: italic;
   padding: 0.25rem 0 0.25rem 1rem;
 }
-.markdown-content .markdown-body code {
+.markdown-content .markdown-body code:not(.markdown-code-block) {
   background: color-mix(in srgb, var(--color-textPrimary, #171717) 7%, var(--color-background, #ffffff));
   border: 1px solid color-mix(in srgb, var(--color-textPrimary, #171717) 10%, transparent);
   border-radius: 0.3rem;
@@ -1541,7 +1559,8 @@ code[class*="language-"] .token.italic { font-style: italic; }
   font-weight: 500;
   padding: 0.1rem 0.34rem;
 }
-.markdown-content .markdown-body pre {
+.markdown-content .markdown-body pre,
+.markdown-content .markdown-body code.markdown-code-block {
   --syntax-fg: var(--color-textPrimary, #171717);
   --syntax-muted: color-mix(in oklch, var(--color-textSecondary, #525252) 78%, transparent);
   --syntax-punctuation: color-mix(in oklch, var(--color-textSecondary, #525252) 88%, var(--color-textPrimary, #171717));
@@ -1575,13 +1594,21 @@ code[class*="language-"] .token.italic { font-style: italic; }
   border: 0;
   color: inherit;
   display: block;
-  font-size: 0.88rem;
+  font-size: var(--ds-text-base);
   font-weight: 500;
   line-height: 1.75;
   min-width: max-content;
   padding: 0;
 }
-.dark .markdown-content .markdown-body pre {
+.markdown-content .markdown-body code.markdown-code-block {
+  display: block;
+  font-size: var(--ds-text-base);
+  font-weight: 500;
+  line-height: 1.75;
+  white-space: pre;
+}
+.dark .markdown-content .markdown-body pre,
+.dark .markdown-content .markdown-body code.markdown-code-block {
   --syntax-fg: oklch(0.94 0.006 264);
   --syntax-muted: oklch(0.67 0.012 264);
   --syntax-punctuation: oklch(0.76 0.01 264);
@@ -1601,7 +1628,7 @@ code[class*="language-"] .token.italic { font-style: italic; }
     inset 0 -1px 0 rgba(0, 0, 0, 0.28);
   color: rgba(255, 255, 255, 0.88);
 }
-.dark .markdown-content .markdown-body code {
+.dark .markdown-content .markdown-body code:not(.markdown-code-block) {
   background: rgba(255, 255, 255, 0.075);
   border-color: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.9);
@@ -1637,7 +1664,7 @@ code[class*="language-"] .token.italic { font-style: italic; }
   border-collapse: separate;
   border-spacing: 0;
   display: table;
-  font-size: 0.92rem;
+  font-size: var(--ds-text-base);
   line-height: 1.58;
   margin: 0;
   min-width: min(42rem, 100%);
@@ -1705,6 +1732,22 @@ code[class*="language-"] .token.italic { font-style: italic; }
   height: auto;
   border-radius: 0.5rem;
   margin: 1.25rem 0;
+}
+
+.markdown-content .markdown-body .markdown-media {
+  display: block;
+  margin: 1.25rem 0;
+}
+
+.markdown-content .markdown-body .markdown-media > img,
+.markdown-content .markdown-body .markdown-media > video {
+  margin: 0;
+}
+
+.markdown-content .markdown-body .markdown-horizontal-rule {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-textPrimary, #171717) 16%, transparent);
+  margin: 2rem 0;
 }
 
 .markdown-content .markdown-body video {
@@ -1779,26 +1822,6 @@ code[class*="language-"] .token.italic { font-style: italic; }
 
 .compact-comments-scroll::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--color-textPrimary, #171717) 46%, transparent);
-}
-
-/* Homepage moments are summaries, not article bodies. Constrain both the
-   component root and semantic body to two lines across browser engines. */
-.moment-home-summary,
-.moment-home-summary .markdown-body {
-  max-height: 3rem;
-  overflow: hidden;
-}
-
-.moment-home-summary .markdown-body {
-  display: -webkit-box;
-  line-height: 1.5rem;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.moment-home-summary .markdown-body > * {
-  display: inline;
-  margin: 0;
 }
 
 .project-detail-section-nav {

@@ -7,6 +7,7 @@ import { useAnnotations } from './hooks/useAnnotations';
 
 // Import all components
 import { BlogLoadingState } from './components/BlogLoadingState';
+import { AnnotationUI } from './components/AnnotationUI';
 import ArticleDetailLayout from './ArticleDetailLayout';
 import SeriesDetailLayout from './SeriesDetailLayout';
 
@@ -34,9 +35,12 @@ const BlogDetail: React.FC = () => {
     newAnnotationText,
     selectedText,
     highlightedAnnotation,
+    selectionMenu,
+    formAnchor,
     setNewAnnotationText,
     setShowAnnotationForm,
     handleTextSelection,
+    openAnnotationForm,
     addUserAnnotation,
     removeUserAnnotation,
     highlightAnnotation,
@@ -140,6 +144,23 @@ const BlogDetail: React.FC = () => {
     />
   );
 
+  // The two-step annotation UI (selection toolbar + anchored composer) is
+  // rendered once here — it positions itself `fixed` in the viewport, so it
+  // works identically over both layouts.
+  const annotationUi = (
+    <AnnotationUI
+      selectionMenu={selectionMenu}
+      formAnchor={formAnchor}
+      showAnnotationForm={showAnnotationForm}
+      selectedText={selectedText}
+      newAnnotationText={newAnnotationText}
+      onOpenForm={openAnnotationForm}
+      onSetNewAnnotationText={setNewAnnotationText}
+      onAddUserAnnotation={(contentId: string) => addUserAnnotation(contentId)}
+      onCancelAnnotation={cancelAnnotation}
+    />
+  );
+
   if (blog.seriesId) {
     return (
       <>
@@ -162,6 +183,7 @@ const BlogDetail: React.FC = () => {
         onHighlightAnnotation={highlightAnnotation}
         onCancelAnnotation={cancelAnnotation}
       />
+        {annotationUi}
       </>
     );
   }
@@ -187,6 +209,7 @@ const BlogDetail: React.FC = () => {
       onHighlightAnnotation={highlightAnnotation}
       onCancelAnnotation={cancelAnnotation}
       />
+      {annotationUi}
     </>
   );
 };

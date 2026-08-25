@@ -1,8 +1,8 @@
 // src/components/Resume/PublicationsList.tsx
 //
-// The publications section body — an editorial reading list. A single column
-// keeps title, venue and authors in a stable scan order; masonry made papers
-// look like unrelated product tiles and created unnecessary horizontal chrome.
+// The publications section body — a compact editorial reading list. Desktop
+// cards alternate their figure side while preserving one stable reading order
+// and a single-column mobile fallback.
 import React from 'react';
 import PublicationCard, { type PublicationCardData } from './PublicationCard';
 
@@ -16,7 +16,7 @@ const PublicationsList: React.FC<PublicationsListProps> = ({
   publications,
   highlightAuthor,
 }) => (
-  <div className="space-y-2">
+  <div className="divide-y divide-ds-border">
     {publications.map((publication, index) => (
       <PublicationCard
         key={publication.id}

@@ -17,22 +17,13 @@ export default {
     extend: {
       // Typography
       fontFamily: {
-        'sans': ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],
-        'display': ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],
-        // The site stays primarily sans-serif; this is reserved for the
-        // oversized personal sign-off in the footer.
-        'signature': ['"DM Serif Display"', 'Iowan Old Style', 'Baskerville', 'Georgia', 'serif'],
-        'mono': ['"JetBrains Mono"', 'Monaco', 'Consolas', 'monospace'],
-        // Yuque-style article body: system + PingFang SC first for CJK,
-        // graceful fallback through Hiragino / YaHei to Helvetica.
-        'article': [
-          '-apple-system', 'BlinkMacSystemFont',
-          '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"',
-          '"Helvetica Neue"', 'Arial', 'sans-serif',
-        ],
-        // Yuque-style inline code: Menlo first (macOS native, matches the
-        // reference) with Monaco / Courier New fallback.
-        'article-mono': ['Menlo', 'Monaco', '"Courier New"', 'monospace'],
+        'sans': ['var(--font-app)'],
+        'serif': ['var(--font-app)'],
+        'display': ['var(--font-app)'],
+        'signature': ['var(--font-app)'],
+        'mono': ['var(--font-app)'],
+        'article': ['var(--font-app)'],
+        'article-mono': ['var(--font-app)'],
       },
       
       // Theme-aware colors using CSS custom properties

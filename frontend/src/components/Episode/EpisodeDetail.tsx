@@ -268,14 +268,14 @@ const EpisodeDetail: React.FC = () => {
         {isOverview ? (
           <>
             <header data-ds className="pb-8 pt-6">
-              <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] leading-5 text-ds-fg-subtle">
+              <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-ds-xs leading-5 text-ds-fg-subtle">
                 {language === 'en' ? 'Series' : '系列'}
                 {seriesData?.episodes.length
                   ? ` · ${seriesData.episodes.length} ${language === 'en' ? 'episodes' : '集'}`
                   : ''}
               </div>
               <h1
-                className="max-w-[70rem] break-words text-balance font-display text-[2.5rem] font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-[3.25rem] lg:text-[4.5rem]"
+                className="max-w-[70rem] break-words text-balance font-display text-ds-3xl font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-ds-4xl lg:text-7xl"
               >
                 {seriesTitle}
               </h1>
@@ -283,7 +283,7 @@ const EpisodeDetail: React.FC = () => {
 
             {seriesData?.description && (
               <section className="mt-8 rounded-ds-lg bg-ds-surface-2 px-6 py-6 sm:px-8">
-                <p className="max-w-[58rem] text-pretty text-[17px] font-medium leading-7 text-ds-fg sm:text-[19px] sm:leading-[1.55]">
+                <p className="max-w-[58rem] text-pretty text-ds-lg font-medium leading-7 text-ds-fg sm:leading-[1.55]">
                   {seriesData.description}
                 </p>
               </section>
@@ -292,7 +292,7 @@ const EpisodeDetail: React.FC = () => {
             {seriesData && seriesData.episodes.length > 0 && (
               <div className="mt-12 max-w-[68rem] space-y-1">
                 <div className="mb-4 flex items-center gap-3">
-                  <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
+                  <span className="font-mono text-ds-2xs font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
                     {language === 'en' ? 'Episodes' : '章节'}
                   </span>
                   <span className="h-px flex-1 bg-ds-border" aria-hidden />
@@ -308,10 +308,10 @@ const EpisodeDetail: React.FC = () => {
                         }}
                         className="group flex w-full items-baseline gap-4 rounded-ds-md px-3 py-2.5 text-left transition-colors hover:bg-ds-surface-2"
                       >
-                        <span className="font-mono text-[12px] text-ds-fg-subtle">
+                        <span className="font-mono text-ds-xs text-ds-fg-subtle">
                           {String(ep.episode_number || i + 1).padStart(2, '0')}
                         </span>
-                        <span className="flex-1 text-[17px] font-medium leading-7 text-ds-fg group-hover:text-ds-primary">
+                        <span className="flex-1 text-ds-lg font-medium leading-7 text-ds-fg group-hover:text-ds-primary">
                           {ep.title}
                         </span>
                       </button>

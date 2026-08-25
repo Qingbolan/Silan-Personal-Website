@@ -42,7 +42,7 @@ const ContentAttribution: React.FC<ContentAttributionProps> = ({
         className,
       )}
     >
-      <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
+      <div className="mb-4 flex items-center gap-2 font-mono text-ds-2xs font-medium uppercase tracking-[0.12em] text-ds-fg-subtle">
         <Fingerprint className="size-3.5" aria-hidden />
         <span>{labels.heading}</span>
       </div>

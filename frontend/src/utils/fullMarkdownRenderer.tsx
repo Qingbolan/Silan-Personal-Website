@@ -28,7 +28,6 @@ export const FileTreeRenderer: React.FC<{ content: string }> = ({ content }) => 
           <pre
             className="overflow-x-auto font-mono text-sm leading-relaxed text-theme-primary"
             style={{
-              fontFamily: 'JetBrains Mono, Monaco, Menlo, "Ubuntu Mono", Consolas, monospace',
               lineHeight: '1.6',
               margin: 0,
               whiteSpace: 'pre',

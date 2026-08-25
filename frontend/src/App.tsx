@@ -18,7 +18,8 @@ import { languageFromPathname, localeBasename } from './lib/localeRouting';
 const ResumeWebsite = React.lazy(() => import('./views/ResumeWebsite'));
 const Moments = React.lazy(() => import('./views/Moments'));
 const MomentDetail = React.lazy(() => import('./views/MomentDetail'));
-const InteractiveContactPage = React.lazy(() => import('./views/InteractiveContactPage'));
+// Contact page disabled (2026-08): kept for easy re-enabling.
+// const InteractiveContactPage = React.lazy(() => import('./views/InteractiveContactPage'));
 const ProjectGallery = React.lazy(() => import('./views/ProjectGallery'));
 const ProjectDetail = React.lazy(() => import('./components/ProjectGallery/ProjectDetail'));
 const BlogStack = React.lazy(() => import('./views/BlogStack'));
@@ -71,14 +72,13 @@ const LocalizedRoutes: React.FC = () => {
     >
       <Routes key={language}>
         <Route path="/" element={<ResumeWebsite />} />
-        {/* MomentDetail renders as a modal overlay on top of the Moments
-            list (Xiaohongshu-style), so the detail route is nested under
-            the list route and rendered through its <Outlet /> rather than
-            replacing the whole page. */}
-        <Route path="/moments" element={<Moments />}>
-          <Route path=":slug" element={<MomentDetail />} />
-        </Route>
-        <Route path="/contact" element={<InteractiveContactPage />} />
+        {/* MomentDetail is a standalone page (Xiaohongshu note-style):
+            navigating to /moments/:slug swaps the whole page, and the
+            list's scroll position is revisited via the browser back
+            button. */}
+        <Route path="/moments" element={<Moments />} />
+        <Route path="/moments/:slug" element={<MomentDetail />} />
+        {/* Contact page disabled (2026-08): <Route path="/contact" element={<InteractiveContactPage />} /> */}
         <Route path="/projects" element={<ProjectGallery />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/ideas" element={<LegacyIdeaRoute />} />

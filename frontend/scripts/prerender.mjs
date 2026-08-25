@@ -117,8 +117,9 @@ const apiUrl = (path) => new URL(path, `${trimTrailingSlash(config.apiOrigin)}/`
 
 const LANGUAGES = ['en', 'zh'];
 const CHINESE_ROUTE_PREFIX = '/zh';
-const LOGICAL_STATIC_ROUTES = ['/', '/blog/', '/projects/', '/moments/', '/contact/', '/search/'];
-const PRERENDER_ROUTE_ROOTS = ['blog', 'projects', 'moments', 'contact', 'search', 'episodes', 'zh'];
+// Contact page disabled (2026-08): '/contact/' removed from both lists.
+const LOGICAL_STATIC_ROUTES = ['/', '/blog/', '/projects/', '/moments/', '/search/'];
+const PRERENDER_ROUTE_ROOTS = ['blog', 'projects', 'moments', 'search', 'episodes', 'zh'];
 const PRERENDER_ROUTE_DATA_SCRIPT_ID = '__SILAN_ROUTE_DATA__';
 const ROUTE_DATA_LANGUAGES = ['en', 'zh'];
 const CONTENT_TEXT_LIMIT = 1800;
