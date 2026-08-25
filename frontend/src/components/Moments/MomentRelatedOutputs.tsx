@@ -31,29 +31,25 @@ const MomentRelatedOutputs: React.FC<MomentRelatedOutputsProps> = ({
     return (
       <div
         {...dsRoot}
-        className={cn('border-l border-ds-border pl-4', className)}
+        className={cn('grid gap-2', className)}
       >
-        <div className="mb-1 font-mono text-ds-2xs font-semibold uppercase tracking-[0.12em] text-ds-fg-subtle">
-          {labels.title}
-        </div>
-        <div className="divide-y divide-ds-border">
-          {outputs.map((output) => {
-            const Icon = iconByKind[output.kind];
-            return (
-              <Link
-                key={`${output.kind}-${output.id}`}
-                to={output.path}
-                className="group flex min-w-0 items-center gap-2.5 py-2 outline-none focus-visible:shadow-ds-focus"
-              >
-                <Icon className="size-3.5 shrink-0 text-ds-fg-subtle" aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-ds-sm font-medium text-ds-fg transition-colors group-hover:text-ds-primary">
-                  {output.title}
-                </span>
-                <ArrowUpRight className="size-3.5 shrink-0 text-ds-fg-subtle transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ds-primary" aria-hidden />
-              </Link>
-            );
-          })}
-        </div>
+        {outputs.map((output) => {
+          const Icon = iconByKind[output.kind];
+          return (
+            <Link
+              key={`${output.kind}-${output.id}`}
+              to={output.path}
+              className="group flex min-w-0 items-center gap-2.5 rounded-ds-sm bg-ds-surface-1 px-3 py-2.5 outline-none transition-[background-color,box-shadow] hover:bg-ds-surface-2 focus-visible:shadow-ds-focus"
+              style={{ border: '1px solid var(--ds-color-border)' }}
+            >
+              <Icon className="size-3.5 shrink-0 text-ds-fg-subtle" aria-hidden />
+              <span className="min-w-0 flex-1 truncate text-ds-sm font-medium text-ds-fg transition-colors group-hover:text-ds-primary">
+                {output.title}
+              </span>
+              <ArrowUpRight className="size-3.5 shrink-0 text-ds-fg-subtle transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ds-primary" aria-hidden />
+            </Link>
+          );
+        })}
       </div>
     );
   }
