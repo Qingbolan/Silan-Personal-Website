@@ -134,17 +134,10 @@ export const ProfileHero: React.FC<ProfileHeroProps> = ({
       )}
 
       <div className="relative z-10 min-w-0 max-w-3xl pt-24 sm:pt-20">
-        <motion.p
-          {...fade(0.03)}
-          className="max-w-[12rem] font-mono text-ds-2xs font-medium uppercase leading-5 tracking-[0.18em] text-ds-primary sm:max-w-none"
-        >
-          NUS · Computing / AI Systems
-        </motion.p>
-
         {name && (
           <motion.h1
-            {...fade(0.08)}
-            className="mt-4 max-w-[7ch] text-[clamp(3.75rem,16vw,5.5rem)] font-semibold leading-[0.88] tracking-[-0.065em] text-ds-fg sm:max-w-none sm:text-7xl"
+            {...fade(0.03)}
+            className="max-w-[7ch] text-[clamp(3.75rem,16vw,5.5rem)] font-semibold leading-[0.88] tracking-[-0.065em] text-ds-fg sm:max-w-none sm:text-7xl"
           >
             {name}
           </motion.h1>
