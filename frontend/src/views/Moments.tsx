@@ -389,7 +389,7 @@ const Moments: React.FC = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.28, delay: Math.min(index * 0.05, 0.15) }}
                               >
-                                <div className={cn('group', !isMultiEntryDay && 'max-w-[82ch]')}>
+                                <div className="group">
                                   <Link
                                     to={momentPath}
                                     className="block rounded-ds-sm outline-none focus-visible:shadow-ds-focus"
