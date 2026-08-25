@@ -158,14 +158,7 @@ const PartPanel: React.FC<{
   }
 
   return (
-    <section id={part.role} className="scroll-mt-24">
-      <h2 className="mb-4 inline-flex items-center gap-2 text-ds-xl font-semibold tracking-[-0.01em] text-ds-fg">
-        {React.createElement(roleIcon(part.role), {
-          className: 'size-[18px] text-ds-fg-subtle',
-          'aria-hidden': true,
-        })}
-        {label}
-      </h2>
+    <section id={part.role} aria-label={label} className="scroll-mt-24">
       {part.shape === 'entry_list' ? (
         <PartEntryList part={part} />
       ) : (
