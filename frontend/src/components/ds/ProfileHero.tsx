@@ -262,8 +262,8 @@ export const ProfileHero: React.FC<ProfileHeroProps> = ({
               title={s.label}
               className={cn(
                 'inline-flex size-11 items-center justify-center rounded-full text-ds-fg-muted',
-                'transition-colors duration-ds-fast ease-ds-standard active:scale-95',
-                'hover:bg-ds-primary-soft hover:text-ds-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-ring',
+                'transition-[color,transform] duration-ds-fast ease-ds-standard hover:-translate-y-0.5 hover:text-ds-primary active:scale-95',
+                'focus-visible:text-ds-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-ring',
                 '[&_svg]:size-[22px]',
               )}
             >

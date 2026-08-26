@@ -11,17 +11,16 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Globe, Moon, Sun } from 'lucide-react';
 import {
-  Home,
-  Briefcase,
   Aperture,
   BookOpen,
-  MoreHorizontal,
+  Briefcase,
+  DotsThree,
+  House,
   X,
-  Globe,
-  Moon,
-  Sun,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
+import type { Icon } from '@phosphor-icons/react';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { cn } from '../../lib/utils';
@@ -31,22 +30,22 @@ import { canonicalInternalPath, isNavigationPathActive } from '../../utils/navig
 interface TabRoute {
   path: string;
   label: string;
-  icon: React.ReactNode;
+  icon: Icon;
 }
 
 // The content destinations that stay pinned in the dock.
 const PRIMARY_ROUTES = (zh: boolean): TabRoute[] => [
-  { path: '/', label: zh ? '主页' : 'Home', icon: <Home size={20} strokeWidth={2} /> },
-  { path: '/moments', label: zh ? '瞬间' : 'Moments', icon: <Aperture size={20} strokeWidth={2} /> },
-  { path: '/blog', label: zh ? '博客' : 'Blog', icon: <BookOpen size={20} strokeWidth={2} /> },
-  { path: '/projects', label: zh ? '项目' : 'Projects', icon: <Briefcase size={20} strokeWidth={2} /> },
+  { path: '/', label: zh ? '主页' : 'Home', icon: House },
+  { path: '/moments', label: zh ? '瞬间' : 'Moments', icon: Aperture },
+  { path: '/blog', label: zh ? '博客' : 'Blog', icon: BookOpen },
+  { path: '/projects', label: zh ? '项目' : 'Projects', icon: Briefcase },
 ];
 
 // Everything else, revealed through the "More" sheet. Currently empty
 // (contact page disabled 2026-08) — the sheet still carries the language
 // and theme switches, so the More button stays.
 const MORE_ROUTES = (): TabRoute[] => [
-  // { path: '/contact', label: zh ? '联系' : 'Contact', icon: <Mail size={18} strokeWidth={2} /> },
+  // { path: '/contact', label: zh ? '联系' : 'Contact', icon: Envelope },
 ];
 
 /** One stable tab slot shared by destinations and the More utility. */
@@ -55,44 +54,40 @@ const TabSlot: React.FC<{
   active: boolean;
   current?: boolean;
   onClick: () => void;
-  reduceMotion: boolean | null;
   expanded?: boolean;
   hasPopup?: boolean;
-}> = ({ route, active, current = active, onClick, reduceMotion, expanded, hasPopup = false }) => (
-  <button
-    type="button"
-    aria-label={route.label}
-    aria-current={current ? 'page' : undefined}
-    aria-expanded={hasPopup ? expanded : undefined}
-    aria-haspopup={hasPopup ? 'menu' : undefined}
-    onClick={onClick}
-    className="relative flex min-h-[3.5rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-ds-lg px-1 py-1 transition-transform duration-ds-fast active:scale-[0.96]"
-  >
-    <span
-      className={cn(
-        'relative flex h-7 w-11 items-center justify-center rounded-full transition-colors duration-ds-fast',
-        active ? 'text-ds-primary' : 'text-ds-fg-subtle',
-      )}
+}> = ({ route, active, current = active, onClick, expanded, hasPopup = false }) => {
+  const TabIcon = route.icon;
+
+  return (
+    <button
+      type="button"
+      aria-label={route.label}
+      aria-current={current ? 'page' : undefined}
+      aria-expanded={hasPopup ? expanded : undefined}
+      aria-haspopup={hasPopup ? 'menu' : undefined}
+      onClick={onClick}
+      className="relative flex min-h-[3.5rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-ds-lg px-1 py-1 transition-transform duration-ds-fast active:scale-[0.96]"
     >
-      {active && (
-        <motion.span
-          layoutId={reduceMotion ? undefined : 'mobile-tab-active-pill'}
-          className="absolute inset-0 rounded-full bg-ds-primary-soft"
-          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-        />
-      )}
-      <span className="relative z-10">{route.icon}</span>
-    </span>
-    <span
-      className={cn(
-        'max-w-full truncate text-[11px] font-medium leading-none tracking-[-0.01em] transition-colors duration-ds-fast',
-        active ? 'text-ds-primary' : 'text-ds-fg-muted',
-      )}
-    >
-      {route.label}
-    </span>
-  </button>
-);
+      <span
+        className={cn(
+          'flex h-7 w-11 items-center justify-center transition-colors duration-ds-fast',
+          active ? 'text-ds-primary' : 'text-ds-fg-subtle',
+        )}
+      >
+        <TabIcon size={20} weight={active ? 'fill' : 'regular'} aria-hidden />
+      </span>
+      <span
+        className={cn(
+          'max-w-full truncate text-[11px] font-medium leading-none tracking-[-0.01em] transition-colors duration-ds-fast',
+          active ? 'text-ds-primary' : 'text-ds-fg-muted',
+        )}
+      >
+        {route.label}
+      </span>
+    </button>
+  );
+};
 
 export const MobileTabBar: React.FC = () => {
   const { pathname } = useLocation();
@@ -110,9 +105,7 @@ export const MobileTabBar: React.FC = () => {
   const moreRoute: TabRoute = {
     path: '#more',
     label: zh ? '更多' : 'More',
-    icon: moreOpen
-      ? <X size={20} strokeWidth={2} />
-      : <MoreHorizontal size={20} strokeWidth={2} />,
+    icon: moreOpen ? X : DotsThree,
   };
 
   // Close the sheet on navigation (own route change, not just More items).
@@ -148,6 +141,7 @@ export const MobileTabBar: React.FC = () => {
             >
               {moreRoutes.map((route) => {
                 const active = isNavigationPathActive(pathname, route.path);
+                const RouteIcon = route.icon;
                 return (
                   <button
                     key={route.path}
@@ -161,7 +155,7 @@ export const MobileTabBar: React.FC = () => {
                     )}
                   >
                     <span className={active ? 'text-ds-primary' : 'text-ds-fg-subtle'}>
-                      {route.icon}
+                      <RouteIcon size={18} weight={active ? 'fill' : 'regular'} aria-hidden />
                     </span>
                     <span className="text-sm font-medium">{route.label}</span>
                   </button>
@@ -204,7 +198,7 @@ export const MobileTabBar: React.FC = () => {
         {...dsRoot}
         aria-label={zh ? '主导航' : 'Primary navigation'}
         className="relative z-50 mx-1.5 mb-1.5 grid flex-shrink-0 grid-cols-5 rounded-ds-xl border border-ds-border bg-ds-surface-1 px-1 pt-1 shadow-ds-2 sm:hidden"
-        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
       >
         {primaryRoutes.map((route) => {
           const current = isNavigationPathActive(pathname, route.path);
@@ -215,7 +209,6 @@ export const MobileTabBar: React.FC = () => {
               active={current && !moreOpen}
               current={current}
               onClick={() => navigate(canonicalInternalPath(route.path))}
-              reduceMotion={reduceMotion}
             />
           );
         })}
@@ -225,7 +218,6 @@ export const MobileTabBar: React.FC = () => {
           active={moreActive || moreOpen}
           current={moreActive}
           onClick={() => setMoreOpen((value) => !value)}
-          reduceMotion={reduceMotion}
           expanded={moreOpen}
           hasPopup
         />

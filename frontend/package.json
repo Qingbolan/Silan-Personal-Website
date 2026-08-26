@@ -26,6 +26,7 @@
     "@lexical/rich-text": "0.49.0",
     "@lexical/table": "0.49.0",
     "@masonrykit/react": "^0.2.3",
+    "@phosphor-icons/react": "^2.1.10",
     "@react-oauth/google": "^0.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
