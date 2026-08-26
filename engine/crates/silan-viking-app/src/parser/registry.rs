@@ -69,7 +69,7 @@ mod tests {
     use super::*;
 
     fn registry() -> ParserRegistry {
-        let schema = Schema::parse(include_str!("../../../../../content/SCHEMA.md"))
+        let schema = Schema::parse(include_str!("../../../../tests/fixtures/content/SCHEMA.md"))
             .expect("repo SCHEMA.md parses");
         ParserRegistry::new(Arc::new(schema))
     }

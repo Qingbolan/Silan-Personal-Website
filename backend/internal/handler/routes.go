@@ -525,6 +525,12 @@ func privateContentStatusRoutes(serverCtx *svc.ServiceContext) []rest.Route {
 			Handler: health.ContentStatusHandler(serverCtx),
 		},
 		{
+			// Download the checksum-bound authored source of the live release.
+			Method:  http.MethodGet,
+			Path:    "/content/source",
+			Handler: health.ContentSourceHandler(serverCtx),
+		},
+		{
 			// Atomically promote an authenticated content projection and media bundle.
 			Method:  http.MethodPost,
 			Path:    "/content/deploy",

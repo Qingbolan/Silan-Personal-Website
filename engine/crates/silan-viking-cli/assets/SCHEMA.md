@@ -80,7 +80,7 @@ types:
       - { name: visibility,         type: "enum(private,unlisted,public)",     required: true,  default: private, source: new,      column: "blog_posts.visibility" }
       - { name: excerpt,            type: text,                                 required: false, default: null,    source: "py,ent", column: "blog_posts.excerpt" }
       - { name: is_featured,        type: bool,                                 required: false, default: false,   source: "py,ent", column: "blog_posts.is_featured" }
-      - { name: featured_image_url, type: string,                               required: false, default: null,    source: "py,ent", column: "blog_posts.featured_image_url" }
+      - { name: featured_image_url, type: string,                               required: false, default: null,    source: "py,ent", column: "blog_post_translations.featured_image_url", translatable: true }
       - { name: published_at,       type: datetime,                             required: false, default: null,    source: "py,ent", column: "blog_posts.published_at" }
       - { name: category,          type: string,                               required: false, default: null,    source: "py,ent", column: "blog_posts.category_id" }
       - { name: tags,               type: "list<string>",                      required: false, default: [],      source: "py,ent", column: "content_tag" }
@@ -143,6 +143,7 @@ types:
         - { name: title,       type: string,                                required: true,  default: null,               source: py,  column: "episode_series.title" }
         - { name: slug,        type: slug,                                  required: true,  default: null,               source: py,  column: "episode_series.slug" }
         - { name: description, type: text,                                  required: false, default: null,               source: py,  column: "episode_series.description" }
+        - { name: cover_url,   type: string,                                required: false, default: null,               source: py,  column: "episode_series.cover_url" }
         - { name: status,      type: "enum(ongoing,completed,archived)",    required: true,  default: ongoing,            source: py,  column: "episode_series.status" }
     fields:
       - { name: slug,             type: slug,                              required: true,  default: null,    source: py,  column: "episodes.slug" }

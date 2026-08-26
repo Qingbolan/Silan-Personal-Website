@@ -25,7 +25,7 @@ pub mod lock;
 pub mod store;
 
 pub use accept::{canonicalize, AcceptOutcome, AcceptReport};
-pub use git::{GitError, GitRepo};
+pub use git::{GitError, GitRepo, RemoteBackupState};
 pub use lock::{LockError, ProposalLock};
 pub use store::ProposalRecord;
 

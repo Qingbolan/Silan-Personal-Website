@@ -27,7 +27,7 @@ func TestStatisticsAccessPolicyRouteSets(t *testing.T) {
 	for _, route := range contentRoutes {
 		got = append(got, route.Method+" "+route.Path)
 	}
-	want = []string{"GET /content/status", "POST /content/deploy", "POST /content/rollback"}
+	want = []string{"GET /content/source", "GET /content/status", "POST /content/deploy", "POST /content/rollback"}
 	slices.Sort(got)
 	if !slices.Equal(got, want) {
 		t.Fatalf("private content routes = %v, want %v", got, want)

@@ -13,6 +13,7 @@ import (
 )
 
 const contentDeployMediaType = "application/vnd.silan.content-deploy+tar+gzip"
+const contentSourceMediaType = "application/vnd.silan.content-source+tar"
 
 func ContentDeployHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +40,23 @@ func ContentDeployHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 		httpx.OkJsonCtx(r.Context(), w, result)
+	}
+}
+
+func ContentSourceHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		snapshot, err := svcCtx.ContentDeploy.CurrentSource(r.Context())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("content source recovery failed: %v", err), http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", contentSourceMediaType)
+		w.Header().Set("Content-Disposition", "attachment; filename=content-source.tar")
+		w.Header().Set("X-Silan-Content-Commit", snapshot.ContentCommit)
+		w.Header().Set("X-Silan-Source-SHA256", snapshot.SourceSHA)
+		w.Header().Set("Cache-Control", "private, no-store")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(snapshot.Bytes)
 	}
 }
 

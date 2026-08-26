@@ -2,7 +2,7 @@
 
 use crate::{
     api_base_url, hash_deploy_media_asset, stage_deploy_media_asset, workspace_stats_sync_token,
-    GitRepo, Workspace, WorkspaceSync, WorkspaceSyncState,
+    ContentSourceArchive, GitRepo, RemoteBackupState, Workspace, WorkspaceSync, WorkspaceSyncState,
 };
 use flate2::{write::GzEncoder, Compression};
 use rusqlite::Connection;
@@ -41,6 +41,8 @@ pub enum DeliveryControlError {
     NothingStaged,
     #[error("content release requires a clean committed workspace; pending paths: {0}")]
     DirtyWorkspace(String),
+    #[error("content release requires a verified private Git backup: {0}")]
+    UndurableRepository(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -200,6 +202,7 @@ struct ContentDeployManifest {
     content_commit: String,
     content_hash: String,
     database_sha256: String,
+    source_sha256: String,
     media: Vec<MediaAssetManifest>,
 }
 
@@ -346,10 +349,21 @@ impl DeliveryControl {
                 "Commit {} changes before deploying content.",
                 dirty.join(", ")
             )
-        } else if deploy_target.is_some() {
-            "Content is clean and ready for content-only deployment.".to_owned()
-        } else {
+        } else if deploy_target.is_none() {
             "Configure a deployment API target before remote delivery.".to_owned()
+        } else {
+            match repo.remote_backup_state() {
+                Ok(RemoteBackupState::Synchronized { .. }) => {
+                    "Content is clean, backed up, and ready for content-only deployment.".to_owned()
+                }
+                Ok(RemoteBackupState::MissingUpstream { branch }) => format!(
+                    "Configure a private upstream for `{branch}` and push before deployment."
+                ),
+                Ok(RemoteBackupState::OutOfSync { upstream, .. }) => {
+                    format!("Push or reconcile `{upstream}` before deployment.")
+                }
+                Err(error) => format!("Verify the private Git backup before deployment: {error}"),
+            }
         };
         let workspace = Workspace::open(&self.content_root)
             .map_err(|error| DeliveryControlError::Workspace(error.to_string()))?;
@@ -623,6 +637,7 @@ impl DeliveryControl {
 
     pub fn deploy_content(&self) -> Result<DeployRunStatus, DeliveryControlError> {
         self.ensure_releaseable()?;
+        self.ensure_remote_backup()?;
         let content_commit = self.content_commit()?;
         let sync = WorkspaceSync::open(&self.content_root, &self.db_path)
             .map_err(|error| DeliveryControlError::Workspace(error.to_string()))?;
@@ -804,12 +819,15 @@ impl DeliveryControl {
         let database_bytes = fs::read(&database).map_err(|error| {
             DeliveryControlError::Runner(format!("read staged database: {error}"))
         })?;
+        let source = ContentSourceArchive::from_repository(&self.content_root)
+            .map_err(|error| DeliveryControlError::Runner(error.to_string()))?;
         let manifest = ContentDeployManifest {
-            version: 2,
+            version: 3,
             schema_version: crate::schema::SUPPORTED_SCHEMA_VERSION,
             content_commit: content_commit.to_owned(),
             content_hash,
             database_sha256: format!("{:x}", Sha256::digest(&database_bytes)),
+            source_sha256: source.sha256().to_owned(),
             media: media.to_vec(),
         };
 
@@ -819,6 +837,7 @@ impl DeliveryControl {
             .map_err(|error| DeliveryControlError::Runner(format!("encode manifest: {error}")))?;
         append_bytes(&mut archive, "manifest.json", &manifest_bytes)?;
         append_bytes(&mut archive, "portfolio.db", &database_bytes)?;
+        append_bytes(&mut archive, "source.tar", source.bytes())?;
         append_directory(&mut archive, "media")?;
         for asset in assets
             .iter()
@@ -923,6 +942,51 @@ impl DeliveryControl {
             suffix.unwrap_or_default(),
         )))
     }
+
+    /// Public release archives deliberately exclude `agent/`; deployment is
+    /// therefore legal only after the complete content commit is verifiably
+    /// present at the branch's private upstream.
+    fn ensure_remote_backup(&self) -> Result<(), DeliveryControlError> {
+        let repo = self.repo()?;
+        let pending = run_raw(&repo, ["status", "--porcelain", "--untracked-files=all"])?;
+        let paths = pending
+            .lines()
+            .filter_map(parse_porcelain_path)
+            .take(8)
+            .collect::<Vec<_>>();
+        if !paths.is_empty() {
+            let suffix = (pending.lines().count() > paths.len()).then_some(", …");
+            return Err(DeliveryControlError::UndurableRepository(format!(
+                "uncommitted repository paths are not backed up: {}{}",
+                paths.join(", "),
+                suffix.unwrap_or_default(),
+            )));
+        }
+        let state = repo
+            .remote_backup_state()
+            .map_err(|error| DeliveryControlError::Repository(error.to_string()))?;
+        match state {
+            RemoteBackupState::Synchronized { .. } => Ok(()),
+            RemoteBackupState::MissingUpstream { branch } => {
+                Err(DeliveryControlError::UndurableRepository(format!(
+                    "branch `{branch}` has no external upstream; configure a private remote and push it"
+                )))
+            }
+            RemoteBackupState::OutOfSync {
+                upstream,
+                local_head,
+                remote_head,
+            } => Err(DeliveryControlError::UndurableRepository(format!(
+                "local HEAD {} is not backed up at `{upstream}` (remote {}); push or reconcile the branch first",
+                short_oid(&local_head),
+                short_oid(&remote_head),
+            ))),
+        }
+    }
+}
+
+fn short_oid(value: &str) -> &str {
+    value.get(..12).unwrap_or(value)
 }
 
 fn parse_porcelain_path(line: &str) -> Option<String> {
@@ -1165,7 +1229,8 @@ mod tests {
         let content = directory.path().join("content");
         std::fs::create_dir_all(content.join("resources")).expect("resources");
         std::fs::copy(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content/SCHEMA.md"),
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../tests/fixtures/content/SCHEMA.md"),
             content.join("SCHEMA.md"),
         )
         .expect("schema");
@@ -1283,6 +1348,24 @@ mod tests {
             !db.exists(),
             "projection must not be built for a dirty release"
         );
+    }
+
+    #[test]
+    fn deployment_rejects_a_clean_repository_without_a_private_backup() {
+        let (_directory, content, db) = fixture("http://127.0.0.1:1");
+        let control = DeliveryControl::open(&content, &db, content.parent().expect("repo root"))
+            .expect("open")
+            .with_bearer_token("delivery-contract-token");
+
+        let error = control
+            .deploy_content()
+            .expect_err("unbacked release must fail");
+
+        assert!(matches!(
+            error,
+            DeliveryControlError::UndurableRepository(_)
+        ));
+        assert!(!db.exists(), "projection must wait for durable source");
     }
 
     #[test]

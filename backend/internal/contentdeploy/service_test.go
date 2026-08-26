@@ -4,13 +4,16 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -134,10 +137,16 @@ func TestDeploymentLifecycleRejectsSkippedAndTerminalTransitions(t *testing.T) {
 func TestReleaseArchiveKeepsACompleteRollbackGeneration(t *testing.T) {
 	root := t.TempDir()
 	database := filepath.Join(root, "projection.db")
+	source := filepath.Join(root, "source.tar")
 	media := filepath.Join(root, "desired-media")
 	if err := os.WriteFile(database, []byte("projection"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	sourceBytes := []byte("authored source")
+	if err := os.WriteFile(source, sourceBytes, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sourceSum := sha256.Sum256(sourceBytes)
 	if err := os.MkdirAll(media, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -151,9 +160,10 @@ func TestReleaseArchiveKeepsACompleteRollbackGeneration(t *testing.T) {
 		ContentCommit: "commit-1",
 		ContentHash:   "hash-1",
 		DatabaseSHA:   "sha-1",
+		SourceSHA:     hex.EncodeToString(sourceSum[:]),
 		Media:         []MediaAsset{},
 	}
-	commit, abort, err := service.stageReleaseArchive(database, media, manifest)
+	commit, abort, err := service.stageReleaseArchive(database, source, media, manifest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,11 +178,98 @@ func TestReleaseArchiveKeepsACompleteRollbackGeneration(t *testing.T) {
 	if len(archives) != 1 || filepath.Base(archives[0]) != "commit-1" {
 		t.Fatalf("archives = %v", archives)
 	}
-	for _, relative := range []string{"complete", "manifest.json", "portfolio.db", "media/figure.png"} {
+	for _, relative := range []string{"complete", "manifest.json", "portfolio.db", "source.tar", "media/figure.png"} {
 		if _, err := os.Stat(filepath.Join(archives[0], relative)); err != nil {
 			t.Fatalf("archive missing %s: %v", relative, err)
 		}
 	}
+}
+
+func TestCurrentSourceReturnsSnapshotBoundToLiveCommit(t *testing.T) {
+	root := t.TempDir()
+	commit := "0123456789abcdef0123456789abcdef01234567"
+	release := filepath.Join(root, commit)
+	if err := os.MkdirAll(release, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	source := sourceTar(t, map[string]string{
+		"SCHEMA.md":                 "schema\n",
+		"resources/blog/post/en.md": "body\n",
+	})
+	sum := sha256.Sum256(source)
+	manifest := &Manifest{
+		Version:       BundleVersion,
+		SchemaVersion: ProjectionSchemaVersion,
+		ContentCommit: commit,
+		ContentHash:   "content-hash",
+		DatabaseSHA:   strings.Repeat("a", 64),
+		SourceSHA:     hex.EncodeToString(sum[:]),
+		Media:         []MediaAsset{},
+	}
+	encoded, err := json.Marshal(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(release, "manifest.json"), encoded, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(release, "source.tar"), source, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`CREATE TABLE sync_meta (content_hash TEXT, content_commit TEXT, generated_at TEXT);
+		INSERT INTO sync_meta VALUES ('content-hash', ?, '2026-08-26T00:00:00Z')`, commit); err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(Config{StateRoot: root}, db)
+	recovered, err := service.CurrentSource(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if recovered.ContentCommit != commit || recovered.SourceSHA != manifest.SourceSHA || !bytes.Equal(recovered.Bytes, source) {
+		t.Fatalf("recovered source = %#v", recovered)
+	}
+}
+
+func TestValidateSourceSnapshotRejectsPrivateNamespace(t *testing.T) {
+	root := t.TempDir()
+	source := sourceTar(t, map[string]string{
+		"SCHEMA.md":              "schema\n",
+		"resources/keep.md":      "public\n",
+		"agent/notes/private.md": "secret\n",
+	})
+	path := filepath.Join(root, "source.tar")
+	if err := os.WriteFile(path, source, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(source)
+	manifest := &Manifest{SourceSHA: hex.EncodeToString(sum[:])}
+	if err := validateSourceSnapshot(path, manifest); err == nil || !strings.Contains(err.Error(), "private path") {
+		t.Fatalf("error = %v, want private-path rejection", err)
+	}
+}
+
+func sourceTar(t *testing.T, files map[string]string) []byte {
+	t.Helper()
+	var output bytes.Buffer
+	archive := tar.NewWriter(&output)
+	for name, body := range files {
+		data := []byte(body)
+		if err := archive.WriteHeader(&tar.Header{Name: name, Mode: 0o600, Size: int64(len(data))}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := archive.Write(data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := archive.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return output.Bytes()
 }
 
 func fnvHash(data []byte) string {

@@ -45,7 +45,53 @@ pub struct GitOutput {
     pub stdout: String,
 }
 
+/// Whether the checked-out content revision exists at its configured
+/// upstream. Production snapshots are intentionally public-only, so this
+/// remote is the durability boundary for the complete repository, including
+/// the private `agent/` namespace.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RemoteBackupState {
+    /// The current branch has no external upstream configured.
+    MissingUpstream { branch: String },
+    /// The configured upstream exists, but does not point at local HEAD.
+    OutOfSync {
+        upstream: String,
+        local_head: String,
+        remote_head: String,
+    },
+    /// Local HEAD is byte-for-byte present at the configured upstream.
+    Synchronized { upstream: String, head: String },
+}
+
 impl GitRepo {
+    /// Initialise a new content repository and commit its recovered source.
+    ///
+    /// Recovery cannot recreate the original Git object graph from a source
+    /// archive, so the deployed commit is recorded in the commit message while
+    /// the restored tree starts a new, explicit history.
+    pub fn initialize_recovered(
+        root: impl AsRef<Path>,
+        deployed_commit: &str,
+        author_name: &str,
+        author_email: &str,
+    ) -> Result<Self, GitError> {
+        let root = root.as_ref();
+        run_git_command(root, ["init", "--quiet", "-b", "main"])?;
+        run_git_command(root, ["config", "user.name", author_name])?;
+        run_git_command(root, ["config", "user.email", author_email])?;
+        run_git_command(root, ["add", "-A"])?;
+        run_git_command(
+            root,
+            [
+                "commit",
+                "--quiet",
+                "-m",
+                &format!("recovery: restore deployed content {deployed_commit}"),
+            ],
+        )?;
+        Self::open(root)
+    }
+
     /// Open the repository rooted at `root`. Verifies `.git` is present so a
     /// caller gets a clear error rather than a confusing later failure.
     pub fn open(root: impl AsRef<Path>) -> Result<Self, GitError> {
@@ -119,9 +165,73 @@ impl GitRepo {
         }
     }
 
+    /// Produce a byte-exact tar archive from one committed revision.
+    ///
+    /// Binary Git output stays inside this adapter rather than leaking a
+    /// second process-spawning implementation into the application layer.
+    pub fn archive(&self, revision: &str, paths: &[&str]) -> Result<Vec<u8>, GitError> {
+        let mut args = vec!["archive", "--format=tar", revision, "--"];
+        args.extend(paths.iter().copied());
+        let output = Command::new("git")
+            .args(&args)
+            .current_dir(&self.root)
+            .output()
+            .map_err(|error| GitError::Spawn(error.to_string()))?;
+        if output.status.success() {
+            Ok(output.stdout)
+        } else {
+            Err(GitError::Command {
+                command: "archive".to_owned(),
+                code: output.status.code().unwrap_or(-1),
+                stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+            })
+        }
+    }
+
     /// The current OID of a ref (e.g. `refs/heads/main` or `HEAD`).
     pub fn rev_parse(&self, refname: &str) -> Result<String, GitError> {
         Ok(self.run(["rev-parse", refname])?.stdout)
+    }
+
+    /// Query the configured upstream directly and compare it with local HEAD.
+    ///
+    /// `git status` and cached remote-tracking refs are insufficient here:
+    /// both can look clean while the local repository remains the only copy.
+    /// `ls-remote` verifies the actual backup without mutating either side.
+    pub fn remote_backup_state(&self) -> Result<RemoteBackupState, GitError> {
+        let branch = self.run(["rev-parse", "--abbrev-ref", "HEAD"])?.stdout;
+        if branch == "HEAD" {
+            return Ok(RemoteBackupState::MissingUpstream { branch });
+        }
+        let remote = match self.run(["config", "--get", &format!("branch.{branch}.remote")]) {
+            Ok(output) if !output.stdout.is_empty() && output.stdout != "." => output.stdout,
+            _ => return Ok(RemoteBackupState::MissingUpstream { branch }),
+        };
+        let merge_ref = match self.run(["config", "--get", &format!("branch.{branch}.merge")]) {
+            Ok(output) if !output.stdout.is_empty() => output.stdout,
+            _ => return Ok(RemoteBackupState::MissingUpstream { branch }),
+        };
+        let local_head = self.rev_parse("HEAD")?;
+        let remote_output = self.run(["ls-remote", "--exit-code", &remote, &merge_ref])?;
+        let remote_head = remote_output
+            .stdout
+            .split_whitespace()
+            .next()
+            .unwrap_or_default()
+            .to_owned();
+        let upstream = format!("{remote}/{}", merge_ref.trim_start_matches("refs/heads/"));
+        if remote_head == local_head {
+            Ok(RemoteBackupState::Synchronized {
+                upstream,
+                head: local_head,
+            })
+        } else {
+            Ok(RemoteBackupState::OutOfSync {
+                upstream,
+                local_head,
+                remote_head,
+            })
+        }
     }
 
     /// Whether a local branch exists.
@@ -154,6 +264,31 @@ impl GitRepo {
     }
 }
 
+fn run_git_command<I, S>(cwd: &Path, args: I) -> Result<(), GitError>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let args = args
+        .into_iter()
+        .map(|argument| argument.as_ref().to_owned())
+        .collect::<Vec<_>>();
+    let output = Command::new("git")
+        .args(&args)
+        .current_dir(cwd)
+        .output()
+        .map_err(|error| GitError::Spawn(error.to_string()))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(GitError::Command {
+            command: args.first().cloned().unwrap_or_default(),
+            code: output.status.code().unwrap_or(-1),
+            stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -164,5 +299,72 @@ mod tests {
         // temp_dir itself is not a git repo.
         let err = GitRepo::open(&dir);
         assert!(matches!(err, Err(GitError::NotARepo(_))));
+    }
+
+    #[test]
+    fn remote_backup_state_requires_an_upstream_and_observes_pushes() {
+        let directory = tempfile::tempdir().expect("temp");
+        let content = directory.path().join("content");
+        let remote = directory.path().join("remote.git");
+        std::fs::create_dir(&content).expect("content");
+        run_git_command(&content, ["init", "--quiet", "-b", "main"]).expect("init");
+        std::fs::write(content.join("SCHEMA.md"), "schema\n").expect("source");
+        run_git_command(&content, ["add", "."]).expect("add");
+        run_git_command(
+            &content,
+            [
+                "-c",
+                "user.name=Silan.Hu",
+                "-c",
+                "user.email=silan.hu@u.nus.edu",
+                "commit",
+                "--quiet",
+                "-m",
+                "initial",
+            ],
+        )
+        .expect("commit");
+        let repo = GitRepo::open(&content).expect("repo");
+        assert!(matches!(
+            repo.remote_backup_state().expect("state"),
+            RemoteBackupState::MissingUpstream { .. }
+        ));
+
+        run_git_command(
+            directory.path(),
+            ["init", "--quiet", "--bare", remote.to_str().unwrap()],
+        )
+        .expect("bare remote");
+        run_git_command(
+            &content,
+            ["remote", "add", "origin", remote.to_str().unwrap()],
+        )
+        .expect("add remote");
+        run_git_command(&content, ["push", "--quiet", "-u", "origin", "main"]).expect("push");
+        assert!(matches!(
+            repo.remote_backup_state().expect("state"),
+            RemoteBackupState::Synchronized { .. }
+        ));
+
+        std::fs::write(content.join("SCHEMA.md"), "new schema\n").expect("edit");
+        run_git_command(&content, ["add", "."]).expect("add edit");
+        run_git_command(
+            &content,
+            [
+                "-c",
+                "user.name=Silan.Hu",
+                "-c",
+                "user.email=silan.hu@u.nus.edu",
+                "commit",
+                "--quiet",
+                "-m",
+                "local change",
+            ],
+        )
+        .expect("commit edit");
+        assert!(matches!(
+            repo.remote_backup_state().expect("state"),
+            RemoteBackupState::OutOfSync { .. }
+        ));
     }
 }

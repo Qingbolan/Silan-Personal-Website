@@ -1139,7 +1139,8 @@ mod tests {
         let directory = tempfile::tempdir().expect("temp workspace");
         let content = directory.path().join("content");
         std::fs::create_dir_all(content.join("resources")).expect("resources");
-        let schema = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content/SCHEMA.md");
+        let schema = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/fixtures/content/SCHEMA.md");
         std::fs::copy(schema, content.join("SCHEMA.md")).expect("schema");
         let db = directory.path().join("portfolio.db");
         Connection::open(&db).expect("database");

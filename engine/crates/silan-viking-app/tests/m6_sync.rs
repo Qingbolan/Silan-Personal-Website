@@ -23,12 +23,11 @@ fn sync_writes_every_content_main_table() {
     let mut sink = SqliteSink::open_in_memory().expect("in-memory sink");
     let report = ws.sync_into(&mut sink).expect("sync succeeds");
 
-    assert_eq!(report.items_scanned, 6);
+    assert_eq!(report.items_scanned, 5);
     assert!(report.wrote, "a first sync writes");
 
     // Every content type's main table received its single fixture row.
     for table in [
-        "ideas",
         "blog_posts",
         "projects",
         "episodes",
@@ -110,7 +109,7 @@ fn sync_records_sync_meta_provenance() {
         })
         .expect("sync_meta row written");
     assert!(!hash.is_empty(), "sync_meta records a content digest");
-    assert_eq!(total, 6, "sync_meta records the item count");
+    assert_eq!(total, 5, "sync_meta records the active item count");
 }
 
 #[test]
@@ -145,12 +144,10 @@ fn sync_writes_schema_routed_side_table_fields() {
     assert_eq!(license, "Apache-2.0");
     assert_eq!(version, "0.8.4");
 
-    let priority: String = conn
-        .query_row("SELECT priority FROM idea_details LIMIT 1", [], |row| {
-            row.get(0)
-        })
-        .expect("authored idea detail row exists");
-    assert_eq!(priority, "high");
+    let legacy_idea_rows: i64 = conn
+        .query_row("SELECT COUNT(*) FROM idea_details", [], |row| row.get(0))
+        .expect("legacy idea table remains readable");
+    assert_eq!(legacy_idea_rows, 0, "inactive ideas are not projected");
 }
 
 #[test]

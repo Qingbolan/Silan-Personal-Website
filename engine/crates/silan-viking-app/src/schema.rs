@@ -447,7 +447,7 @@ mod tests {
 
     /// Load the real `content/SCHEMA.md` from the repository root.
     fn real_schema() -> Schema {
-        let text = include_str!("../../../../content/SCHEMA.md");
+        let text = include_str!("../../../tests/fixtures/content/SCHEMA.md");
         Schema::parse(text).expect("the repo SCHEMA.md must parse")
     }
 

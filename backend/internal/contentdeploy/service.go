@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -23,7 +24,8 @@ import (
 )
 
 const (
-	BundleVersion           = 2
+	BundleVersion           = 3
+	LegacyBundleVersion     = 2
 	ProjectionSchemaVersion = 1
 )
 
@@ -75,6 +77,7 @@ type Manifest struct {
 	ContentCommit string       `json:"content_commit"`
 	ContentHash   string       `json:"content_hash"`
 	DatabaseSHA   string       `json:"database_sha256"`
+	SourceSHA     string       `json:"source_sha256,omitempty"`
 	Media         []MediaAsset `json:"media"`
 }
 
@@ -104,6 +107,16 @@ type Result struct {
 	MediaRootOK     bool   `json:"media_root_ok"`
 	StaticPublished bool   `json:"static_published,omitempty"`
 	StaticRelease   string `json:"static_release,omitempty"`
+}
+
+// SourceSnapshot is the authenticated recovery payload for the currently
+// deployed authored revision. It contains only SCHEMA.md, .gitignore and
+// resources/; the private agent/ namespace never crosses the production
+// boundary.
+type SourceSnapshot struct {
+	ContentCommit string
+	SourceSHA     string
+	Bytes         []byte
 }
 
 type Config struct {
@@ -157,11 +170,47 @@ func (s *Service) Deploy(ctx context.Context, body io.Reader) (_ *Result, err er
 	if err := validateDatabase(databasePath, manifest); err != nil {
 		return nil, err
 	}
+	if err := validateSourceSnapshot(filepath.Join(work, "source.tar"), manifest); err != nil {
+		return nil, err
+	}
 	if err := lifecycle.transition(StateValidated); err != nil {
 		return nil, err
 	}
 
 	return s.promotePrepared(ctx, work, manifest, lifecycle)
+}
+
+// CurrentSource returns the source archive bound to the currently deployed
+// content commit. Legacy v2 releases remain valid rollback generations but
+// report an explicit absence instead of pretending the projection is source.
+func (s *Service) CurrentSource(ctx context.Context) (*SourceSnapshot, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	current, err := s.currentResult(ctx)
+	if err != nil {
+		return nil, err
+	}
+	release := filepath.Join(s.config.StateRoot, current.ContentCommit)
+	manifest, err := readManifest(filepath.Join(release, "manifest.json"))
+	if err != nil {
+		return nil, fmt.Errorf("read current release archive: %w", err)
+	}
+	if manifest.SourceSHA == "" {
+		return nil, fmt.Errorf("deployed release %s predates authored-source snapshots", current.ContentCommit)
+	}
+	path := filepath.Join(release, "source.tar")
+	if err := validateSourceSnapshot(path, manifest); err != nil {
+		return nil, fmt.Errorf("validate current source snapshot: %w", err)
+	}
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read current source snapshot: %w", err)
+	}
+	return &SourceSnapshot{
+		ContentCommit: manifest.ContentCommit,
+		SourceSHA:     manifest.SourceSHA,
+		Bytes:         bytes,
+	}, nil
 }
 
 // Rollback promotes the newest complete archived generation that differs from
@@ -198,6 +247,9 @@ func (s *Service) Rollback(ctx context.Context) (_ *Result, err error) {
 		if validateErr := validateDatabase(filepath.Join(archive, "portfolio.db"), manifest); validateErr != nil {
 			return nil, fmt.Errorf("validate rollback archive %q: %w", manifest.ContentCommit, validateErr)
 		}
+		if validateErr := validateSourceSnapshot(filepath.Join(archive, "source.tar"), manifest); validateErr != nil {
+			return nil, fmt.Errorf("validate rollback source %q: %w", manifest.ContentCommit, validateErr)
+		}
 		if err := lifecycle.transition(StateValidated); err != nil {
 			return nil, err
 		}
@@ -213,11 +265,12 @@ func (s *Service) promotePrepared(
 	lifecycle *deploymentLifecycle,
 ) (_ *Result, err error) {
 	databasePath := filepath.Join(work, "portfolio.db")
+	sourcePath := filepath.Join(work, "source.tar")
 	stagedMedia, rollbackMedia, commitMedia, finalizeMedia, err := stageMedia(work, s.config.MediaRoot, manifest.Media)
 	if err != nil {
 		return nil, fmt.Errorf("stage media: %w", err)
 	}
-	commitArchive, abortArchive, err := s.stageReleaseArchive(databasePath, stagedMedia, manifest)
+	commitArchive, abortArchive, err := s.stageReleaseArchive(databasePath, sourcePath, stagedMedia, manifest)
 	if err != nil {
 		return nil, fmt.Errorf("stage release archive: %w", err)
 	}
@@ -297,6 +350,7 @@ func (s *Service) promotePrepared(
 
 func (s *Service) stageReleaseArchive(
 	databasePath string,
+	sourcePath string,
 	mediaPath string,
 	manifest *Manifest,
 ) (func() error, func(), error) {
@@ -317,6 +371,12 @@ func (s *Service) stageReleaseArchive(
 	if err := copyFile(databasePath, filepath.Join(next, "portfolio.db"), 0o600); err != nil {
 		abort()
 		return nil, nil, err
+	}
+	if manifest.SourceSHA != "" {
+		if err := copyFile(sourcePath, filepath.Join(next, "source.tar"), 0o600); err != nil {
+			abort()
+			return nil, nil, err
+		}
 	}
 	if err := copyTree(mediaPath, filepath.Join(next, "media")); err != nil {
 		abort()
@@ -492,13 +552,19 @@ func readManifest(path string) (*Manifest, error) {
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		return nil, fmt.Errorf("decode deployment manifest: %w", err)
 	}
-	if manifest.Version != BundleVersion ||
+	if (manifest.Version != BundleVersion && manifest.Version != LegacyBundleVersion) ||
 		manifest.SchemaVersion != ProjectionSchemaVersion ||
 		!isHexDigest(manifest.ContentCommit, 40) ||
 		manifest.ContentHash == "" ||
 		!isHexDigest(manifest.DatabaseSHA, 64) ||
 		manifest.Media == nil {
 		return nil, fmt.Errorf("invalid deployment manifest")
+	}
+	if manifest.Version == BundleVersion && !isHexDigest(manifest.SourceSHA, 64) {
+		return nil, fmt.Errorf("invalid deployment source manifest")
+	}
+	if manifest.Version == LegacyBundleVersion && manifest.SourceSHA != "" {
+		return nil, fmt.Errorf("legacy deployment manifest cannot declare a source snapshot")
 	}
 	return &manifest, nil
 }
@@ -538,6 +604,58 @@ func validateDatabase(path string, manifest *Manifest) error {
 	}
 	if contentHash != manifest.ContentHash || contentCommit != manifest.ContentCommit {
 		return fmt.Errorf("manifest does not match database provenance")
+	}
+	return nil
+}
+
+func validateSourceSnapshot(snapshotPath string, manifest *Manifest) error {
+	if manifest.SourceSHA == "" {
+		return nil
+	}
+	file, err := os.Open(snapshotPath)
+	if err != nil {
+		return fmt.Errorf("open authored-source snapshot: %w", err)
+	}
+	defer file.Close()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return fmt.Errorf("hash authored-source snapshot: %w", err)
+	}
+	if actual := hex.EncodeToString(hash.Sum(nil)); actual != manifest.SourceSHA {
+		return fmt.Errorf("authored-source snapshot checksum mismatch")
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("rewind authored-source snapshot: %w", err)
+	}
+	archive := tar.NewReader(file)
+	hasSchema := false
+	hasResources := false
+	for {
+		header, err := archive.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("read authored-source snapshot: %w", err)
+		}
+		name := path.Clean(header.Name)
+		if name == "." || path.IsAbs(name) || name == ".." || strings.HasPrefix(name, "../") {
+			return fmt.Errorf("authored-source snapshot contains unsafe path %q", header.Name)
+		}
+		allowed := name == ".gitignore" || name == "SCHEMA.md" || name == "resources" || strings.HasPrefix(name, "resources/")
+		if !allowed {
+			return fmt.Errorf("authored-source snapshot contains private path %q", header.Name)
+		}
+		switch header.Typeflag {
+		case tar.TypeReg, tar.TypeRegA, tar.TypeDir:
+		default:
+			return fmt.Errorf("authored-source snapshot contains unsupported entry %q", header.Name)
+		}
+		hasSchema = hasSchema || name == "SCHEMA.md"
+		hasResources = hasResources || name == "resources" || strings.HasPrefix(name, "resources/")
+	}
+	if !hasSchema || !hasResources {
+		return fmt.Errorf("authored-source snapshot must contain SCHEMA.md and resources/")
 	}
 	return nil
 }

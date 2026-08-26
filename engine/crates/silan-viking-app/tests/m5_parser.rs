@@ -22,8 +22,9 @@ fn workspace() -> Workspace {
 #[test]
 fn scan_finds_every_fixture_item() {
     let report = workspace().scan().expect("scan succeeds");
-    // blog ×1, idea ×1, project ×1, episode ×1, update ×1, resume ×1.
-    assert_eq!(report.len(), 6, "one item per content type in the fixture");
+    // blog ×1, project ×1, episode ×1, moment ×1, resume ×1. Ideas are a
+    // legacy source shape and deliberately absent from ContentKind::ALL.
+    assert_eq!(report.len(), 5, "one item per active content type");
 }
 
 #[test]
@@ -41,26 +42,14 @@ fn parser_registry_dispatches_by_item_kind() {
 }
 
 #[test]
-fn idea_parses_four_parts_with_progress_bilingual() {
-    let ws = workspace();
-    let report = ws.scan().expect("scan succeeds");
-    let idea = report
-        .items()
-        .iter()
-        .find(|i| i.kind() == ContentKind::Idea)
-        .expect("the multi-tab idea");
-
-    // The Part dimension: 4 roles.
-    assert_eq!(idea.parts().len(), 4, "overview/progress/reference/result");
-
-    // The Lang dimension is distinct from the Part dimension: `progress`
-    // alone has two language files; the other parts have one.
-    let parser = ws.parsers().parser_for(idea).expect("idea parser");
-    let parsed = parser.parse(idea).expect("idea parses");
-    assert_eq!(
-        parsed.languages().count(),
-        2,
-        "the idea has en + zh across its parts"
+fn legacy_idea_fixture_is_not_projected_as_active_content() {
+    let report = workspace().scan().expect("scan succeeds");
+    assert!(
+        report
+            .items()
+            .iter()
+            .all(|item| item.kind() != ContentKind::Idea),
+        "legacy ideas must not silently re-enter the active projection"
     );
 }
 

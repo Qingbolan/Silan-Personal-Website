@@ -25,6 +25,7 @@ mod api_credentials;
 
 pub mod capture;
 pub mod commit_message;
+pub mod content_recovery;
 pub mod content_relationships;
 pub mod cover;
 pub mod credential_profile;
@@ -59,6 +60,10 @@ pub use capture::{CaptureError, CapturedContent, ContentCreator, IdeaCategory};
 pub use commit_message::{
     DeepSeekCommitMessageError, DeepSeekCommitMessageGenerator, DEEPSEEK_COMMIT_MESSAGE_MODEL_ENV,
     DEFAULT_DEEPSEEK_COMMIT_MESSAGE_MODEL,
+};
+pub use content_recovery::{
+    restore_source_archive, ContentRecoveryClient, ContentRecoveryError, ContentRecoveryResult,
+    ContentSourceArchive,
 };
 pub use content_relationships::{
     ContentRelationshipEditor, ContentRelationshipError, RelationshipMutation,
@@ -130,7 +135,7 @@ pub use openai_transcription::{
 pub use proposal::store::ProposalKind;
 pub use proposal::{
     canonicalize, AcceptOutcome, AcceptReport, GitRepo, ProposalError, ProposalId, ProposalLock,
-    ProposalRecord, ProposalState, ProposalSummary, ProposalTarget,
+    ProposalRecord, ProposalState, ProposalSummary, ProposalTarget, RemoteBackupState,
 };
 pub use query::{EmbedderMode, QueryDocument, QueryError, QueryHit, QueryIndex};
 pub use schema::{Schema, SchemaError};
