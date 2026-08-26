@@ -21,7 +21,6 @@ const iconByKind = {
 
 const MomentRelatedOutputs: React.FC<MomentRelatedOutputsProps> = ({
   outputs,
-  labels,
   variant = 'card',
   className,
 }) => {
@@ -56,9 +55,6 @@ const MomentRelatedOutputs: React.FC<MomentRelatedOutputsProps> = ({
 
   return (
     <div {...dsRoot} className={cn('space-y-2', className)}>
-      <div className="font-mono text-ds-xs font-semibold uppercase tracking-[0.12em] text-ds-fg-subtle">
-        {labels.title}
-      </div>
       <div className="grid gap-2">
         {outputs.map((output) => {
           const Icon = iconByKind[output.kind];

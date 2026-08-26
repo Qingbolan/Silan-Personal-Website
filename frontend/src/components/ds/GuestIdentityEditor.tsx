@@ -3,6 +3,7 @@ import { Check, LoaderCircle, LogIn, Pencil, UserCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useLanguage } from '../LanguageContext';
 import { dsRoot } from './dsAttr';
+import { isInternalGuestName, publicDisplayName } from '../../lib/publicIdentity';
 
 export interface GuestIdentityEditorProps {
   name: string;
@@ -32,11 +33,12 @@ export const GuestIdentityEditor: React.FC<GuestIdentityEditorProps> = ({
 }) => {
   const { language } = useLanguage();
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(name);
+  const [draft, setDraft] = useState(() => isInternalGuestName(name) ? '' : name);
   const signedInInitial = signedInName?.trim().charAt(0).toUpperCase() || '?';
+  const displayName = publicDisplayName(name, undefined, language as 'en' | 'zh');
 
   useEffect(() => {
-    if (!editing) setDraft(name);
+    if (!editing) setDraft(isInternalGuestName(name) ? '' : name);
   }, [editing, name]);
 
   const commit = () => {
@@ -46,7 +48,6 @@ export const GuestIdentityEditor: React.FC<GuestIdentityEditorProps> = ({
 
   return (
     <div className={cn('flex min-w-0 items-center gap-1.5 text-ds-xs text-ds-fg-subtle', className)}>
-      <span className="shrink-0">{language === 'zh' ? '访客身份' : 'Guest identity'}</span>
       {editing ? (
         <>
           <input
@@ -67,6 +68,7 @@ export const GuestIdentityEditor: React.FC<GuestIdentityEditorProps> = ({
             }}
             maxLength={100}
             aria-label={language === 'zh' ? '编辑访客名称' : 'Edit guest name'}
+            placeholder={language === 'zh' ? '输入显示名称' : 'Display name'}
             className="h-7 min-w-0 max-w-72 flex-1 rounded-ds-sm border border-ds-border bg-ds-surface-1 px-2 font-mono text-ds-xs text-ds-fg outline-none focus:border-ds-primary"
           />
           <Check className="size-3.5 shrink-0 text-ds-primary" aria-hidden />
@@ -75,9 +77,11 @@ export const GuestIdentityEditor: React.FC<GuestIdentityEditorProps> = ({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="inline-flex min-w-0 items-center gap-1 rounded-ds-sm px-1.5 py-0.5 font-mono text-ds-fg-muted transition-colors hover:bg-ds-surface-3 hover:text-ds-fg"
+          className="inline-flex min-w-0 items-center gap-1 rounded-ds-sm px-1 py-0.5 text-ds-fg-muted transition-colors hover:bg-ds-surface-3 hover:text-ds-fg"
         >
-          <span className="truncate">{name}</span>
+          <span className="truncate">
+            {language === 'zh' ? `以 ${displayName} 评论` : `Comment as ${displayName}`}
+          </span>
           <Pencil className="size-3 shrink-0" aria-hidden />
         </button>
       )}

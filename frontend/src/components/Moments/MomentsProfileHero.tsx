@@ -29,11 +29,11 @@ const MomentsProfileHero: React.FC<MomentsProfileHeroProps> = ({
   <header
     {...dsRoot}
     className={cn(
-      'relative mb-16 sm:mb-20 lg:-mx-8 lg:w-[calc(100%_+_4rem)]',
+      'relative mb-14 sm:mb-16 lg:-mx-8 lg:w-[calc(100%_+_4rem)]',
       className,
     )}
   >
-    <div className="relative min-h-[13rem] overflow-hidden bg-ds-surface-3 sm:min-h-[clamp(18rem,18vw,24rem)]">
+    <div className="relative min-h-[10.5rem] overflow-hidden bg-ds-surface-3 sm:min-h-[clamp(16rem,17vw,21rem)]">
       <img
         src={coverUrl}
         alt={coverAlt}
@@ -45,15 +45,15 @@ const MomentsProfileHero: React.FC<MomentsProfileHeroProps> = ({
       />
     </div>
 
-    <div className="absolute -bottom-16 inset-x-0 2xl:-bottom-20">
+    <div className="absolute -bottom-12 inset-x-0 sm:-bottom-14 2xl:-bottom-16">
       <div className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'flex justify-end')}>
         <div className="flex max-w-full items-start gap-3 sm:gap-4 2xl:gap-5">
-          <div className="min-w-0 pt-5 text-right">
-            <strong className="block truncate text-xl font-semibold tracking-[-0.025em] text-white drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:text-2xl 2xl:text-3xl">
+          <div className="min-w-0 pt-3.5 text-right sm:pt-4">
+            <strong className="block truncate text-lg font-semibold tracking-[-0.02em] text-white drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:text-xl 2xl:text-2xl">
               {name}
             </strong>
             {role && (
-              <span className="mt-1 block line-clamp-2 max-w-64 text-xs leading-5 text-ds-fg-muted sm:text-sm 2xl:max-w-80 2xl:text-base 2xl:leading-6">
+              <span className="mt-0.5 block line-clamp-2 max-w-56 text-[11px] leading-4 text-ds-fg-muted sm:max-w-64 sm:text-xs sm:leading-5 2xl:max-w-72 2xl:text-sm">
                 {role}
               </span>
             )}
@@ -61,7 +61,7 @@ const MomentsProfileHero: React.FC<MomentsProfileHeroProps> = ({
           <img
             src={avatarUrl}
             alt={`${name} portrait`}
-            className="size-24 shrink-0 rounded-full border-4 border-ds-canvas bg-ds-surface-3 object-cover shadow-ds-2 sm:size-28 2xl:size-32"
+            className="size-20 shrink-0 rounded-full border-[3px] border-ds-canvas bg-ds-surface-3 object-cover shadow-ds-2 sm:size-24 2xl:size-28"
           />
         </div>
       </div>

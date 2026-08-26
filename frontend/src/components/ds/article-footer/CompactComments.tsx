@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AlertCircle, Heart, LoaderCircle, MessageCircle, MessageSquareText, Send, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, LoaderCircle, MessageSquareText, Send, ThumbsUp, Trash2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useLanguage } from '../../LanguageContext';
 import { useAuth } from '../../InteractiveContact';
@@ -11,6 +12,8 @@ import AuthProviderBadge from './AuthProviderBadge';
 import Markdown from '../../ui/Markdown';
 import { formatTimelineTime } from './commentTimeline';
 import type { ArticleComment, CommentDraft, CommentLoadState } from './types';
+import { publicDisplayName } from '../../../lib/publicIdentity';
+import { canonicalInternalPath } from '../../../utils/navigation';
 
 interface CompactCommentsProps {
   comments: ArticleComment[];
@@ -29,7 +32,7 @@ interface CompactCommentsProps {
   /** Where the new-comment composer renders relative to the list — 'top'
    *  (default) for feed-style panels, 'bottom' for a chat-like sidebar where
    *  the list scrolls above a pinned input. */
-  composerPosition?: 'top' | 'bottom';
+  composerPosition?: 'top' | 'bottom' | 'sticky-bottom';
   /** Allows parent action bars to reveal the composer without hiding comments. */
   composerVisible?: boolean;
   surface?: 'default' | 'sidebar';
@@ -121,12 +124,13 @@ const Composer: React.FC<{
       name={composerName || (language === 'zh' ? '访客' : 'Guest')}
       src={composerAvatar}
       countryCode={composerCountryCode}
-      size={surface === 'sidebar' ? 'xs' : 'sm'}
+      size="sm"
+      className="size-7 rounded-[6px]"
     />
   );
 
   return (
-    <div className="space-y-1.5">
+    <div className="moment-comment-composer space-y-1.5">
       <GuestIdentityEditor
         name={commenter.authorName}
         onChange={setAuthorName}
@@ -159,7 +163,7 @@ const Composer: React.FC<{
             maxLength={4000}
             placeholder={placeholder}
             className={cn(
-              'min-h-10 flex-1 bg-transparent text-ds-sm text-ds-fg outline-none placeholder:text-ds-fg-subtle',
+              'moment-comment-input min-h-10 flex-1 bg-transparent text-ds-sm text-ds-fg outline-none placeholder:text-ds-fg-subtle',
               surface === 'sidebar' && 'min-w-0 text-ds-base',
             )}
           />
@@ -186,12 +190,11 @@ const Composer: React.FC<{
 };
 
 // A single row in the Xiaohongshu-style comment list: avatar, author, content,
-// then time/reaction actions. Replies use the same row with a smaller avatar
-// and an inline "Reply to name:" prefix.
+// with metadata and actions sharing the first line. Replies use the same row
+// with an inline "Reply to name:" prefix; the list owns their indentation.
 const CommentRow: React.FC<{
   comment: ArticleComment;
   replyToName?: string;
-  compact?: boolean;
   surface?: 'default' | 'sidebar';
   language: 'en' | 'zh';
   onLike: (commentId: string) => void;
@@ -202,7 +205,6 @@ const CommentRow: React.FC<{
 }> = ({
   comment,
   replyToName,
-  compact = false,
   surface = 'default',
   language,
   onLike,
@@ -213,31 +215,98 @@ const CommentRow: React.FC<{
 }) => {
   const pending = isLikePending(comment.id);
   const sidebar = surface === 'sidebar';
-  const avatarSize = compact || sidebar ? 'xs' : 'md';
   const ipRegion = commentIpRegion(comment, language);
+  const authorName = publicDisplayName(comment.authorName, comment.visitorNumber, language);
+  const replyName = replyToName ? publicDisplayName(replyToName, undefined, language) : undefined;
+  const actorPath = comment.actorId
+    ? canonicalInternalPath(`/people/${encodeURIComponent(comment.actorId)}`)
+    : undefined;
+  const avatar = (
+    <Avatar
+      name={comment.authorName}
+      src={comment.avatarUrl}
+      countryCode={comment.countryCode}
+      visitorNumber={comment.visitorNumber}
+      size="sm"
+      className="size-7 rounded-[6px]"
+    />
+  );
 
   return (
-    <div className={cn('flex items-start', compact || sidebar ? 'gap-2.5' : 'gap-3')}>
-      <Avatar
-        name={comment.authorName}
-        src={comment.avatarUrl}
-        countryCode={comment.countryCode}
-        visitorNumber={comment.visitorNumber}
-        size={avatarSize}
-      />
+    <div className="flex items-start gap-2.5">
+      {actorPath ? (
+        <Link
+          to={actorPath}
+          aria-label={language === 'zh' ? `查看${authorName}的资料` : `View ${authorName}'s profile`}
+          className="shrink-0 rounded-[6px] transition-opacity hover:opacity-80 focus-visible:shadow-ds-focus"
+        >
+          {avatar}
+        </Link>
+      ) : avatar}
       <div className="min-w-0 flex-1">
-        <div className={cn(
-          'flex min-h-5 items-center gap-1.5 font-medium leading-5 text-ds-fg-muted',
-          sidebar ? 'text-ds-sm' : 'text-ds-base',
-        )}>
-          {comment.authorName}
-          <AuthProviderBadge provider={comment.authProvider} className="size-3 shrink-0 text-ds-fg-subtle" />
+        <div className="flex min-h-7 min-w-0 items-center justify-between gap-2">
+          <div className={cn(
+            'moment-comment-author flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap font-medium text-ds-fg-muted',
+            sidebar ? 'text-ds-sm' : 'text-ds-base',
+          )}>
+            {actorPath ? (
+              <Link
+                to={actorPath}
+                className="truncate rounded-ds-xs transition-colors hover:text-ds-primary hover:underline focus-visible:shadow-ds-focus"
+              >
+                {authorName}
+              </Link>
+            ) : <span className="truncate">{authorName}</span>}
+            <AuthProviderBadge provider={comment.authProvider} className="size-3 shrink-0 text-ds-fg-subtle" />
+            {ipRegion && <span className="moment-comment-meta shrink-0 text-ds-fg-subtle">{ipRegion}</span>}
+            <time className="moment-comment-meta shrink-0 text-ds-fg-subtle" dateTime={comment.createdAt}>
+              {formatTimelineTime(comment.createdAt, language)}
+            </time>
+          </div>
+
+          <div className="moment-comment-actions flex shrink-0 items-center gap-1 font-medium text-ds-fg-muted">
+            <button
+              type="button"
+              onClick={() => onReply(comment)}
+              className="inline-flex min-h-7 items-center rounded-ds-xs px-1.5 transition-colors hover:text-ds-fg focus-visible:shadow-ds-focus"
+            >
+              {language === 'zh' ? '回复' : 'Reply'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onLike(comment.id)}
+              disabled={pending}
+              aria-label={language === 'zh' ? '赞' : 'Like'}
+              aria-pressed={comment.likedByCurrentUser}
+              className={cn(
+                'inline-flex size-7 items-center justify-center rounded-ds-xs transition-colors focus-visible:shadow-ds-focus',
+                comment.likedByCurrentUser ? 'text-ds-primary' : 'hover:text-ds-fg',
+              )}
+            >
+              {pending
+                ? <LoaderCircle className="size-4 animate-spin" />
+                : <ThumbsUp className="size-[17px]" fill={comment.likedByCurrentUser ? 'currentColor' : 'none'} />}
+            </button>
+            {comment.canDelete && onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(comment)}
+                disabled={isDeletePending(comment.id)}
+                aria-label={language === 'zh' ? '删除' : 'Delete'}
+                className="inline-flex size-7 items-center justify-center rounded-ds-xs text-ds-fg-subtle transition-colors hover:text-ds-error focus-visible:shadow-ds-focus"
+              >
+                {isDeletePending(comment.id)
+                  ? <LoaderCircle className="size-3 animate-spin" />
+                  : <Trash2 className="size-3.5" />}
+              </button>
+            )}
+          </div>
         </div>
-        <div className={cn('mt-1 leading-6 text-ds-fg', sidebar ? 'text-ds-base' : 'text-ds-md')}>
-          {replyToName && (
+        <div className={cn('moment-comment-body mt-0.5 text-ds-fg', sidebar ? 'text-ds-base' : 'text-ds-md')}>
+          {replyName && (
             <span className="mr-1 text-ds-fg-subtle">
               {language === 'zh' ? '回复 ' : 'Reply to '}
-              <span className="font-medium text-ds-fg-muted">{replyToName}</span>
+              <span className="font-medium text-ds-fg-muted">{replyName}</span>
               {language === 'zh' ? '：' : ': '}
             </span>
           )}
@@ -245,59 +314,10 @@ const CommentRow: React.FC<{
             {comment.content}
           </Markdown>
         </div>
-        <div className={cn(
-          'mt-1.5 flex items-center gap-2 leading-5 text-ds-fg-subtle',
-          sidebar ? 'text-ds-xs' : 'text-ds-sm',
-        )}>
-          <span>{formatTimelineTime(comment.createdAt, language)}</span>
-          {ipRegion && <span>{ipRegion}</span>}
-        </div>
-        <div className={cn(
-          'mt-2 flex items-center font-medium leading-none text-ds-fg-muted',
-          sidebar ? 'gap-4 text-ds-sm' : 'gap-5 text-ds-sm',
-        )}>
-          <button
-            type="button"
-            onClick={() => onLike(comment.id)}
-            disabled={pending}
-            aria-pressed={comment.likedByCurrentUser}
-            className={cn(
-              'inline-flex items-center gap-1 transition-colors',
-              comment.likedByCurrentUser ? 'text-ds-primary' : 'hover:text-ds-fg',
-            )}
-          >
-            {pending ? <LoaderCircle className="size-4 animate-spin" /> : <Heart className={sidebar ? 'size-4' : 'size-[18px]'} />}
-            {comment.likesCount > 0 ? comment.likesCount : language === 'zh' ? '赞' : 'Like'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onReply(comment)}
-            className="inline-flex items-center gap-1 transition-colors hover:text-ds-fg"
-          >
-            <MessageCircle className={sidebar ? 'size-4' : 'size-[18px]'} />
-            {language === 'zh' ? '回复' : 'Reply'}
-          </button>
-          {comment.canDelete && onDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete(comment)}
-              disabled={isDeletePending(comment.id)}
-              className="inline-flex items-center gap-1 font-medium text-ds-fg-subtle transition-colors hover:text-ds-error"
-            >
-              {isDeletePending(comment.id)
-                ? <LoaderCircle className="size-3 animate-spin" />
-                : <Trash2 className="size-3" />}
-              {language === 'zh' ? '删除' : 'Delete'}
-            </button>
-          )}
-        </div>
       </div>
     </div>
   );
 };
-
-const countThread = (comment: ArticleComment): number =>
-  1 + comment.replies.reduce((sum, reply) => sum + countThread(reply), 0);
 
 const countryRegionName = (countryCode: string | undefined, language: 'en' | 'zh'): string | undefined => {
   if (!countryCode) return undefined;
@@ -337,8 +357,10 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
 
   const visibleThreads = visibleCount === undefined || expanded ? comments : comments.slice(0, visibleCount);
   const hiddenCount = comments.length - visibleThreads.length;
-  const totalCount = comments.reduce((sum, root) => sum + countThread(root), 0);
   const showComposer = composerVisible || Boolean(replyTarget);
+  const replyTargetName = replyTarget
+    ? publicDisplayName(replyTarget.authorName, replyTarget.visitorNumber, language as 'en' | 'zh')
+    : undefined;
 
   const submitDraft = async (content: string, authorName: string, parentId?: string) => {
     setFormError(undefined);
@@ -352,12 +374,11 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
 
   const renderCommentRow = (
     comment: ArticleComment,
-    options: { compact?: boolean; replyToName?: string } = {},
+    options: { replyToName?: string } = {},
   ) => (
       <CommentRow
         comment={comment}
         replyToName={options.replyToName}
-        compact={options.compact}
         surface={surface}
         language={language as 'en' | 'zh'}
       onLike={(commentId) => { void onCommentLike(commentId); }}
@@ -371,9 +392,9 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
   const renderReplies = (replies: ArticleComment[], parentName: string): React.ReactNode =>
     replies.map((reply) => (
       <li key={reply.id}>
-        {renderCommentRow(reply, { compact: true, replyToName: parentName })}
+        {renderCommentRow(reply, { replyToName: parentName })}
         {reply.replies.length > 0 && (
-          <ul className="mt-3 space-y-3">
+          <ul className="mt-4 space-y-4">
             {renderReplies(reply.replies, reply.authorName)}
           </ul>
         )}
@@ -382,7 +403,7 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
 
   const replyBanner = replyTarget && (
     <div className="flex items-center justify-between gap-2 rounded-ds-sm bg-ds-surface-2 px-3 py-1.5 text-ds-xs text-ds-fg-subtle">
-      <span>{language === 'zh' ? `回复 ${replyTarget.authorName}` : `Replying to ${replyTarget.authorName}`}</span>
+      <span>{language === 'zh' ? `回复 ${replyTargetName}` : `Replying to ${replyTargetName}`}</span>
       <button type="button" onClick={() => setReplyTarget(null)} className="font-medium hover:text-ds-fg">
         {language === 'zh' ? '取消' : 'Cancel'}
       </button>
@@ -397,7 +418,7 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
           labels?.placeholder && !replyTarget
             ? labels.placeholder
             : replyTarget
-            ? language === 'zh' ? `回复 ${replyTarget.authorName}…` : `Reply to ${replyTarget.authorName}…`
+            ? language === 'zh' ? `回复 ${replyTargetName}…` : `Reply to ${replyTargetName}…`
             : language === 'zh' ? '说点什么…' : 'Add a comment…'
         }
         postAria={labels?.postAria || (language === 'zh' ? '发布评论' : 'Post comment')}
@@ -424,10 +445,10 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
       )}
 
       {state === 'loading' && (
-        <div className="space-y-4" aria-hidden>
+        <div className="space-y-5" aria-hidden>
           {[0, 1].map((item) => (
             <div key={item} className="flex animate-pulse gap-2.5">
-              <div className="size-8 shrink-0 rounded-full bg-ds-surface-1" />
+              <div className="size-7 shrink-0 rounded-[6px] bg-ds-surface-1" />
               <div className="h-10 w-3/5 rounded-ds-md bg-ds-surface-1" />
             </div>
           ))}
@@ -452,24 +473,19 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
         </div>
       )}
 
-      {state === 'ready' && totalCount > 0 && (
-        <>
-          <div className="text-ds-xs text-ds-fg-subtle">
-            {labels?.count?.(totalCount) || (language === 'zh' ? `共 ${totalCount} 条评论` : `${totalCount} comments`)}
-          </div>
-          <ul className="space-y-4">
-            {visibleThreads.map((root) => (
-              <li key={root.id}>
-                {renderCommentRow(root)}
-                {root.replies.length > 0 && (
-                  <ul className="mt-3 space-y-3 pl-[52px]">
-                    {renderReplies(root.replies, root.authorName)}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </>
+      {state === 'ready' && comments.length > 0 && (
+        <ul className="space-y-5">
+          {visibleThreads.map((root) => (
+            <li key={root.id}>
+              {renderCommentRow(root)}
+              {root.replies.length > 0 && (
+                <ul className="mt-4 space-y-4 pl-10">
+                  {renderReplies(root.replies, root.authorName)}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
 
       {!expanded && hiddenCount > 0 && (
@@ -478,7 +494,7 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
           onClick={() => setExpanded(true)}
           className="text-ds-xs font-medium text-ds-fg-subtle hover:text-ds-fg"
         >
-          {labels?.viewAll?.(comments.length) || (language === 'zh' ? `查看全部 ${comments.length} 条评论` : `View all ${comments.length} comments`)}
+          {language === 'zh' ? '查看全部评论' : 'View all comments'}
         </button>
       )}
     </div>
@@ -498,6 +514,21 @@ const CompactComments: React.FC<CompactCommentsProps> = ({
             'shrink-0 border-t border-ds-border',
             surface === 'sidebar' ? 'bg-ds-surface-2/95 px-0 pb-1 pt-3' : 'bg-ds-surface-2 pt-3',
           )}>
+            {composer}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (composerPosition === 'sticky-bottom') {
+    return (
+      <div className="space-y-4">
+        {list}
+        {showComposer && (
+          <div
+            className="sticky bottom-0 z-20 -mx-4 border-t border-ds-border bg-ds-surface-1/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl"
+          >
             {composer}
           </div>
         )}

@@ -2,6 +2,7 @@ export type CommentLoadState = 'loading' | 'ready' | 'error';
 
 export interface ArticleComment {
   id: string;
+  actorId?: string;
   authorName: string;
   avatarUrl?: string;
   countryCode?: string;

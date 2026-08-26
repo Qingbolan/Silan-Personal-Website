@@ -10,6 +10,7 @@ import { useLanguage } from '../LanguageContext';
 
 export interface RemoteDiscussionComment {
   id: string;
+  actor_id?: string;
   author_name: string;
   author_avatar_url?: string;
   country_code?: string;
@@ -52,8 +53,8 @@ export interface EntityDiscussionProps {
   ) => Promise<void>;
   /** Cap top-level comments before a "view all" expand — omit to show all. */
   visibleCount?: number;
-  /** 'top' (default) or 'bottom' — see CompactComments. */
-  composerPosition?: 'top' | 'bottom';
+  /** Placement is owned by the page state: inline, bounded rail, or mobile sticky. */
+  composerPosition?: 'top' | 'bottom' | 'sticky-bottom';
   /** Whether the root composer should be shown; comment rows remain visible. */
   composerVisible?: boolean;
   surface?: 'default' | 'sidebar';
@@ -61,6 +62,7 @@ export interface EntityDiscussionProps {
 
 const mapComment = (comment: RemoteDiscussionComment): ArticleComment => ({
   id: comment.id,
+  actorId: comment.actor_id,
   authorName: comment.author_name,
   avatarUrl: comment.author_avatar_url,
   countryCode: comment.country_code,

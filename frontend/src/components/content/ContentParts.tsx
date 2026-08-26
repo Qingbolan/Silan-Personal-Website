@@ -171,9 +171,9 @@ const EXTRA_PREFIX = 'tab:';
  * sub-desktop viewports, where a full vertical list of full-width rows (one per
  * tab) would push the actual content off-screen below the fold. Icons only,
  * no labels, tapped directly (no popover) since staying on one row is the
- * point. Sits above the site-wide MobileTabBar dock (bottom-3, ~46px tall)
- * so the two floating docks don't collide; scrolls horizontally on its own
- * axis if a content Item has enough Parts to overflow the row.
+ * point. Sits above the site-wide in-flow MobileTabBar so the two navigation
+ * layers do not collide; scrolls horizontally on its own axis if a content
+ * Item has enough Parts to overflow the row.
  */
 const MobileTabDock: React.FC<{
   items: TabItem[];
@@ -187,7 +187,7 @@ const MobileTabDock: React.FC<{
     <nav
       {...dsRoot}
       aria-label="Section navigation"
-      className="ds-liquid-glass fixed bottom-20 right-4 z-30 flex max-w-[calc(100vw-2rem)] items-center gap-0.5 overflow-x-auto rounded-full px-1 py-1 lg:hidden"
+      className="ds-liquid-glass fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-30 flex max-w-[calc(100vw-2rem)] items-center gap-0.5 overflow-x-auto rounded-full px-1 py-1 lg:hidden"
     >
       {items.map((item) => {
         const isActive = item.value === active;

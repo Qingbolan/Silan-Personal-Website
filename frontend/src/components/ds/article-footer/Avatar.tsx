@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '../../../lib/utils';
+import FlagAvatar from '../FlagAvatar';
 
 interface AvatarProps {
   name: string;
@@ -42,21 +43,13 @@ const Avatar: React.FC<AvatarProps> = ({ name, src, countryCode, visitorNumber, 
 
   if (!src && countryCode && !flagFailed) {
     return (
-      <span className={cn('relative inline-flex shrink-0', SIZE[size], className)} title={name} aria-label={name}>
-        <img
-          src={`https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`}
-          alt=""
-          className="h-full w-full rounded-[7px] border border-ds-border bg-white object-contain p-[1px]"
-          loading="lazy"
-          decoding="async"
-          onError={() => setFlagFailed(true)}
-        />
-        {visitorNumber && (
-          <span className="absolute bottom-0 right-0 flex min-w-[16px] items-center justify-center rounded-[5px] border border-ds-surface-1 bg-ds-fg px-0.5 font-mono text-[10px] font-semibold leading-[12px] tabular-nums text-ds-surface-1 shadow-sm">
-            {visitorNumber}
-          </span>
-        )}
-      </span>
+      <FlagAvatar
+        countryCode={countryCode}
+        label={name}
+        visitorNumber={visitorNumber}
+        className={cn(SIZE[size], className)}
+        onError={() => setFlagFailed(true)}
+      />
     );
   }
 

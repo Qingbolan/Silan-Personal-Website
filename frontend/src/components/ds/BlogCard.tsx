@@ -4,10 +4,11 @@
 // ProjectCard's cover system (sizes, branded placeholder, feature layout)
 // but carries blog metadata: date, author, read time, article/series kind.
 import React from 'react';
-import { Calendar, User, FileText, Layers, ArrowUpRight } from 'lucide-react';
+import { Calendar, FileText, Layers, ArrowUpRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Card } from './Card';
 import { Badge } from './Badge';
+import { Avatar } from './Avatar';
 
 export type BlogCoverSize = 'compact' | 'standard' | 'tall' | 'feature';
 
@@ -21,6 +22,8 @@ export interface BlogCardData {
   /** Publish date — any displayable string. */
   date?: string;
   author?: string;
+  /** Author portrait. Falls back to the author's initials when unavailable. */
+  authorAvatarUrl?: string;
   /** Estimated read time, e.g. "5 min read". */
   readTime?: string;
   /** Article (single post) or series (multi-part). */
@@ -90,6 +93,29 @@ const splitQuoteLead = (text: string): { lead: string; rest: string } => {
   return { lead: normalized, rest: '' };
 };
 
+interface CardAuthorProps {
+  name: string;
+  avatarUrl?: string;
+  onCover?: boolean;
+}
+
+/** One author identity treatment shared by every BlogCard composition. */
+const CardAuthor: React.FC<CardAuthorProps> = ({ name, avatarUrl, onCover = false }) => (
+  <span className="inline-flex items-center gap-1.5">
+    <Avatar
+      src={avatarUrl}
+      name={name}
+      size="xs"
+      bordered={false}
+      className={cn(
+        'size-4 text-[0.5rem]',
+        onCover && 'ring-1 ring-white/40',
+      )}
+    />
+    {name}
+  </span>
+);
+
 /* --- BlogCard ------------------------------------------------------------ */
 
 export const BlogCard: React.FC<BlogCardProps> = ({
@@ -100,7 +126,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
   className,
 }) => {
   const {
-    id, title, excerpt, tags = [], date, author, readTime,
+    id, title, excerpt, tags = [], date, author, authorAvatarUrl, readTime,
     kind = 'article', episodeCount, latestEpisode, coverImage,
   } = post;
 
@@ -184,10 +210,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
                 </span>
               )}
               {author && (
-                <span className="inline-flex items-center gap-1.5">
-                  <User className="size-3" />
-                  {author}
-                </span>
+                <CardAuthor name={author} avatarUrl={authorAvatarUrl} />
               )}
             </div>
 
@@ -280,10 +303,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
             </span>
           )}
           {author && (
-            <span className="inline-flex items-center gap-1">
-              <User className="size-3" />
-              {author}
-            </span>
+            <CardAuthor name={author} avatarUrl={authorAvatarUrl} onCover />
           )}
         </div>
       )}

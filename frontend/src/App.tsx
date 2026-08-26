@@ -18,6 +18,7 @@ import { languageFromPathname, localeBasename } from './lib/localeRouting';
 const ResumeWebsite = React.lazy(() => import('./views/ResumeWebsite'));
 const Moments = React.lazy(() => import('./views/Moments'));
 const MomentDetail = React.lazy(() => import('./views/MomentDetail'));
+const PublicActorProfile = React.lazy(() => import('./views/PublicActorProfile'));
 // Contact page disabled (2026-08): kept for easy re-enabling.
 // const InteractiveContactPage = React.lazy(() => import('./views/InteractiveContactPage'));
 const ProjectGallery = React.lazy(() => import('./views/ProjectGallery'));
@@ -78,6 +79,7 @@ const LocalizedRoutes: React.FC = () => {
             button. */}
         <Route path="/moments" element={<Moments />} />
         <Route path="/moments/:slug" element={<MomentDetail />} />
+        <Route path="/people/:actorId" element={<PublicActorProfile />} />
         {/* Contact page disabled (2026-08): <Route path="/contact" element={<InteractiveContactPage />} /> */}
         <Route path="/projects" element={<ProjectGallery />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />

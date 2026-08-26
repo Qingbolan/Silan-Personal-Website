@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 
 export interface BlogLiker {
+  actor_id?: string;
   kind: 'user' | 'visitor' | string;
   country_code?: string;
   visitor_number?: string;

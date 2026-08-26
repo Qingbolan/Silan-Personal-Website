@@ -23,6 +23,7 @@ export const fetchMoment = (
   });
 
 export interface MomentLiker {
+  actor_id?: string;
   kind: 'visitor' | 'user';
   country_code?: string;
   visitor_number?: string;

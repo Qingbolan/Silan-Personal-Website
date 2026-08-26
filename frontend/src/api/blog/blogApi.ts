@@ -171,12 +171,14 @@ export const updateBlogLikes = async (id: string, increment: boolean = true, lan
 // ----- Comments API -----
 export interface BlogCommentData {
   id: string;
+  actor_id?: string;
   blog_post_id: string;
   parent_id?: string;
   author_name: string;
   author_avatar_url?: string;
   auth_provider?: string;
   country_code?: string;
+  visitor_number?: string;
   content: string;
   created_at: string;
   can_delete: boolean;

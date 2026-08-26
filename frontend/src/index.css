@@ -1448,6 +1448,113 @@ code[class*="language-"] .token.italic { font-style: italic; }
 
 .markdown-content .markdown-body p { color: color-mix(in srgb, var(--color-textPrimary, #171717) 84%, transparent); }
 .markdown-content .markdown-body strong { color: var(--color-textPrimary, #171717); font-weight: 650; }
+
+/* Moment details are read inside a narrow, interaction-led mobile surface.
+   Keep the Lexical document engine, but tighten its editorial rhythm so the
+   first action and first comment remain reachable without a long dead zone. */
+.moment-detail-prose .markdown-body {
+  font-size: 1.0625rem;
+  line-height: 1.68;
+  overflow-wrap: break-word;
+}
+.moment-detail-prose .markdown-body p,
+.moment-detail-prose .markdown-body ul,
+.moment-detail-prose .markdown-body ol,
+.moment-detail-prose .markdown-body blockquote {
+  margin-top: 0.55rem;
+  margin-bottom: 0.55rem;
+}
+
+/* Mobile reading rhythm follows the density of WeChat's detail view: body
+   copy stays comfortably legible at 17px, while reduced leading and paragraph
+   gaps keep a long post continuous instead of turning every paragraph into a
+   separate card. These rules are scoped to Moments so document typography on
+   desktop and other public surfaces remains unchanged. */
+@media (max-width: 639px) {
+  .moment-detail-title {
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    line-height: 1.22;
+  }
+
+  .moment-detail-prose .markdown-body {
+    color: var(--color-textPrimary, #171717);
+    font-size: 1.0625rem;
+    font-weight: 425;
+    letter-spacing: 0.01em;
+    line-height: 1.55;
+  }
+
+  .moment-detail-prose .markdown-body p,
+  .moment-detail-prose .markdown-body li,
+  .moment-detail-prose .markdown-body blockquote {
+    color: var(--color-textPrimary, #171717);
+  }
+
+  .moment-detail-prose .markdown-body p,
+  .moment-detail-prose .markdown-body ul,
+  .moment-detail-prose .markdown-body ol,
+  .moment-detail-prose .markdown-body blockquote {
+    margin-bottom: 0.3rem;
+    margin-top: 0.3rem;
+  }
+
+  .moment-feed-title {
+    color: var(--color-textPrimary, #171717);
+    font-size: 1.0625rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+
+  .moment-feed-excerpt {
+    color: color-mix(in srgb, var(--color-textPrimary, #171717) 94%, transparent);
+    font-size: 0.9375rem;
+    font-weight: 450;
+    letter-spacing: 0.008em;
+    line-height: 1.5;
+  }
+
+  .moment-discussion-typography .moment-engagement-controls button {
+    font-size: 0.9375rem;
+    letter-spacing: 0.005em;
+    line-height: 1.35;
+  }
+
+  .moment-discussion-typography .moment-liker-label,
+  .moment-discussion-typography .moment-comment-actions {
+    font-size: 0.8125rem;
+    letter-spacing: 0.005em;
+    line-height: 1.35;
+  }
+
+  .moment-discussion-typography .moment-comment-author {
+    color: color-mix(in srgb, var(--color-textPrimary, #171717) 84%, transparent);
+    font-size: 0.9375rem;
+    letter-spacing: 0.005em;
+    line-height: 1.35;
+  }
+
+  .moment-discussion-typography .moment-comment-body {
+    color: var(--color-textPrimary, #171717);
+    font-size: 1rem;
+    font-weight: 450;
+    letter-spacing: 0.008em;
+    line-height: 1.5;
+  }
+
+  .moment-discussion-typography .moment-comment-meta {
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    line-height: 1.35;
+  }
+
+  .moment-discussion-typography .moment-comment-input {
+    font-size: 1rem;
+    letter-spacing: 0.006em;
+    line-height: 1.4;
+  }
+}
 .markdown-content .markdown-body a {
   color: var(--color-accent, #f97316);
   overflow-wrap: anywhere;

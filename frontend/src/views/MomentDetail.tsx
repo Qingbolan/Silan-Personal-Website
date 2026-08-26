@@ -2,18 +2,21 @@ import React, { useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchMoment } from '../api/moments/momentApi';
-import type { Moment } from '../types/api';
+import { fetchPersonalInfo } from '../api/home/resumeApi';
+import { mediaUrl } from '../api/utils';
+import type { Moment, PersonalInfo } from '../types/api';
 import Markdown from '../components/ui/Markdown';
 import MomentActions from '../components/Resume/MomentActions';
 import MomentRelatedOutputs from '../components/Moments/MomentRelatedOutputs';
 import { useLanguage } from '../components/LanguageContext';
 import { Seo, creativeWorkJsonLd } from '../components/Seo';
-import { Badge, BrandLoading, NetworkError } from '../components/ds';
+import { Avatar, Badge, BrandLoading, NetworkError } from '../components/ds';
 import { useRemoteResource } from '../hooks/useRemoteResource';
 import { useSetPageTitle } from '../layout/PageTitleContext';
 import { markdownToPlainExcerpt, withoutRepeatedTitle } from '../lib/markdown';
 import { normalizeContentTimestamp } from '../utils/contentTimestamp';
 import { canonicalInternalPath } from '../utils/navigation';
+import { publicAssetUrl } from '../utils/publicAsset';
 
 const formatMomentDate = (moment: Moment, language: 'en' | 'zh') => {
   const date = new Date(`${moment.date}T00:00:00`);
@@ -49,6 +52,12 @@ const MomentDetail: React.FC = () => {
   );
   const resource = useRemoteResource<Moment>(slug, loadMoment);
   const moment = resource.data;
+  const loadAuthor = useCallback(() => fetchPersonalInfo(lang), [lang]);
+  const authorResource = useRemoteResource<PersonalInfo>(`moment-author-${lang}`, loadAuthor);
+  const authorName = authorResource.data?.full_name || 'Silan Hu';
+  const authorAvatarUrl = authorResource.data?.avatar_url
+    ? mediaUrl(authorResource.data.avatar_url)
+    : publicAssetUrl('/image.png');
 
   useSetPageTitle(
     moment
@@ -93,11 +102,17 @@ const MomentDetail: React.FC = () => {
       <p className="max-w-sm text-ds-sm text-ds-fg-muted">{copy.notFoundBody}</p>
     </div>
   ) : (
-    <MomentDetailBody moment={moment} lang={lang} copy={copy} />
+    <MomentDetailBody
+      moment={moment}
+      lang={lang}
+      copy={copy}
+      authorName={authorName}
+      authorAvatarUrl={authorAvatarUrl}
+    />
   );
 
   return (
-    <div className="mx-auto w-full max-w-[76rem] px-4 pb-16 pt-6 sm:px-8 sm:pt-8 lg:px-0">
+    <div className="mx-auto w-full max-w-[76rem] px-5 pb-0 pt-4 sm:px-8 sm:pt-7 lg:px-0">
       {moment && (
         <Seo
           title={moment.title}
@@ -118,13 +133,13 @@ const MomentDetail: React.FC = () => {
 
       <Link
         to={canonicalInternalPath('/moments')}
-        className="inline-flex items-center gap-1.5 text-ds-sm font-medium text-ds-fg-muted transition-colors hover:text-ds-primary"
+        className="inline-flex min-h-9 items-center gap-1.5 text-ds-sm font-medium text-ds-fg-muted transition-colors hover:text-ds-primary"
       >
         <ArrowLeft className="size-4" aria-hidden />
         {copy.back}
       </Link>
 
-      <div className="mt-5 sm:mt-7">{body}</div>
+      <div className="mt-3 sm:mt-5">{body}</div>
     </div>
   );
 };
@@ -139,38 +154,59 @@ const MomentDetailBody: React.FC<{
   copy: {
     related: string;
   };
-}> = ({ moment, lang, copy }) => {
+  authorName: string;
+  authorAvatarUrl: string;
+}> = ({ moment, lang, copy, authorName, authorAvatarUrl }) => {
   const bodyText = withoutRepeatedTitle(moment.description, moment.title);
-  const timestamp =
-    moment.created_at && !moment.created_at.startsWith('0001-')
-      ? moment.created_at
-      : `${moment.date}T00:00:00`;
+  // A Moment is a dated public record. Its interaction footer must use the
+  // same public date as the article header; creation time is projection
+  // metadata and can differ after imports or migrations.
+  const timestamp = `${moment.date}T00:00:00`;
   const formattedDate = formatMomentDate(moment, lang);
 
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_26rem]">
-      <article className="min-w-0 pb-12">
+      <article className="min-w-0 pb-5 sm:pb-8">
         <div className="mx-auto max-w-[44rem]">
-          <header className="border-b border-ds-border pb-0">
-            <h1 className="text-balance text-ds-2xl font-semibold leading-[1.12] tracking-[-0.03em] text-ds-fg sm:text-ds-4xl">
+          <header>
+            <h1 className="moment-detail-title text-pretty text-[1.625rem] font-semibold leading-[1.16] tracking-[-0.025em] text-ds-fg sm:text-ds-3xl lg:text-ds-4xl">
               {moment.title}
             </h1>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <time dateTime={moment.date} className="font-mono text-ds-xs tabular-nums text-ds-fg-subtle">
+            <div className="mt-3.5 flex min-w-0 items-center gap-2">
+              <Avatar
+                src={authorAvatarUrl}
+                name={authorName}
+                size="sm"
+                bordered={false}
+                className="size-7"
+              />
+              <Link
+                to={canonicalInternalPath('/')}
+                className="min-w-0 truncate rounded-ds-xs text-[0.9375rem] font-semibold leading-[1.35] text-ds-primary transition-colors hover:text-ds-primary-hover hover:underline focus-visible:shadow-ds-focus"
+              >
+                {authorName}
+              </Link>
+              <span className="text-ds-fg-subtle" aria-hidden>·</span>
+              <time dateTime={moment.date} className="shrink-0 text-ds-sm tabular-nums text-ds-fg-subtle">
                 {formattedDate}
               </time>
-              {moment.tags?.map((tag) => (
+            </div>
+
+            {moment.tags?.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {moment.tags.map((tag) => (
                 <Badge key={tag} tone="neutral" appearance="soft">
                   #{tag}
                 </Badge>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </header>
 
           <Markdown
             documentTitle={moment.title}
-            className="mt-5 text-ds-base leading-8 text-ds-fg-muted sm:text-ds-lg [&_.markdown-body]:!pl-0"
+            className="moment-detail-prose mt-5 text-ds-base leading-[1.68] text-ds-fg-muted sm:text-ds-lg [&_.markdown-body]:!pl-0"
           >
             {bodyText}
           </Markdown>
@@ -180,13 +216,13 @@ const MomentDetailBody: React.FC<{
             labels={{
               title: copy.related,
             }}
-            className="mt-8"
+            className="mt-6"
           />
 
           {/* Below lg, the interaction rail collapses back into the
               article flow — the sidebar variant only makes sense with
               room beside the text. */}
-          <div className="mt-8 lg:hidden">
+          <div className="mt-6 lg:hidden">
             <MomentActions momentKey={moment.slug || moment.id} timestamp={timestamp} />
           </div>
         </div>

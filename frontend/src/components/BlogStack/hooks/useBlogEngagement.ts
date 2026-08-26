@@ -33,9 +33,11 @@ interface UseBlogEngagementOptions {
 
 const mapComment = (comment: BlogCommentData): ArticleComment => ({
   id: comment.id,
+  actorId: comment.actor_id,
   authorName: comment.author_name,
   avatarUrl: comment.author_avatar_url,
   countryCode: comment.country_code,
+  visitorNumber: comment.visitor_number,
   authProvider: comment.auth_provider,
   content: comment.content,
   createdAt: comment.created_at,

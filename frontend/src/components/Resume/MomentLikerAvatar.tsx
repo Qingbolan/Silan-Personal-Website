@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Globe2, UserRound } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { MomentLiker } from '../../api/moments/momentApi';
+import FlagAvatar from '../ds/FlagAvatar';
 
 interface MomentLikerAvatarProps {
   liker: MomentLiker;
   language: 'en' | 'zh';
   showVisitorNumber?: boolean;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
@@ -21,6 +22,17 @@ const countryName = (code: string, language: 'en' | 'zh'): string => {
   }
 };
 
+export const momentLikerLabel = (liker: MomentLiker, language: 'en' | 'zh'): string => {
+  const countryCode = liker.country_code?.toUpperCase() ?? '';
+  return liker.label || (liker.kind === 'visitor'
+    ? countryCode
+      ? language === 'zh'
+        ? `来自${countryName(countryCode, language)}的访客 ${liker.visitor_number}`
+        : `Visitor ${liker.visitor_number} from ${countryName(countryCode, language)}`
+      : language === 'zh' ? `访客 ${liker.visitor_number}` : `Visitor ${liker.visitor_number}`
+    : language === 'zh' ? '已登录用户' : 'Signed-in user');
+};
+
 const MomentLikerAvatar: React.FC<MomentLikerAvatarProps> = ({
   liker,
   language,
@@ -31,19 +43,21 @@ const MomentLikerAvatar: React.FC<MomentLikerAvatarProps> = ({
   const [imageFailed, setImageFailed] = useState(false);
   const countryCode = liker.country_code?.toUpperCase() ?? '';
   const isVisitor = liker.kind === 'visitor';
-  const boxSize = size === 'sm' ? 'size-7' : 'size-8';
+  const boxSize = size === 'sm' ? 'size-7' : size === 'lg' ? 'size-9' : 'size-8';
   const iconSize = size === 'sm' ? 'size-3.5' : 'size-4';
-  const label = liker.label || (
-    isVisitor
-      ? countryCode
-        ? language === 'zh'
-          ? `来自${countryName(countryCode, language)}的访客 ${liker.visitor_number}`
-          : `Visitor ${liker.visitor_number} from ${countryName(countryCode, language)}`
-        : language === 'zh'
-          ? `访客 ${liker.visitor_number}`
-          : `Visitor ${liker.visitor_number}`
-      : language === 'zh' ? '已登录用户' : 'Signed-in user'
-  );
+  const label = momentLikerLabel(liker, language);
+
+  if (isVisitor && countryCode && !imageFailed) {
+    return (
+      <FlagAvatar
+        countryCode={countryCode}
+        label={label}
+        visitorNumber={showVisitorNumber ? liker.visitor_number : undefined}
+        className={cn(boxSize, className)}
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
 
   return (
     <span
@@ -51,16 +65,7 @@ const MomentLikerAvatar: React.FC<MomentLikerAvatarProps> = ({
       title={label}
       aria-label={label}
     >
-      {isVisitor && countryCode && !imageFailed ? (
-        <img
-          src={`https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`}
-          alt=""
-          className={cn(boxSize, 'rounded-[7px] border border-ds-border bg-white object-contain p-[1px] shadow-sm')}
-          loading="lazy"
-          decoding="async"
-          onError={() => setImageFailed(true)}
-        />
-      ) : liker.avatar_url && !imageFailed ? (
+      {liker.avatar_url && !imageFailed ? (
         <img
           src={liker.avatar_url}
           alt=""

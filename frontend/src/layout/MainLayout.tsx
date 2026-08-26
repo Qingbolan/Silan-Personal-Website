@@ -22,6 +22,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { pathname } = useLocation();
   const normalizedPathname = pathname.replace(/\/+$/, '') || '/';
   const isSearchRoute = normalizedPathname === '/search';
+  const isMomentDetailRoute = /^\/moments\/[^/]+$/.test(normalizedPathname);
+  const isPublicActorRoute = /^\/people\/[^/]+$/.test(normalizedPathname);
+  const isStandaloneDetailRoute = isMomentDetailRoute || isPublicActorRoute;
   // The progress bar is driven straight through a ref — writing `transform`
   // on every animation frame, never via React state, so scrolling does not
   // re-render MainLayout (and the heavy NoiseBackground) on every event.
@@ -196,14 +199,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <div className="relative z-10 mx-auto w-full max-w-full min-w-0 lg:px-8">
           {children}
         </div>
-        {isSearchRoute ? <div className="hidden sm:block"><Footer /></div> : <Footer />}
+        {isSearchRoute
+          ? <div className="hidden sm:block"><Footer /></div>
+          : !isStandaloneDetailRoute && <Footer />}
       </motion.main>
 
-      {/* Mobile-only glass dock — the primary nav on viewports where the
-          desktop chrome capsules (NavBefore/NavAfter) are hidden. Purely
-          `fixed` + z-40, floating above scrolling content like iOS's own
-          floating tab bars — it never reserves layout space of its own. */}
-      {!isSearchRoute && <MobileTabBar />}
+      {/* Mobile-only app rail — the primary nav on viewports where the
+          desktop chrome capsules (NavBefore/NavAfter) are hidden. It remains
+          in this flex layout so the content viewport ends above the rail and
+          no card, footer action, or final paragraph is hidden underneath. */}
+      {!isSearchRoute && !isStandaloneDetailRoute && <MobileTabBar />}
     </div>
   );
 };

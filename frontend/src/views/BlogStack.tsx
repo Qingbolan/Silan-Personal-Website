@@ -10,6 +10,7 @@ import { fetchEpisodeSeriesList } from '../api/episodes/episodeApi';
 import { mediaUrl } from '../api/utils';
 import type { EpisodeSeriesData } from '../types/episode';
 import { DEFAULT_CONTENT_AUTHOR } from '../lib/contentAttribution';
+import { publicAssetUrl } from '../utils/publicAsset';
 import {
   BlogHeader,
   BrandLoading,
@@ -116,6 +117,7 @@ function toBlogCardData(post: BlogData, language: string): BlogCardData {
       ? new Date(post.publishDate).toLocaleDateString()
       : undefined,
     author: post.author || DEFAULT_CONTENT_AUTHOR,
+    authorAvatarUrl: publicAssetUrl('/image.png'),
     readTime: post.videoDuration || post.readTime,
     kind: series ? 'series' : 'article',
     episodeCount: series ? post.totalEpisodes : undefined,

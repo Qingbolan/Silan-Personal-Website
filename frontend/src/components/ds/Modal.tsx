@@ -19,6 +19,8 @@ export interface ModalProps {
   /** Footer content — actions live here. */
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Present compact mobile workflows as a bottom sheet while keeping the desktop dialog. */
+  placement?: 'center' | 'mobile-bottom';
   /** Hide the top-right close button. */
   hideClose?: boolean;
   /** Localized accessible name for the close button. */
@@ -38,6 +40,7 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   footer,
   size = 'md',
+  placement = 'center',
   hideClose = false,
   closeLabel = 'Close',
   returnFocusRef,
@@ -112,7 +115,10 @@ export const Modal: React.FC<ModalProps> = ({
       {open && (
         <div
           {...dsRoot}
-          className="fixed inset-0 flex items-center justify-center p-4"
+          className={cn(
+            'fixed inset-0 flex justify-center p-4',
+            placement === 'mobile-bottom' ? 'items-end sm:items-center' : 'items-center',
+          )}
           style={{ zIndex: 1100 }}
           role="dialog"
           aria-modal="true"
@@ -134,6 +140,7 @@ export const Modal: React.FC<ModalProps> = ({
             tabIndex={-1}
             className={cn(
               'relative w-full rounded-ds-xl ds-acrylic ds-ridge p-6',
+              placement === 'mobile-bottom' && '-mb-4 rounded-b-none pb-[calc(1rem+env(safe-area-inset-bottom))] sm:mb-0 sm:rounded-ds-xl sm:pb-6',
               sizeMap[size],
               className,
             )}

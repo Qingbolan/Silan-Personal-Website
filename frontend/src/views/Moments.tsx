@@ -44,7 +44,7 @@ interface MomentYearGroup {
 }
 
 const MOMENT_ROW_CLASS =
-  'grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 overflow-hidden rounded-ds-md bg-ds-surface-2 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-5';
+  'grid grid-cols-[3.25rem_minmax(0,1fr)] gap-2 overflow-hidden rounded-ds-md bg-ds-surface-2 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4';
 
 const Moments: React.FC = () => {
   const { language } = useLanguage();
@@ -261,7 +261,7 @@ const Moments: React.FC = () => {
 
   return (
     <motion.div
-      className="min-h-screen w-full pb-12 sm:pb-16"
+      className="min-h-screen w-full pb-20 sm:pb-14"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -285,10 +285,10 @@ const Moments: React.FC = () => {
           <div
             {...dsRoot}
             aria-label={language === 'en' ? 'Loading moments' : '正在加载动态'}
-            className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'space-y-2')}
+            className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'space-y-1.5')}
           >
             {[0, 1, 2].map((item) => (
-              <div key={item} className={cn(MOMENT_ROW_CLASS, 'px-3 py-4 sm:px-4')}>
+              <div key={item} className={cn(MOMENT_ROW_CLASS, 'px-3 py-3 sm:px-4')}>
                 <Skeleton className="w-10" />
                 <div className="grid gap-5 xl:grid-cols-2">
                   {[0, 1].map((column) => (
@@ -320,20 +320,20 @@ const Moments: React.FC = () => {
         )}
 
         {loadState === 'ready' && filtered.length > 0 && (
-          <div className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'space-y-8')}>
+          <div className={cn(EDITORIAL_CONTENT_FRAME_CLASS, 'space-y-5 sm:space-y-7')}>
             {yearGroups.map((group) => (
               <section {...dsRoot} key={group.year} aria-labelledby={`year-${group.year}`}>
-                <header className="mb-2 grid grid-cols-[3.5rem_minmax(0,1fr)] items-end gap-3 border-b border-ds-border pb-3 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-5">
+                <header className="mb-1.5 grid grid-cols-[3.25rem_minmax(0,1fr)] items-end gap-2 border-b border-ds-border pb-2.5 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
                   <h2
                     id={`year-${group.year}`}
-                    className="font-mono text-3xl font-bold leading-[0.9] tabular-nums tracking-[-0.075em] text-ds-fg sm:text-4xl lg:text-5xl"
+                    className="font-mono text-2xl font-semibold leading-none tabular-nums tracking-[-0.055em] text-ds-fg sm:text-3xl lg:text-4xl"
                   >
                     {group.year}
                   </h2>
                   <div aria-hidden />
                 </header>
 
-                <ol className="space-y-2">
+                <ol className="space-y-1.5 sm:space-y-2">
                   {group.dateGroups.map((dateGroup) => {
                     const isMultiEntryDay = dateGroup.items.length > 1;
                     const day = dateGroup.date
@@ -350,10 +350,10 @@ const Moments: React.FC = () => {
                         key={dateGroup.key}
                         className={MOMENT_ROW_CLASS}
                       >
-                        <div className="px-3 pt-4 sm:pl-4 sm:pr-0">
+                        <div className="px-3 pt-3.5 sm:pl-4 sm:pr-0">
                           <time
                             dateTime={dateGroup.key}
-                            className="block font-mono text-xl font-medium leading-none tabular-nums tracking-[-0.05em] text-ds-fg sm:text-2xl"
+                            className="block font-mono text-xl font-medium leading-none tabular-nums tracking-[-0.04em] text-ds-fg sm:text-2xl"
                           >
                             {day}
                           </time>
@@ -380,7 +380,7 @@ const Moments: React.FC = () => {
                                   else momentElements.current.delete(moment.id);
                                 }}
                                 className={cn(
-                                  'min-w-0 scroll-mt-24 px-3 py-4 sm:px-4',
+                                  'min-w-0 scroll-mt-24 px-3 py-3 sm:px-4 sm:py-3.5',
                                   index > 0 && 'border-t border-ds-border',
                                   isMultiEntryDay && index % 2 === 1 && 'xl:border-l xl:pl-5',
                                   isMultiEntryDay && index === 1 && 'xl:border-t-0',
@@ -400,7 +400,7 @@ const Moments: React.FC = () => {
                                       </span>
                                     )}
                                     <div className="flex items-start gap-2.5">
-                                      <h3 className="min-w-0 flex-1 text-balance text-ds-lg font-semibold leading-[1.25] tracking-[-0.02em] text-ds-fg transition-colors group-hover:text-ds-primary sm:text-ds-xl">
+                                      <h3 className="moment-feed-title line-clamp-2 min-w-0 flex-1 text-pretty text-ds-lg font-semibold leading-[1.28] tracking-[-0.018em] text-ds-fg transition-colors group-hover:text-ds-primary md:text-ds-xl">
                                         {moment.title}
                                       </h3>
                                       <ArrowUpRight className="mt-1 size-3.5 shrink-0 text-ds-fg-subtle opacity-0 transition-[opacity,transform,color] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ds-primary group-hover:opacity-100" aria-hidden />
@@ -409,8 +409,8 @@ const Moments: React.FC = () => {
                                     {excerpt && (
                                       <p
                                         className={cn(
-                                          'mt-2 text-pretty text-ds-sm leading-[1.55] text-ds-fg-muted sm:text-ds-base',
-                                          isMultiEntryDay ? 'line-clamp-3' : 'line-clamp-4',
+                                          'moment-feed-excerpt mt-1.5 line-clamp-3 text-pretty text-ds-sm leading-[1.5] text-ds-fg-muted md:text-ds-base',
+                                          isMultiEntryDay && 'xl:line-clamp-3',
                                         )}
                                       >
                                         {excerpt}
@@ -418,7 +418,7 @@ const Moments: React.FC = () => {
                                     )}
 
                                     {moment.tags?.length > 0 && (
-                                      <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
+                                      <div className="mt-2 hidden flex-wrap gap-x-3 gap-y-1 sm:flex">
                                         {moment.tags.map((tag) => (
                                           <span key={tag} className="font-mono text-ds-xs text-ds-fg-subtle">
                                             #{tag}
@@ -435,7 +435,7 @@ const Moments: React.FC = () => {
                                       labels={{
                                         title: copy.related,
                                       }}
-                                      className="mt-3"
+                                      className="mt-2.5"
                                     />
                                   )}
                                   <MomentActions

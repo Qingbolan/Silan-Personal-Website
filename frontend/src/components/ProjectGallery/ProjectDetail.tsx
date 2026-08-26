@@ -222,7 +222,7 @@ const ProjectLikerWall: React.FC<{
           || (liker.kind === 'visitor'
             ? (language === 'zh' ? `访客 ${liker.visitor_number || index + 1}` : `Visitor ${liker.visitor_number || index + 1}`)
             : (language === 'zh' ? '读者' : 'Reader'));
-        return (
+        const avatar = (
           <LikerAvatar
             key={`${liker.kind}-${liker.label || liker.visitor_number || index}`}
             name={name}
@@ -233,6 +233,16 @@ const ProjectLikerWall: React.FC<{
             className="rounded-[8px]"
           />
         );
+        return liker.actor_id ? (
+          <Link
+            key={liker.actor_id}
+            to={canonicalInternalPath(`/people/${encodeURIComponent(liker.actor_id)}`)}
+            aria-label={language === 'zh' ? `查看${name}的资料` : `View ${name}'s profile`}
+            className="rounded-[8px] transition-transform hover:-translate-y-0.5 focus-visible:shadow-ds-focus"
+          >
+            {avatar}
+          </Link>
+        ) : avatar;
       })}
     </div>
   );

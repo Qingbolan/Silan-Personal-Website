@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import LikePanel from './article-footer/LikePanel';
 import ArticleMeta, { type ShareTarget } from './article-footer/ArticleMeta';
@@ -12,8 +13,10 @@ import type {
   CommentDraft,
   CommentLoadState,
 } from './article-footer/types';
+import { canonicalInternalPath } from '../../utils/navigation';
 
 export interface ArticleLiker {
+  actor_id?: string;
   kind: 'user' | 'visitor' | string;
   country_code?: string;
   visitor_number?: string;
@@ -62,7 +65,7 @@ const LikerStrip: React.FC<{
           const name = liker.label || (liker.kind === 'visitor'
             ? `Visitor ${liker.visitor_number || index + 1}`
             : 'Reader');
-          return (
+          const avatar = (
             <LikerAvatar
               key={`${liker.kind}-${liker.label || liker.visitor_number || index}`}
               name={name}
@@ -73,6 +76,16 @@ const LikerStrip: React.FC<{
               className="rounded-[8px]"
             />
           );
+          return liker.actor_id ? (
+            <Link
+              key={liker.actor_id}
+              to={canonicalInternalPath(`/people/${encodeURIComponent(liker.actor_id)}`)}
+              aria-label={`View ${name}'s profile`}
+              className="rounded-[8px] transition-transform hover:-translate-y-0.5 focus-visible:shadow-ds-focus"
+            >
+              {avatar}
+            </Link>
+          ) : avatar;
         })}
       </div>
     </div>

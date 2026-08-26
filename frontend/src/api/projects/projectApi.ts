@@ -195,12 +195,14 @@ export const fetchProjectDetailById = async (
 
 export interface ProjectCommentData {
   id: string;
+  actor_id?: string;
   project_id: string;
   parent_id?: string;
   author_name: string;
   author_avatar_url?: string;
   auth_provider?: string;
   country_code?: string;
+  visitor_number?: string;
   content: string;
   type: string;
   created_at: string;
@@ -470,6 +472,7 @@ export interface ProjectMetricsResponse {
 }
 
 export interface ProjectLiker {
+  actor_id?: string;
   kind: 'user' | 'visitor' | string;
   country_code?: string;
   visitor_number?: string;
