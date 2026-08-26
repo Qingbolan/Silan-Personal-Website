@@ -121,6 +121,10 @@ import {
   preferredMarkdownLanguages,
 } from './app/content/markdownLanguage';
 import {
+  deploymentReadinessFor,
+  type DeploymentPlanState,
+} from './lib/deploymentReadiness';
+import {
   buildDashboardRankingItems,
   dashboardRankingLabels,
   dashboardRankingNoun,
@@ -313,7 +317,12 @@ const lifecycleButtonVariantFor = (tone: LifecycleAction['tone'] | SeriesLifecyc
 export default function App() {
   const [documents, setDocuments] = React.useState<EditorDocument[]>([]);
   const [dashboard, setDashboard] = React.useState<DashboardData | null>(null);
-  const [deploymentPlan, setDeploymentPlan] = React.useState<DeploymentPlan | null>(null);
+  const [deploymentPlanLoad, setDeploymentPlanLoad] = React.useState<{
+    state: DeploymentPlanState;
+    plan: DeploymentPlan | null;
+    error: string | null;
+  }>({ state: 'loading', plan: null, error: null });
+  const deploymentPlan = deploymentPlanLoad.plan;
   const [deliverySyncStatus, setDeliverySyncStatus] = React.useState<DeliverySyncStatus | null>(null);
   const [refreshingDeliveryStatus, setRefreshingDeliveryStatus] = React.useState(false);
   const [activityPage, setActivityPage] = React.useState<0 | 1>(0);
@@ -1067,9 +1076,16 @@ export default function App() {
   const remoteDeliveryCount = deliverySyncStatus?.remote_commits ?? 0;
   const attentionCount = localDeliveryCount + remoteDeliveryCount;
   const workspaceChangeCount = deliverySyncStatus?.workspace_changes ?? deploymentPlan?.dirty_count ?? 0;
-  const canDeployCommittedContent = localDeliveryCount > 0
-    && workspaceChangeCount === 0
-    && dirtyIds.size === 0;
+  const deploymentReadiness = deploymentReadinessFor({
+    localCommitCount: deliverySyncStatus ? localDeliveryCount : null,
+    remoteCommitCount: remoteDeliveryCount,
+    workspaceChangeCount,
+    unsavedDocumentCount: dirtyIds.size,
+    planState: deploymentPlanLoad.state,
+    planError: deploymentPlanLoad.error,
+    deploying: deployingContent,
+  });
+  const canDeployCommittedContent = deploymentReadiness.canDeploy;
   const visibleRecentItems = (dashboard?.recent_items || []).filter(
     (item) => !isArchivedResource(item),
   );
@@ -1206,10 +1222,12 @@ export default function App() {
   }, []);
 
   const loadDeploymentPlan = React.useCallback(async () => {
+    setDeploymentPlanLoad({ state: 'loading', plan: null, error: null });
     try {
-      setDeploymentPlan(await invoke<DeploymentPlan>('get_deployment_plan'));
+      const plan = await invoke<DeploymentPlan>('get_deployment_plan');
+      setDeploymentPlanLoad({ state: 'ready', plan, error: null });
     } catch (reason) {
-      setError(String(reason));
+      setDeploymentPlanLoad({ state: 'error', plan: null, error: String(reason) });
     }
   }, []);
 
@@ -3293,16 +3311,8 @@ export default function App() {
                 >
                   <span>Needs attention</span>
                   <strong>{attentionCount}</strong>
-                  <p className="attention-status" data-state={deliverySyncStatus?.state || 'loading'}>
-                    {!deliverySyncStatus
-                      ? 'Comparing local and deployed versions…'
-                      : workspaceChangeCount > 0
-                        ? `${workspaceChangeCount} uncommitted ${workspaceChangeCount === 1 ? 'change' : 'changes'} must be committed first`
-                        : localDeliveryCount > 0
-                          ? `${localDeliveryCount} committed ${localDeliveryCount === 1 ? 'moment' : 'moments'} ready to deploy`
-                          : remoteDeliveryCount > 0
-                            ? `${remoteDeliveryCount} ${remoteDeliveryCount === 1 ? 'moment exists' : 'moments exist'} on the deployed version`
-                            : 'Local and deployed content match'}
+                  <p className="attention-status" data-state={deploymentReadiness.state}>
+                    {deploymentReadiness.message}
                   </p>
                   {deliverySyncStatus && (
                     <div className="attention-version-pair" aria-label="Local and deployed content versions">
@@ -3316,24 +3326,84 @@ export default function App() {
                     <button
                       type="button"
                       className="attention-deploy"
-                      disabled={deployingContent || !deploymentPlan || !canDeployCommittedContent}
-                      onClick={() => setConfirmingDeploy(true)}
-                      title={workspaceChangeCount > 0 ? 'Commit workspace changes before deploying' : 'Deploy committed content to the production website'}
+                      disabled={!canDeployCommittedContent && deploymentReadiness.state !== 'check_failed'}
+                      onClick={() => {
+                        if (deploymentReadiness.state === 'check_failed') {
+                          void loadDeploymentPlan();
+                        } else if (canDeployCommittedContent) {
+                          setConfirmingDeploy(true);
+                        }
+                      }}
+                      title={deploymentReadiness.actionTitle}
                     >
-                      {deployingContent ? <LoaderCircle size={14} /> : <UploadCloud size={14} />}
-                      {deployingContent ? 'Deploying' : `Deploy ${localDeliveryCount}`}
+                      {deploymentReadiness.state === 'deploying' || deploymentReadiness.state === 'checking'
+                        ? <LoaderCircle size={14} />
+                        : deploymentReadiness.state === 'check_failed'
+                          ? <RotateCcw size={14} />
+                          : <UploadCloud size={14} />}
+                      {deploymentReadiness.state === 'deploying'
+                        ? 'Deploying'
+                        : deploymentReadiness.state === 'checking'
+                          ? 'Checking deployment'
+                          : deploymentReadiness.state === 'check_failed'
+                            ? 'Retry deploy check'
+                            : `Deploy ${localDeliveryCount}`}
                     </button>
                   </div>
                 )}
                 {deployVerification && (
-                  <div className="delivery-verification" data-verified={deployVerification.verified}>
-                    <CheckCircle2 size={14} />
-                    <span>
-                      {deployVerification.verified
-                        ? `Remote + SEO verified at ${deployVerification.remote.content_commit.slice(0, 12)}${deployedStaticRelease ? ` · release ${deployedStaticRelease}` : ''}`
-                        : deployVerification.mismatch_reason || 'Remote content differs from local content'}
-                    </span>
-                  </div>
+                  <details
+                    key={`${deployVerification.remote.content_commit}:${deployVerification.verified}`}
+                    className="delivery-verification"
+                    data-verified={deployVerification.verified}
+                    aria-live="polite"
+                  >
+                    <summary className="delivery-verification-summary" title="Toggle deployment details">
+                      <strong className="delivery-verification-code">
+                        {deployVerification.verified
+                          ? <CheckCircle2 size={13} aria-hidden="true" />
+                          : <AlertCircle size={13} aria-hidden="true" />}
+                        <span>{deployVerification.verified ? 'DEPLOY::OK' : 'DEPLOY::FAIL'}</span>
+                      </strong>
+                      <code className="delivery-verification-commit">
+                        {deployVerification.remote.content_commit.slice(0, 7)}
+                      </code>
+                      <span className="delivery-verification-target">
+                        {deployVerification.verified ? 'SEO' : 'MISMATCH'}
+                      </span>
+                      <ChevronDown className="delivery-verification-toggle" size={12} aria-hidden="true" />
+                    </summary>
+                    <dl className="delivery-verification-details">
+                      <div>
+                        <dt>remote</dt>
+                        <dd><code>{deployVerification.remote.content_commit}</code></dd>
+                      </div>
+                      {!deployVerification.verified && (
+                        <div>
+                          <dt>expected</dt>
+                          <dd><code>{deployVerification.expected_content_commit}</code></dd>
+                        </div>
+                      )}
+                      <div>
+                        <dt>release</dt>
+                        <dd>{deployedStaticRelease || (deployVerification.verified ? 'SEO verified' : 'unverified')}</dd>
+                      </div>
+                      <div>
+                        <dt>runtime</dt>
+                        <dd>{deployVerification.remote.health} · media {deployVerification.remote.media_root_ok ? 'ok' : 'failed'}</dd>
+                      </div>
+                      <div>
+                        <dt>generated</dt>
+                        <dd>{deployVerification.remote.generated_at}</dd>
+                      </div>
+                      {!deployVerification.verified && (
+                        <div data-tone="error">
+                          <dt>reason</dt>
+                          <dd>{deployVerification.mismatch_reason || 'Remote content differs from local content'}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </details>
                 )}
               </section>
 
