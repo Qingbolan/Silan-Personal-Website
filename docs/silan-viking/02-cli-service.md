@@ -275,7 +275,19 @@ silan site publish <uri>   set an Item's visibility to public (selective publica
 silan site deploy      Docker deploy (--dry-run on by default; --confirm to really deploy); deploys also carry crawler artefacts
 silan site rollback    roll back to the previous release
 silan site status      live-service health + the content commit that is currently deployed
+silan site recover [--from URL] [--to PATH]
+                       restore the checksum-bound public authored source of the live release;
+                       --from enables a new device with no local project configuration
 ```
+
+`site recover --from https://silan.tech` restores into `./content` by
+default. It reads `SILAN_STATS_SYNC_TOKEN` from the process or the target
+workspace's `.env`; an interactive terminal prompts securely when neither is
+available. The restored directory is a new Git repository containing
+`SCHEMA.md`, `resources/`, media and an empty `agent/` marker. Private
+`agent/` content and the original Git object graph are never stored on the
+public deployment server; the private content Git remote remains their
+authoritative new-device migration path.
 
 ### `silan stats <verb>` — content-interaction data queries (serves #15)
 

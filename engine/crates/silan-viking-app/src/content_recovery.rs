@@ -15,6 +15,7 @@ use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 use tar::Archive;
 use thiserror::Error;
+use url::{Host, Url};
 
 const AUTHOR_NAME: &str = "Silan.Hu";
 const AUTHOR_EMAIL: &str = "silan.hu@u.nus.edu";
@@ -88,9 +89,15 @@ pub struct ContentRecoveryResult {
 }
 
 pub struct ContentRecoveryClient {
-    content_root: PathBuf,
+    content_root: Option<PathBuf>,
     base_url: String,
     bearer_token: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RecoveryEndpointSource {
+    WorkspaceConfiguration,
+    DirectSiteArgument,
 }
 
 impl ContentRecoveryClient {
@@ -101,11 +108,25 @@ impl ContentRecoveryClient {
         let base_url = api_base_url(&content_root)
             .map_err(|error| ContentRecoveryError::Configuration(error.to_string()))?;
         let bearer_token = workspace_stats_sync_token(&content_root);
-        Ok(Self {
-            content_root,
+        Self::connect(
             base_url,
+            Some(content_root),
             bearer_token,
-        })
+            RecoveryEndpointSource::WorkspaceConfiguration,
+        )
+    }
+
+    /// Connect directly to a deployed site without relying on a local
+    /// `silan-viking.toml`. This is the new-device bootstrap path: the caller
+    /// supplies the public site address and then restores into an absent or
+    /// empty content directory.
+    pub fn from_site(site_url: impl AsRef<str>) -> Result<Self, ContentRecoveryError> {
+        Self::connect(
+            site_url.as_ref(),
+            None,
+            None,
+            RecoveryEndpointSource::DirectSiteArgument,
+        )
     }
 
     pub fn with_bearer_token(mut self, token: impl Into<String>) -> Self {
@@ -163,7 +184,88 @@ impl ContentRecoveryClient {
     }
 
     pub fn recover_default(&self) -> Result<ContentRecoveryResult, ContentRecoveryError> {
-        self.recover(&self.content_root)
+        let content_root = self.content_root.as_ref().ok_or_else(|| {
+            ContentRecoveryError::Destination(
+                "direct site recovery has no default destination; pass an explicit path".to_owned(),
+            )
+        })?;
+        self.recover(content_root)
+    }
+
+    fn connect(
+        base_url: impl AsRef<str>,
+        content_root: Option<PathBuf>,
+        bearer_token: Option<String>,
+        endpoint_source: RecoveryEndpointSource,
+    ) -> Result<Self, ContentRecoveryError> {
+        Ok(Self {
+            content_root,
+            base_url: normalize_site_url(base_url.as_ref(), endpoint_source)?,
+            bearer_token,
+        })
+    }
+}
+
+/// Canonicalize the site origin once at the client boundary. A bare hostname
+/// is intentionally accepted for the one-command bootstrap experience and is
+/// interpreted as HTTPS. Bearer credentials are never sent over plaintext
+/// HTTP except to a loopback development server.
+fn normalize_site_url(
+    value: &str,
+    endpoint_source: RecoveryEndpointSource,
+) -> Result<String, ContentRecoveryError> {
+    let value = value.trim();
+    if value.is_empty() {
+        return Err(ContentRecoveryError::Configuration(
+            "recovery site URL cannot be empty".to_owned(),
+        ));
+    }
+    let candidate = if value.contains("://") {
+        value.to_owned()
+    } else {
+        format!("https://{value}")
+    };
+    let mut parsed = Url::parse(&candidate)
+        .map_err(|error| ContentRecoveryError::Configuration(error.to_string()))?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err(ContentRecoveryError::Configuration(
+            "recovery site URL must use https".to_owned(),
+        ));
+    }
+    if parsed.host().is_none() {
+        return Err(ContentRecoveryError::Configuration(
+            "recovery site URL must include a host".to_owned(),
+        ));
+    }
+    if !parsed.username().is_empty() || parsed.password().is_some() {
+        return Err(ContentRecoveryError::Configuration(
+            "recovery site URL must not contain credentials".to_owned(),
+        ));
+    }
+    if parsed.query().is_some() || parsed.fragment().is_some() {
+        return Err(ContentRecoveryError::Configuration(
+            "recovery site URL must not contain a query or fragment".to_owned(),
+        ));
+    }
+    if parsed.scheme() == "http"
+        && endpoint_source == RecoveryEndpointSource::DirectSiteArgument
+        && !is_loopback_host(parsed.host())
+    {
+        return Err(ContentRecoveryError::Configuration(
+            "recovery credentials require https for non-loopback servers".to_owned(),
+        ));
+    }
+    parsed.set_query(None);
+    parsed.set_fragment(None);
+    Ok(parsed.to_string().trim_end_matches('/').to_owned())
+}
+
+fn is_loopback_host(host: Option<Host<&str>>) -> bool {
+    match host {
+        Some(Host::Domain(domain)) => domain.eq_ignore_ascii_case("localhost"),
+        Some(Host::Ipv4(address)) => address.is_loopback(),
+        Some(Host::Ipv6(address)) => address.is_loopback(),
+        None => false,
     }
 }
 
@@ -381,7 +483,9 @@ fn is_hex(value: &str, len: usize) -> bool {
 mod tests {
     use super::*;
     use std::io::Write;
+    use std::net::TcpListener;
     use std::process::Command;
+    use std::thread;
 
     fn git(root: &Path, args: &[&str]) {
         let status = Command::new("git")
@@ -434,6 +538,67 @@ mod tests {
             .collect::<Vec<_>>();
         assert!(paths.iter().any(|path| path == Path::new("SCHEMA.md")));
         assert!(!paths.iter().any(|path| path.starts_with("agent")));
+    }
+
+    #[test]
+    fn direct_site_client_normalizes_hostname_and_rejects_plaintext_remote() {
+        let client = ContentRecoveryClient::from_site("silan.tech").expect("site client");
+        assert_eq!(client.base_url, "https://silan.tech");
+        assert!(matches!(
+            ContentRecoveryClient::from_site("http://silan.tech"),
+            Err(ContentRecoveryError::Configuration(_))
+        ));
+        assert!(ContentRecoveryClient::from_site("http://127.0.0.1:5200").is_ok());
+    }
+
+    #[test]
+    fn direct_site_client_recovers_without_local_project_configuration() {
+        let (_root, source, deployed_commit) = source_fixture();
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind recovery server");
+        let address = listener.local_addr().expect("server address");
+        let response_source = source.clone();
+        let response_commit = deployed_commit.clone();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept recovery request");
+            let mut request = [0_u8; 4096];
+            let bytes_read = stream.read(&mut request).expect("read request");
+            let request = String::from_utf8_lossy(&request[..bytes_read]);
+            assert!(
+                request.starts_with("GET /api/v1/content/source HTTP/1.1"),
+                "{request}"
+            );
+            assert!(
+                request
+                    .to_ascii_lowercase()
+                    .contains("authorization: bearer recovery-secret"),
+                "{request}"
+            );
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nX-Silan-Content-Commit: {}\r\nX-Silan-Source-SHA256: {}\r\nConnection: close\r\n\r\n",
+                response_source.bytes().len(),
+                response_commit,
+                response_source.sha256(),
+            )
+            .expect("write response headers");
+            stream
+                .write_all(response_source.bytes())
+                .expect("write response body");
+        });
+
+        let destination_parent = tempfile::tempdir().expect("destination parent");
+        let destination = destination_parent.path().join("content");
+        let result = ContentRecoveryClient::from_site(format!("http://{address}"))
+            .expect("direct site client")
+            .with_bearer_token("recovery-secret")
+            .recover(&destination)
+            .expect("recover without project config");
+        server.join().expect("recovery server");
+
+        assert_eq!(result.deployed_commit, deployed_commit);
+        assert!(destination.join("SCHEMA.md").is_file());
+        assert!(destination.join("resources/blog/post/en.md").is_file());
+        assert!(destination.join("agent/.gitkeep").is_file());
     }
 
     #[test]

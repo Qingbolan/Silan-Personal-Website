@@ -25,3 +25,6 @@ serde_json        = { workspace = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "3", features = ["apple-native"] }
+
+[dev-dependencies]
+sha2 = { workspace = true }

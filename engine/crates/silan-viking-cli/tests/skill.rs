@@ -78,6 +78,7 @@ fn emit_renders_the_full_skill_package() {
     assert!(skill_md.contains("reader-review"));
     assert!(skill_md.contains("expert_pull"));
     assert!(skill_md.contains("markdown_structure"));
+    assert!(skill_md.contains("site recover --from https://silan.tech"));
     // The type list is interpolated from SCHEMA.
     assert!(skill_md.contains("blog / project / episode / resume / moment"));
 

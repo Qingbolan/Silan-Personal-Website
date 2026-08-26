@@ -1966,6 +1966,7 @@ dependencies = [
  "rpassword",
  "rusqlite",
  "serde_json",
+ "sha2",
  "silan-viking-app",
  "silan-viking-base",
  "silan-viking-mcp",

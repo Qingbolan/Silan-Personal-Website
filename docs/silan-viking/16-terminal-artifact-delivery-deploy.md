@@ -1,6 +1,6 @@
 # 16 · Unified content release and code delivery architecture
 
-> Decision owner: Silan.Hu · Status: settled · Revised: 2026-08-04
+> Decision owner: Silan.Hu · Status: settled · Revised: 2026-08-26
 
 ## 16.1 Decision
 
@@ -36,6 +36,8 @@ content/ Git revision
 | Production promotion | Go content-deploy service | Clients cannot write production tables or media over SSH. |
 | Static public output | Frontend publisher | Sitemap, robots, localized HTML, JSON-LD and `llms.txt` have one production owner. |
 | Runtime facts | PostgreSQL/runtime API | Comments, visits and authentication are not transported in content bundles. |
+| Public-source recovery | Versioned production release | A checksum-bound `SCHEMA.md` + `resources/` archive can rebuild a lost public authoring tree. |
+| Private authoring context | Private content Git remote | `agent/` and the original Git history never enter a production release. |
 | Local preview | Docker Compose | Preview state is disposable and never becomes a production fallback. |
 
 ## 16.3 Content release state machine
@@ -98,8 +100,30 @@ operation.
 - `silan site deploy --what=all --confirm`: install matching code artifacts,
   compile the frontend baseline, then finish through the content transaction.
 - `silan site preview --confirm`: disposable local Docker stack.
+- `silan site recover --from https://silan.tech --to ./content`: authenticated,
+  configuration-free recovery of the exact public authored source attached to
+  the live content release. The client verifies release provenance, archive
+  checksum and path safety before atomically activating a new Git repository.
 
-## 16.7 Removed architecture
+## 16.7 New-device and disaster recovery
+
+The complete private workspace moves between devices through the private
+content Git remote. Production recovery is a separate, deliberately narrower
+state machine for the case where no usable checkout or backup remains:
+
+```text
+authenticate -> download -> verify provenance -> stage -> validate -> initialize Git -> activate
+       \________________________ any failure ________________________/ -> destination unchanged
+```
+
+Every current-format content release archives the committed public source,
+not the mutable deployment worktree. The authenticated
+`GET /api/v1/content/source` response binds the archive to the deployed content
+commit and SHA-256 digest. The client accepts an absent or empty destination,
+rejects private/unsafe archive paths and leaves the destination unchanged until
+all validation and Git initialization succeeds.
+
+## 16.8 Removed architecture
 
 The following paths are intentionally obsolete and must not be reintroduced as
 fallbacks:

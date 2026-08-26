@@ -6,14 +6,15 @@ mod credentials;
 mod image_attribution;
 mod language_check;
 mod onboarding;
+mod recovery;
 mod scaffold;
 mod skill;
 
 use rusqlite::{params, Connection, OptionalExtension};
 use silan_viking_app::{
-    optimize_media_tree, stage_deploy_media_asset, ContentKind, ContentRecoveryClient,
-    ContentRelationshipEditor, CredentialProfile, DeliveryControl, Identified, ProposalId,
-    RelationshipTargetKind, ScannedAsset, Workspace,
+    optimize_media_tree, stage_deploy_media_asset, ContentKind, ContentRelationshipEditor,
+    CredentialProfile, DeliveryControl, Identified, ProposalId, RelationshipTargetKind,
+    ScannedAsset, Workspace,
 };
 use std::env;
 use std::fs;
@@ -110,7 +111,7 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
             "site build [--static-base <base>|--target nus] · site preview|check|status [--out PATH]",
             "site publish <uri> · site deploy [--dry-run|--confirm]",
             "site update-content [--dry-run|--confirm]",
-            "site rollback · site recover [--to PATH]",
+            "site rollback · site recover [--from URL] [--to PATH]",
             "site promote <live-db> <snapshot-db> <content-commit>",
         ],
         "stats" => &[
@@ -650,13 +651,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
             run_content_release(&opts.content_root, &opts.db_path, confirm)
         }
         ["site", "rollback"] => site_rollback(&opts.content_root, &opts.db_path),
-        ["site", "recover"] => site_recover(&opts.content_root, &opts.content_root),
-        ["site", "recover", "--to", destination] => {
-            site_recover(&opts.content_root, Path::new(destination))
-        }
-        ["site", "recover", flag] if flag.starts_with("--to=") => {
-            site_recover(&opts.content_root, Path::new(&flag["--to=".len()..]))
-        }
+        ["site", "recover", flags @ ..] => recovery::run(&opts.content_root, flags),
         // The first token names a known multi-verb command, but the rest
         // didn't match any arm — a bare or mistyped subcommand. List that
         // command's verbs rather than leaving the user with a blank error.
@@ -1022,7 +1017,10 @@ fn print_help(content_root: &Path) {
         d("site publish <uri> · site deploy [--dry-run|--confirm]")
     );
     println!("  {}", d("site update-content [--dry-run|--confirm]"));
-    println!("  {}", d("site rollback · site recover [--to PATH]"));
+    println!(
+        "  {}",
+        d("site rollback · site recover [--from URL] [--to PATH]")
+    );
     println!(
         "  {}",
         d("site promote <live-db> <snapshot-db> <content-commit>")
@@ -5424,23 +5422,6 @@ fn site_rollback(content_root: &Path, db_path: &Path) -> Result<(), String> {
         .rollback_content()
         .map_err(|error| error.to_string())?;
     println!("{}", status.stdout);
-    Ok(())
-}
-
-/// Restore the exact public authored source attached to the currently
-/// deployed content release. The destination must be absent or empty; the
-/// application service stages, validates, and atomically activates it.
-fn site_recover(expected_content_root: &Path, destination: &Path) -> Result<(), String> {
-    let result = ContentRecoveryClient::open(expected_content_root)
-        .map_err(|error| error.to_string())?
-        .recover(destination)
-        .map_err(|error| error.to_string())?;
-    println!("recovered deployed content {}", result.deployed_commit);
-    println!("  destination  {}", result.destination.display());
-    println!("  files        {}", result.files_restored);
-    println!("  source sha   {}", result.source_sha256);
-    println!("  local commit {}", result.local_commit);
-    println!("  next         configure a private Git remote and push this recovery commit");
     Ok(())
 }
 

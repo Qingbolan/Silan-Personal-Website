@@ -65,6 +65,127 @@ fn help_lists_every_command_group() {
 }
 
 #[test]
+fn site_recover_from_restores_a_new_device_without_project_configuration() {
+    use sha2::{Digest, Sha256};
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+
+    let temporary = std::env::temp_dir().join(format!(
+        "silan-cli-recover-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos()
+    ));
+    let deployed_source = temporary.join("deployed-source");
+    copy_tree(&fixture(), &deployed_source);
+    std::fs::write(deployed_source.join(".gitignore"), "*.db\n").expect("gitignore");
+    git(&deployed_source, &["init", "-q", "-b", "main"]);
+    git(&deployed_source, &["add", "-A"]);
+    git(
+        &deployed_source,
+        &[
+            "-c",
+            "user.name=Silan.Hu",
+            "-c",
+            "user.email=silan.hu@u.nus.edu",
+            "commit",
+            "-q",
+            "-m",
+            "deployed fixture",
+        ],
+    );
+    let deployed_commit = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(&deployed_source)
+        .output()
+        .expect("read deployed commit");
+    assert!(deployed_commit.status.success());
+    let deployed_commit = String::from_utf8(deployed_commit.stdout)
+        .expect("commit utf8")
+        .trim()
+        .to_owned();
+    let archive = Command::new("git")
+        .args([
+            "archive",
+            "--format=tar",
+            "HEAD",
+            "--",
+            ".gitignore",
+            "SCHEMA.md",
+            "resources",
+        ])
+        .current_dir(&deployed_source)
+        .output()
+        .expect("archive deployed source");
+    assert!(
+        archive.status.success(),
+        "{}",
+        String::from_utf8_lossy(&archive.stderr)
+    );
+    let source_sha = format!("{:x}", Sha256::digest(&archive.stdout));
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind recovery endpoint");
+    let address = listener.local_addr().expect("recovery endpoint address");
+    let response_commit = deployed_commit.clone();
+    let response_archive = archive.stdout;
+    let server = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept recovery request");
+        let mut request = [0_u8; 4096];
+        let read = stream.read(&mut request).expect("read recovery request");
+        let request = String::from_utf8_lossy(&request[..read]);
+        assert!(request.starts_with("GET /api/v1/content/source HTTP/1.1"));
+        assert!(request
+            .to_ascii_lowercase()
+            .contains("authorization: bearer new-device-secret"));
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nX-Silan-Content-Commit: {}\r\nX-Silan-Source-SHA256: {}\r\nConnection: close\r\n\r\n",
+            response_archive.len(),
+            response_commit,
+            source_sha,
+        )
+        .expect("write recovery headers");
+        stream
+            .write_all(&response_archive)
+            .expect("write recovery archive");
+    });
+
+    let destination = temporary.join("new-device/content");
+    let out = Command::new(bin())
+        .args([
+            "site",
+            "recover",
+            "--from",
+            &format!("http://{address}"),
+            "--to",
+            destination.to_str().expect("destination path"),
+        ])
+        .env("SILAN_STATS_SYNC_TOKEN", "new-device-secret")
+        .current_dir(&temporary)
+        .output()
+        .expect("run one-command recovery");
+    server.join().expect("recovery endpoint");
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains(&deployed_commit), "{stdout}");
+    assert!(destination.join("SCHEMA.md").is_file());
+    assert!(destination
+        .join("resources/blog/hello-world/item.toml")
+        .is_file());
+    assert!(destination.join("agent/.gitkeep").is_file());
+    assert!(!destination.join("agent/notes").exists());
+    assert!(destination.join(".git").is_dir());
+
+    std::fs::remove_dir_all(temporary).expect("remove recovery fixture");
+}
+
+#[test]
 fn content_ls_lists_fixture_items() {
     let (ok, stdout, _) = run(&[
         "--content",
