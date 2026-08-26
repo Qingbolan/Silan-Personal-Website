@@ -12,26 +12,47 @@ It keeps authoring local: Markdown remains the source of truth, SQLite remains
 a rebuildable read model, and the Rust engine owns validation, serialization,
 and synchronization.
 
-## Launch
+## Launch the compiled application
 
-Use the Rust CLI from the repository root so both workspace paths are passed
-to Tauri:
+Install a release bundle once, then use the CLI from any configured project:
 
 ```bash
-./engine/target/debug/silan-viking desktop
+packaging/release/dev-install-local.sh --desktop-only --user-apps
+silan desktop
 ```
 
-For an installed CLI:
+The historical `destop` spelling remains an alias:
 
 ```bash
-silan-viking desktop
-# `silan desktop` is the Python command-name shim for the same binary.
+silan destop
+```
+
+Both commands refresh the local SQLite projection and launch the compiled
+`Silan Context System.app`. The CLI injects the workspace paths and
+`SILAN_VIKING_BIN` so desktop delivery actions call the same reviewed engine
+binary that opened the app.
+
+## Development session
+
+The Tauri/Vite development server is explicit:
+
+```bash
+npm ci --prefix desktop
+silan desktop dev
 ```
 
 Do not run `npm run desktop` directly unless `SILAN_DESKTOP_CONTENT` and
-`SILAN_DESKTOP_DB` are already set. The CLI injects both paths and also passes
-`SILAN_VIKING_BIN` so desktop delivery actions call the same reviewed engine
-binary that opened the app.
+`SILAN_DESKTOP_DB` are already set.
+
+## Archived resources
+
+Archiving keeps source files intact and removes the resource from active
+shelves. The Settings → Archived resources view offers two explicit exits:
+restore the resource privately, or permanently delete it after typing its
+source coordinate (`slug`, or `series/slug` for an episode). Permanent deletion
+is accepted only for archived resources with a current source revision and no
+incoming content relations; the engine restores the source directory if the
+SQLite projection cannot be rebuilt.
 
 ## OpenAI connection
 

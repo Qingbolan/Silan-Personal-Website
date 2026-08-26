@@ -175,12 +175,14 @@ compare local and deployed content.
 From a full source checkout:
 
 ```sh
-./engine/target/debug/silan-viking desktop
+packaging/release/dev-install-local.sh --desktop-only --user-apps
+silan desktop
 ```
 
-The CLI injects the content and database paths expected by the Tauri app.
-Running `desktop/` directly is a development workflow and requires the
-corresponding environment variables.
+The default command launches the installed compiled application and injects
+the content and database paths expected by the Tauri app. Use
+`silan desktop dev` for the Tauri/Vite development session. Running
+`desktop/` directly requires the corresponding environment variables.
 
 ## Owner-Reviewed Agent Help
 

@@ -3,6 +3,7 @@
 mod banner;
 mod cover;
 mod credentials;
+mod desktop;
 mod image_attribution;
 mod language_check;
 mod onboarding;
@@ -26,6 +27,7 @@ use std::time::{Duration, Instant};
 /// The canonical `content/SCHEMA.md`, embedded so `silan init` writes a
 /// schema the engine can actually parse (it needs the fenced ```yaml``` block).
 const SCHEMA_TEMPLATE: &str = include_str!("../assets/SCHEMA.md");
+const BUILD_VERSION: &str = env!("SILAN_BUILD_VERSION");
 
 fn main() {
     if let Err(err) = run(env::args().skip(1).collect()) {
@@ -118,7 +120,7 @@ fn command_usage(command: &str) -> Option<&'static [&'static str]> {
             "stats sync <uri>",
             "stats show|visitors|crawlers|sources <uri>",
         ],
-        "desktop" | "destop" => &["desktop"],
+        "desktop" | "destop" => &["desktop", "desktop dev"],
         "onboard" | "setup" => &[
             "onboard [--flow quickstart|advanced]",
             "onboard --plan",
@@ -204,7 +206,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
         .iter()
         .any(|a| matches!(a.as_str(), "-V" | "--version" | "version"))
     {
-        println!("silan-viking {}", env!("CARGO_PKG_VERSION"));
+        println!("silan-viking {BUILD_VERSION}");
         return Ok(());
     }
 
@@ -286,7 +288,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
             }
         }
         ["desktop", flags @ ..] | ["destop", flags @ ..] => {
-            desktop_editor(&opts.content_root, &opts.db_path, flags)
+            desktop::run(&opts.content_root, &opts.db_path, flags)
         }
         ["completion", shell] => completion(shell),
         ["index", "sync"] => {
@@ -794,15 +796,6 @@ fn resolve_db_path(content_root: &Path) -> Option<PathBuf> {
     })
 }
 
-fn absolute_path(path: &Path) -> Result<PathBuf, String> {
-    if path.is_absolute() {
-        return Ok(path.to_path_buf());
-    }
-    Ok(env::current_dir()
-        .map_err(|error| error.to_string())?
-        .join(path))
-}
-
 /// Resolve the content root for the help/banner path. Mirrors the
 /// `--content` handling in `CliOptions::parse` so the banner's status
 /// block reflects the project the user is pointing at.
@@ -935,7 +928,10 @@ fn print_help(content_root: &Path) {
     row("guide", "Show the next recommended step for this project");
     row("doctor", "Health check — content, index, embedder");
     row("config", "Show resolved paths, or edit silan-viking.toml");
-    row("desktop", "Open the local Vditor content editor");
+    row(
+        "desktop",
+        "Launch the installed app (desktop dev: Tauri development)",
+    );
     row(
         "completion",
         "Emit a shell completion script (bash/zsh/fish)",
@@ -1034,7 +1030,7 @@ fn print_help(content_root: &Path) {
     println!("{}", h("Maintenance verbs:"));
     println!(
         "  {}",
-        d("desktop · config edit [--global] · completion bash|zsh|fish")
+        d("desktop · desktop dev · config edit [--global] · completion bash|zsh|fish")
     );
     println!("  {}", d("uninstall [--purge] [--dry-run|--yes]"));
     println!();
@@ -1043,7 +1039,7 @@ fn print_help(content_root: &Path) {
         "{}",
         d(&format!(
             "silan-viking {} · commands: silan · svk · silan-viking",
-            env!("CARGO_PKG_VERSION"),
+            BUILD_VERSION,
         )),
     );
 }
@@ -2579,71 +2575,6 @@ fn config_edit(content_root: &Path, global: bool) -> Result<(), String> {
     }
 }
 
-fn desktop_editor(content_root: &Path, db_path: &Path, args: &[&str]) -> Result<(), String> {
-    if let Some(flag) = args.first() {
-        return Err(format!(
-            "desktop: unknown argument `{flag}` · the Tauri desktop app takes no CLI flags"
-        ));
-    }
-
-    let content_root = fs::canonicalize(content_root).map_err(|error| {
-        format!(
-            "desktop: resolve content root {}: {error}",
-            content_root.display()
-        )
-    })?;
-    let db_path = absolute_path(db_path).map_err(|error| {
-        format!(
-            "desktop: resolve database path {}: {error}",
-            db_path.display()
-        )
-    })?;
-
-    let project_root = content_root.parent().unwrap_or(&content_root);
-    let desktop_dir = project_root.join("desktop");
-    let package_json = desktop_dir.join("package.json");
-    if !package_json.is_file() {
-        return Err(format!(
-            "desktop editor needs desktop/package.json under project root: {}",
-            package_json.display()
-        ));
-    }
-
-    let workspace = Workspace::open(&content_root)
-        .map_err(|error| format!("desktop: open content workspace: {error}"))?;
-    let sync = workspace
-        .sync(&db_path)
-        .map_err(|error| format!("desktop: refresh SQLite projection: {error}"))?;
-
-    println!("desktop editor: Silan Context System Tauri app");
-    println!("content root: {}", content_root.display());
-    println!("database: {}", db_path.display());
-    println!(
-        "projection: {} items · {}",
-        sync.items_scanned,
-        if sync.wrote { "refreshed" } else { "current" }
-    );
-    println!("desktop: {}", desktop_dir.display());
-    println!("press Ctrl-C to stop the desktop dev session");
-
-    let current_cli = env::current_exe()
-        .map_err(|error| format!("desktop: resolve current CLI executable: {error}"))?;
-    let status = Command::new("npm")
-        .current_dir(&desktop_dir)
-        .env("SILAN_DESKTOP_CONTENT", &content_root)
-        .env("SILAN_DESKTOP_DB", &db_path)
-        // DeliveryControl must invoke the same reviewed CLI that launched this
-        // Desktop session, not an unrelated older binary found on PATH.
-        .env("SILAN_VIKING_BIN", current_cli)
-        .args(["run", "desktop"])
-        .status()
-        .map_err(|e| format!("launch Tauri desktop app: {e}"))?;
-    if !status.success() {
-        return Err("Tauri desktop app exited with a non-zero status".to_string());
-    }
-    Ok(())
-}
-
 /// `silan completion <shell>` — emit a shell completion script (`02` §顶层
 ///命令). The surface is verb-stable, so a static script per shell suffices.
 fn completion(shell: &str) -> Result<(), String> {
@@ -2654,7 +2585,7 @@ fn completion(shell: &str) -> Result<(), String> {
                  #   eval \"$(silan completion bash)\"\n\
                  _silan() {{\n  \
                    local groups=\"blog project episode resume moment cover media content index \\\n    \
-                     relation site stats proposal mcp skill credentials init onboard setup config doctor completion\"\n  \
+                     relation site stats proposal mcp skill credentials init onboard setup config doctor desktop completion\"\n  \
                    COMPREPLY=( $(compgen -W \"$groups\" -- \"${{COMP_WORDS[COMP_CWORD]}}\") )\n\
                  }}\n\
                  complete -F _silan silan svk silan-viking"
@@ -2669,7 +2600,7 @@ fn completion(shell: &str) -> Result<(), String> {
                  _silan() {{\n  \
                    local -a groups\n  \
                    groups=(blog project episode resume moment cover media content index \\\n    \
-                     relation site stats proposal mcp skill credentials init onboard setup config doctor completion)\n  \
+                     relation site stats proposal mcp skill credentials init onboard setup config doctor desktop completion)\n  \
                    compadd -- $groups\n\
                  }}\n\
                  compdef _silan silan svk silan-viking"
@@ -2681,7 +2612,7 @@ fn completion(shell: &str) -> Result<(), String> {
                 "# silan fish completion — save to ~/.config/fish/completions/silan.fish\n\
                  complete -c silan -f -n __fish_use_subcommand -a \\\n  \
                  'blog project episode resume moment cover media content index relation site \\\n   \
-                 stats proposal mcp skill credentials init onboard setup config doctor completion'\n\
+                 stats proposal mcp skill credentials init onboard setup config doctor desktop completion'\n\
                  complete -c svk -w silan\n\
                  complete -c silan-viking -w silan"
             );

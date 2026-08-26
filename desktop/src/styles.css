@@ -1394,7 +1394,7 @@ textarea:focus-visible {
 }
 
 .sidebar-account-trigger:hover,
-.sidebar-account-trigger[aria-expanded='true'] {
+.sidebar-account-trigger:focus-visible {
   border-color: var(--workspace-sidebar-control-hover-border);
   background: var(--workspace-sidebar-control-hover);
   color: rgba(255, 255, 255, 0.94);
@@ -1456,43 +1456,8 @@ textarea:focus-visible {
 }
 
 .sidebar-account-trigger:hover .sidebar-account-settings,
-.sidebar-account-trigger[aria-expanded='true'] .sidebar-account-settings {
+.sidebar-account-trigger:focus-visible .sidebar-account-settings {
   color: rgba(255, 255, 255, 0.86);
-}
-
-.sidebar-account-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 7px);
-  left: 0;
-  z-index: 12;
-  padding: 5px;
-  border: 1px solid var(--workspace-sidebar-control-hover-border);
-  border-radius: 7px;
-  background: #202429;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
-}
-
-.sidebar-account-menu button {
-  display: grid;
-  width: 100%;
-  height: 36px;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 9px;
-  align-items: center;
-  border: 0;
-  border-radius: 4px;
-  padding: 0 9px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 11.5px;
-  text-align: left;
-}
-
-.sidebar-account-menu button:hover,
-.sidebar-account-menu button:focus-visible {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
 }
 
 .sidebar button:focus-visible,
@@ -7128,7 +7093,14 @@ h1 {
   font-size: 9px;
 }
 
-.workspace-archive-restore {
+.workspace-archive-actions {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.workspace-archive-restore,
+.workspace-archive-delete {
   display: inline-flex;
   gap: 6px;
   align-items: center;
@@ -7150,13 +7122,51 @@ h1 {
   color: var(--paper-solid);
 }
 
-.workspace-archive-restore:active:not(:disabled) {
+.workspace-archive-delete {
+  border-color: color-mix(in srgb, var(--color-error) 28%, var(--line));
+  color: var(--color-error);
+}
+
+.workspace-archive-delete:hover:not(:disabled) {
+  border-color: var(--color-error);
+  background: var(--color-error);
+  color: white;
+}
+
+.workspace-archive-restore:active:not(:disabled),
+.workspace-archive-delete:active:not(:disabled) {
   transform: translateY(1px);
 }
 
-.workspace-archive-restore:disabled {
+.workspace-archive-restore:disabled,
+.workspace-archive-delete:disabled {
   cursor: not-allowed;
   opacity: 0.48;
+}
+
+.workspace-archive-delete-confirmation {
+  display: grid;
+  gap: 7px;
+  margin-top: 20px;
+}
+
+.workspace-archive-delete-confirmation > span {
+  color: var(--color-textSecondary);
+  font-size: 11px;
+}
+
+.workspace-archive-delete-confirmation strong {
+  color: var(--color-textPrimary);
+  font-family: var(--font-mono);
+  font-weight: 650;
+}
+
+.workspace-archive-delete-error {
+  margin: 10px 0 0;
+  color: var(--color-error);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .workspace-archive-empty {
@@ -7256,9 +7266,14 @@ h1 {
     grid-template-columns: 32px minmax(0, 1fr);
   }
 
-  .workspace-archive-restore {
+  .workspace-archive-actions {
     grid-column: 1 / -1;
     width: 100%;
+  }
+
+  .workspace-archive-restore,
+  .workspace-archive-delete {
+    flex: 1;
   }
 }
 

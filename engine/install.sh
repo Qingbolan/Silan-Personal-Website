@@ -9,7 +9,7 @@
 # the project's GitHub Releases, and installs it to ~/.local/bin. If no prebuilt
 # binary exists for your platform (or no release is published yet), it falls
 # back to building from source with `cargo install` — which needs the Rust
-# toolchain (https://rustup.rs).
+# toolchain (https://rustup.rs) and TideMark.
 #
 # Env overrides:
 #   SILAN_INSTALL_DIR   install location          (default: ~/.local/bin)
@@ -63,6 +63,8 @@ install_from_source() {
   say "no prebuilt binary available — building from source with cargo."
   have cargo || die "cargo (the Rust toolchain) is required for the source \
 build. Install it from https://rustup.rs and re-run."
+  have tide || die "tide is required for a source build. Install TideMark \
+from https://github.com/Qingbolan/TideMark and re-run."
   # `cargo install` puts the binary in ~/.cargo/bin; honor the requested dir
   # by installing there directly with --root (it appends /bin).
   cargo install \

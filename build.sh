@@ -14,6 +14,8 @@ NC='\033[0m' # No Color
 
 # Project directories
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_VERSION="$("$PROJECT_ROOT/scripts/tide-version.sh")"
+export SILAN_BUILD_VERSION="$PROJECT_VERSION"
 FRONTEND_DIR="$PROJECT_ROOT/frontend"
 BACKEND_GO_DIR="$PROJECT_ROOT/backend"
 PYTHON_PKG_DIR="$PROJECT_ROOT/silan-personal-website"
@@ -252,16 +254,9 @@ npm run dev
 For more information, visit: https://github.com/Qingbolan/Silan-Personal-Website
 EOF
 
-    # Create version info
-    python3 -c "
-import sys
-sys.path.insert(0, '$PYTHON_PKG_DIR')
-try:
-    from silan.version import __version__
-    print(f'v{__version__}')
-except:
-    print('v1.0.1')
-" > "$DIST_DIR/VERSION"
+    # TideMark is the project build-version truth. Package-manifest versions
+    # describe compatibility/release anchors and are not independent clocks.
+    printf 'v%s\n' "$PROJECT_VERSION" > "$DIST_DIR/VERSION"
 
     print_success "Distribution directory created: $DIST_DIR"
 }

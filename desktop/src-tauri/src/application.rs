@@ -19,9 +19,10 @@ use silan_viking_app::{
     api_base_url, workspace_stats_sync_token, ArticleImageAttributionPlan,
     ArticleImageAttributionResult, ArticleImageAttributionWorkspace, ContentCreator, ContentEditor,
     ContentKind, ContentRelationshipEditor, CoverBrief, CoverGenerationInput, CoverWorkspace,
-    CreateTranslationInput, DeepSeekApiKey, DeepSeekCommitMessageGenerator, DeliveryControl,
-    EditableDocument, EditablePart, EditableSection, GeoAdvisor, IdeaCategory, ImageOutputFormat,
-    ImageQuality, ImageSize, LanguageAuditReport, LanguageAuditScope, LanguageAuditWorkflow,
+    CreateTranslationInput, DeepSeekApiKey, DeepSeekCommitMessageGenerator,
+    DeleteArchivedResourceInput, DeletedArchivedResource, DeliveryControl, EditableDocument,
+    EditablePart, EditableSection, GeoAdvisor, IdeaCategory, ImageOutputFormat, ImageQuality,
+    ImageSize, LanguageAuditReport, LanguageAuditScope, LanguageAuditWorkflow,
     MarkdownSelectionEditAction, MarkdownSelectionEditRequest, MarkdownTranslationRequest,
     MarkdownTranslationSyncRequest, MediaAssetRef, MediaLibrary, OpenAiApiKey,
     OpenAiMarkdownTranslator, RelationshipTargetKind, ReleaseScope, ResumeProfileUpdate,
@@ -1115,29 +1116,22 @@ impl DesktopWorkspace {
             .ok_or_else(|| format!("saved translation `{translation_id}` was not returned"))
     }
 
-    pub(crate) fn save_content_metadata(
+    pub(crate) fn delete_archived_resource(
         &self,
         translation_id: &str,
-        metadata: ContentMetadataInput,
         expected_revision: &str,
-    ) -> Result<EditorDocument, String> {
-        if metadata.title.trim().is_empty() {
-            return Err("Content title is required.".to_owned());
-        }
-        let input = save_metadata_input(translation_id, metadata, expected_revision);
-        let saved = self
-            .workspace_content
-            .save_metadata(&input, &self.db_path)
-            .map_err(|error| error.to_string())?;
-        let engagement = ContentEngagementSnapshot::read(&self.db_path);
-        map_editable_document(saved, &engagement)
-            .into_iter()
-            .find(|part| {
-                part.translations
-                    .iter()
-                    .any(|value| value.id == translation_id)
-            })
-            .ok_or_else(|| format!("saved metadata `{translation_id}` was not returned"))
+        confirmation: &str,
+    ) -> Result<DeletedArchivedResource, String> {
+        self.workspace_content
+            .delete_archived_resource(
+                &DeleteArchivedResourceInput {
+                    translation_id: translation_id.to_owned(),
+                    expected_revision: expected_revision.to_owned(),
+                    confirmation: confirmation.to_owned(),
+                },
+                &self.db_path,
+            )
+            .map_err(|error| error.to_string())
     }
 
     pub(crate) fn save_content_settings(

@@ -2219,6 +2219,43 @@ export default function App() {
     await saveGroupState(group, restoreAction.nextState);
   };
 
+  const deleteArchivedResource = async (group: ContentGroup, confirmation: string) => {
+    const { translation } = stateTargetForGroup(group);
+    if (!translation) {
+      const reason = `No source revision found for ${group.title}`;
+      setError(reason);
+      throw new Error(reason);
+    }
+    if (dirtyIds.has(translation.id)) {
+      const reason = 'Save or discard pending Markdown edits before permanently deleting this resource.';
+      setError(reason);
+      throw new Error(reason);
+    }
+
+    setStateSavingId(group.id);
+    setError(null);
+    try {
+      await invoke('delete_archived_resource', {
+        id: translation.id,
+        expectedRevision: translation.revision,
+        confirmation,
+      });
+      const entityId = group.documents[0]?.entity_id;
+      setDocuments((current) => current.filter((document) => !(
+        document.entity_type === group.kind && document.entity_id === entityId
+      )));
+      if (selected?.entity_type === group.kind && selected.entity_id === entityId) {
+        setContentEditorOpen(false);
+        setSelectedId('');
+      }
+    } catch (reason) {
+      setError(String(reason));
+      throw reason;
+    } finally {
+      setStateSavingId('');
+    }
+  };
+
   const saveSeriesState = async (series: EpisodeSeries, state: DocumentStateInput) => {
     const targets = series.episodes.map((episode) => ({
       episode,
@@ -3131,6 +3168,7 @@ export default function App() {
             preferences={workspacePreferences}
             onPreferencesChange={applyWorkspacePreferences}
             onRestoreResource={restoreArchivedResource}
+            onDeleteResource={deleteArchivedResource}
           />
         ) : screen === 'dashboard' ? (
           <section className="dashboard-area">

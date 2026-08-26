@@ -5,12 +5,14 @@
 //! rows or database schema details.
 
 use crate::parser::{EntryValue, Parsed};
-use crate::{ContentEditor, EditorError, TranslationLocator, Workspace};
+use crate::{source_lock, ContentEditor, EditorError, TranslationLocator, Workspace};
 use serde::{Deserialize, Serialize};
 use silan_viking_base::HasMeta;
 use silan_viking_content::{ContentKind, PartShape};
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -29,6 +31,22 @@ pub enum WorkspaceContentError {
     InvalidTranslationId(String),
     #[error("invalid content metadata: {0}")]
     InvalidMetadata(String),
+    #[error("resource `{0}` must be archived before it can be permanently deleted")]
+    DeleteRequiresArchive(String),
+    #[error("permanent deletion confirmation must exactly match `{0}`")]
+    DeleteConfirmation(String),
+    #[error("resource `{resource}` has incoming relations:\n{relations}")]
+    DeleteHasIncomingRelations { resource: String, relations: String },
+    #[error("cannot permanently delete `{path}`: {detail}")]
+    Delete { path: String, detail: String },
+    #[error("content projection failed after deleting `{path}`; source was restored: {detail}")]
+    DeleteProjection { path: String, detail: String },
+    #[error("content projection failed after deleting `{path}` ({projection}); source rollback also failed ({rollback})")]
+    DeleteRollback {
+        path: String,
+        projection: String,
+        rollback: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -166,6 +184,27 @@ pub struct SaveProjectFeaturedInput {
     pub translation_id: String,
     pub is_featured: bool,
     pub expected_revision: String,
+}
+
+/// Explicit, concurrency-safe request to erase one archived resource.
+///
+/// The confirmation is a human-entered source coordinate (`slug`, or
+/// `series/slug` for an episode). Keeping it inside the application contract
+/// prevents presentation adapters from bypassing the destructive-action
+/// guard.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct DeleteArchivedResourceInput {
+    pub translation_id: String,
+    pub expected_revision: String,
+    pub confirmation: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DeletedArchivedResource {
+    pub document_id: String,
+    pub content_type: String,
+    pub slug: String,
+    pub confirmation: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -652,6 +691,120 @@ impl WorkspaceContent {
         WorkspaceContent::open(&self.content_root)?.editable_document(&document.id)
     }
 
+    /// Permanently remove one archived source resource and refresh its
+    /// projection as one recoverable transaction.
+    ///
+    /// The source directory is first moved out of `resources/`, then the
+    /// projection is rebuilt. A projection failure moves the exact directory
+    /// back before returning. Incoming relations are rejected so deletion
+    /// cannot silently leave dangling authored links.
+    pub fn delete_archived_resource(
+        &self,
+        input: &DeleteArchivedResourceInput,
+        db_path: impl AsRef<Path>,
+    ) -> Result<DeletedArchivedResource, WorkspaceContentError> {
+        let (document, _, translation) = self.translation(&input.translation_id)?;
+        if !document.status.trim().eq_ignore_ascii_case("archived") {
+            return Err(WorkspaceContentError::DeleteRequiresArchive(
+                document.slug.clone(),
+            ));
+        }
+
+        let confirmation = deletion_confirmation(&document)?;
+        if input.confirmation.trim() != confirmation {
+            return Err(WorkspaceContentError::DeleteConfirmation(confirmation));
+        }
+        if translation.source_revision.0 != input.expected_revision {
+            return Err(WorkspaceContentError::Edit(EditorError::RevisionConflict {
+                path: translation.source_path,
+            }));
+        }
+
+        let kind = deletable_kind(&document)?;
+        let target_uri = format!("silan://resources/{}/{}", kind.dir_name(), document.slug);
+        let mut incoming = Vec::new();
+        for candidate in self.editable_documents()? {
+            if candidate.id == document.id {
+                continue;
+            }
+            let source_directory = ContentKind::from_frontmatter_value(&candidate.content_type)
+                .map(|value| value.dir_name())
+                .unwrap_or(candidate.content_type.as_str());
+            for relation in candidate
+                .relations
+                .iter()
+                .filter(|relation| relation.target_uri == target_uri)
+            {
+                incoming.push(format!(
+                    "  silan://resources/{}/{} --{}--> {target_uri}",
+                    source_directory, candidate.slug, relation.relation_type,
+                ));
+            }
+        }
+        if !incoming.is_empty() {
+            return Err(WorkspaceContentError::DeleteHasIncomingRelations {
+                resource: confirmation,
+                relations: incoming.join("\n"),
+            });
+        }
+
+        let source_path = resource_source_path(&self.content_root, kind, &document)?;
+        let relative_path = source_path
+            .strip_prefix(&self.content_root)
+            .unwrap_or(&source_path)
+            .to_string_lossy()
+            .replace('\\', "/");
+        let _save_guard =
+            source_lock::acquire().map_err(|detail| WorkspaceContentError::Delete {
+                path: relative_path.clone(),
+                detail,
+            })?;
+        if !source_path.is_dir() {
+            return Err(WorkspaceContentError::NotFound(document.id));
+        }
+
+        let transaction_root = self.content_root.join(".viking/transactions");
+        fs::create_dir_all(&transaction_root).map_err(|error| WorkspaceContentError::Delete {
+            path: relative_path.clone(),
+            detail: format!("create deletion transaction: {error}"),
+        })?;
+        let staged_path = transaction_root.join(deletion_transaction_name(&document.id));
+        fs::rename(&source_path, &staged_path).map_err(|error| WorkspaceContentError::Delete {
+            path: relative_path.clone(),
+            detail: format!("stage source directory: {error}"),
+        })?;
+
+        if let Err(error) = self.workspace.sync(db_path.as_ref()) {
+            let projection = error.to_string();
+            if let Err(rollback) = fs::rename(&staged_path, &source_path) {
+                return Err(WorkspaceContentError::DeleteRollback {
+                    path: relative_path,
+                    projection,
+                    rollback: rollback.to_string(),
+                });
+            }
+            return Err(WorkspaceContentError::DeleteProjection {
+                path: relative_path,
+                detail: projection,
+            });
+        }
+
+        fs::remove_dir_all(&staged_path).map_err(|error| WorkspaceContentError::Delete {
+            path: relative_path,
+            detail: format!(
+                "source was removed from the workspace, but transaction cleanup failed at {}: {error}",
+                staged_path.display()
+            ),
+        })?;
+
+        Ok(DeletedArchivedResource {
+            document_id: document.id,
+            content_type: document.content_type,
+            slug: document.slug,
+            confirmation,
+        })
+    }
+
     pub fn content_root(&self) -> &Path {
         &self.content_root
     }
@@ -659,6 +812,60 @@ impl WorkspaceContent {
     pub fn editor(&self) -> &ContentEditor {
         &self.editor
     }
+}
+
+fn deletable_kind(document: &EditableDocument) -> Result<ContentKind, WorkspaceContentError> {
+    let kind = ContentKind::from_frontmatter_value(&document.content_type)
+        .map_err(|_| WorkspaceContentError::NotFound(document.id.clone()))?;
+    if matches!(
+        kind,
+        ContentKind::Blog | ContentKind::Episode | ContentKind::Project
+    ) {
+        Ok(kind)
+    } else {
+        Err(WorkspaceContentError::InvalidMetadata(format!(
+            "permanent deletion is not supported for `{}`",
+            document.content_type
+        )))
+    }
+}
+
+fn deletion_confirmation(document: &EditableDocument) -> Result<String, WorkspaceContentError> {
+    let kind = deletable_kind(document)?;
+    if kind == ContentKind::Episode {
+        let series = document
+            .series_slug
+            .as_deref()
+            .ok_or_else(|| WorkspaceContentError::NotFound(document.id.clone()))?;
+        Ok(format!("{series}/{}", document.slug))
+    } else {
+        Ok(document.slug.clone())
+    }
+}
+
+fn resource_source_path(
+    content_root: &Path,
+    kind: ContentKind,
+    document: &EditableDocument,
+) -> Result<PathBuf, WorkspaceContentError> {
+    let mut path = content_root.join("resources").join(kind.dir_name());
+    if kind == ContentKind::Episode {
+        path.push(
+            document
+                .series_slug
+                .as_deref()
+                .ok_or_else(|| WorkspaceContentError::NotFound(document.id.clone()))?,
+        );
+    }
+    Ok(path.join(&document.slug))
+}
+
+fn deletion_transaction_name(document_id: &str) -> String {
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or_default();
+    format!("delete-{document_id}-{}-{timestamp}", std::process::id())
 }
 
 pub fn translation_id(part_id: &str, language: &str) -> String {

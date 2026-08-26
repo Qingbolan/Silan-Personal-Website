@@ -77,6 +77,13 @@ npm --prefix desktop run build
 npm --prefix desktop run build:desktop -- --debug --bundles app --ci --no-sign
 ```
 
+The installed CLI keeps compiled and development lifecycles separate:
+
+```sh
+silan desktop       # launch an installed compiled app bundle
+silan desktop dev   # run the Tauri/Vite development session
+```
+
 The macOS debug bundle is written to:
 
 ```text

@@ -156,10 +156,11 @@ pub use website_insights::{
 };
 pub use workspace::{LintIssue, ScanError, ScannedAsset, Workspace};
 pub use workspace_content::{
-    ArticleAttribution, ArticleResource, CreateTranslationInput, EditableDocument, EditableEntry,
-    EditablePart, EditableSection, EditableTranslation, EditableWorkspace, SaveLifecycleInput,
-    SaveMetadataInput, SaveProjectFeaturedInput, SaveTranslationInput, SourceRevision,
-    WorkspaceContent, WorkspaceContentError, WorkspaceEntityCount,
+    ArticleAttribution, ArticleResource, CreateTranslationInput, DeleteArchivedResourceInput,
+    DeletedArchivedResource, EditableDocument, EditableEntry, EditablePart, EditableSection,
+    EditableTranslation, EditableWorkspace, SaveLifecycleInput, SaveMetadataInput,
+    SaveProjectFeaturedInput, SaveTranslationInput, SourceRevision, WorkspaceContent,
+    WorkspaceContentError, WorkspaceEntityCount,
 };
 pub use workspace_join::{
     DeploymentKeyRequirement, GitAuthenticationKind, GitRepositoryState, GitRepositoryStatus,

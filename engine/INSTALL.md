@@ -6,6 +6,21 @@ workspace.
 compatibility. All three names execute the same binary.
 (Engine developers: use `engine/install-dev.sh` to build from a checkout.)
 
+## Install the current source checkout
+
+From the repository root, the canonical engine-only developer install is:
+
+```sh
+./engine/install-dev.sh
+```
+
+It resolves the repository build coordinate with `tide mark`, runs the Rust
+engine workspace test suite, builds the locked release profile, verifies and atomically
+activates the binary, and records the Tide coordinate, source revision, and
+binary SHA-256 in `~/.local/state/silan-viking/install-receipt`. Use
+`--skip-tests` only for an explicit fast local iteration; a completed change
+must run the default checked path.
+
 ## One-line install
 
 ```sh
@@ -21,7 +36,8 @@ This:
 
 If no prebuilt binary exists for your platform (or no release is published
 yet), the script **falls back to building from source** with `cargo` — that
-path needs the Rust toolchain ([rustup.rs](https://rustup.rs)).
+path needs the Rust toolchain ([rustup.rs](https://rustup.rs)) and TideMark so
+the source build receives the same Git-native version coordinate.
 
 ### Options
 

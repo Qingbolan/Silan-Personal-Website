@@ -22,7 +22,7 @@ port          = 7700
 enable_deploy = false
 
 [desktop]
-default_language = "en"
+default_language = "zh"
 
 [desktop.moments]
 profile_alignment = "right"

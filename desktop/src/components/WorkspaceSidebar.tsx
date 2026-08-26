@@ -1,4 +1,3 @@
-import React from 'react';
 import type { EntityFilter } from '../types';
 
 type SidebarGlyphName =
@@ -125,50 +124,6 @@ export function WorkspaceSidebar({
   onItemOpen,
   onSettingsOpen,
 }: WorkspaceSidebarProps) {
-  const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
-  const accountMenuRef = React.useRef<HTMLDivElement | null>(null);
-  const accountTriggerRef = React.useRef<HTMLButtonElement | null>(null);
-  const settingsItemRef = React.useRef<HTMLButtonElement | null>(null);
-
-  const closeAccountMenu = React.useCallback((restoreFocus = false) => {
-    setAccountMenuOpen(false);
-    if (restoreFocus) window.requestAnimationFrame(() => accountTriggerRef.current?.focus());
-  }, []);
-
-  React.useEffect(() => {
-    if (!open) closeAccountMenu();
-  }, [closeAccountMenu, open]);
-
-  React.useEffect(() => {
-    if (!accountMenuOpen) return undefined;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!accountMenuRef.current?.contains(event.target as Node)) {
-        closeAccountMenu();
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeAccountMenu(true);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [accountMenuOpen, closeAccountMenu]);
-
-  const toggleAccountMenu = (focusFirstItem: boolean) => {
-    setAccountMenuOpen((current) => {
-      const next = !current;
-      if (next && focusFirstItem) {
-        window.requestAnimationFrame(() => settingsItemRef.current?.focus());
-      }
-      return next;
-    });
-  };
-
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`} aria-label="Workspace sidebar">
       <nav className="entity-nav" aria-label="Workspace navigation">
@@ -204,37 +159,13 @@ export function WorkspaceSidebar({
       </nav>
 
       <footer className="sidebar-footer">
-        <div className="sidebar-account" ref={accountMenuRef}>
-          {accountMenuOpen && (
-            <div
-              id="workspace-account-menu"
-              className="sidebar-account-menu"
-              role="menu"
-              aria-label="Workspace account"
-            >
-              <button
-                ref={settingsItemRef}
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  closeAccountMenu();
-                  onSettingsOpen();
-                }}
-              >
-                <SidebarGlyph name="settings" size={16} />
-                <span>Workspace settings</span>
-              </button>
-            </div>
-          )}
+        <div className="sidebar-account">
           <button
-            ref={accountTriggerRef}
             type="button"
             className="sidebar-account-trigger"
-            onClick={(event) => toggleAccountMenu(event.detail === 0)}
-            aria-haspopup="menu"
-            aria-controls="workspace-account-menu"
-            aria-expanded={accountMenuOpen}
-            title="Workspace account"
+            onClick={onSettingsOpen}
+            title="Open workspace settings"
+            aria-label="Open workspace settings"
           >
             <span className="sidebar-account-avatar" data-empty={!avatarUrl}>
               {avatarUrl

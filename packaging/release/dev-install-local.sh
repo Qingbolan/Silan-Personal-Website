@@ -37,6 +37,9 @@ if [ -d "$HOME/.nvm/versions/node" ]; then
 fi
 export PATH="${nvm_bin:+$nvm_bin:}$HOME/.cargo/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
+project_version="$("$repo_root/scripts/tide-version.sh")"
+export SILAN_BUILD_VERSION="$project_version"
+
 profile="release"
 install_enabled=1
 build_cli=1
@@ -137,9 +140,9 @@ if [ "$build_desktop" -eq 1 ]; then
     (
         cd "$desktop_root"
         if [ "$profile" = "release" ]; then
-            npm run build:desktop
+            npm run build:desktop -- --config "{\"version\":\"$project_version\"}"
         else
-            npm run build:desktop -- --debug
+            npm run build:desktop -- --debug --config "{\"version\":\"$project_version\"}"
         fi
     )
     [ -d "$desktop_app" ] || die "Desktop bundle missing: $desktop_app"
@@ -199,6 +202,7 @@ fi
 
 echo
 echo "  ✓ Local SDK, CLI, and Desktop deployment complete."
+echo "    Tide:    $project_version"
 if [ "$build_cli" -eq 1 ]; then
     for command_name in silan svk silan-viking; do
         [ -x "$install_bin/$command_name" ] \

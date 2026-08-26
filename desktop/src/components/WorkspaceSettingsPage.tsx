@@ -19,6 +19,14 @@ import {
 } from 'lucide-react';
 import { selectPrimaryDocument } from '../lib/content';
 import { Button } from './ds/Button';
+import {
+  Dialog,
+  DialogActions,
+  DialogCard,
+  DialogDescription,
+  DialogTitle,
+} from './ds/Dialog';
+import { Input } from './ds/Input';
 import { contentLifecycleFor, contentStateSummary } from '../lib/contentLifecycle';
 import { formatShortDate } from '../lib/format';
 import { toWebviewMediaUrl } from '../lib/media';
@@ -34,6 +42,7 @@ type WorkspaceSettingsPageProps = {
   preferences: WorkspacePreferences | null;
   onPreferencesChange: (preferences: WorkspacePreferences) => void;
   onRestoreResource: (resource: ContentGroup) => Promise<void>;
+  onDeleteResource: (resource: ContentGroup, confirmation: string) => Promise<void>;
 };
 
 const archiveKindMeta = {
@@ -410,12 +419,17 @@ function ArchivedResourceSettings({
   resources,
   restoringResourceId,
   onRestoreResource,
+  onDeleteResource,
 }: {
   resources: ContentGroup[];
   restoringResourceId: string;
   onRestoreResource: (resource: ContentGroup) => Promise<void>;
+  onDeleteResource: (resource: ContentGroup, confirmation: string) => Promise<void>;
 }) {
   const [query, setQuery] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<ContentGroup | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const normalizedQuery = query.trim().toLowerCase();
   const visibleResources = useMemo(() => resources.filter((resource) => {
     if (!normalizedQuery) return true;
@@ -431,6 +445,30 @@ function ArchivedResourceSettings({
   const articleCount = resources.filter((resource) => resource.kind === 'blog').length;
   const episodeCount = resources.filter((resource) => resource.kind === 'episode').length;
   const projectCount = resources.filter((resource) => resource.kind === 'project').length;
+  const deleteCoordinate = deleteTarget
+    ? deleteTarget.kind === 'episode'
+      ? `${selectPrimaryDocument(deleteTarget)?.series_slug || 'series'}/${deleteTarget.slug}`
+      : deleteTarget.slug
+    : '';
+  const deleting = Boolean(deleteTarget && restoringResourceId === deleteTarget.id);
+
+  const closeDeleteDialog = () => {
+    if (deleting) return;
+    setDeleteTarget(null);
+    setDeleteConfirmation('');
+    setDeleteError('');
+  };
+
+  const confirmPermanentDeletion = async () => {
+    if (!deleteTarget || deleteConfirmation.trim() !== deleteCoordinate || deleting) return;
+    setDeleteError('');
+    try {
+      await onDeleteResource(deleteTarget, deleteConfirmation.trim());
+      closeDeleteDialog();
+    } catch (reason) {
+      setDeleteError(String(reason));
+    }
+  };
 
   return (
     <section
@@ -487,18 +525,34 @@ function ArchivedResourceSettings({
                 <strong>{resource.title}</strong>
                 <p>{context} · archived {formatShortDate(primary?.updated_at || '')}</p>
               </div>
-              <button
-                type="button"
-                className="workspace-archive-restore"
-                disabled={Boolean(restoringResourceId)}
-                title={restoreAction?.description || 'Restore this resource privately'}
-                onClick={() => void onRestoreResource(resource)}
-              >
-                {restoring
-                  ? <LoaderCircle size={14} className="spin" />
-                  : <RotateCcw size={14} />}
-                {restoring ? 'Restoring' : restoreAction?.label || 'Restore'}
-              </button>
+              <div className="workspace-archive-actions">
+                <button
+                  type="button"
+                  className="workspace-archive-restore"
+                  disabled={Boolean(restoringResourceId)}
+                  title={restoreAction?.description || 'Restore this resource privately'}
+                  onClick={() => void onRestoreResource(resource)}
+                >
+                  {restoring
+                    ? <LoaderCircle size={14} className="spin" />
+                    : <RotateCcw size={14} />}
+                  {restoring ? 'Restoring' : restoreAction?.label || 'Restore'}
+                </button>
+                <button
+                  type="button"
+                  className="workspace-archive-delete"
+                  disabled={Boolean(restoringResourceId)}
+                  title={`Permanently delete ${resource.title}`}
+                  onClick={() => {
+                    setDeleteTarget(resource);
+                    setDeleteConfirmation('');
+                    setDeleteError('');
+                  }}
+                >
+                  <Trash2 size={14} />
+                  Delete permanently
+                </button>
+              </div>
             </article>
           );
         })}
@@ -518,6 +572,49 @@ function ArchivedResourceSettings({
           </div>
         )}
       </div>
+
+      <Dialog open={Boolean(deleteTarget)} onClose={closeDeleteDialog}>
+        <DialogCard role="alertdialog" aria-labelledby="archive-delete-title">
+          <DialogTitle id="archive-delete-title">Permanently delete this resource?</DialogTitle>
+          <DialogDescription>
+            This erases <strong>{deleteTarget?.title}</strong> and all of its source files from
+            the local content workspace. It cannot be restored from the archive afterward.
+          </DialogDescription>
+          <label className="workspace-archive-delete-confirmation">
+            <span>Type <strong>{deleteCoordinate}</strong> to confirm</span>
+            <Input
+              value={deleteConfirmation}
+              placeholder={deleteCoordinate}
+              autoComplete="off"
+              spellCheck={false}
+              data-autofocus
+              disabled={deleting}
+              onChange={(event) => setDeleteConfirmation(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void confirmPermanentDeletion();
+              }}
+            />
+          </label>
+          {deleteError && (
+            <p className="workspace-archive-delete-error" role="alert">{deleteError}</p>
+          )}
+          <DialogActions>
+            <Button type="button" variant="secondary" size="sm" disabled={deleting} onClick={closeDeleteDialog}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              loading={deleting}
+              disabled={deleteConfirmation.trim() !== deleteCoordinate}
+              onClick={() => void confirmPermanentDeletion()}
+            >
+              Delete permanently
+            </Button>
+          </DialogActions>
+        </DialogCard>
+      </Dialog>
     </section>
   );
 }
@@ -528,6 +625,7 @@ export function WorkspaceSettingsPage({
   preferences,
   onPreferencesChange,
   onRestoreResource,
+  onDeleteResource,
 }: WorkspaceSettingsPageProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
@@ -580,6 +678,7 @@ export function WorkspaceSettingsPage({
             resources={archivedResources}
             restoringResourceId={restoringResourceId}
             onRestoreResource={onRestoreResource}
+            onDeleteResource={onDeleteResource}
           />
         )}
       </div>

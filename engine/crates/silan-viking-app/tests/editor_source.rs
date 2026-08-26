@@ -1,5 +1,6 @@
 use rusqlite::Connection;
 use silan_viking_app::{
+    workspace_content::{DeleteArchivedResourceInput, WorkspaceContent, WorkspaceContentError},
     ContentEditor, ContentKind, EditorError, ResumeProfileUpdate, TranslationLocator, Workspace,
 };
 use std::fs;
@@ -21,6 +22,12 @@ fn copy_tree(source: &Path, destination: &Path) {
             fs::copy(source_path, destination_path).expect("copy fixture file");
         }
     }
+}
+
+fn replace_fixture_text(path: &Path, before: &str, after: &str) {
+    let source = fs::read_to_string(path).expect("read fixture source");
+    assert!(source.contains(before), "missing fixture text `{before}`");
+    fs::write(path, source.replacen(before, after, 1)).expect("write fixture source");
 }
 
 #[test]
@@ -598,4 +605,154 @@ fn save_episode_series_metadata_rewrites_series_toml_then_refreshes_projection()
             "completed".to_owned()
         )
     );
+}
+
+#[test]
+fn permanent_deletion_removes_only_an_archived_resource_and_refreshes_projection() {
+    let temporary = tempfile::tempdir().expect("temporary workspace");
+    let content_root = temporary.path().join("content");
+    let db_path = temporary.path().join("portfolio.db");
+    copy_tree(&fixture_root(), &content_root);
+    let source = content_root.join("resources/blog/hello-world/parts/body/en.md");
+    replace_fixture_text(&source, "status: published", "status: archived");
+    replace_fixture_text(&source, "visibility: public", "visibility: private");
+
+    Workspace::open(&content_root)
+        .expect("open copied fixture")
+        .sync(&db_path)
+        .expect("seed projection");
+    let workspace = WorkspaceContent::open(&content_root).expect("open workspace content");
+    let document = workspace
+        .editable_documents()
+        .expect("list documents")
+        .into_iter()
+        .find(|document| document.content_type == "blog" && document.slug == "hello-world")
+        .expect("archived blog");
+    let translation = &document.parts[0].translations[0];
+
+    let deleted = workspace
+        .delete_archived_resource(
+            &DeleteArchivedResourceInput {
+                translation_id: translation.id.clone(),
+                expected_revision: translation.source_revision.0.clone(),
+                confirmation: "hello-world".to_owned(),
+            },
+            &db_path,
+        )
+        .expect("delete archived blog");
+
+    assert_eq!(deleted.document_id, document.id);
+    assert!(!content_root.join("resources/blog/hello-world").exists());
+    let connection = Connection::open(&db_path).expect("open projection");
+    let projected: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM item_part WHERE entity_type = 'blog'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("count projected blog parts");
+    assert_eq!(projected, 0);
+}
+
+#[test]
+fn permanent_deletion_rejects_active_or_referenced_resources() {
+    let temporary = tempfile::tempdir().expect("temporary workspace");
+    let content_root = temporary.path().join("content");
+    let db_path = temporary.path().join("portfolio.db");
+    copy_tree(&fixture_root(), &content_root);
+    Workspace::open(&content_root)
+        .expect("open copied fixture")
+        .sync(&db_path)
+        .expect("seed projection");
+
+    let workspace = WorkspaceContent::open(&content_root).expect("open workspace content");
+    let active_blog = workspace
+        .editable_documents()
+        .expect("list documents")
+        .into_iter()
+        .find(|document| document.content_type == "blog")
+        .expect("active blog");
+    let blog_translation = &active_blog.parts[0].translations[0];
+    let active_error = workspace
+        .delete_archived_resource(
+            &DeleteArchivedResourceInput {
+                translation_id: blog_translation.id.clone(),
+                expected_revision: blog_translation.source_revision.0.clone(),
+                confirmation: active_blog.slug.clone(),
+            },
+            &db_path,
+        )
+        .expect_err("active resource must not be deleted");
+    assert!(matches!(
+        active_error,
+        WorkspaceContentError::DeleteRequiresArchive(_)
+    ));
+
+    let project_source =
+        content_root.join("resources/projects/sample-project/parts/overview/en.md");
+    replace_fixture_text(&project_source, "status: active", "status: archived");
+    replace_fixture_text(&project_source, "visibility: public", "visibility: private");
+    let workspace = WorkspaceContent::open(&content_root).expect("reopen workspace content");
+    let project = workspace
+        .editable_documents()
+        .expect("list documents")
+        .into_iter()
+        .find(|document| document.content_type == "project")
+        .expect("archived project");
+    let project_translation = &project.parts[0].translations[0];
+    let relation_error = workspace
+        .delete_archived_resource(
+            &DeleteArchivedResourceInput {
+                translation_id: project_translation.id.clone(),
+                expected_revision: project_translation.source_revision.0.clone(),
+                confirmation: project.slug.clone(),
+            },
+            &db_path,
+        )
+        .expect_err("referenced project must not be deleted");
+    assert!(matches!(
+        relation_error,
+        WorkspaceContentError::DeleteHasIncomingRelations { .. }
+    ));
+    assert!(content_root
+        .join("resources/projects/sample-project")
+        .is_dir());
+}
+
+#[test]
+fn permanent_deletion_restores_source_when_projection_fails() {
+    let temporary = tempfile::tempdir().expect("temporary workspace");
+    let content_root = temporary.path().join("content");
+    copy_tree(&fixture_root(), &content_root);
+    let source = content_root.join("resources/blog/hello-world/parts/body/en.md");
+    replace_fixture_text(&source, "status: published", "status: archived");
+    replace_fixture_text(&source, "visibility: public", "visibility: private");
+
+    let invalid_database_path = temporary.path().join("database-directory");
+    fs::create_dir(&invalid_database_path).expect("create invalid database path");
+    let workspace = WorkspaceContent::open(&content_root).expect("open workspace content");
+    let document = workspace
+        .editable_documents()
+        .expect("list documents")
+        .into_iter()
+        .find(|document| document.content_type == "blog")
+        .expect("archived blog");
+    let translation = &document.parts[0].translations[0];
+
+    let error = workspace
+        .delete_archived_resource(
+            &DeleteArchivedResourceInput {
+                translation_id: translation.id.clone(),
+                expected_revision: translation.source_revision.0.clone(),
+                confirmation: document.slug.clone(),
+            },
+            &invalid_database_path,
+        )
+        .expect_err("projection failure must abort deletion");
+
+    assert!(matches!(
+        error,
+        WorkspaceContentError::DeleteProjection { .. }
+    ));
+    assert!(content_root.join("resources/blog/hello-world").is_dir());
 }
