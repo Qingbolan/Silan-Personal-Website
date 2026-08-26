@@ -2,20 +2,16 @@ import React from 'react';
 import {
   AlertCircle,
   CheckCircle2,
-  Columns2,
-  Eye,
   FileSearch,
   GripVertical,
   LoaderCircle,
-  PencilLine,
 } from 'lucide-react';
 import MarkdownEditor, {
   type MarkdownEditorHandle,
   type MarkdownEditorProps,
 } from './MarkdownEditor';
 import { MarkdownPreview } from './MarkdownPreview';
-
-type WorkspaceView = 'edit' | 'split' | 'preview';
+import type { MarkdownWorkspaceView } from '../lib/markdownWorkspaceView';
 
 export type MarkdownWorkspaceActivity = {
   state: 'working' | 'complete' | 'review' | 'error';
@@ -23,25 +19,14 @@ export type MarkdownWorkspaceActivity = {
   detail?: string;
 };
 
-const workspaceViews: Array<{
-  value: WorkspaceView;
-  label: string;
-  description: string;
-  icon: typeof PencilLine;
-}> = [
-  { value: 'edit', label: 'Edit', description: 'Rich editing', icon: PencilLine },
-  { value: 'split', label: 'Split', description: 'Markdown source and preview', icon: Columns2 },
-  { value: 'preview', label: 'Preview', description: 'Rendered preview', icon: Eye },
-];
-
 type MarkdownDocumentWorkspaceProps = MarkdownEditorProps & {
   previewLabel: string;
-  defaultView?: WorkspaceView;
+  view: MarkdownWorkspaceView;
   activity?: MarkdownWorkspaceActivity | null;
 };
 
 /**
- * Owns the explicit edit/preview lifecycle for one Markdown representation.
+ * Renders the controlled edit/split/preview state for one Markdown representation.
  * The controlled Markdown value is the persistence boundary: Lexical emits it from
  * the writing pane and the preview consumes the same value on every render.
  * Split binds the left pane to styled Markdown source while keeping the right
@@ -52,18 +37,12 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
   MarkdownDocumentWorkspaceProps
 >(function MarkdownDocumentWorkspace({
   previewLabel,
-  defaultView = 'edit',
+  view,
   activity,
   value,
   onChange,
   ...editorProps
 }, forwardedRef) {
-  const [view, setView] = React.useState<WorkspaceView>(() => {
-    const stored = window.localStorage.getItem('sv-editor-view');
-    return stored === 'edit' || stored === 'split' || stored === 'preview'
-      ? stored
-      : defaultView;
-  });
   const [liveValue, setLiveValue] = React.useState(value);
   const [splitPercent, setSplitPercent] = React.useState(() => {
     const stored = Number(window.localStorage.getItem('sv-editor-split-percent'));
@@ -78,6 +57,14 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
   React.useEffect(() => {
     setLiveValue(value);
   }, [value]);
+
+  React.useEffect(() => {
+    if (view !== 'preview') return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      previewPaneRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [view]);
 
   const handleEditorChange = React.useCallback((nextValue: string) => {
     setLiveValue(nextValue);
@@ -97,15 +84,6 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
     setResizing(false);
     window.localStorage.setItem('sv-editor-split-percent', String(splitPercent));
   }, [resizing, splitPercent]);
-
-  const updateView = (nextView: WorkspaceView) => {
-    setView(nextView);
-    window.localStorage.setItem('sv-editor-view', nextView);
-    window.requestAnimationFrame(() => {
-      if (nextView !== 'preview') return;
-      previewPaneRef.current?.focus({ preventScroll: true });
-    });
-  };
 
   return (
     <div
@@ -215,22 +193,6 @@ export const MarkdownDocumentWorkspace = React.forwardRef<
         </div>
       )}
 
-      <nav className="markdown-workspace-switcher" aria-label="Editor view">
-        {workspaceViews.map(({ value: option, label, description, icon: Icon }) => (
-          <button
-            type="button"
-            key={option}
-            className={view === option ? 'active' : ''}
-            aria-label={`${description} view`}
-            aria-pressed={view === option}
-            title={description}
-            onClick={() => updateView(option)}
-          >
-            <Icon size={13} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
     </div>
   );
 });

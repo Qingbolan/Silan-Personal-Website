@@ -62,6 +62,9 @@ type CaptureSheetProps = {
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onTransitionEnd: (event: React.TransitionEvent<HTMLElement>) => void;
   origin: { x: number; y: number };
+  authorName: string;
+  authorAvatarUrl?: string;
+  authorAvatarLabel: string;
 };
 
 const MAX_DICTATION_MS = 60_000;
@@ -131,12 +134,16 @@ export function CaptureSheet({
   onKeyDown,
   onTransitionEnd,
   origin,
+  authorName,
+  authorAvatarUrl,
+  authorAvatarLabel,
 }: CaptureSheetProps) {
   const [voicePhase, setVoicePhase] = React.useState<'idle' | 'recording' | 'transcribing'>('idle');
   const [voiceError, setVoiceError] = React.useState<string | null>(null);
   const [recordingSeconds, setRecordingSeconds] = React.useState(0);
   const recorderRef = React.useRef<MediaRecorder | null>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
+  const captureStartedAtRef = React.useRef(new Date().toISOString());
   const recordingStartedAtRef = React.useRef<number | null>(null);
   const recordingDeadlineRef = React.useRef<number | null>(null);
   const recordingClockRef = React.useRef<number | null>(null);
@@ -184,6 +191,10 @@ export function CaptureSheet({
     recorderRef.current?.stop();
     stopStream();
   }, []);
+
+  React.useEffect(() => {
+    if (phase === 'opening') captureStartedAtRef.current = new Date().toISOString();
+  }, [phase]);
 
   React.useEffect(() => {
     if (voicePhase !== 'recording' || !streamRef.current || !waveformCanvasRef.current) return;
@@ -304,6 +315,12 @@ export function CaptureSheet({
     else if (voicePhase === 'idle') void startVoiceInput();
   };
 
+  const isChinese = language === 'zh';
+  const documentTitle = target === 'moment'
+    ? (isChinese ? '未命名事件' : 'Untitled moment')
+    : (isChinese ? '未命名文章' : 'Untitled article');
+  const editedLabel = isChinese ? '刚刚编辑' : 'Edited just now';
+
   return (
     <section
       className="moment-capture"
@@ -352,71 +369,87 @@ export function CaptureSheet({
       </header>
 
       <div className="capture-workspace">
-        {target !== 'moment' && (
-          <div className="capture-categories" role="radiogroup" aria-label="Content category">
-            <span className="capture-categories__label" aria-hidden="true">文章意图</span>
-            {categories.map(({ value, label, Icon }) => (
-              <button
-                type="button"
-                role="radio"
-                aria-checked={category === value}
-                className={category === value ? 'active' : ''}
-                key={value}
-                onClick={() => onCategoryChange(value)}
-                disabled={phase === 'submitting'}
-              >
-                <Icon size={15} />
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
+        <article className="capture-document" aria-labelledby="capture-document-title">
+          <header className="capture-document-header">
+            <h1 id="capture-document-title">{documentTitle}</h1>
+            <div className="capture-document-meta">
+              <span className="capture-document-avatar" aria-hidden="true">
+                {authorAvatarUrl
+                  ? <img src={authorAvatarUrl} alt="" />
+                  : authorAvatarLabel}
+              </span>
+              <strong>{authorName}</strong>
+              <span className="capture-document-meta__divider" aria-hidden="true" />
+              <time dateTime={captureStartedAtRef.current}>{editedLabel}</time>
+            </div>
+          </header>
 
-        <div className="capture-sheet">
-          <MarkdownEditor
-            ref={inputRef}
-            value={note}
-            disabled={phase === 'submitting'}
-            toolbarVisible
-            slashCommands={editorAssist.slashCommands}
-            onImportImages={importCaptureImages}
-            ariaLabel={target === 'moment' ? '事件内容' : '文章草稿'}
-            placeholder={target === 'moment'
-              ? '记录刚发生的进展、事件或状态变化... 输入 / 插入事件模板，[[ 连接已有内容'
-              : '先把文章草稿写下来... 输入 / 插入结构块，[[ 连接已有内容'}
-            onChange={onNoteChange}
-            onKeyDown={onKeyDown}
-            onSelectionAssist={requestSelectionAssist}
-          />
-          {editorAssist.fileInput}
-        </div>
-
-        {attachments.length > 0 && (
-          <section className="capture-attachments" aria-label="Capture attachments">
-            <header>
-              <FileImage size={14} />
-              <strong>{attachments.length} attachment{attachments.length === 1 ? '' : 's'}</strong>
-              <span>Imported when this draft is saved</span>
-            </header>
-            <div>
-              {attachments.map((file, index) => (
-                <CaptureAttachmentPreview
-                  key={`${file.name}:${file.size}:${file.lastModified}:${index}`}
-                  file={file}
-                  index={index}
-                  onRemove={onRemoveAttachment}
-                />
+          {target !== 'moment' && (
+            <div className="capture-categories" role="radiogroup" aria-label="Content category">
+              <span className="capture-categories__label" aria-hidden="true">{isChinese ? '文章意图' : 'Article intent'}</span>
+              {categories.map(({ value, label, Icon }) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={category === value}
+                  className={category === value ? 'active' : ''}
+                  key={value}
+                  onClick={() => onCategoryChange(value)}
+                  disabled={phase === 'submitting'}
+                >
+                  <Icon size={15} />
+                  {label}
+                </button>
               ))}
             </div>
-          </section>
-        )}
+          )}
 
-        {(error || voiceError) && (
-          <div className="capture-error" role="alert">
-            <AlertCircle size={15} />
-            <span>{error || voiceError}</span>
+          <div className="capture-sheet">
+            <MarkdownEditor
+              ref={inputRef}
+              value={note}
+              disabled={phase === 'submitting'}
+              toolbarVisible
+              slashCommands={editorAssist.slashCommands}
+              onImportImages={importCaptureImages}
+              ariaLabel={target === 'moment' ? '事件内容' : '文章草稿'}
+              placeholder={target === 'moment'
+                ? '记录刚发生的进展、事件或状态变化... 输入 / 插入事件模板，[[ 连接已有内容'
+                : '先把文章草稿写下来... 输入 / 插入结构块，[[ 连接已有内容'}
+              onChange={onNoteChange}
+              onKeyDown={onKeyDown}
+              onSelectionAssist={requestSelectionAssist}
+            />
+            {editorAssist.fileInput}
           </div>
-        )}
+
+          {attachments.length > 0 && (
+            <section className="capture-attachments" aria-label="Capture attachments">
+              <header>
+                <FileImage size={14} />
+                <strong>{attachments.length} attachment{attachments.length === 1 ? '' : 's'}</strong>
+                <span>Imported when this draft is saved</span>
+              </header>
+              <div>
+                {attachments.map((file, index) => (
+                  <CaptureAttachmentPreview
+                    key={`${file.name}:${file.size}:${file.lastModified}:${index}`}
+                    file={file}
+                    index={index}
+                    onRemove={onRemoveAttachment}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {(error || voiceError) && (
+            <div className="capture-error" role="alert">
+              <AlertCircle size={15} />
+              <span>{error || voiceError}</span>
+            </div>
+          )}
+        </article>
       </div>
 
       <div className="capture-action-dock" aria-label="Capture actions">

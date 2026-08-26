@@ -118,6 +118,7 @@ pub struct EditablePart {
 pub struct EditableTranslation {
     pub id: String,
     pub language: String,
+    pub title: String,
     pub content: String,
     pub source_revision: SourceRevision,
     pub source_path: String,
@@ -129,6 +130,7 @@ pub struct SourceRevision(pub String);
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct SaveTranslationInput {
     pub translation_id: String,
+    pub title: String,
     pub content: String,
     pub expected_revision: String,
 }
@@ -271,19 +273,30 @@ impl WorkspaceContent {
                     let translations = part
                         .files()
                         .iter()
-                        .map(|file| EditableTranslation {
-                            id: translation_id(part.id().as_str(), &file.lang().to_string()),
-                            language: file.lang().to_string(),
-                            content: source_body(part.shape(), file.body()),
-                            source_revision: SourceRevision(file.hash().to_string()),
-                            source_path: source_path(
-                                item.kind(),
-                                series_slug.as_deref(),
-                                item.slug().as_str(),
-                                part.role().as_str(),
-                                &file.lang().to_string(),
-                                part.shape(),
-                            ),
+                        .map(|file| {
+                            let language = file.lang().to_string();
+                            let translation_title = parsed
+                                .langs()
+                                .iter()
+                                .find(|(candidate, _)| candidate.to_string() == language)
+                                .and_then(|(_, variant)| variant.text("title"))
+                                .unwrap_or(title.as_str())
+                                .to_owned();
+                            EditableTranslation {
+                                id: translation_id(part.id().as_str(), &language),
+                                language: language.clone(),
+                                title: translation_title,
+                                content: source_body(part.shape(), file.body()),
+                                source_revision: SourceRevision(file.hash().to_string()),
+                                source_path: source_path(
+                                    item.kind(),
+                                    series_slug.as_deref(),
+                                    item.slug().as_str(),
+                                    part.role().as_str(),
+                                    &language,
+                                    part.shape(),
+                                ),
+                            }
                         })
                         .collect();
                     EditablePart {
@@ -491,10 +504,20 @@ impl WorkspaceContent {
                 input.translation_id.clone(),
             ));
         }
+        let title = input.title.trim();
+        if title.is_empty() {
+            return Err(WorkspaceContentError::InvalidMetadata(
+                "content title is required".to_owned(),
+            ));
+        }
         let locator = locator(&document, &part, &translation.language)?;
-        self.editor.save_markdown_and_sync(
+        self.editor.save_markdown_with_frontmatter_values_and_sync(
             &locator,
             &input.content,
+            &[(
+                "title".to_owned(),
+                serde_yaml::Value::String(title.to_owned()),
+            )],
             &input.expected_revision,
             db_path,
         )?;
@@ -1122,6 +1145,7 @@ mod tests {
                         translation.id,
                         format!("{}:{}", part.id, translation.language)
                     );
+                    assert!(!translation.title.trim().is_empty());
                     assert!(!translation.source_path.contains("item_part"));
                 }
             }

@@ -221,6 +221,56 @@ impl ContentEditor {
         expected_revision: &str,
         db_path: impl AsRef<Path>,
     ) -> Result<SourceDocument, EditorError> {
+        self.save_source_and_sync(
+            locator,
+            expected_revision,
+            db_path,
+            |original, relative_path| {
+                frontmatter::replace_body(original, body).ok_or_else(|| {
+                    EditorError::MalformedSource {
+                        path: relative_path.to_owned(),
+                    }
+                })
+            },
+        )
+    }
+
+    /// Save the editable document title and Markdown body as one source
+    /// mutation. The localized frontmatter title is the persistent metadata
+    /// contract; the body remains the rich-editor representation.
+    pub fn save_markdown_with_frontmatter_values_and_sync(
+        &self,
+        locator: &TranslationLocator,
+        body: &str,
+        fields: &[(String, serde_yaml::Value)],
+        expected_revision: &str,
+        db_path: impl AsRef<Path>,
+    ) -> Result<SourceDocument, EditorError> {
+        self.save_source_and_sync(
+            locator,
+            expected_revision,
+            db_path,
+            |original, relative_path| {
+                let with_frontmatter = replace_frontmatter_values(original, fields, relative_path)?;
+                frontmatter::replace_body(&with_frontmatter, body).ok_or_else(|| {
+                    EditorError::MalformedSource {
+                        path: relative_path.to_owned(),
+                    }
+                })
+            },
+        )
+    }
+
+    fn save_source_and_sync<F>(
+        &self,
+        locator: &TranslationLocator,
+        expected_revision: &str,
+        db_path: impl AsRef<Path>,
+        mutate: F,
+    ) -> Result<SourceDocument, EditorError>
+    where
+        F: FnOnce(&str, &str) -> Result<String, EditorError>,
+    {
         let path = self.source_path(locator);
         let relative_path = self.relative_path(&path);
         let _save_guard = source_lock::acquire().map_err(|detail| EditorError::Io {
@@ -235,11 +285,7 @@ impl ContentEditor {
             });
         }
 
-        let updated = frontmatter::replace_body(&original, body).ok_or_else(|| {
-            EditorError::MalformedSource {
-                path: relative_path.clone(),
-            }
-        })?;
+        let updated = mutate(&original, &relative_path)?;
         if updated == original {
             return Ok(self.source_document(&path, &original));
         }
@@ -369,68 +415,12 @@ impl ContentEditor {
         expected_revision: &str,
         db_path: impl AsRef<Path>,
     ) -> Result<SourceDocument, EditorError> {
-        let path = self.source_path(locator);
-        let relative_path = self.relative_path(&path);
-        let _save_guard = source_lock::acquire().map_err(|detail| EditorError::Io {
-            path: relative_path.clone(),
-            detail,
-        })?;
-        let original = read_source(&path)?;
-        let actual_revision = ContentHash::of(original.as_bytes());
-        if actual_revision.as_str() != expected_revision {
-            return Err(EditorError::RevisionConflict {
-                path: relative_path,
-            });
-        }
-
-        let doc = frontmatter::split(&original);
-        let mut map = parse_frontmatter_mapping(&doc.frontmatter, &relative_path)?;
-        for (key, value) in fields {
-            map.insert(serde_yaml::Value::String(key.clone()), value.clone());
-        }
-        let frontmatter =
-            serde_yaml::to_string(&serde_yaml::Value::Mapping(map)).map_err(|error| {
-                EditorError::Io {
-                    path: relative_path.clone(),
-                    detail: format!("cannot serialize frontmatter: {error}"),
-                }
-            })?;
-        let updated = format!("---\n{}\n---\n{}", frontmatter.trim_end(), doc.body);
-        if updated == original {
-            return Ok(self.source_document(&path, &original));
-        }
-
-        atomic_replace(&path, updated.as_bytes())?;
-        if let Err(error) = self.workspace.sync(db_path.as_ref()) {
-            let projection = error.to_string();
-            let current = read_source(&path).map_err(|error| EditorError::Rollback {
-                path: relative_path.clone(),
-                projection: projection.clone(),
-                rollback: format!("cannot verify the source before rollback: {error}"),
-            })?;
-            if ContentHash::of(current.as_bytes()) != ContentHash::of(updated.as_bytes()) {
-                return Err(EditorError::Rollback {
-                    path: relative_path,
-                    projection,
-                    rollback: "source changed after save; refusing to overwrite the external edit"
-                        .to_owned(),
-                });
-            }
-            if let Err(rollback) = atomic_replace(&path, original.as_bytes()) {
-                return Err(EditorError::Rollback {
-                    path: relative_path,
-                    projection,
-                    rollback: rollback.to_string(),
-                });
-            }
-            return Err(EditorError::Projection {
-                path: relative_path,
-                detail: projection,
-            });
-        }
-
-        let persisted = read_source(&path)?;
-        Ok(self.source_document(&path, &persisted))
+        self.save_source_and_sync(
+            locator,
+            expected_revision,
+            db_path,
+            |original, relative_path| replace_frontmatter_values(original, fields, relative_path),
+        )
     }
 
     /// Read one structured Resume part file (`entry_list` /
@@ -943,6 +933,29 @@ fn parse_frontmatter_mapping(
             detail: "frontmatter is not a YAML mapping".to_owned(),
         }),
     }
+}
+
+fn replace_frontmatter_values(
+    source: &str,
+    fields: &[(String, serde_yaml::Value)],
+    relative_path: &str,
+) -> Result<String, EditorError> {
+    let doc = frontmatter::split(source);
+    let mut map = parse_frontmatter_mapping(&doc.frontmatter, relative_path)?;
+    for (key, value) in fields {
+        map.insert(serde_yaml::Value::String(key.clone()), value.clone());
+    }
+    let frontmatter = serde_yaml::to_string(&serde_yaml::Value::Mapping(map)).map_err(|error| {
+        EditorError::Io {
+            path: relative_path.to_owned(),
+            detail: format!("cannot serialize frontmatter: {error}"),
+        }
+    })?;
+    Ok(format!(
+        "---\n{}\n---\n{}",
+        frontmatter.trim_end(),
+        doc.body,
+    ))
 }
 
 fn parse_toml_table(

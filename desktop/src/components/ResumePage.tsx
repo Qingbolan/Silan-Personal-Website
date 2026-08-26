@@ -19,6 +19,7 @@ import { MarkdownPreview } from './MarkdownPreview';
 import { LanguageCloseControls } from './LanguageCloseControls';
 import { ResumeBioEditor } from './ResumeBioEditor';
 import { toWebviewMediaUrl } from '../lib/media';
+import type { MarkdownWorkspaceView } from '../lib/markdownWorkspaceView';
 import type {
   EditorDocument,
   ImportedMediaAsset,
@@ -42,6 +43,24 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleOrder = ['experience', 'education', 'research', 'publications', 'awards', 'expectations', 'skills'];
+
+/** Curated platform suggestions; the editor still accepts custom platform names. */
+const socialPlatformOptions = [
+  { value: 'GitHub', label: 'GitHub' },
+  { value: 'LinkedIn', label: 'LinkedIn' },
+  { value: 'Scholar', label: 'Google Scholar' },
+  { value: '小红书', label: '小红书 / Xiaohongshu / RedNote' },
+  { value: 'Website', label: 'Website' },
+  { value: 'PyPI', label: 'PyPI' },
+  { value: 'npm', label: 'npm' },
+  { value: 'X', label: 'X / Twitter' },
+  { value: 'YouTube', label: 'YouTube' },
+  { value: 'Instagram', label: 'Instagram' },
+  { value: 'Facebook', label: 'Facebook' },
+  { value: 'Telegram', label: 'Telegram' },
+] as const;
+
+const socialPlatformListId = 'resume-social-platform-options';
 
 /** Fields the block editor manages itself — never shown as form inputs. */
 const managedFields = new Set(['entry_id', 'sort_order']);
@@ -710,13 +729,20 @@ function ResumeProfileForm({
               Link
             </button>
           </div>
+          <datalist id={socialPlatformListId}>
+            {socialPlatformOptions.map((platform) => (
+              <option value={platform.value} label={platform.label} key={platform.value} />
+            ))}
+          </datalist>
           {profile.social_links.map((link, index) => (
             <div className="resume-social-row" key={index}>
               <input
                 type="text"
+                list={socialPlatformListId}
                 value={link.platform}
                 disabled={saving}
-                placeholder="Platform"
+                placeholder="Select or type platform"
+                autoComplete="off"
                 onChange={(event) => setSocialLink(index, { platform: event.target.value })}
               />
               <input
@@ -757,12 +783,16 @@ export function ResumePage({
   overview,
   language,
   onLanguageChange,
-  editControlsVisible,
+  managementEnabled,
+  markdownWorkspaceView,
+  onMarkdownWorkspaceViewChange,
 }: {
   overview: EditorDocument | null;
   language: string;
   onLanguageChange: (language: string) => void;
-  editControlsVisible: boolean;
+  managementEnabled: boolean;
+  markdownWorkspaceView: MarkdownWorkspaceView;
+  onMarkdownWorkspaceViewChange: (view: MarkdownWorkspaceView) => void;
 }) {
   const [sections, setSections] = React.useState<ResumeSection[] | null>(null);
   const [profileSource, setProfileSource] = React.useState<ResumeProfileSource | null>(null);
@@ -818,13 +848,13 @@ export function ResumePage({
   }, [editing, profileDraft, summaryDraft]);
 
   React.useEffect(() => {
-    if (editControlsVisible) return;
+    if (managementEnabled) return;
     setEditing(null);
     setProfileDraft(null);
     setSummaryDraft(null);
     setSummaryToolbarVisible(false);
     setConfirmDelete(null);
-  }, [editControlsVisible]);
+  }, [managementEnabled]);
 
   const orderedSections = React.useMemo(() => {
     if (!sections) return [];
@@ -1010,13 +1040,13 @@ export function ResumePage({
           source={profileSource}
           onEdit={startEditProfile}
           editingDisabled={editing !== null || summaryDraft !== null || savingProfile}
-          showEditControls={editControlsVisible}
+          showEditControls={managementEnabled}
         />
       ) : null}
 
       {(profileSource || summaryText) && (
         <header className="resume-summary">
-          {profileSource && editControlsVisible && (
+          {profileSource && managementEnabled && (
             <button type="button" className="resume-block-action resume-summary-edit" disabled={editing !== null || profileDraft !== null || savingProfile} onClick={startEditSummary} title="Edit bio" aria-label="Edit bio">
               <PencilLine size={13} />
             </button>
@@ -1045,7 +1075,7 @@ export function ResumePage({
           <section className="resume-section" key={section.role}>
             <div className="resume-section-head">
               <h2>{roleLabels[section.role] || section.role}</h2>
-              {editControlsVisible && (
+              {managementEnabled && (
                 <button
                   type="button"
                   className="resume-block-action"
@@ -1086,7 +1116,7 @@ export function ResumePage({
                           <EntryView role={section.role} entry={entry} />
                         )}
                       </div>
-                      {editControlsVisible && (
+                      {managementEnabled && (
                         <div className="resume-block-actions">
                           <button
                             type="button"
@@ -1186,10 +1216,12 @@ export function ResumePage({
           disabled={savingProfile}
           dirty={summaryDraft !== profileSource.summary}
           toolbarVisible={summaryToolbarVisible}
+          workspaceView={markdownWorkspaceView}
           onChange={setSummaryDraft}
           onSave={() => void saveSummary()}
           onCancel={() => setSummaryDraft(null)}
           onToggleToolbar={() => setSummaryToolbarVisible((visible) => !visible)}
+          onWorkspaceViewChange={onMarkdownWorkspaceViewChange}
         />
       )}
 

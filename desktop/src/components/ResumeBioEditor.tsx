@@ -1,6 +1,8 @@
 import { FileText, LoaderCircle, Save, Type } from 'lucide-react';
 import { LanguageCloseControls } from './LanguageCloseControls';
 import { MarkdownDocumentWorkspace } from './MarkdownDocumentWorkspace';
+import { MarkdownWorkspaceViewToggle } from './MarkdownWorkspaceViewToggle';
+import type { MarkdownWorkspaceView } from '../lib/markdownWorkspaceView';
 
 export function ResumeBioEditor({
   value,
@@ -9,11 +11,13 @@ export function ResumeBioEditor({
   disabled,
   dirty,
   toolbarVisible,
+  workspaceView,
   onChange,
   onLanguageChange,
   onSave,
   onCancel,
   onToggleToolbar,
+  onWorkspaceViewChange,
 }: {
   value: string;
   language: string;
@@ -21,11 +25,13 @@ export function ResumeBioEditor({
   disabled: boolean;
   dirty: boolean;
   toolbarVisible: boolean;
+  workspaceView: MarkdownWorkspaceView;
   onChange: (value: string) => void;
   onLanguageChange: (language: string) => void;
   onSave: () => void;
   onCancel: () => void;
   onToggleToolbar: () => void;
+  onWorkspaceViewChange: (view: MarkdownWorkspaceView) => void;
 }) {
   return (
     <section className="content-editor-overlay" role="dialog" aria-modal="true" aria-labelledby="resume-bio-editor-title">
@@ -38,7 +44,12 @@ export function ResumeBioEditor({
               <p>summary · 1 Markdown part</p>
             </div>
           </div>
-          <div className="content-editor-actions">
+          <div className="quick-dock content-editor-actions">
+            <MarkdownWorkspaceViewToggle
+              className="content-close content-view-toggle"
+              view={workspaceView}
+              onChange={onWorkspaceViewChange}
+            />
             <button
               type="button"
               className={`content-close content-toolbar-toggle ${toolbarVisible ? 'active' : ''}`}
@@ -103,6 +114,7 @@ export function ResumeBioEditor({
             <div className="editor-frame content-editor-frame" data-entity="resume" data-toolbar={toolbarVisible ? 'visible' : 'hidden'}>
               <MarkdownDocumentWorkspace
                 key={language}
+                view={workspaceView}
                 value={value}
                 ariaLabel={`Resume bio editor (${language})`}
                 previewLabel={`Bio · ${language}`}

@@ -64,6 +64,8 @@ import {
   MarkdownDocumentWorkspace,
   type MarkdownWorkspaceActivity,
 } from './components/MarkdownDocumentWorkspace';
+import { MarkdownWorkspaceViewToggle } from './components/MarkdownWorkspaceViewToggle';
+import { ShelfInteractionModeToggle } from './components/ShelfInteractionModeToggle';
 import type {
   EditorReviewFinding,
   MarkdownEditorHandle,
@@ -74,6 +76,15 @@ import {
   type EditorAssistReference,
   useEditorAssistSlashCommands,
 } from './components/editor/useEditorAssistSlashCommands';
+import {
+  parseMarkdownWorkspaceView,
+  type MarkdownWorkspaceView,
+} from './lib/markdownWorkspaceView';
+import {
+  initialShelfInteractionMode,
+  managementControlsVisible,
+  transitionShelfInteractionMode,
+} from './lib/shelfInteractionMode';
 import { NewProjectDialog } from './components/NewProjectDialog';
 import { DesktopTitlebar } from './components/DesktopTitlebar';
 import { WorkspaceSettingsPage } from './components/WorkspaceSettingsPage';
@@ -155,7 +166,7 @@ import {
   type SeriesLifecycleAction,
 } from './lib/contentLifecycle';
 import { inferCoverSourceType, type CoverSourceType } from './lib/coverSource';
-import { formatSyncedAgo } from './lib/format';
+import { formatShortDate, formatSyncedAgo } from './lib/format';
 import { summarizeMarkdownBlockChanges } from './lib/markdownBlockDiff';
 import { cssBackgroundImage, toWebviewMediaUrl } from './lib/media';
 import {
@@ -340,7 +351,10 @@ export default function App() {
   const [captureError, setCaptureError] = React.useState<string | null>(null);
   const [chromeLanguage, setChromeLanguage] = React.useState('en');
   const [resumeLanguage, setResumeLanguage] = React.useState('en');
-  const [resumeEditControlsVisible, setResumeEditControlsVisible] = React.useState(true);
+  const [shelfInteractionMode, dispatchShelfInteractionMode] = React.useReducer(
+    transitionShelfInteractionMode,
+    initialShelfInteractionMode,
+  );
   const [contentEditorOpen, setContentEditorOpen] = React.useState(false);
   const [contentRailPanel, setContentRailPanel] = React.useState<ContentRailPanel>('parts');
   const [contentRailMode, setContentRailMode] = React.useState<ContentRailMode>('files');
@@ -394,6 +408,9 @@ export default function App() {
   // happens by typing Markdown syntax and native shortcuts (⌘B, ⌘I…).
   const [toolbarVisible, setToolbarVisible] = React.useState(
     () => window.localStorage.getItem('sv-editor-toolbar') === '1',
+  );
+  const [markdownWorkspaceView, setMarkdownWorkspaceView] = React.useState(
+    () => parseMarkdownWorkspaceView(window.localStorage.getItem('sv-editor-view')),
   );
   const [selectedSeriesId, setSelectedSeriesId] = React.useState('');
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -786,6 +803,7 @@ export default function App() {
   const proseShelfActive = screen === 'content'
     && masonryContentKinds.has(entityFilter as ContentKind)
     && !contentEditorOpen;
+  const managementEnabled = managementControlsVisible(shelfInteractionMode);
   const selectedLanguage = selected
     ? languageByDocument[selected.id]
       || selected.canonical_language
@@ -1541,6 +1559,7 @@ export default function App() {
             const attachmentMarkdown = imported.map((asset) => asset.markdown).join('\n\n');
             savedCreated = await invoke<EditorDocument>('save_document', {
               id: createdTranslation.id,
+              title: createdTranslation.title,
               content: `${createdTranslation.content.trim()}\n\n${attachmentMarkdown}`,
               expectedRevision: createdTranslation.revision,
             });
@@ -1662,6 +1681,7 @@ export default function App() {
   const saveSelected = async () => {
     if (!selected || !selectedTranslation) return null;
     const content = editorRef.current?.getMarkdown() ?? selectedTranslation.content;
+    const title = editorRef.current?.getTitle() || selectedTranslation.title || selected.title;
     if (content !== selectedTranslation.content) {
       replaceTranslationContent(selected.id, selectedTranslation.id, content);
       setDirtyIds((current) => new Set(current).add(selectedTranslation.id));
@@ -1671,6 +1691,7 @@ export default function App() {
     try {
       const saved = await invoke<EditorDocument>('save_document', {
         id: selectedTranslation.id,
+        title,
         content,
         expectedRevision: selectedTranslation.revision,
       });
@@ -2092,6 +2113,11 @@ export default function App() {
     window.localStorage.setItem('sv-editor-toolbar', next ? '1' : '0');
     return next;
   });
+
+  const changeMarkdownWorkspaceView = React.useCallback((next: MarkdownWorkspaceView) => {
+    setMarkdownWorkspaceView(next);
+    window.localStorage.setItem('sv-editor-view', next);
+  }, []);
 
   const stateTargetForGroup = (group: ContentGroup) => {
     const document = selectPrimaryDocument(group);
@@ -3590,7 +3616,9 @@ export default function App() {
               overview={resumeOverview}
               language={resumeLanguage}
               onLanguageChange={setResumeLanguage}
-              editControlsVisible={resumeEditControlsVisible}
+              managementEnabled={managementEnabled}
+              markdownWorkspaceView={markdownWorkspaceView}
+              onMarkdownWorkspaceViewChange={changeMarkdownWorkspaceView}
             />
           </section>
         ) : isUpdateShelf && !contentEditorOpen ? (
@@ -3604,13 +3632,6 @@ export default function App() {
                 query={query}
                 settings={momentsSettings}
                 languageByDocument={languageByDocument}
-                eyebrow={currentShelf.eyebrow}
-                title={currentShelf.label}
-                meta={[
-                  contentSummary,
-                  `${dirtyIds.size} unsaved`,
-                  ...(selected ? [docPath(selected)] : []),
-                ]}
                 onOpen={openContentGroup}
               />
             )}
@@ -3623,11 +3644,14 @@ export default function App() {
               ) : selectedSeries ? (
                 <SeriesDetail
                   series={selectedSeries}
+                  managementEnabled={managementEnabled}
                   onBack={() => setSelectedSeriesId('')}
                   onEditSeries={(series) => void openSeriesEditor(series)}
                   onEditEpisode={openContentGroup}
                   renderStateControls={renderStateControls}
-                  seriesStateControls={renderSeriesStateControls(selectedSeries, 'header')}
+                  seriesStateControls={managementEnabled
+                    ? renderSeriesStateControls(selectedSeries, 'header')
+                    : undefined}
                 />
               ) : masonryGroups.length === 0 ? (
                 <div className="empty content-empty">{query.trim() ? 'No matches for your search.' : currentShelf.empty}</div>
@@ -3641,11 +3665,15 @@ export default function App() {
                         ? () => setSelectedSeriesId(group.id)
                         : openContentGroup}
                       stateControls={group.cardKind === 'series'
-                        ? renderSeriesStateControls(
-                            episodeSeries.find((series) => `series:${series.id}` === group.id)!,
-                            'card',
-                          )
-                        : renderStateControls(group, 'card')}
+                        ? managementEnabled
+                          ? renderSeriesStateControls(
+                              episodeSeries.find((series) => `series:${series.id}` === group.id)!,
+                              'card',
+                            )
+                          : undefined
+                        : managementEnabled
+                          ? renderStateControls(group, 'card')
+                          : undefined}
                     />
                   ))}
                 </div>
@@ -3766,7 +3794,9 @@ export default function App() {
                         <MarkdownDocumentWorkspace
                           key={`${selectedTranslation.id}:shelf`}
                           ref={editorRef}
+                          view={markdownWorkspaceView}
                           value={selectedTranslation.content}
+                          defaultTitle={selectedTranslation.title || selected.title}
                           ariaLabel={`${selected.title} ${selected.role} Markdown editor`}
                           previewLabel={`${selected.title} · ${selected.role} · ${selectedTranslation.language}`}
                           activity={workspaceActivity}
@@ -3831,16 +3861,11 @@ export default function App() {
           </div>
         ) : shelfDockMode ? (
           <div className="quick-dock shelf-action-dock" aria-label={`${currentShelf.label} shortcuts`}>
-            {shelfDockMode === 'resume' && (
-              <button
-                type="button"
-                className="dock-mode-toggle"
-                aria-pressed={!resumeEditControlsVisible}
-                onClick={() => setResumeEditControlsVisible((visible) => !visible)}
-                title={resumeEditControlsVisible ? 'Hide resume edit operations' : 'Show resume edit operations'}
-              >
-                {resumeEditControlsVisible ? 'Editing' : 'Preview'}
-              </button>
+            {(shelfDockMode === 'resume' || shelfDockMode === 'blog' || shelfDockMode === 'project') && (
+              <ShelfInteractionModeToggle
+                mode={shelfInteractionMode}
+                onToggle={() => dispatchShelfInteractionMode({ type: 'toggle' })}
+              />
             )}
             {shelfDockMode === 'blog' && (
               <button type="button" className="dock-primary" onClick={() => openCapture('blog')}>
@@ -3880,15 +3905,24 @@ export default function App() {
                 <span>{saveDockSubline}</span>
               </div>
             </div>
-            <button
-              className={`primary ${saving ? 'pending' : ''}`}
-              type="button"
-              disabled={!selected || !dirty || saving}
-              onClick={() => void saveSelected()}
-            >
-              <Save size={16} />
-              {saving ? 'Saving' : saveFailed ? 'Retry save' : 'Save Markdown'}
-            </button>
+            <div className="save-dock-actions">
+              {selected && (
+                <MarkdownWorkspaceViewToggle
+                  className="save-dock-view-toggle"
+                  view={markdownWorkspaceView}
+                  onChange={changeMarkdownWorkspaceView}
+                />
+              )}
+              <button
+                className={`primary ${saving ? 'pending' : ''}`}
+                type="button"
+                disabled={!selected || !dirty || saving}
+                onClick={() => void saveSelected()}
+              >
+                <Save size={16} />
+                {saving ? 'Saving' : saveFailed ? 'Retry save' : 'Save Markdown'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -4283,6 +4317,11 @@ export default function App() {
                 </div>
                 {contentRailPanel === 'parts' && (
                   <div className="quick-dock content-editor-actions">
+                    <MarkdownWorkspaceViewToggle
+                      className="content-close content-view-toggle"
+                      view={markdownWorkspaceView}
+                      onChange={changeMarkdownWorkspaceView}
+                    />
                     {languageReviewAvailable && (
                       <button
                         type="button"
@@ -4531,12 +4570,23 @@ export default function App() {
                         <MarkdownDocumentWorkspace
                           key={`${selectedTranslation.id}:overlay`}
                           ref={editorRef}
+                          view={markdownWorkspaceView}
                           value={selectedTranslation.content}
+                          defaultTitle={selectedTranslation.title || selected.title}
                           ariaLabel={`${selected.title} ${selected.role} Markdown editor`}
                           previewLabel={`${selected.title} · ${selected.role} · ${selectedTranslation.language}`}
                           activity={workspaceActivity}
                           disabled={saving}
                           toolbarVisible={toolbarVisible}
+                          documentMeta={{
+                            authorName: workspacePreferences?.identity.display_name || 'Silan Hu',
+                            authorAvatarUrl: workspacePreferences?.identity.avatar_url
+                              ? toWebviewMediaUrl(workspacePreferences.identity.avatar_url)
+                              : undefined,
+                            authorAvatarLabel: workspacePreferences?.identity.avatar_label || 'S',
+                            modifiedAt: selected.updated_at,
+                            modifiedLabel: `Modified ${formatShortDate(selected.updated_at)}`,
+                          }}
                           reviewFindings={selectedReviewFindings}
                           onReviewFindingActivate={languageReview.openReport}
                           onReviewFindingApplied={languageReview.resolveFinding}
@@ -5178,6 +5228,11 @@ export default function App() {
         attachments={captureAttachments}
         references={editorAssistReferences}
         error={captureError}
+        authorName={workspacePreferences?.identity.display_name || 'Silan Hu'}
+        authorAvatarUrl={workspacePreferences?.identity.avatar_url
+          ? toWebviewMediaUrl(workspacePreferences.identity.avatar_url)
+          : undefined}
+        authorAvatarLabel={workspacePreferences?.identity.avatar_label || 'S'}
         inputRef={captureInputRef}
         onAttachFiles={attachFilesToCapture}
         onRemoveAttachment={(index) => {

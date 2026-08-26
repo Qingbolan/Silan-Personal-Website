@@ -158,6 +158,7 @@ export const localizedDocumentTitle = (
 ) => {
   const translation = selectTranslation(document, language);
   return markdownTitle(translation?.content || '')
+    || translation?.title
     || document?.title
     || '';
 };

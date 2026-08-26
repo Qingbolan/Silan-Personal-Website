@@ -30,8 +30,10 @@ import {
 } from 'lexical';
 import type { MarkdownSelectionRange } from '../extensionPoints';
 import { $tryRestoreSelectionRange } from '../model/SelectionRange';
+import { $isDocumentTitleNode } from '../model/DocumentTitle';
 
 export type BlockFormat =
+  | 'title'
   | 'paragraph'
   | 'h1'
   | 'h2'
@@ -99,7 +101,9 @@ export function $readFormattingSnapshot(): FormattingSnapshot {
   const link = $findMatchingParent(node, $isLinkNode);
   const code = $findMatchingParent(node, $isCodeNode);
   const block: BlockFormat = heading
-    ? (heading.getTag() as HeadingTagType)
+    ? $isDocumentTitleNode(heading)
+      ? 'title'
+      : (heading.getTag() as HeadingTagType)
     : $findMatchingParent(node, $isQuoteNode)
       ? 'quote'
       : code
@@ -124,6 +128,7 @@ export function $readFormattingSnapshot(): FormattingSnapshot {
 }
 
 export function setBlockFormat(editor: LexicalEditor, block: BlockFormat) {
+  if (block === 'title') return;
   editor.update(() => {
     const selection = $getSelection();
     if (!$isRangeSelection(selection)) return;
@@ -208,7 +213,7 @@ export function runFormattingCommand(editor: LexicalEditor, command: FormattingC
 
 export function adjustHeadingLevel(editor: LexicalEditor, delta: -1 | 1) {
   const current = editor.read(() => $readFormattingSnapshot().block);
-  if (current === 'quote' || current === 'code') return;
+  if (current === 'title' || current === 'quote' || current === 'code') return;
   if (current === 'paragraph') {
     if (delta < 0) setBlockFormat(editor, 'h6');
     return;

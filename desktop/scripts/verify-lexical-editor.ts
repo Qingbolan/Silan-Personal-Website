@@ -33,7 +33,16 @@ import {
   runTableToolbarAction,
 } from '../src/components/editor/interaction/TableEditingController';
 import { $getMarkdownTableAlignments } from '../src/components/editor/model/MarkdownTable';
-import { setBlockFormat } from '../src/components/editor/interaction/FormattingController';
+import {
+  $readFormattingSnapshot,
+  setBlockFormat,
+} from '../src/components/editor/interaction/FormattingController';
+import {
+  $ensureDocumentTitleNode,
+  $getDocumentTitleNode,
+  $getDocumentTitleText,
+  registerDocumentTitleTransform,
+} from '../src/components/editor/model/DocumentTitle';
 import { $readSelectionAssistContext } from '../src/components/editor/interaction/SelectionAssist';
 import {
   EditorShortcutController,
@@ -263,6 +272,65 @@ headingEditor.update(() => $getRoot().selectStart(), { discrete: true });
 setBlockFormat(headingEditor, 'h3');
 assert.equal(headingEditor.read(() => $documentToMarkdown()), '### Semantic heading');
 headingEditor.dispose();
+
+const titleEditor = buildEditorFromExtensions(
+  createMarkdownEditorExtension(false, [], '# Document title\n\nBody'),
+);
+titleEditor.update(() => {
+  const title = $getDocumentTitleNode();
+  assert(title, 'Expected the first root-level H1 to own document title semantics');
+  title.selectStart();
+}, { discrete: true });
+assert.equal(titleEditor.read(() => $readFormattingSnapshot().block), 'title');
+assert.equal(titleEditor.read(() => $getDocumentTitleNode()?.getTextContent()), 'Document title');
+titleEditor.dispose();
+
+const defaultTitleEditor = buildEditorFromExtensions(
+  createMarkdownEditorExtension(false, [], 'Body without a heading'),
+);
+defaultTitleEditor.update(() => {
+  $ensureDocumentTitleNode();
+}, { discrete: true });
+assert.equal(
+  defaultTitleEditor.read(() => $documentToMarkdown()),
+  '#\n\nBody without a heading',
+);
+assert.equal(defaultTitleEditor.read(() => $getDocumentTitleText()), '');
+defaultTitleEditor.update(() => {
+  const title = $getDocumentTitleNode();
+  assert(title);
+  title.clear().append($createTextNode('Edited document title'));
+}, { discrete: true });
+assert.equal(defaultTitleEditor.read(() => $getDocumentTitleText()), 'Edited document title');
+assert.match(defaultTitleEditor.read(() => $documentToMarkdown()), /^# Edited document title/);
+defaultTitleEditor.dispose();
+
+const titleLifecycleEditor = buildEditorFromExtensions(
+  createMarkdownEditorExtension(false, [], 'Body'),
+);
+const unregisterTitleLifecycle = registerDocumentTitleTransform(
+  titleLifecycleEditor,
+);
+titleLifecycleEditor.update(() => {}, { discrete: true });
+assert.equal(titleLifecycleEditor.read(() => $getDocumentTitleText()), '');
+titleLifecycleEditor.update(() => {
+  $getDocumentTitleNode()?.remove();
+}, { discrete: true });
+assert.equal(titleLifecycleEditor.read(() => Boolean($getDocumentTitleNode())), true);
+assert.equal(titleLifecycleEditor.read(() => $getDocumentTitleText()), '');
+assert.match(titleLifecycleEditor.read(() => $documentToMarkdown()), /Body$/);
+unregisterTitleLifecycle();
+titleLifecycleEditor.dispose();
+
+const sectionHeadingEditor = buildEditorFromExtensions(
+  createMarkdownEditorExtension(false, [], 'Intro\n\n# Section heading'),
+);
+sectionHeadingEditor.update(() => {
+  assert.equal($getDocumentTitleNode(), null);
+  $getRoot().getLastChild()?.selectStart();
+}, { discrete: true });
+assert.equal(sectionHeadingEditor.read(() => $readFormattingSnapshot().block), 'h1');
+sectionHeadingEditor.dispose();
 
 const duplicateSelectionEditor = buildEditorFromExtensions(
   createMarkdownEditorExtension(false, [], 'repeat alpha\n\nmiddle marker\n\nrepeat omega'),

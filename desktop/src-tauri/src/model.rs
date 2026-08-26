@@ -86,6 +86,7 @@ pub(crate) struct InteractionComment {
 pub(crate) struct EditorTranslation {
     pub(crate) id: String,
     pub(crate) language: String,
+    pub(crate) title: String,
     pub(crate) content: String,
     pub(crate) revision: String,
     pub(crate) source_path: String,

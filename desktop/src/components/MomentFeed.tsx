@@ -11,9 +11,6 @@ type MomentFeedProps = {
   query: string;
   settings: MomentsSettings | null;
   languageByDocument: Record<string, string>;
-  eyebrow: string;
-  title: string;
-  meta: string[];
   onOpen: (group: ContentGroup) => void;
 };
 
@@ -46,9 +43,6 @@ export function MomentFeed({
   query,
   settings,
   languageByDocument,
-  eyebrow,
-  title,
-  meta,
   onOpen,
 }: MomentFeedProps) {
   const ordered = [...groups].sort((left, right) =>
@@ -73,13 +67,6 @@ export function MomentFeed({
     <section className="moments-feed moments-moments" aria-label="Moments feed">
       <header className="moments-cover">
         <div className="moments-cover-art" aria-hidden="true" />
-        <div className="moments-cover-title">
-          <div className="eyebrow">{eyebrow}</div>
-          <h1>{title}</h1>
-          <div className="meta">
-            {meta.map((item) => <span key={item}>{item}</span>)}
-          </div>
-        </div>
         <div className="moments-profile" data-align={profile?.alignment || 'right'}>
           <strong>{displayName}</strong>
           <div className="moments-avatar" aria-hidden="true">

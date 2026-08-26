@@ -87,6 +87,65 @@ fn save_updates_markdown_then_refreshes_the_projection() {
 }
 
 #[test]
+fn save_document_updates_localized_title_and_body_atomically() {
+    let temporary = tempfile::tempdir().expect("temporary workspace");
+    let content_root = temporary.path().join("content");
+    let db_path = temporary.path().join("portfolio.db");
+    copy_tree(&fixture_root(), &content_root);
+
+    Workspace::open(&content_root)
+        .expect("open copied fixture")
+        .sync(&db_path)
+        .expect("seed projection");
+
+    let editor = ContentEditor::open(&content_root).expect("open source editor");
+    let locator = TranslationLocator::new(
+        ContentKind::Blog,
+        "hello-world",
+        None::<String>,
+        "body",
+        "en",
+    )
+    .expect("valid locator");
+    let original = editor.read_markdown(&locator).expect("read source");
+    let replacement = "# Edited title\n\nEdited body.\n";
+    let saved = editor
+        .save_markdown_with_frontmatter_values_and_sync(
+            &locator,
+            replacement,
+            &[(
+                "title".to_owned(),
+                serde_yaml::Value::String("Edited title".to_owned()),
+            )],
+            &original.revision,
+            &db_path,
+        )
+        .expect("save title and body");
+
+    let source = fs::read_to_string(content_root.join(saved.relative_path)).expect("read source");
+    assert!(source.contains("title: Edited title"));
+    assert!(source.ends_with(replacement));
+
+    let connection = Connection::open(&db_path).expect("open refreshed projection");
+    let projected_title: String = connection
+        .query_row(
+            "SELECT title FROM blog_post_translations WHERE language_code = 'en' AND title = 'Edited title'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("projected localized title");
+    let projected_body: String = connection
+        .query_row(
+            "SELECT body FROM item_part_translation WHERE language_code = 'en' AND body = ?1",
+            [replacement],
+            |row| row.get(0),
+        )
+        .expect("projected body");
+    assert_eq!(projected_title, "Edited title");
+    assert_eq!(projected_body, replacement);
+}
+
+#[test]
 fn create_markdown_translation_syncs_without_overwriting_existing_source() {
     let temporary = tempfile::tempdir().expect("temporary workspace");
     let content_root = temporary.path().join("content");

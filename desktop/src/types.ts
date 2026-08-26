@@ -197,6 +197,7 @@ export type EngagementStats = {
 export type EditorTranslation = {
   id: string;
   language: string;
+  title: string;
   content: string;
   revision: string;
   source_path: string;

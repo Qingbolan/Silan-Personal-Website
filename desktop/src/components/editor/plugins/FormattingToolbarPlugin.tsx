@@ -64,6 +64,7 @@ const toolbarButtons: ToolbarButton[] = [
 ];
 
 const blockOptions: Array<{ label: string; value: BlockFormat }> = [
+  { label: 'Title', value: 'title' },
   { label: 'Paragraph', value: 'paragraph' },
   { label: 'Heading 1', value: 'h1' },
   { label: 'Heading 2', value: 'h2' },
@@ -188,7 +189,13 @@ export function FormattingToolbar({
             onChange={(event) => controller?.setBlock(event.target.value as BlockFormat)}
           >
             {blockOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option
+                key={option.value}
+                value={option.value}
+                disabled={option.value === 'title'}
+              >
+                {option.label}
+              </option>
             ))}
           </select>
         </label>

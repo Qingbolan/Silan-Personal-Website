@@ -5,10 +5,16 @@ import { registerCodeHighlighting } from '@lexical/code';
 import { $getExtensionOutput } from '@lexical/extension';
 import { MdastImportExtension } from '@lexical/mdast';
 import {
+  $createParagraphNode,
+  $getNearestNodeFromDOMNode,
+  $getSelection,
+  $isRangeSelection,
   COMMAND_PRIORITY_HIGH,
   KEY_DOWN_COMMAND,
   PASTE_COMMAND,
+  type EditorState,
 } from 'lexical';
+import { GripVertical, Plus } from 'lucide-react';
 import {
   EditorShortcutController,
   resolveEditorShortcut,
@@ -45,6 +51,52 @@ export function MarkdownPastePlugin({ disabled }: { disabled: boolean }) {
 export function CodeHighlightPlugin() {
   const [editor] = useLexicalComposerContext();
   React.useEffect(() => registerCodeHighlighting(editor), [editor]);
+  return null;
+}
+
+export function ActiveBlockPlugin({ disabled }: { disabled: boolean }) {
+  const [editor] = useLexicalComposerContext();
+
+  React.useEffect(() => {
+    let activeElement: HTMLElement | null = null;
+
+    const clearActiveElement = () => {
+      activeElement?.classList.remove('lexical-active-block');
+      activeElement = null;
+    };
+
+    if (disabled) {
+      clearActiveElement();
+      return undefined;
+    }
+
+    const markActiveElement = (editorState: EditorState) => {
+      const activeKey = editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return null;
+        return selection.anchor.getNode().getTopLevelElement()?.getKey() || null;
+      });
+      const nextElement = activeKey ? editor.getElementByKey(activeKey) : null;
+      if (nextElement === activeElement) return;
+      clearActiveElement();
+      activeElement = nextElement;
+      activeElement?.classList.add('lexical-active-block');
+    };
+
+    const unregisterUpdate = editor.registerUpdateListener(({ editorState }) => {
+      markActiveElement(editorState);
+    });
+    const unregisterRoot = editor.registerRootListener(() => {
+      markActiveElement(editor.getEditorState());
+    });
+
+    return () => {
+      unregisterUpdate();
+      unregisterRoot();
+      clearActiveElement();
+    };
+  }, [disabled, editor]);
+
   return null;
 }
 
@@ -92,11 +144,24 @@ export function BlockDragPlugin({ disabled }: { disabled: boolean }) {
   const [editor] = useLexicalComposerContext();
   const menuRef = React.useRef<HTMLDivElement | null>(null);
   const targetLineRef = React.useRef<HTMLDivElement | null>(null);
+  const activeBlockRef = React.useRef<HTMLElement | null>(null);
   const [anchor, setAnchor] = React.useState<HTMLElement | null>(null);
 
   React.useEffect(() => editor.registerRootListener((root) => {
     setAnchor(root?.parentElement || null);
   }), [editor]);
+
+  const insertParagraphAfter = React.useCallback(() => {
+    const activeBlock = activeBlockRef.current;
+    if (!activeBlock) return;
+    editor.update(() => {
+      const target = $getNearestNodeFromDOMNode(activeBlock)?.getTopLevelElement();
+      if (!target) return;
+      const paragraph = $createParagraphNode();
+      target.insertAfter(paragraph);
+      paragraph.selectStart();
+    }, { onUpdate: () => editor.focus() });
+  }, [editor]);
 
   if (disabled || !anchor) return null;
   return (
@@ -104,9 +169,31 @@ export function BlockDragPlugin({ disabled }: { disabled: boolean }) {
       anchorElem={anchor}
       menuRef={menuRef}
       targetLineRef={targetLineRef}
-      menuComponent={<div ref={menuRef} className="drag-handle" aria-label="Move block" />}
+      menuComponent={(
+        <div ref={menuRef} className="block-controls" role="group" aria-label="Block controls">
+          <button
+            type="button"
+            className="block-controls__add"
+            aria-label="Add block below"
+            title="Add block below"
+            onMouseDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={insertParagraphAfter}
+          >
+            <Plus size={15} />
+          </button>
+          <span className="drag-handle" aria-hidden="true" title="Drag to move block">
+            <GripVertical size={15} />
+          </span>
+        </div>
+      )}
       targetLineComponent={<div ref={targetLineRef} className="lexical-block-drop-line" />}
       isOnMenu={(element) => menuRef.current?.contains(element) === true}
+      onElementChanged={(element) => {
+        activeBlockRef.current = element;
+      }}
     />
   );
 }

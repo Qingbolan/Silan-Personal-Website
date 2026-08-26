@@ -727,6 +727,7 @@ impl DesktopWorkspace {
     pub(crate) fn save_document(
         &self,
         translation_id: &str,
+        title: &str,
         body: &str,
         expected_revision: &str,
     ) -> Result<EditorDocument, String> {
@@ -735,6 +736,7 @@ impl DesktopWorkspace {
             .save_translation(
                 &SaveTranslationInput {
                     translation_id: translation_id.to_owned(),
+                    title: title.to_owned(),
                     content: body.to_owned(),
                     expected_revision: expected_revision.to_owned(),
                 },
@@ -882,6 +884,7 @@ impl DesktopWorkspace {
             .save_translation(
                 &SaveTranslationInput {
                     translation_id: target.id.clone(),
+                    title: target.title.clone(),
                     content: synced.body,
                     expected_revision: target.source_revision.0.clone(),
                 },
@@ -1986,6 +1989,7 @@ fn map_editable_document(
                     .map(|translation| EditorTranslation {
                         id: translation.id,
                         language: translation.language,
+                        title: translation.title,
                         content: translation.content,
                         revision: translation.source_revision.0,
                         source_path: translation.source_path,

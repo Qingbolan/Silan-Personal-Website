@@ -99,7 +99,11 @@ export function ContentCard({ group, onOpen, stateControls }: ContentCardProps) 
           </span>
         </span>
       </button>
-      {stateControls && <div className="content-card-actions">{stateControls}</div>}
+      {stateControls && (
+        <div className="content-card-actions management-controls-enter">
+          {stateControls}
+        </div>
+      )}
     </article>
   );
 }

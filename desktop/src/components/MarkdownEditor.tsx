@@ -53,6 +53,7 @@ import {
   SlashCommandPlugin,
 } from './editor/plugins/SlashCommandPlugin';
 import {
+  ActiveBlockPlugin,
   BlockDragPlugin,
   CodeHighlightPlugin,
   EditorKeymapPlugin,
@@ -71,6 +72,11 @@ import { quoteIssueComment } from './editor/interaction/SelectionAssist';
 import { resolveEditorShortcut } from './editor/interaction/EditorShortcutController';
 import { MarkdownSourceProjector } from './editor/model/MarkdownSourceProjection';
 import { MarkdownSourceHighlight } from './editor/plugins/MarkdownSourceHighlight';
+import { $getDocumentTitleText } from './editor/model/DocumentTitle';
+import {
+  DocumentTitlePlugin,
+  type MarkdownDocumentMeta,
+} from './editor/plugins/DocumentTitlePlugin';
 import { ArticleSkeleton } from './ds/Skeleton';
 
 export type {
@@ -89,6 +95,7 @@ type EditorPhase = 'creating' | 'ready';
 export type MarkdownEditorHandle = {
   focus: () => void;
   getMarkdown: () => string;
+  getTitle: () => string;
   insertMarkdown: (markdown: string) => string | null;
   replaceMarkdown: (markdown: string) => string | null;
   focusReviewFinding: (findingId: string) => boolean;
@@ -96,6 +103,8 @@ export type MarkdownEditorHandle = {
 };
 
 export type MarkdownEditingMode = 'rich' | 'source';
+
+export type { MarkdownDocumentMeta } from './editor/plugins/DocumentTitlePlugin';
 
 export type MarkdownEditorProps = {
   value: string;
@@ -110,6 +119,8 @@ export type MarkdownEditorProps = {
   plugins?: MarkdownEditorPlugin[];
   slashCommands?: SlashCommandDefinition[];
   reviewFindings?: EditorReviewFinding[];
+  defaultTitle?: string;
+  documentMeta?: MarkdownDocumentMeta;
   onChange?: (value: string) => void;
   onImportImages?: MarkdownImageImporter;
   onEditingModeChange?: (mode: MarkdownEditingMode) => void;
@@ -179,6 +190,8 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
     plugins = emptyPlugins,
     slashCommands = emptySlashCommands,
     reviewFindings = [],
+    defaultTitle = '',
+    documentMeta,
     onChange,
     onImportImages,
     onEditingModeChange,
@@ -191,6 +204,7 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
     const sourceHighlightRef = React.useRef<HTMLPreElement | null>(null);
     const initialValueRef = React.useRef(value);
     const valueRef = React.useRef(value);
+    const defaultTitleRef = React.useRef(defaultTitle);
     const onChangeRef = React.useRef(onChange);
     const reviewFindingsRef = React.useRef(reviewFindings);
     const onReviewFindingAppliedRef = React.useRef(onReviewFindingApplied);
@@ -239,6 +253,7 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
     );
 
     onChangeRef.current = onChange;
+    defaultTitleRef.current = defaultTitle;
     reviewFindingsRef.current = reviewFindings;
     onReviewFindingAppliedRef.current = onReviewFindingApplied;
 
@@ -314,6 +329,11 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
       () => (sourceMode || !editor ? valueRef.current : readMarkdown(editor)),
       [editor, sourceMode],
     );
+
+    const currentTitle = React.useCallback(() => {
+      if (!editor) return defaultTitleRef.current.trim();
+      return editor.read(() => $getDocumentTitleText()) || defaultTitleRef.current.trim();
+    }, [editor]);
 
     const insertMarkdown = React.useCallback((markdown: string) => {
       if (inactive) return null;
@@ -410,11 +430,13 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
       focus,
       focusReviewFinding,
       getMarkdown: currentMarkdown,
+      getTitle: currentTitle,
       insertMarkdown,
       replaceMarkdown,
     }), [
       applyReviewSuggestion,
       currentMarkdown,
+      currentTitle,
       focus,
       focusReviewFinding,
       insertMarkdown,
@@ -514,6 +536,7 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
         data-empty={value.trim() ? 'false' : 'true'}
         data-source-model="lexical-ast"
         data-toolbar={!readOnly && toolbarVisible ? 'visible' : 'hidden'}
+        data-document-title={defaultTitle && !sourceMode ? 'visible' : 'hidden'}
         onKeyDown={onKeyDown}
         onMouseDown={(event) => {
           if (sourceMode || inactive || !editor || phase !== 'ready') return;
@@ -551,6 +574,9 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
               placeholder={placeholder ? <div className="lexical-placeholder">{placeholder}</div> : null}
               ErrorBoundary={LexicalErrorBoundary}
             />
+            {defaultTitle && !readOnly && !sourceMode && (
+              <DocumentTitlePlugin defaultTitle={defaultTitle} meta={documentMeta} />
+            )}
             {!readOnly && <HistoryPlugin />}
             <ListPlugin />
             <CheckListPlugin disableTakeFocusOnClick={readOnly} />
@@ -568,6 +594,7 @@ const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEditorProp
               />
             )}
             {!readOnly && <MarkdownPastePlugin disabled={disabled || sourceMode} />}
+            {!readOnly && <ActiveBlockPlugin disabled={disabled || sourceMode} />}
             {!readOnly && <BlockDragPlugin disabled={disabled || sourceMode} />}
             {!readOnly && (
               <SlashCommandPlugin

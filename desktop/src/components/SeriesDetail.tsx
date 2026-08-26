@@ -8,6 +8,7 @@ import type { ContentGroup, EpisodeGroup, EpisodeSeries } from '../types';
 
 type SeriesDetailProps = {
   series: EpisodeSeries;
+  managementEnabled: boolean;
   onBack: () => void;
   onEditSeries: (series: EpisodeSeries) => void;
   onEditEpisode: (episode: EpisodeGroup) => void;
@@ -20,7 +21,15 @@ const seriesEngagement = (series: EpisodeSeries) => series.episodes.reduce((tota
   comments: total.comments + episode.engagement.comments,
 }), { likes: 0, comments: 0 });
 
-export function SeriesDetail({ series, onBack, onEditSeries, onEditEpisode, renderStateControls, seriesStateControls }: SeriesDetailProps) {
+export function SeriesDetail({
+  series,
+  managementEnabled,
+  onBack,
+  onEditSeries,
+  onEditEpisode,
+  renderStateControls,
+  seriesStateControls,
+}: SeriesDetailProps) {
   const coverUrl = toWebviewMediaUrl(series.coverUrl);
   const engagement = seriesEngagement(series);
   const latestDate = series.episodes.reduce((latest, episode) => {
@@ -60,13 +69,15 @@ export function SeriesDetail({ series, onBack, onEditSeries, onEditEpisode, rend
             <img className="series-cover" src={coverUrl} alt="" loading="lazy" />
           )}
         </div>
-        <div className="series-detail-actions">
-          <button type="button" className="series-edit-button" onClick={() => onEditSeries(series)}>
-            <PencilLine size={13} />
-            Edit series
-          </button>
-          {seriesStateControls}
-        </div>
+        {managementEnabled && (
+          <div className="series-detail-actions management-controls-enter">
+            <button type="button" className="series-edit-button" onClick={() => onEditSeries(series)}>
+              <PencilLine size={13} />
+              Edit series
+            </button>
+            {seriesStateControls}
+          </div>
+        )}
       </header>
 
       <div className="series-episode-list">
@@ -112,13 +123,15 @@ export function SeriesDetail({ series, onBack, onEditSeries, onEditEpisode, rend
                   {excerpt && <small>{excerpt}</small>}
                 </span>
               </button>
-              <div className="series-episode-actions">
-                {renderStateControls(episode, 'card')}
-                <button type="button" className="series-edit-button" onClick={() => onEditEpisode(episode)}>
-                  <PencilLine size={13} />
-                  Edit
-                </button>
-              </div>
+              {managementEnabled && (
+                <div className="series-episode-actions management-controls-enter">
+                  {renderStateControls(episode, 'card')}
+                  <button type="button" className="series-edit-button" onClick={() => onEditEpisode(episode)}>
+                    <PencilLine size={13} />
+                    Edit
+                  </button>
+                </div>
+              )}
             </article>
           );
         })}

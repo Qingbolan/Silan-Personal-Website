@@ -163,10 +163,12 @@ export function DesktopTitlebar(props: DesktopTitlebarProps) {
       )}
       {showWorkspaceNavigation && (props.titlebarTitle || props.titlebarMeta || props.titlebarOptions) && (
         <div className="desktop-titlebar-options">
-          <div className="desktop-titlebar-heading">
-            {props.titlebarTitle && <strong className="desktop-titlebar-page-title">{props.titlebarTitle}</strong>}
-            {props.titlebarMeta && <div className="desktop-titlebar-meta">{props.titlebarMeta}</div>}
-          </div>
+          {(props.titlebarTitle || props.titlebarMeta) && (
+            <div className="desktop-titlebar-heading">
+              {props.titlebarTitle && <strong className="desktop-titlebar-page-title">{props.titlebarTitle}</strong>}
+              {props.titlebarMeta && <div className="desktop-titlebar-meta">{props.titlebarMeta}</div>}
+            </div>
+          )}
           {props.titlebarOptions}
         </div>
       )}

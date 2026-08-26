@@ -300,10 +300,11 @@ pub(crate) async fn commit_workspace_changes(
 #[tauri::command]
 pub(crate) fn save_document(
     id: String,
+    title: String,
     content: String,
     expected_revision: String,
 ) -> Result<EditorDocument, String> {
-    DesktopWorkspace::from_environment()?.save_document(&id, &content, &expected_revision)
+    DesktopWorkspace::from_environment()?.save_document(&id, &title, &content, &expected_revision)
 }
 
 #[tauri::command]
