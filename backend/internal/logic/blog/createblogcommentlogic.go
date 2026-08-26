@@ -8,6 +8,8 @@ import (
 
 	"silan-backend/internal/commentruntime"
 	"silan-backend/internal/ent/comment"
+	engagementlogic "silan-backend/internal/logic/engagement"
+	"silan-backend/internal/publicactor"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -126,14 +128,23 @@ func (l *CreateBlogCommentLogic) CreateComment(req *types.CreateBlogCommentReque
 	l.Infof("Created %s comment %s by %s user (author: %s, ip: %s, fingerprint: %s)",
 		commentType, c.ID, userType, author.Name, req.ClientIP, req.Fingerprint)
 
+	actorID := publicactor.ID(publicactor.Visitor, req.Fingerprint)
+	visitorNumber := engagementlogic.VisitorNumber(req.Fingerprint)
+	if author.UserIdentityID != "" {
+		actorID = publicactor.ID(publicactor.User, author.UserIdentityID)
+		visitorNumber = ""
+	}
+
 	return &types.BlogCommentData{
 		ID:              c.ID,
+		ActorID:         actorID,
 		BlogPostID:      c.EntityID,
 		ParentID:        parentID,
 		AuthorName:      c.AuthorName,
 		AuthorAvatarURL: author.AvatarURL,
 		AuthProvider:    author.AuthProvider,
 		CountryCode:     countryCode,
+		VisitorNumber:   visitorNumber,
 		Content:         c.Content,
 		CreatedAt:       c.CreatedAt.Format(time.RFC3339),
 		CanDelete:       true,

@@ -9,6 +9,8 @@ import (
 
 	"silan-backend/internal/commentruntime"
 	entcomment "silan-backend/internal/ent/comment"
+	engagementlogic "silan-backend/internal/logic/engagement"
+	"silan-backend/internal/publicactor"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -113,14 +115,23 @@ func (l *CreateProjectCommentLogic) CreateProjectComment(req *types.CreateProjec
 		return nil, err
 	}
 
+	actorID := publicactor.ID(publicactor.Visitor, req.Fingerprint)
+	visitorNumber := engagementlogic.VisitorNumber(req.Fingerprint)
+	if author.UserIdentityID != "" {
+		actorID = publicactor.ID(publicactor.User, author.UserIdentityID)
+		visitorNumber = ""
+	}
+
 	return &types.ProjectCommentData{
 		ID:              comment.ID,
+		ActorID:         actorID,
 		ProjectID:       comment.EntityID,
 		ParentID:        comment.ParentID,
 		AuthorName:      comment.AuthorName,
 		AuthorAvatarURL: author.AvatarURL,
 		AuthProvider:    author.AuthProvider,
 		CountryCode:     countryCode,
+		VisitorNumber:   visitorNumber,
 		Content:         comment.Content,
 		Type:            string(comment.Type),
 		CreatedAt:       comment.CreatedAt.Format(time.RFC3339),

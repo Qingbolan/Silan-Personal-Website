@@ -9,10 +9,12 @@ import (
 	"silan-backend/internal/ent/contentinteraction"
 	"silan-backend/internal/ent/projectlike"
 	"silan-backend/internal/ent/useridentity"
+	"silan-backend/internal/publicactor"
 )
 
 // Liker is the public-safe identity projection for a content like.
 type Liker struct {
+	ActorID       string
 	Kind          string
 	CountryCode   string
 	VisitorNumber string
@@ -61,6 +63,7 @@ func ProjectLikers(ctx context.Context, client *ent.Client, projectID string, li
 	for _, row := range rows {
 		if user := identities[row.UserIdentityID]; user != nil {
 			likers = append(likers, Liker{
+				ActorID:   publicactor.ID(publicactor.User, user.ID),
 				Kind:      "user",
 				AvatarURL: user.AvatarURL,
 				Label:     user.DisplayName,
@@ -68,6 +71,7 @@ func ProjectLikers(ctx context.Context, client *ent.Client, projectID string, li
 			continue
 		}
 		likers = append(likers, Liker{
+			ActorID:       publicactor.ID(publicactor.Visitor, row.Fingerprint),
 			Kind:          "visitor",
 			VisitorNumber: VisitorNumber(row.Fingerprint),
 		})
@@ -120,6 +124,7 @@ func ContentLikers(ctx context.Context, client *ent.Client, entityType contentin
 		if row.UserIdentityID != nil {
 			if user := identities[*row.UserIdentityID]; user != nil {
 				likers = append(likers, Liker{
+					ActorID:   publicactor.ID(publicactor.User, user.ID),
 					Kind:      "user",
 					AvatarURL: user.AvatarURL,
 					Label:     user.DisplayName,
@@ -132,6 +137,7 @@ func ContentLikers(ctx context.Context, client *ent.Client, entityType contentin
 			fingerprint = *row.Fingerprint
 		}
 		likers = append(likers, Liker{
+			ActorID:       publicactor.ID(publicactor.Visitor, fingerprint),
 			Kind:          "visitor",
 			CountryCode:   row.CountryCode,
 			VisitorNumber: VisitorNumber(fingerprint),

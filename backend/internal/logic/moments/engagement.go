@@ -2,7 +2,6 @@ package moments
 
 import (
 	"context"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"strings"
@@ -16,6 +15,8 @@ import (
 	"silan-backend/internal/ent/moment"
 	"silan-backend/internal/ent/useridentity"
 	"silan-backend/internal/logic/analytics"
+	engagementlogic "silan-backend/internal/logic/engagement"
+	"silan-backend/internal/publicactor"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 )
@@ -109,7 +110,8 @@ func updateLikers(ctx context.Context, svcCtx *svc.ServiceContext, momentID stri
 			user := identities[*row.UserIdentityID]
 			if user != nil {
 				result = append(result, types.UpdateLiker{
-					Kind: "user", AvatarURL: user.AvatarURL, Label: user.DisplayName,
+					ActorID: publicactor.ID(publicactor.User, user.ID),
+					Kind:    "user", AvatarURL: user.AvatarURL, Label: user.DisplayName,
 				})
 				continue
 			}
@@ -119,18 +121,13 @@ func updateLikers(ctx context.Context, svcCtx *svc.ServiceContext, momentID stri
 			fingerprint = *row.Fingerprint
 		}
 		result = append(result, types.UpdateLiker{
+			ActorID:       publicactor.ID(publicactor.Visitor, fingerprint),
 			Kind:          "visitor",
 			CountryCode:   strings.ToUpper(row.CountryCode),
-			VisitorNumber: visitorNumber(fingerprint),
+			VisitorNumber: engagementlogic.VisitorNumber(fingerprint),
 		})
 	}
 	return result, nil
-}
-
-func visitorNumber(fingerprint string) string {
-	sum := sha256.Sum256([]byte(fingerprint))
-	number := (int(sum[0])<<8|int(sum[1]))%99 + 1
-	return fmt.Sprintf("%02d", number)
 }
 
 func ToggleUpdateLike(ctx context.Context, svcCtx *svc.ServiceContext, req *types.LikeProjectRequest) (*types.UpdateEngagementResponse, error) {
@@ -225,10 +222,12 @@ func CreateUpdateComment(ctx context.Context, svcCtx *svc.ServiceContext, req *t
 		return nil, err
 	}
 	visitor := ""
+	actorID := publicactor.ID(publicactor.User, author.UserIdentityID)
 	if req.AuthenticatedUserID == "" && strings.TrimSpace(req.Fingerprint) != "" {
-		visitor = visitorNumber(req.Fingerprint)
+		visitor = engagementlogic.VisitorNumber(req.Fingerprint)
+		actorID = publicactor.ID(publicactor.Visitor, req.Fingerprint)
 	}
-	return &types.UpdateCommentData{ID: row.ID, UpdateID: id, ParentID: row.ParentID, AuthorName: author.Name, AuthorAvatarURL: author.AvatarURL, AuthProvider: author.AuthProvider, CountryCode: countryCode, VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: true, IsPublic: row.IsApproved, Replies: []types.UpdateCommentData{}}, nil
+	return &types.UpdateCommentData{ID: row.ID, ActorID: actorID, UpdateID: id, ParentID: row.ParentID, AuthorName: author.Name, AuthorAvatarURL: author.AvatarURL, AuthProvider: author.AuthProvider, CountryCode: countryCode, VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: true, IsPublic: row.IsApproved, Replies: []types.UpdateCommentData{}}, nil
 }
 
 func ListUpdateComments(ctx context.Context, svcCtx *svc.ServiceContext, key, fingerprint, identity string) (*types.UpdateCommentListResponse, error) {
@@ -253,12 +252,14 @@ func ListUpdateComments(ctx context.Context, svcCtx *svc.ServiceContext, key, fi
 			}
 		}
 		visitor := ""
+		actorID := publicactor.ID(publicactor.User, row.UserIdentityID)
 		if row.UserIdentityID == "" {
 			if stored := commentruntime.Fingerprint(row); stored != "" {
-				visitor = visitorNumber(stored)
+				visitor = engagementlogic.VisitorNumber(stored)
+				actorID = publicactor.ID(publicactor.Visitor, stored)
 			}
 		}
-		comments[row.ID] = &types.UpdateCommentData{ID: row.ID, UpdateID: id, ParentID: row.ParentID, AuthorName: row.AuthorName, AuthorAvatarURL: avatar, AuthProvider: provider, CountryCode: strings.ToUpper(row.CountryCode), VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: actor.CanDelete(row), LikesCount: row.LikesCount, IsPublic: row.IsApproved, Replies: []types.UpdateCommentData{}}
+		comments[row.ID] = &types.UpdateCommentData{ID: row.ID, ActorID: actorID, UpdateID: id, ParentID: row.ParentID, AuthorName: row.AuthorName, AuthorAvatarURL: avatar, AuthProvider: provider, CountryCode: strings.ToUpper(row.CountryCode), VisitorNumber: visitor, Content: row.Content, CreatedAt: row.CreatedAt.Format(time.RFC3339), CanDelete: actor.CanDelete(row), LikesCount: row.LikesCount, IsPublic: row.IsApproved, Replies: []types.UpdateCommentData{}}
 		order = append(order, row.ID)
 	}
 	if len(order) > 0 && (identity != "" || fingerprint != "") {

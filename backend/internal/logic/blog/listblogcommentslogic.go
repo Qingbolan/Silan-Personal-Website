@@ -9,6 +9,8 @@ import (
 	"silan-backend/internal/commentruntime"
 	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/commentlike"
+	engagementlogic "silan-backend/internal/logic/engagement"
+	"silan-backend/internal/publicactor"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -101,14 +103,24 @@ func (l *ListBlogCommentsLogic) listComments(req *types.BlogCommentListRequest, 
 	// First pass: create all comment objects
 	for _, c := range list {
 		identity := lookupIdentity(c.AuthorEmail)
+		commentFingerprint := commentruntime.Fingerprint(c)
+		actorID := publicactor.ID(publicactor.Visitor, commentFingerprint)
+		visitorNumber := ""
+		if c.UserIdentityID != "" {
+			actorID = publicactor.ID(publicactor.User, c.UserIdentityID)
+		} else {
+			visitorNumber = engagementlogic.VisitorNumber(commentFingerprint)
+		}
 		comment := types.BlogCommentData{
 			ID:              c.ID,
+			ActorID:         actorID,
 			BlogPostID:      c.EntityID,
 			ParentID:        c.ParentID,
 			AuthorName:      c.AuthorName,
 			AuthorAvatarURL: identity.avatar,
 			AuthProvider:    identity.provider,
 			CountryCode:     strings.ToUpper(c.CountryCode),
+			VisitorNumber:   visitorNumber,
 			Content:         c.Content,
 			CreatedAt:       c.CreatedAt.Format(time.RFC3339),
 			CanDelete:       actor.CanDelete(c),

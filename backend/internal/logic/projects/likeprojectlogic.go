@@ -149,6 +149,7 @@ func projectLikers(likers []engagement.Liker) []types.UpdateLiker {
 	result := make([]types.UpdateLiker, 0, len(likers))
 	for _, liker := range likers {
 		result = append(result, types.UpdateLiker{
+			ActorID:       liker.ActorID,
 			Kind:          liker.Kind,
 			CountryCode:   liker.CountryCode,
 			VisitorNumber: liker.VisitorNumber,

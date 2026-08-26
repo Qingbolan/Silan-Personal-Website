@@ -10,6 +10,8 @@ import (
 	"silan-backend/internal/ent/comment"
 	"silan-backend/internal/ent/commentlike"
 	"silan-backend/internal/ent/useridentity"
+	engagementlogic "silan-backend/internal/logic/engagement"
+	"silan-backend/internal/publicactor"
 	"silan-backend/internal/svc"
 	"silan-backend/internal/types"
 
@@ -119,14 +121,24 @@ func (l *ListProjectCommentsLogic) ListProjectComments(req *types.ProjectComment
 	for _, comment := range comments {
 		_, isLiked := likedCommentIDs[comment.ID]
 		identity := lookupIdentity(comment.AuthorEmail)
+		fingerprint := commentruntime.Fingerprint(comment)
+		actorID := publicactor.ID(publicactor.Visitor, fingerprint)
+		visitorNumber := ""
+		if comment.UserIdentityID != "" {
+			actorID = publicactor.ID(publicactor.User, comment.UserIdentityID)
+		} else {
+			visitorNumber = engagementlogic.VisitorNumber(fingerprint)
+		}
 		commentData := types.ProjectCommentData{
 			ID:              comment.ID,
+			ActorID:         actorID,
 			ProjectID:       comment.EntityID,
 			ParentID:        comment.ParentID,
 			AuthorName:      comment.AuthorName,
 			AuthorAvatarURL: identity.avatar,
 			AuthProvider:    identity.provider,
 			CountryCode:     strings.ToUpper(comment.CountryCode),
+			VisitorNumber:   visitorNumber,
 			Content:         comment.Content,
 			Type:            string(comment.Type),
 			CreatedAt:       comment.CreatedAt.Format(time.RFC3339),

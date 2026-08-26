@@ -8,14 +8,15 @@ import (
 	"entgo.io/ent/dialect"
 	"silan-backend/internal/ent/enttest"
 	"silan-backend/internal/ent/itempart"
+	"silan-backend/internal/logic/engagement"
 	"silan-backend/internal/svc"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestVisitorNumberIsStableAndTwoDigits(t *testing.T) {
-	first := visitorNumber("browser-cookie-a")
-	if first != visitorNumber("browser-cookie-a") {
+	first := engagement.VisitorNumber("browser-cookie-a")
+	if first != engagement.VisitorNumber("browser-cookie-a") {
 		t.Fatal("visitor number must remain stable for one browser cookie")
 	}
 	if len(first) != 2 || first < "01" || first > "99" {

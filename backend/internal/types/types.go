@@ -25,12 +25,14 @@ type BlogCategory struct {
 
 type BlogCommentData struct {
 	ID              string            `json:"id"`
+	ActorID         string            `json:"actor_id,omitempty"`
 	BlogPostID      string            `json:"blog_post_id"`
 	ParentID        string            `json:"parent_id,optional"`
 	AuthorName      string            `json:"author_name"`
 	AuthorAvatarURL string            `json:"author_avatar_url,optional"`
 	AuthProvider    string            `json:"auth_provider,optional"`
 	CountryCode     string            `json:"country_code,optional"`
+	VisitorNumber   string            `json:"visitor_number,omitempty"`
 	Content         string            `json:"content"`
 	CreatedAt       string            `json:"created_at"`
 	CanDelete       bool              `json:"can_delete"`
@@ -578,12 +580,14 @@ type ProjectByIdRequest struct {
 
 type ProjectCommentData struct {
 	ID              string               `json:"id"`
+	ActorID         string               `json:"actor_id,omitempty"`
 	ProjectID       string               `json:"project_id"`
 	ParentID        string               `json:"parent_id,optional"`
 	AuthorName      string               `json:"author_name"`
 	AuthorAvatarURL string               `json:"author_avatar_url,optional"`
 	AuthProvider    string               `json:"auth_provider,optional"`
 	CountryCode     string               `json:"country_code,optional"`
+	VisitorNumber   string               `json:"visitor_number,omitempty"`
 	Content         string               `json:"content"`
 	Type            string               `json:"type"`
 	CreatedAt       string               `json:"created_at"`
@@ -765,6 +769,7 @@ type MomentRelatedOutput struct {
 
 type UpdateCommentData struct {
 	ID              string              `json:"id"`
+	ActorID         string              `json:"actor_id,omitempty"`
 	UpdateID        string              `json:"update_id"`
 	ParentID        string              `json:"parent_id,optional"`
 	AuthorName      string              `json:"author_name"`
@@ -806,11 +811,41 @@ type UpdateEngagementResponse struct {
 }
 
 type UpdateLiker struct {
+	ActorID       string `json:"actor_id,omitempty"`
 	Kind          string `json:"kind"`
 	CountryCode   string `json:"country_code,omitempty"`
 	VisitorNumber string `json:"visitor_number,omitempty"`
 	AvatarURL     string `json:"avatar_url,omitempty"`
 	Label         string `json:"label,omitempty"`
+}
+
+type PublicActorRequest struct {
+	ActorID  string `path:"actor_id"`
+	Language string `form:"lang,default=en"`
+}
+
+type PublicActorActivity struct {
+	ID          string `json:"id"`
+	Kind        string `json:"kind"`
+	EntityType  string `json:"entity_type"`
+	EntityID    string `json:"entity_id"`
+	EntitySlug  string `json:"entity_slug,omitempty"`
+	EntityTitle string `json:"entity_title,omitempty"`
+	EntityPath  string `json:"entity_path,omitempty"`
+	Content     string `json:"content,omitempty"`
+	CreatedAt   string `json:"created_at"`
+}
+
+type PublicActorProfile struct {
+	ActorID       string                `json:"actor_id"`
+	Kind          string                `json:"kind"`
+	DisplayName   string                `json:"display_name"`
+	AvatarURL     string                `json:"avatar_url,omitempty"`
+	CountryCode   string                `json:"country_code,omitempty"`
+	RegionName    string                `json:"region_name,omitempty"`
+	VisitorNumber string                `json:"visitor_number,omitempty"`
+	JoinedAt      string                `json:"joined_at,omitempty"`
+	Activities    []PublicActorActivity `json:"activities"`
 }
 
 type RecordProjectViewRequest struct {

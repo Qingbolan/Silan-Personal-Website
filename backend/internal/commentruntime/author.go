@@ -57,7 +57,7 @@ func ResolveAuthor(
 		return Author{}, fmt.Errorf("fingerprint is required for guest comments")
 	}
 	name := strings.TrimSpace(requestedName)
-	if name == "" || isGeneratedGuestName(name) {
+	if name == "" || IsGeneratedGuestName(name) {
 		name = DefaultGuestName(countryCode, regionCode, fingerprint)
 	}
 	return Author{Name: name}, nil
@@ -105,7 +105,9 @@ func locationToken(value, fallback string) string {
 	return token.String()
 }
 
-func isGeneratedGuestName(value string) bool {
+// IsGeneratedGuestName reports whether a name was synthesized from the
+// anonymous identity rather than explicitly chosen by the visitor.
+func IsGeneratedGuestName(value string) bool {
 	return strings.HasPrefix(value, "guest-id<") &&
 		strings.HasSuffix(value, ">") &&
 		strings.Count(value, "/") == 2

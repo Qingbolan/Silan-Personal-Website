@@ -14,6 +14,7 @@ import (
 	health "silan-backend/internal/handler/health"
 	media "silan-backend/internal/handler/media"
 	moments "silan-backend/internal/handler/moments"
+	people "silan-backend/internal/handler/people"
 	projects "silan-backend/internal/handler/projects"
 	resume "silan-backend/internal/handler/resume"
 	stats "silan-backend/internal/handler/stats"
@@ -28,6 +29,20 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		Path:    "/api/v1/analytics/crawler-hit",
 		Handler: analytics.CrawlerHitHandler(serverCtx),
 	})
+
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.Cors, serverCtx.Analytics},
+			[]rest.Route{
+				{
+					Method:  http.MethodGet,
+					Path:    "/:actor_id",
+					Handler: people.GetPublicActorHandler(serverCtx),
+				},
+			}...,
+		),
+		rest.WithPrefix("/api/v1/people"),
+	)
 
 	server.AddRoutes(
 		rest.WithMiddlewares(
