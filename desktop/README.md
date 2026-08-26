@@ -32,6 +32,11 @@ Both commands refresh the local SQLite projection and launch the compiled
 `SILAN_VIKING_BIN` so desktop delivery actions call the same reviewed engine
 binary that opened the app.
 
+Workspace paths come from the nearest `silan-viking.toml`. In particular,
+`[project].content_dir` may name a restored content repository such as
+`silan.tech`; Desktop does not assume every device stores authored source in a
+directory literally named `content`.
+
 ## Development session
 
 The Tauri/Vite development server is explicit:

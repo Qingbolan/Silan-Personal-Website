@@ -117,7 +117,8 @@ mod tests {
     #[test]
     fn sync_state_moves_from_missing_to_synchronized() {
         let directory = tempfile::tempdir().expect("temp");
-        let content = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content");
+        let content =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/content");
         let db = directory.path().join("portfolio.db");
         let sync = WorkspaceSync::open(content, &db).expect("open");
         assert_eq!(

@@ -758,6 +758,24 @@ where
 mod tests {
     use super::*;
 
+    fn fixture_content() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/content")
+    }
+
+    fn copy_tree(source: &Path, destination: &Path) {
+        fs::create_dir_all(destination).expect("create fixture destination");
+        for entry in fs::read_dir(source).expect("read fixture directory") {
+            let entry = entry.expect("fixture entry");
+            let source_path = entry.path();
+            let destination_path = destination.join(entry.file_name());
+            if source_path.is_dir() {
+                copy_tree(&source_path, &destination_path);
+            } else {
+                fs::copy(source_path, destination_path).expect("copy fixture file");
+            }
+        }
+    }
+
     fn git_ok(root: Option<&Path>, args: &[&str]) {
         let mut command = Command::new("git");
         command.args(args);
@@ -837,7 +855,22 @@ mod tests {
     #[test]
     fn content_repository_join_clones_validates_and_rebuilds_projection() {
         let temporary = tempfile::tempdir().expect("temporary join fixture");
-        let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content");
+        let source = temporary.path().join("source-content");
+        copy_tree(&fixture_content(), &source);
+        git_ok(Some(&source), &["init"]);
+        git_ok(Some(&source), &["add", "."]);
+        git_ok(
+            Some(&source),
+            &[
+                "-c",
+                "user.name=Silan Hu",
+                "-c",
+                "user.email=silan.hu@u.nus.edu",
+                "commit",
+                "-m",
+                "test: initialize content fixture",
+            ],
+        );
         let remote = temporary.path().join("content.git");
         git_ok(
             None,

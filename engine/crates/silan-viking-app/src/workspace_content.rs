@@ -1334,13 +1334,13 @@ fn entry_value_json(value: &EntryValue) -> serde_json::Value {
 mod tests {
     use super::*;
 
-    fn repository_content() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content")
+    fn fixture_content() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/content")
     }
 
     #[test]
     fn editable_workspace_uses_stable_source_identities() {
-        let workspace = WorkspaceContent::open(repository_content()).expect("open content");
+        let workspace = WorkspaceContent::open(fixture_content()).expect("open content");
         let documents = workspace.editable_documents().expect("scan documents");
         assert!(!documents.is_empty());
         for document in documents {
@@ -1361,7 +1361,7 @@ mod tests {
 
     #[test]
     fn episode_source_paths_include_the_series_container() {
-        let workspace = WorkspaceContent::open(repository_content()).expect("open content");
+        let workspace = WorkspaceContent::open(fixture_content()).expect("open content");
         let episode = workspace
             .editable_documents()
             .expect("scan documents")
@@ -1370,31 +1370,27 @@ mod tests {
             .expect("episode fixture");
         let source = &episode.parts[0].translations[0].source_path;
         assert!(
-            source.starts_with("resources/episode/using-silan-viking/"),
+            source.starts_with("resources/episode/tutorial-series/"),
             "{source}"
         );
     }
 
     #[test]
     fn moment_editor_projection_exposes_semantic_metadata_and_relations() {
-        let workspace = WorkspaceContent::open(repository_content()).expect("open content");
+        let workspace = WorkspaceContent::open(fixture_content()).expect("open content");
         let moment = workspace
             .editable_documents()
             .expect("scan documents")
             .into_iter()
             .find(|document| {
-                document.content_type == "moment" && document.slug == "silan-viking-progress"
+                document.content_type == "moment" && document.slug == "changelog-2026-q2"
             })
             .expect("moment fixture");
 
-        assert_eq!(moment.moment_type.as_deref(), Some("progress"));
+        assert_eq!(moment.moment_type.as_deref(), Some("release"));
         assert_eq!(moment.priority.as_deref(), Some("medium"));
-        assert_eq!(moment.tags, ["silan-viking", "content-system"]);
-        assert!(moment.relations.iter().any(|relation| {
-            relation.relation_type == "evolved_into"
-                && relation.target_kind == "project"
-                && relation.target_slug == "silan-viking"
-        }));
+        assert_eq!(moment.tags, ["release"]);
+        assert!(moment.relations.is_empty());
     }
 
     #[test]

@@ -98,6 +98,9 @@ silan desktop dev   # 唯一的 Tauri/Vite 开发服务器入口
 
 默认命令不得探测源码 `package.json`、调用 npm 或启动开发服务器。安装或更新桌面
 bundle 使用 `packaging/release/dev-install-local.sh --desktop-only --user-apps`。
+CLI 和 Desktop 必须共同遵守最近项目配置中的 `[project].content_dir`；恢复后的
+content repository 可以使用 `silan.tech` 等设备本地目录名，不能重新硬编码为
+`content/`。
 
 安装后至少验证：
 

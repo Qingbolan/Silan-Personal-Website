@@ -731,10 +731,13 @@ impl CliOptions {
             .and_then(|p| p.parent())
             .map(Path::to_path_buf)
             .or_else(|| find_project_root_from(&cwd));
-        let content_root = explicit_content.unwrap_or_else(|| match &project_root {
-            Some(root) => root.join("content"),
-            None => cwd.join("content"),
-        });
+        let content_root = match explicit_content {
+            Some(content_root) => content_root,
+            None => match &project_root {
+                Some(root) => configured_content_root(root)?,
+                None => cwd.join("content"),
+            },
+        };
 
         let out_dir = explicit_out.unwrap_or_else(|| match &project_root {
             Some(root) => root.join("_site"),
@@ -774,6 +777,45 @@ fn find_project_root_from(start: &Path) -> Option<PathBuf> {
     None
 }
 
+/// Resolve the authored source directory declared by one project shell.
+///
+/// `content/` remains the default, but recovered or joined content
+/// repositories may deliberately use another device-local directory name.
+/// The configured path must stay inside the project root; accepting absolute
+/// paths or `..` would make an innocent CLI invocation operate on unrelated
+/// data outside the selected workspace.
+fn configured_content_root(project_root: &Path) -> Result<PathBuf, String> {
+    use std::path::Component;
+
+    let config_path = project_root.join("silan-viking.toml");
+    let config: toml::Value = fs::read_to_string(&config_path)
+        .map_err(|error| format!("read project config {}: {error}", config_path.display()))?
+        .parse()
+        .map_err(|error| format!("parse project config {}: {error}", config_path.display()))?;
+    let configured = config
+        .get("project")
+        .and_then(|project| project.get("content_dir"))
+        .and_then(toml::Value::as_str)
+        .unwrap_or("content")
+        .trim();
+    let relative = Path::new(configured);
+    if relative.as_os_str().is_empty()
+        || relative.is_absolute()
+        || relative.components().any(|component| {
+            matches!(
+                component,
+                Component::ParentDir | Component::RootDir | Component::Prefix(_)
+            )
+        })
+    {
+        return Err(format!(
+            "[project].content_dir must be a relative path inside {}",
+            project_root.display()
+        ));
+    }
+    Ok(project_root.join(relative))
+}
+
 /// Resolve the derived-database path from `silan-viking.toml`'s
 /// `[database].path`. The project root is the content dir's parent; a relative
 /// config path is joined onto it. Returns `None` when there is no project
@@ -800,8 +842,8 @@ fn resolve_db_path(content_root: &Path) -> Option<PathBuf> {
 /// `--content` handling in `CliOptions::parse` so the banner's status
 /// block reflects the project the user is pointing at.
 ///
-/// Priority: `--content <path>` (explicit) → `find_project_root_from(cwd)`
-/// climb (V3-H fix) → `<cwd>/content` fallback. The climb means running
+/// Priority: `--content <path>` (explicit) → configured content directory in
+/// `find_project_root_from(cwd)` → `<cwd>/content` fallback. The climb means running
 /// `silan-viking --help` from a project subdir prints the right project
 /// status (matching what `silan-viking ... moment new` would actually do).
 fn resolve_content_root(args: &[String]) -> PathBuf {
@@ -822,7 +864,7 @@ fn resolve_content_root(args: &[String]) -> PathBuf {
         return p;
     }
     if let Some(root) = find_project_root_from(&cwd) {
-        return root.join("content");
+        return configured_content_root(&root).unwrap_or_else(|_| root.join("content"));
     }
     cwd.join("content")
 }
@@ -6191,13 +6233,41 @@ fn resume_add_part(content_root: &Path, role: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_search_submit_config, search_submit_env_pairs, validate_stats_token,
-        CredentialProfile, DeployConfig, GitCodeArtifact, DEPLOYED_STATS_TOKEN_ENV,
-        PRIVATE_API_TOKEN_ENV,
+        configured_content_root, parse_search_submit_config, search_submit_env_pairs,
+        validate_stats_token, CredentialProfile, DeployConfig, GitCodeArtifact,
+        DEPLOYED_STATS_TOKEN_ENV, PRIVATE_API_TOKEN_ENV,
     };
     use std::fs;
     use std::path::PathBuf;
     use std::process::Command;
+
+    #[test]
+    fn project_content_directory_comes_from_the_project_shell() {
+        let root = std::env::temp_dir().join(format!(
+            "silan-project-path-test-{}-{}",
+            std::process::id(),
+            time::OffsetDateTime::now_utc().unix_timestamp_nanos(),
+        ));
+        fs::create_dir_all(&root).expect("create fixture");
+        fs::write(
+            root.join("silan-viking.toml"),
+            "[project]\ncontent_dir = \"silan.tech\"\n",
+        )
+        .expect("write project config");
+
+        assert_eq!(
+            configured_content_root(&root).expect("configured content root"),
+            root.join("silan.tech")
+        );
+
+        fs::write(
+            root.join("silan-viking.toml"),
+            "[project]\ncontent_dir = \"../outside\"\n",
+        )
+        .expect("write unsafe project config");
+        assert!(configured_content_root(&root).is_err());
+        fs::remove_dir_all(root).expect("remove fixture");
+    }
 
     #[test]
     fn private_api_deploy_token_requires_strength_and_env_safe_characters() {
