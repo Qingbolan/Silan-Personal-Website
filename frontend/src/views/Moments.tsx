@@ -11,7 +11,6 @@ import { fetchMoments } from '../api/moments/momentApi';
 import { fetchPersonalInfo } from '../api/home/resumeApi';
 import { mediaUrl } from '../api/utils';
 import type { Moment, PersonalInfo } from '../types/api';
-import MomentActions from '../components/Resume/MomentActions';
 import MomentRelatedOutputs from '../components/Moments/MomentRelatedOutputs';
 import MomentsProfileHero from '../components/Moments/MomentsProfileHero';
 import { EDITORIAL_CONTENT_FRAME_CLASS } from '../layout/contentFrame';
@@ -438,16 +437,6 @@ const Moments: React.FC = () => {
                                       className="mt-2.5"
                                     />
                                   )}
-                                  <MomentActions
-                                    momentKey={moment.slug || moment.id}
-                                    timestamp={
-                                      moment.created_at && !moment.created_at.startsWith('0001-')
-                                        ? moment.created_at
-                                        : `${moment.date}T00:00:00`
-                                    }
-                                    variant="compact"
-                                    timestampDisplay="hidden"
-                                  />
                                 </div>
                               </motion.article>
                             );
