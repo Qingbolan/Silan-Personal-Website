@@ -7,6 +7,10 @@ import { fetchProjects } from '../api/projects/projectApi';
 import { useLanguage } from '../components/LanguageContext';
 import { Seo } from '../components/Seo';
 import {
+  DEFAULT_CONTENT_AUTHOR,
+  DEFAULT_CONTENT_AUTHOR_AVATAR_URL,
+} from '../lib/contentAttribution';
+import {
   BlogHeader,
   BrandLoading,
   Button,
@@ -17,7 +21,6 @@ import {
   type ProjectCardData,
 } from '../components/ds';
 import type { Project } from '../types/api';
-import { DEFAULT_CONTENT_AUTHOR } from '../lib/contentAttribution';
 
 const SINGLE_PROJECT_BREAKPOINTS = [
   { minWidth: 640, columns: 2 },
@@ -95,9 +98,9 @@ const ProjectGallery: React.FC = () => {
     id: project.id,
     title: project.name,
     description: project.description,
-    tags: project.tags,
     year: project.year,
     author: DEFAULT_CONTENT_AUTHOR,
+    authorAvatarUrl: DEFAULT_CONTENT_AUTHOR_AVATAR_URL,
     githubUrl: project.githubUrl,
     documentationUrl: project.documentationUrl,
     demoUrl: project.demoUrl || project.coverWebsiteUrl,
@@ -135,7 +138,7 @@ const ProjectGallery: React.FC = () => {
         lang={language as 'en' | 'zh'}
       />
       <div className="mx-auto max-w-6xl px-4">
-        <motion.div className="mb-12" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div className="mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <BlogHeader
             eyebrow={language === 'en' ? 'Work' : '作品'}
             title={t('projects.title')}
@@ -151,6 +154,8 @@ const ProjectGallery: React.FC = () => {
             selectedTag={selectedTag}
             onTagChange={setSelectedTag}
             tagLabel={language === 'en' ? 'Topic' : '主题'}
+            expandTagsLabel={language === 'en' ? 'More' : '更多'}
+            collapseTagsLabel={language === 'en' ? 'Less' : '收起'}
             formatTag={(tag) => tag === 'all' ? t('projects.all') : tag}
           />
         </motion.div>
@@ -166,6 +171,7 @@ const ProjectGallery: React.FC = () => {
             <Masonry
               items={filteredProjects}
               getKey={projectKey}
+              gap={12}
               bottomPadding={96}
               breakpoints={filteredProjects.length === 1 ? SINGLE_PROJECT_BREAKPOINTS : undefined}
               getSpan={filteredProjects.length === 1 ? spanFeatureProject : undefined}

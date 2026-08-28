@@ -8,7 +8,7 @@ import { Calendar, FileText, Layers, ArrowUpRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Card } from './Card';
 import { Badge } from './Badge';
-import { Avatar } from './Avatar';
+import { CardAuthor } from './CardAuthor';
 
 export type BlogCoverSize = 'compact' | 'standard' | 'tall' | 'feature';
 
@@ -92,29 +92,6 @@ const splitQuoteLead = (text: string): { lead: string; rest: string } => {
   if (softBreak) return { lead: softBreak[1], rest: softBreak[2] };
   return { lead: normalized, rest: '' };
 };
-
-interface CardAuthorProps {
-  name: string;
-  avatarUrl?: string;
-  onCover?: boolean;
-}
-
-/** One author identity treatment shared by every BlogCard composition. */
-const CardAuthor: React.FC<CardAuthorProps> = ({ name, avatarUrl, onCover = false }) => (
-  <span className="inline-flex items-center gap-1.5">
-    <Avatar
-      src={avatarUrl}
-      name={name}
-      size="xs"
-      bordered={false}
-      className={cn(
-        'size-4 text-[0.5rem]',
-        onCover && 'ring-1 ring-white/40',
-      )}
-    />
-    {name}
-  </span>
-);
 
 /* --- BlogCard ------------------------------------------------------------ */
 

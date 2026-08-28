@@ -16,12 +16,12 @@ import {
   Github,
   Globe2,
   MonitorUp,
-  User,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { dsRoot } from './dsAttr';
 import { Card } from './Card';
 import { Badge } from './Badge';
+import { CardAuthor } from './CardAuthor';
 import { ProjectLivePreview, ProjectPlaceholder } from './ProjectPreviewSurface';
 
 /**
@@ -43,6 +43,8 @@ export interface ProjectCardData {
   year?: number | string;
   /** Author / owner — shown in the cover meta strip. */
   author?: string;
+  /** Author portrait. Falls back to initials when unavailable. */
+  authorAvatarUrl?: string;
   githubUrl?: string;
   demoUrl?: string;
   documentationUrl?: string;
@@ -141,7 +143,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   const {
     id, title, description, tags = [],
     coverImage, coverVideo, coverPoster, livePreview,
-    year, author, githubUrl, demoUrl, documentationUrl, relatedLinks = [],
+    year, author, authorAvatarUrl, githubUrl, demoUrl, documentationUrl, relatedLinks = [],
     coverSourceType, status,
   } = project;
 
@@ -316,10 +318,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </span>
           )}
           {author && (
-            <span className="inline-flex items-center gap-1">
-              <User className="size-3" />
-              {author}
-            </span>
+            <CardAuthor name={author} avatarUrl={authorAvatarUrl} onCover />
           )}
         </div>
       )}

@@ -37,10 +37,15 @@ import { useRemoteResource } from '../../hooks/useRemoteResource';
 import { useProjectEngagement } from './hooks/useProjectEngagement';
 import { cn } from '../../lib/utils';
 import { scrollToAnchor } from '../../lib/scrollToAnchor';
+import {
+  DEFAULT_CONTENT_AUTHOR,
+  DEFAULT_CONTENT_AUTHOR_AVATAR_URL,
+} from '../../lib/contentAttribution';
 import type { ContentPart } from '../../types';
 import {
   Badge,
   Button,
+  CardAuthor,
   ContentAttribution,
   Divider,
   BrandLoading,
@@ -139,13 +144,11 @@ const PartPanel: React.FC<{
   label: string;
   language: string;
   documentTitle: string;
-  coverNode?: React.ReactNode;
-}> = ({ part, label, language, documentTitle, coverNode }) => {
+}> = ({ part, label, language, documentTitle }) => {
   const body = partBody(part, language);
   if (part.role === 'overview') {
     return (
       <section id={part.role} className="max-w-[68rem] scroll-mt-24">
-        {coverNode}
         <Markdown
           className="text-ds-lg font-medium leading-[1.55] text-ds-fg"
           documentTitle={documentTitle}
@@ -180,23 +183,21 @@ const ProjectCoverBlock: React.FC<{
 
   if (!image) return null;
 
-  const media = <img src={image} alt={title} className="size-full object-cover" />;
+  const media = <img src={image} alt={title} className="size-full object-cover object-top" />;
 
   return (
-    <div className="mb-8">
-      <div className="h-80 overflow-hidden rounded-ds-lg border border-ds-border bg-ds-surface-2 shadow-ds-2">
-        {normalizedSrc ? (
-          <a
-            href={normalizedSrc}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={openLabel}
-            className="block size-full transition duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-accent"
-          >
-            {media}
-          </a>
-        ) : media}
-      </div>
+    <div className="aspect-[16/9] overflow-hidden rounded-ds-md border border-ds-border bg-ds-surface-2 shadow-ds-1 sm:aspect-[16/7] sm:rounded-ds-lg">
+      {normalizedSrc ? (
+        <a
+          href={normalizedSrc}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={openLabel}
+          className="block size-full transition duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-accent"
+        >
+          {media}
+        </a>
+      ) : media}
     </div>
   );
 };
@@ -503,19 +504,17 @@ const ProjectDetail: React.FC = () => {
     );
   }
 
-  const buildStatus = project.status?.buildStatus;
-  const hasReportedBuildStatus = buildStatus === 'passing' || buildStatus === 'failing';
   const downloadableAsset = project.versions?.releases
     ?.flatMap((release) => release.assets ?? [])
     .find((asset) => Boolean(asset.downloadUrl));
-  const overviewCoverNode = activePart?.role === 'overview' ? (
+  const projectCoverNode = (
     <ProjectCoverBlock
       title={title}
       image={project.image}
       websiteUrl={project.coverSourceType === 'website' ? project.coverWebsiteUrl || homepageUrl : undefined}
       language={language as 'en' | 'zh'}
     />
-  ) : undefined;
+  );
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -547,66 +546,68 @@ const ProjectDetail: React.FC = () => {
         currentChapterId={activeSection}
         wordCount={wordCount}
         showLeftRail={false}
+        contentClassName="px-4 !py-3 sm:px-6 sm:!py-8 lg:px-12"
         outlineContainerSelector="#project-detail-document"
         outlineHeadingSelector="header h1, h2, h3"
       >
         <article data-ds id="project-detail-document" className="w-full">
-          <header id={PROJECT_HEADER_ID} className="scroll-mt-24 pb-8 pt-6">
-            {(project.status?.lifecycle || project.year || hasReportedBuildStatus) && (
-              <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-ds-xs leading-5 text-ds-fg-subtle">
-                {project.status?.lifecycle && <span>{project.status.lifecycle}</span>}
-                {project.year > 0 && <span>{project.year}</span>}
-                {hasReportedBuildStatus && buildStatus && (
-                  <span
-                    className={cn(
-                      'inline-flex items-center gap-1.5',
-                      buildStatus === 'passing' ? 'text-ds-success' : 'text-ds-error',
-                    )}
-                  >
-                    <span className="size-1.5 rounded-full bg-current" aria-hidden />
-                    {t(`projects.build.${buildStatus}`, { defaultValue: buildStatus })}
-                  </span>
-                )}
-              </div>
-            )}
-
+          <header id={PROJECT_HEADER_ID} className="scroll-mt-24 pb-4 pt-0 sm:pt-6">
             <h1
-              className="max-w-[70rem] break-words text-balance font-display text-ds-3xl font-medium leading-[1.08] tracking-normal text-ds-fg sm:text-ds-4xl lg:text-7xl"
+              className="max-w-[70rem] break-words text-balance font-display text-ds-3xl font-semibold leading-[1.08] tracking-normal text-ds-fg sm:text-ds-4xl sm:font-medium lg:text-7xl"
             >
               {title}
             </h1>
 
             {project.description && (
-              <p className="mt-7 max-w-[58rem] text-pretty text-ds-lg font-medium leading-7 text-ds-fg-muted sm:leading-[1.55]">
+              <p className="mt-4 max-w-[58rem] text-pretty text-ds-lg font-medium leading-7 text-ds-fg-muted sm:mt-6 sm:leading-[1.55]">
                 {project.description}
               </p>
             )}
 
-            <div className="mt-8 flex flex-col gap-5 border-y border-ds-border py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3 text-ds-sm text-ds-fg-muted">
+            {project.image && (
+              <div className="mt-5 sm:mt-6">
+                {projectCoverNode}
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-col gap-3 border-y border-ds-border py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="grid grid-cols-2 items-center gap-x-4 gap-y-3 text-ds-sm text-ds-fg-muted sm:flex sm:flex-wrap sm:gap-3">
+                <Link
+                  to={canonicalInternalPath('/')}
+                  rel="author"
+                  className="inline-flex whitespace-nowrap font-medium transition-colors hover:text-ds-fg"
+                >
+                  <CardAuthor
+                    name={DEFAULT_CONTENT_AUTHOR}
+                    avatarUrl={DEFAULT_CONTENT_AUTHOR_AVATAR_URL}
+                  />
+                </Link>
+                <Divider orientation="vertical" className="hidden h-3.5 sm:block" />
                 {project.status?.license && (
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                     <Shield size={15} className="text-ds-fg-subtle" />
                     {project.status.license}
                   </span>
                 )}
                 {project.status?.lastUpdated && (
                   <>
-                    {project.status?.license && <Divider orientation="vertical" className="h-3.5" />}
-                    <span className="inline-flex items-center gap-1.5">
+                    {project.status?.license && <Divider orientation="vertical" className="hidden h-3.5 sm:block" />}
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                       <Calendar size={15} className="text-ds-fg-subtle" />
                       {t('projects.updated')}{' '}
                       {new Date(project.status.lastUpdated).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-SG')}
                     </span>
                   </>
                 )}
-                <Divider orientation="vertical" className="h-3.5" />
+                {(project.status?.license || project.status?.lastUpdated) && (
+                  <Divider orientation="vertical" className="hidden h-3.5 sm:block" />
+                )}
                 <button
                   type="button"
                   onClick={() => void engagement.toggleLike()}
                   disabled={engagement.likePending}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-ds-sm px-1 py-0.5 transition-colors hover:text-ds-error',
+                    'inline-flex items-center gap-1.5 whitespace-nowrap rounded-ds-sm px-1 py-0.5 transition-colors hover:text-ds-error',
                     engagement.metrics.is_liked_by_user && 'text-ds-error',
                     engagement.likePending && 'cursor-not-allowed opacity-60',
                   )}
@@ -617,8 +618,8 @@ const ProjectDetail: React.FC = () => {
                   />
                   {engagement.metrics.likes_count} {t('projects.likes')}
                 </button>
-                <Divider orientation="vertical" className="h-3.5" />
-                <span className="font-mono text-ds-xs tabular-nums text-ds-fg-subtle">
+                <Divider orientation="vertical" className="hidden h-3.5 sm:block" />
+                <span className="inline-flex items-center whitespace-nowrap font-mono text-ds-xs tabular-nums text-ds-fg-subtle">
                   {engagement.metrics.views_count} views
                 </span>
               </div>
@@ -648,22 +649,12 @@ const ProjectDetail: React.FC = () => {
               </div>
             </div>
 
-            {project.tags && project.tags.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-1.5">
-                {project.tags.map((tag: string) => (
-                  <Badge key={tag} tone="neutral" appearance="soft" size="md">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
-
           </header>
 
           <nav
             data-ds
             aria-label={language === 'zh' ? '项目详情章节' : 'Project detail sections'}
-            className="project-detail-section-nav sticky top-0 z-20 mt-2 flex flex-wrap items-center bg-ds-surface-1"
+            className="project-detail-section-nav no-scrollbar sticky top-0 z-20 flex flex-nowrap items-center overflow-x-auto bg-ds-surface-1"
           >
             {sectionTabs.map((tab) => {
               const Icon = tab.icon;
@@ -677,25 +668,24 @@ const ProjectDetail: React.FC = () => {
                     setActivePanel(tab.id);
                   }}
                   className={cn(
-                    'inline-flex h-12 items-center gap-2 rounded-t-ds-md px-4 text-ds-base font-semibold transition',
+                    'inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-ds-md px-3 text-ds-sm font-semibold transition',
                     active ? 'text-ds-primary' : 'text-ds-fg-muted hover:text-ds-primary dark:text-white dark:hover:text-ds-primary',
                   )}
                 >
-                  <Icon className="size-[18px]" aria-hidden />
+                  <Icon className="size-4" aria-hidden />
                   {tab.label}
                 </button>
               );
             })}
           </nav>
 
-          <div className="mt-8">
+          <div className="mt-6">
             {activePart && (
               <PartPanel
                 part={activePart}
                 label={roleLabel(activePart.role, language)}
                 language={language}
                 documentTitle={title}
-                coverNode={overviewCoverNode}
               />
             )}
 

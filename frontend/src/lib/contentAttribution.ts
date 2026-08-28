@@ -1,6 +1,6 @@
 import siteProfile from '../../site-profile.json';
 import { canonicalRoutePath } from './localeRouting';
-import { siteUrl } from '../utils/publicAsset';
+import { publicAssetUrl, siteUrl } from '../utils/publicAsset';
 
 export type ContentLanguage = 'en' | 'zh';
 export type AttributedContentKind = 'article' | 'project' | 'series';
@@ -12,6 +12,7 @@ const canonicalAliases = new Set([
 ]);
 
 export const DEFAULT_CONTENT_AUTHOR = siteProfile.canonicalName;
+export const DEFAULT_CONTENT_AUTHOR_AVATAR_URL = publicAssetUrl('/image.png');
 
 export const resolveContentAuthor = (author?: string): string => {
   const candidate = author?.trim();

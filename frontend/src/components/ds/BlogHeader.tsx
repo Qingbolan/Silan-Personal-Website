@@ -12,7 +12,7 @@
 // Self-contained: takes plain string arrays, decoupled from BlogData. The
 // parent owns all filter state and passes values + change handlers down.
 import React from 'react';
-import { Search, LayoutGrid, Tag as TagIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, LayoutGrid, Tag as TagIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { dsRoot } from './dsAttr';
 import { Input } from './Input';
@@ -52,6 +52,10 @@ export interface BlogHeaderProps {
   tagLabel?: React.ReactNode;
   /** Map a tag value to its display label (e.g. 'all' → 'All'). */
   formatTag?: (_tag: string) => string;
+  /** Maximum number of tag choices shown before the row is expanded. */
+  collapsedTagLimit?: number;
+  expandTagsLabel?: React.ReactNode;
+  collapseTagsLabel?: React.ReactNode;
 
   className?: string;
 }
@@ -68,7 +72,7 @@ const TagChip: React.FC<{
     onClick={onClick}
     aria-pressed={active}
     className={cn(
-      'max-w-full min-w-0 rounded-full border px-3 py-1 text-ds-xs font-medium',
+      'shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-ds-xs font-medium',
       'transition-colors duration-ds-fast ease-ds-standard outline-none',
       'focus-visible:shadow-ds-focus',
       active
@@ -76,9 +80,7 @@ const TagChip: React.FC<{
         : 'border-ds-border bg-ds-surface-1 text-ds-fg-muted hover:border-ds-fg-subtle hover:text-ds-fg',
     )}
   >
-    <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
-      {label}
-    </span>
+    {label}
   </button>
 );
 
@@ -110,6 +112,9 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
   onTagChange,
   tagLabel = 'Topics',
   formatTag,
+  collapsedTagLimit = 4,
+  expandTagsLabel = 'More',
+  collapseTagsLabel = 'Less',
   className,
 }) => {
   // The toolbar groups are independently optional — a header with only a
@@ -117,6 +122,20 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
   const showSearch = typeof onSearchChange === 'function';
   const showSegmented = !!typeOptions && typeOptions.length > 0;
   const showTags = !!tags && tags.length > 0 && typeof onTagChange === 'function';
+  const [tagsExpanded, setTagsExpanded] = React.useState(false);
+  const collapsedTags = React.useMemo(() => {
+    const allTags = tags ?? [];
+    const limit = Math.max(1, collapsedTagLimit);
+    if (allTags.length <= limit) return allTags;
+
+    const visible = allTags.slice(0, limit);
+    if (selectedTag && allTags.includes(selectedTag) && !visible.includes(selectedTag)) {
+      visible[visible.length - 1] = selectedTag;
+    }
+    return visible;
+  }, [collapsedTagLimit, selectedTag, tags]);
+  const visibleTags = tagsExpanded ? (tags ?? []) : collapsedTags;
+  const hiddenTagCount = Math.max(0, (tags?.length ?? 0) - collapsedTags.length);
 
   return (
     <header {...dsRoot} className={cn('w-full max-w-full min-w-0 overflow-hidden', className)}>
@@ -174,10 +193,10 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
 
           {/* Group 3 — topic chips. */}
           {showTags && (
-            <div className="mt-4 grid min-w-0 max-w-full gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-x-2.5 sm:gap-y-2">
+            <div className="mt-4 grid min-w-0 max-w-full gap-2 sm:flex sm:items-start sm:gap-2.5">
               <FilterLabel icon={<TagIcon />}>{tagLabel}</FilterLabel>
-              <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 sm:contents">
-                {tags!.map((tag) => (
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                {visibleTags.map((tag) => (
                   <TagChip
                     key={tag}
                     label={formatTag ? formatTag(tag) : tag}
@@ -185,6 +204,19 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
                     onClick={() => onTagChange!(tag)}
                   />
                 ))}
+                {hiddenTagCount > 0 && (
+                  <button
+                    {...dsRoot}
+                    type="button"
+                    aria-expanded={tagsExpanded}
+                    onClick={() => setTagsExpanded((expanded) => !expanded)}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-ds-xs font-medium text-ds-fg-subtle transition-colors hover:bg-ds-surface-2 hover:text-ds-fg focus-visible:shadow-ds-focus"
+                  >
+                    {tagsExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                    {tagsExpanded ? collapseTagsLabel : expandTagsLabel}
+                    {!tagsExpanded && <span aria-hidden>+{hiddenTagCount}</span>}
+                  </button>
+                )}
               </div>
             </div>
           )}

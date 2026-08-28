@@ -83,6 +83,8 @@ export type {
 
 export { Avatar } from './Avatar';
 export type { AvatarProps } from './Avatar';
+export { CardAuthor } from './CardAuthor';
+export type { CardAuthorProps } from './CardAuthor';
 
 export { ProjectCard } from './ProjectCard';
 export type { ProjectCardProps, ProjectCardData, CoverSize } from './ProjectCard';

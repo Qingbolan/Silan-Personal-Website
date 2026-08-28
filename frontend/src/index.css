@@ -3,11 +3,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'DM Serif Display';
+  src: url('/fonts/dm-serif-display-latin.ttf') format('truetype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 /* Modern Typography Variables */
 :root {
-  /* One global family across web and desktop. Hierarchy comes from size,
-     weight, spacing, and surface treatment — never a second typeface. */
+  /* Product typography stays unified across web and desktop. The footer
+     wordmark alone uses an editorial face as a deliberate brand accent. */
   --font-app: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-footer-editorial: 'DM Serif Display', Georgia, 'Times New Roman', serif;
   --font-system: var(--font-app);
   --font-display: var(--font-app);
   --font-body: var(--font-app);

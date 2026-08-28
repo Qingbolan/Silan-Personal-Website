@@ -297,7 +297,7 @@ const BlogStack: React.FC = () => {
       <div className="mx-auto w-full max-w-6xl min-w-0 px-4">
         {/* Header — title + search + content-type + topic filters. */}
         <motion.div
-          className="mb-12"
+          className="mb-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -305,11 +305,6 @@ const BlogStack: React.FC = () => {
           <BlogHeader
             eyebrow={language === 'en' ? 'Writing' : '文字'}
             title={language === 'en' ? 'Blog' : '博客'}
-            description={
-              language === 'en'
-                ? 'Thoughts, insights, and tutorials on AI, software development, and emerging technologies.'
-                : '关于AI、软件开发和新兴技术的思考、见解和教程。'
-            }
             search={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder={language === 'en' ? 'Search articles…' : '搜索文章…'}
@@ -321,6 +316,8 @@ const BlogStack: React.FC = () => {
             selectedTag={selectedTag}
             onTagChange={setSelectedTag}
             tagLabel={language === 'en' ? 'Topics' : '主题'}
+            expandTagsLabel={language === 'en' ? 'More' : '更多'}
+            collapseTagsLabel={language === 'en' ? 'Less' : '收起'}
             formatTag={(tag) =>
               tag === 'all' ? (language === 'en' ? 'All' : '全部') : tag
             }
@@ -352,9 +349,11 @@ const BlogStack: React.FC = () => {
             <Masonry
               items={filteredPostsMemo}
               getKey={(post) => post.id}
+              gap={12}
               bottomPadding={64}
               renderItem={(post) => (
                 <BlogCard
+                  className="rounded-ds-md"
                   coverSize="standard"
                   post={toBlogCardData(post, language)}
                   onOpen={() => handlePostClick(post)}

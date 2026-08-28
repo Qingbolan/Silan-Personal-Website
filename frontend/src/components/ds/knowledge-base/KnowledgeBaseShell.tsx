@@ -223,7 +223,7 @@ const KnowledgeBaseShell: React.FC<KnowledgeBaseShellProps> = ({
         >
           <div
             className={cn(
-              'sticky top-0 max-h-[calc(100dvh-4rem)] overflow-y-auto pt-6',
+              'no-scrollbar sticky top-0 max-h-[calc(100dvh-4rem)] overflow-y-auto pt-6',
               outlineCollapsed ? 'max-w-14' : 'max-w-[34rem]',
             )}
           >

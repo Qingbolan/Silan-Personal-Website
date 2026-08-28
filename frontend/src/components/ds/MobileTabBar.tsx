@@ -67,7 +67,7 @@ const TabSlot: React.FC<{
       aria-expanded={hasPopup ? expanded : undefined}
       aria-haspopup={hasPopup ? 'menu' : undefined}
       onClick={onClick}
-      className="relative flex min-h-[3.5rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-ds-lg px-1 py-1 transition-transform duration-ds-fast active:scale-[0.96]"
+      className="relative flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-ds-lg px-1 py-0.5 transition-transform duration-ds-fast active:scale-[0.96]"
     >
       <span
         className={cn(

@@ -149,21 +149,26 @@ const Footer: React.FC = () => {
 
       <motion.div
         aria-hidden
-        className="relative mt-8 select-none overflow-hidden px-3 pb-28 text-center text-white/[0.18] sm:mt-12 sm:px-8 sm:pb-10"
+        className="relative mx-auto mt-8 w-full max-w-7xl select-none overflow-hidden px-5 pb-28 text-left text-white/[0.18] sm:mt-12 sm:px-10 sm:pb-10 lg:px-12"
         initial={reduceMotion ? false : { opacity: 0, y: 28 }}
         whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
         <motion.span
-          className="block whitespace-nowrap font-signature text-[clamp(4.8rem,12.5vw,15.5rem)] font-normal leading-[0.82] tracking-[-0.025em]"
+          className="-ml-[0.06em] block origin-left whitespace-nowrap font-signature text-[clamp(4.8rem,12.5vw,15.5rem)] font-normal leading-[0.82]"
           animate={reduceMotion ? undefined : { y: [0, -4, 0], rotate: [0, -0.35, 0], scaleX: [1.035, 1.055, 1.035], opacity: [0.82, 1, 0.82] }}
           transition={reduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           whileHover={reduceMotion ? undefined : { y: -8, scaleX: 1.085, scaleY: 1.012, opacity: 1, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }}
         >
-          <span>Silan</span>
-          <span className="mx-[0.14em] inline-block sm:mx-[0.26em]">.</span>
-          <span>Hu</span>
+          <span className="font-medium tracking-[-0.06em]">Silan</span>
+          <span className="-ml-[0.08em] inline-block text-[#f58220]/65">.</span>
+          <span
+            className="relative -top-[0.015em] -ml-[0.1em] inline-block text-[0.9em] italic tracking-[-0.045em] text-white/[0.26]"
+            style={{ fontFamily: 'var(--font-footer-editorial)' }}
+          >
+            Tech
+          </span>
         </motion.span>
       </motion.div>
     </footer>
