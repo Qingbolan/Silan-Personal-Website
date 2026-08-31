@@ -16,7 +16,6 @@
   /* Product typography stays unified across web and desktop. The footer
      wordmark alone uses an editorial face as a deliberate brand accent. */
   --font-app: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mobile-mono: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --font-footer-editorial: 'DM Serif Display', Georgia, 'Times New Roman', serif;
   --font-system: var(--font-app);
   --font-display: var(--font-app);
@@ -64,17 +63,6 @@
   --text-4xl: 2.25rem;    /* 36px */
   --text-5xl: 3rem;       /* 48px */
   --text-6xl: 4rem;       /* 64px */
-}
-
-/* On phone-sized viewports, every public typography role resolves through a
-   single native monospace stack. Keeping the switch at the token boundary
-   covers headings, body copy, controls, and Tailwind font utilities without
-   duplicating responsive overrides across individual components. */
-@media (max-width: 639px) {
-  :root {
-    --font-app: var(--font-mobile-mono);
-    --font-footer-editorial: var(--font-mobile-mono);
-  }
 }
 
 /* Dark theme class for Tailwind compatibility */
@@ -1492,6 +1480,16 @@ code[class*="language-"] .token.italic { font-style: italic; }
    separate card. These rules are scoped to Moments so document typography on
    desktop and other public surfaces remains unchanged. */
 @media (max-width: 639px) {
+  /* Keep the established typeface while giving long-form copy a consistent
+     reading measure on narrow screens. Inline markdown is excluded because
+     labels, metadata, and navigation must not stretch their word spacing. */
+  .markdown-content:not(.markdown-content--inline) .markdown-body p {
+    hyphens: auto;
+    text-align: justify;
+    text-align-last: start;
+    text-justify: auto;
+  }
+
   .moment-detail-title {
     font-size: 1.5rem;
     letter-spacing: -0.01em;
