@@ -1480,16 +1480,6 @@ code[class*="language-"] .token.italic { font-style: italic; }
    separate card. These rules are scoped to Moments so document typography on
    desktop and other public surfaces remains unchanged. */
 @media (max-width: 639px) {
-  /* Keep the established typeface while giving long-form copy a consistent
-     reading measure on narrow screens. Inline markdown is excluded because
-     labels, metadata, and navigation must not stretch their word spacing. */
-  .markdown-content:not(.markdown-content--inline) .markdown-body p {
-    hyphens: auto;
-    text-align: justify;
-    text-align-last: start;
-    text-justify: auto;
-  }
-
   .moment-detail-title {
     font-size: 1.5rem;
     letter-spacing: -0.01em;
